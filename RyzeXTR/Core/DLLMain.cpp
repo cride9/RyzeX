@@ -1,0 +1,82 @@
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <cstdint>
+#include <thread>
+#include <iostream>
+#include "Hooks/hooks.h"
+#include "SDK/Menu/gui.h"
+#include "Interface/interfaces.h"
+#include "SDK/NetVar/Netvar.h"
+#include "hungarians.h"
+#include "globals.h"
+#include "SDK/math.h"
+DWORD WINAPI CheatThread(PVOID);
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
+	if (fdwReason == DLL_PROCESS_ATTACH) {
+
+		DisableThreadLibraryCalls(hinstDLL);
+
+		auto thread = CreateThread(nullptr, 0, CheatThread, hinstDLL, 0, nullptr);
+
+		if (thread)
+			CloseHandle(thread);
+	}
+
+	return TRUE;
+}
+
+void OpenConsole() {
+
+	AllocConsole();
+	freopen_s((FILE**)stdin, "CONIN$", "r", stdin);
+	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+	SetConsoleTitleA("Alpha Console");
+}
+
+void CloseConsole() {
+
+	fclose((FILE*)stdin);
+	fclose((FILE*)stdout);
+
+	HWND hw_ConsoleHwnd = GetConsoleWindow();
+	FreeConsole();
+	PostMessageW(hw_ConsoleHwnd, WM_CLOSE, 0, 0);
+}
+
+void SetupFonts() {
+
+	g::fonts::NameESP = i::Surface->FontCreate();
+	g::fonts::HealthESP = i::Surface->FontCreate();
+
+	i::Surface->SetFontGlyphSet(g::fonts::NameESP, "Verdana", 12, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
+	i::Surface->SetFontGlyphSet(g::fonts::HealthESP, "Verdana", 10, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
+}
+
+DWORD WINAPI CheatThread(PVOID hinstDLL) {
+
+	if (!GetModuleHandleA("serverbrowser.dll"))
+		Sleep(200);
+
+	OpenConsole();
+
+	i::SetupInterfaces();
+	SetupFonts();
+	n::SetupNetvars();
+	menu::Setup();
+	M::Setup();
+	h::SetupHooks();
+
+	while (!GetAsyncKeyState(VK_DELETE))
+		Sleep(200);
+
+	menu::open = false;
+	h::DestroyHooks();
+	menu::Destroy();
+	
+	CloseConsole();
+	FreeLibraryAndExitThread(static_cast<HMODULE>(hinstDLL), 0);
+
+	return TRUE;
+}

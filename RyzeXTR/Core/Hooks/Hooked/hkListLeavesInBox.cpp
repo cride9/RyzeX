@@ -1,0 +1,31 @@
+#include "../hooks.h"
+#include "../../SDK/Menu/config.h"
+#include "../../SDK/Entity.h"
+
+int __fastcall h::hkListLeavesInBox(void* thisptr, int edx, const Vector& vecMins, const Vector& vecMaxs, unsigned short* puList, int nListMax) {
+
+	static auto original = detour::listLeaves.GetOriginal<decltype(&h::hkListLeavesInBox)>();
+
+	static std::uintptr_t uInsertIntoTree = (util::FindSignature("client.dll", "56 52 FF 50 18") + 0x5);
+
+	if (cfg::visual::enemyEsp && cfg::model::enemy && reinterpret_cast<std::uintptr_t>(_ReturnAddress()) == uInsertIntoTree) {
+
+		if (const auto pInfo = *reinterpret_cast<RenderableInfo_t**>(reinterpret_cast<std::uintptr_t>(_AddressOfReturnAddress()) + 0x14); pInfo != nullptr) {
+			
+			if (const auto pRenderable = pInfo->pRenderable; pRenderable != nullptr) {
+				
+				if (const auto pEntity = pRenderable->GetIClientUnknown()->GetBaseEntity(); pEntity != nullptr && pEntity->IsPlayer()) {
+					
+					pInfo->uFlags &= ~RENDER_FLAGS_FORCE_OPAQUE_PASS;
+					pInfo->uFlags2 |= RENDER_FLAGS_BOUNDS_ALWAYS_RECOMPUTE;
+
+					constexpr Vector vecMapMin(MIN_COORD_FLOAT, MIN_COORD_FLOAT, MIN_COORD_FLOAT);
+					constexpr Vector vecMapMax(MAX_COORD_FLOAT, MAX_COORD_FLOAT, MAX_COORD_FLOAT);
+					return original(thisptr, edx, vecMapMin, vecMapMax, puList, nListMax);
+				}
+			}
+		}
+	}
+
+	return original(thisptr, edx, vecMins, vecMaxs, puList, nListMax);
+}

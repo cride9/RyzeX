@@ -1,0 +1,28 @@
+#include "../hooks.h"
+#include "../../Features/Misc/misc.h"
+#include "../../SDK/Menu/config.h"
+
+void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
+
+	static auto original = detour::overrideView.GetOriginal<decltype(&h::hkOverrideView)>();
+
+	misc::ThirdPerson();
+
+	if (g::pLocal) { // need menu element
+
+		if (!g::pLocal->IsScoped())
+			pSetup->flFOV = cfg::misc::fov;
+
+		if (cfg::misc::removals[2]) {
+
+			Vector vecViewPunch = g::pLocal->GetViewPunch();
+			Vector vecAimPunch = g::pLocal->GetAimPunch();
+
+			pSetup->angView[0] -= (vecViewPunch[0] + (vecAimPunch[0] * 2 * 0.4499999f));
+			pSetup->angView[1] -= (vecViewPunch[1] + (vecAimPunch[1] * 2 * 0.4499999f));
+			pSetup->angView[2] -= (vecViewPunch[2] + (vecAimPunch[2] * 2 * 0.4499999f));
+		}
+	}
+
+	original(ecx, edx, pSetup);
+}
