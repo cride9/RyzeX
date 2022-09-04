@@ -11,7 +11,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::enabled) {
 
-		bSendPacket = true;
+		if (!cfg::antiaim::fakelag)
+			bSendPacket = true;
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
 		return;

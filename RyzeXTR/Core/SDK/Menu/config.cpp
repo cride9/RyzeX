@@ -85,6 +85,12 @@ void CConfig::Setup() {
 		SetupValue(desyncinverter, 0, "antiaim", "desyncinverter");
 
 		SetupValue(fakelag, 0, "antiaim", "fakelag");
+		SetupValue(fakelagmin, 0, "antiaim", "fakelagmin");
+		SetupValue(fakelagmax, 0, "antiaim", "fakelagmax");
+		SetupValue(fakelagType, 0, "antiaim", "fakelagType");
+
+		SetupValue(defensive, false, "antiaim", "defensive");
+
 		SetupValue(fakewalk, 0, "antiaim", "fakewalk");
 		SetupValue(fakeduck, false, "antiaim", "fakeduck");
 		SetupValue(fakeduckbind, 0, "antiaim", "fakeduckbind");

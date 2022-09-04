@@ -164,6 +164,7 @@ void LagComp::UpdateAnimations(CBaseEntity* pEnt, playerrecord_t* pRecord, playe
 
 		pEnt->GetSimulationTime() = flSimulationTime;
 
+		VelocityFix(pEnt, pRecord, pPrevious);
 		resolver::Resolver(pEnt, pRecord, pPrevious, true, pEnt->AnimState());
 		UpdatePlayer(pEnt);
 
@@ -209,4 +210,35 @@ void LagComp::UpdatePlayer(CBaseEntity* pEnt) {
 
 	i::GlobalVars->flFrameTime = flFrameTime;
 	i::GlobalVars->flCurrentTime = flCurtime;
+}
+
+void LagComp::VelocityFix(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord) {
+
+	if (pPreviousRecord == nullptr)
+		return;
+
+	auto vecOriginDifference = pEnt->GetVecOrigin() - pPreviousRecord->vecOrigin;
+	auto flTimeDifference = pEnt->GetSimulationTime() - pPreviousRecord->flSimulationTime;
+
+	pEnt->GetVelocity() = vecOriginDifference / flTimeDifference;
+
+	float flAnimationSpeed = 0.f;
+
+	if (pEnt->GetFlags() & FL_ONGROUND && pPreviousRecord->nFlags & FL_ONGROUND && pRecord->layer[11].flWeight > 0.f && pRecord->layer[11].flWeight < 1.f && pRecord->layer[11].flPlaybackRate == pPreviousRecord->layer[11].flPlaybackRate) {
+
+		auto flAnimationModifier = 0.35f * (1.f - pRecord->layer[11].flWeight);
+
+		if (flAnimationModifier > 0.f && flAnimationModifier < 1.f)
+			flAnimationSpeed = pRecord->flMaxSpeed * (flAnimationModifier + 0.55f);
+	}
+
+	if (flAnimationSpeed > 0.f) {
+		pEnt->GetVelocity().x *= flAnimationSpeed;
+		pEnt->GetVelocity().y *= flAnimationSpeed;
+	}
+
+	if (!(pEnt->GetFlags() & FL_ONGROUND))
+		pEnt->GetVelocity().z -= i::ConVar->FindVar("sv_gravity")->GetFloat() * flTimeDifference * 0.5f;
+
+	pEnt->SetAbsVelocity(pEnt->GetVelocity());
 }

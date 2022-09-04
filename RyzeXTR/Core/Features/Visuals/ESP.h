@@ -17,6 +17,8 @@ namespace visual {
 	void WeaponEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void MoneyEsp(int&, int, int, int, int, CBaseEntity*, Color);
 
+	void AutoPeekCircle();
+
 	void DrawMultipoints(CBaseEntity*);
 
 	inline std::deque<Vector> multiPoints[65][18];

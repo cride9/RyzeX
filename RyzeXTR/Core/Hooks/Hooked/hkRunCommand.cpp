@@ -36,13 +36,18 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 	}
 	if (doubletap::defensiveCommandNumber == pCmd->iCommandNumber) {
 
-		pEnt->GetTickBase() = doubletap::defensiveTickbase + 7;
+		pEnt->GetTickBase() = doubletap::defensiveTickbase - 3;
+		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(prediction.GetTickBase(pCmd, pEnt));
+	}
+	if (doubletap::defensiveCommandNumberReset == pCmd->iCommandNumber) {
+
+		pEnt->GetTickBase() = doubletap::defensiveTickbaseReset + 3;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(prediction.GetTickBase(pCmd, pEnt));
 	}
 
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
 
-	if (doubletap::cmdCommandNumber == pCmd->iCommandNumber || doubletap::rechargeCommandNumber == pCmd->iCommandNumber || doubletap::defensiveCommandNumber == pCmd->iCommandNumber)
+	if (doubletap::cmdCommandNumber == pCmd->iCommandNumber || doubletap::rechargeCommandNumber == pCmd->iCommandNumber || doubletap::defensiveCommandNumber == pCmd->iCommandNumber || doubletap::defensiveCommandNumberReset == pCmd->iCommandNumber)
 		g::bRestoreGlobals = true;
 
 	if (!localanim.update)

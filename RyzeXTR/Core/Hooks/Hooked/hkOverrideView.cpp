@@ -22,6 +22,11 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 			pSetup->angView[1] -= (vecViewPunch[1] + (vecAimPunch[1] * 2 * 0.4499999f));
 			pSetup->angView[2] -= (vecViewPunch[2] + (vecAimPunch[2] * 2 * 0.4499999f));
 		}
+
+		if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+
+			pSetup->vecOrigin.z = g::pLocal->GetAbsOrigin().z + 64.f;
+		}
 	}
 
 	original(ecx, edx, pSetup);

@@ -19,7 +19,13 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	SlideFix();
 	DefensiveDoubletap();
 	OnlyCheatLogs();
+	Security();
 	//ViewModel();
+}
+
+void misc::Security() {
+
+	i::ConVar->FindVar("cl_showerror")->SetValue(0);
 }
 
 void misc::IdealTick(CUserCmd* pCmd) {
@@ -42,6 +48,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 
 			position = true;
 			origin = g::pLocal->GetAbsOrigin();
+			vecRecord = origin;
 
 		}
 
@@ -50,6 +57,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 
 		position = false;
 		origin = Vector(0, 0, 0);
+		vecRecord = origin;
 
 	}
 
@@ -147,26 +155,55 @@ void misc::NightMode() {
 
 void misc::DefensiveDoubletap() {
 
+	if (!cfg::antiaim::defensive)
+		return;
+
 	static int timer = 0;
+	static bool CycleReset = false;
+	static float flSimulationTime = 0.f;
 
-	//if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
+	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && doubletap::bCharged) {
 
-	//	if (++timer >= 14)
-	//		timer = 0;
+		if (++timer >= 14)
+			timer = 0;
 
-	//	if (timer > 0) {
+		if (timer > 0) {
 
-	//		doubletap::defensiveCommandNumber = g::pCmd->iCommandNumber;
-	//		doubletap::defensiveTickbase = prediction.GetTickBase(g::pCmd, g::pLocal);
-	//		doubletap::defensiveCurtime = i::GlobalVars->flCurrentTime;
+			flSimulationTime = g::pLocal->GetOldSimulationTime();
 
-	//		g::defensiveTickbase = 16;
-	//	}
-	//	else {
+			g::defensiveTickbase = 16;
 
-	//		g::defensiveTickbase = 0;
-	//	}
-	//}
+			// tickbase shifting causes irrelevant simtime change
+			// simtime + (interval * shifted ticks) = new simtime
+			if (g::pLocal->GetSimulationTime() > flSimulationTime + (i::GlobalVars->flIntervalPerTick * 6)) {
+
+				flSimulationTime = g::pLocal->GetSimulationTime();
+				doubletap::defensiveCommandNumber = g::pCmd->iCommandNumber;
+				doubletap::defensiveTickbase = prediction.GetTickBase(g::pCmd, g::pLocal);
+				doubletap::defensiveCurtime = i::GlobalVars->flCurrentTime;
+				//util::LogConsole("Simtime was too high!\n");
+			}
+			CycleReset = true;
+		}
+		else {
+
+			if (CycleReset) {
+
+				doubletap::defensiveCommandNumberReset = g::pCmd->iCommandNumber;
+				doubletap::defensiveTickbaseReset = prediction.GetTickBase(g::pCmd, g::pLocal);
+				doubletap::defensiveCurtimeReset = i::GlobalVars->flCurrentTime;
+				CycleReset = false;
+			}
+
+			g::defensiveTickbase = 0;
+
+			//std::string lmao = std::to_string(g::pLocal->GetOldSimulationTime());
+			//lmao += " : ";
+			//lmao += std::to_string(g::pLocal->GetSimulationTime());
+			//lmao += "\n";
+			//util::LogConsole(lmao.c_str());
+		}
+	}
 }
 
 void misc::SlideFix() {
@@ -614,18 +651,39 @@ void misc::ThirdPerson() {
 	if (!cfg::misc::thirdperson || !g::pLocal)
 		return;
 
+	static bool didSetThirdPerson = false;
 	static CConVar* svcheats = i::ConVar->FindVar("sv_cheats");
 
 	if (GetKeyState(cfg::misc::thirdpersonbind) && g::pLocal->IsAlive()) {
-		svcheats->SetValue(1);
-		i::EngineClient->ExecuteClientCmd("thirdperson");
+
+		if (!didSetThirdPerson) {
+
+			*(int*)((DWORD)&svcheats->fnChangeCallbacks + 0xC) = 0; // ew
+			svcheats->SetValue(1);
+
+			static std::string tpfix = "cam_idealpitch 0;";
+			tpfix += "cam_idealyaw 0;";
+			tpfix += "cam_idealdist 140;";
+			tpfix += "thirdperson;";
+
+			i::EngineClient->ExecuteClientCmd(tpfix.c_str());
+			didSetThirdPerson = true;
+		}
 	}
 	else {
 		i::EngineClient->ExecuteClientCmd("firstperson");
+		didSetThirdPerson = false;
 	}
 }
 
 void misc::FakeLag(bool& bSendPacket) {
+
+	enum FAKELAGTYPE {
+
+		MAXIMUM,
+		ADAPTIVE,
+		JITTER
+	};
 
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return;
@@ -635,7 +693,85 @@ void misc::FakeLag(bool& bSendPacket) {
 		return;
 	}
 
-	bSendPacket = i::ClientState->nChokedCommands >= (cfg::antiaim::fakelag ? (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? cfg::antiaim::fakelag : 2 : cfg::antiaim::fakelag : cfg::antiaim::fakelag);
+	static int iCurrentChoke = 0;
+
+	static CConVar* sv_maxspeed = i::ConVar->FindVar("sv_maxspeed");
+	float flVelocity = g::pLocal->GetVelocity().Length2D();
+	float flMaxVelocity = sv_maxspeed->GetFloat();
+	static bool bChokeCycleEnded = false;
+
+	int iMin = cfg::antiaim::fakelagmin;
+	int iMax = cfg::antiaim::fakelagmax;
+
+	if (cfg::antiaim::fakelag) {
+
+		if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
+
+			if (g::bWaiting) {
+
+				switch (cfg::antiaim::fakelagType) {
+
+				case MAXIMUM:
+					iCurrentChoke = cfg::antiaim::fakelag;
+					break;
+
+				case ADAPTIVE:
+
+					iCurrentChoke = max(1, 15 * (flVelocity / flMaxVelocity));
+					break;
+
+				case JITTER:
+
+					if (bChokeCycleEnded) {
+
+						iCurrentChoke = iMin;
+						bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
+					}
+					else {
+
+						iCurrentChoke = cfg::antiaim::fakelag;
+						bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
+					}
+					break;
+				}
+			}
+			else
+				iCurrentChoke = min(2, iCurrentChoke);
+		}
+		else {
+
+			switch (cfg::antiaim::fakelagType) {
+
+			case MAXIMUM:
+				iCurrentChoke = cfg::antiaim::fakelag;
+				break;
+
+			case ADAPTIVE:
+
+				iCurrentChoke = max(1, 15 * (flVelocity / flMaxVelocity));
+				break;
+
+			case JITTER:
+
+				if (bChokeCycleEnded) {
+
+					iCurrentChoke = iMin;
+					bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
+				}
+				else {
+
+					iCurrentChoke = cfg::antiaim::fakelag;
+					bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
+				}
+				break;
+			}
+		}
+	}
+	else
+		iCurrentChoke = cfg::antiaim::fakelag;
+
+
+	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
 }
 
 //void misc::CustomBombText(const char* szText) {

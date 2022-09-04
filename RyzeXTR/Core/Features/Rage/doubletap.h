@@ -18,6 +18,10 @@ namespace doubletap {
 	inline float defensiveCurtime;
 	inline int defensiveCommandNumber;
 
+	inline int defensiveTickbaseReset;
+	inline float defensiveCurtimeReset;
+	inline int defensiveCommandNumberReset;
+
 	inline int shiftAmount;
 	inline int rechargeAmount;
 

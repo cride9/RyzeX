@@ -27,7 +27,7 @@ void h::SetupHooks() {
 	HookTable(detour::runCommand, i::Prediction, table::runCommand, &hkRunCommand);
 	HookTable(detour::getViewmodelFov, i::ClientMode, table::getViewmodelFov, &hkGetViewModelFov);
 	//HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
-	//HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
+	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
 
 	// Signature hooks
 	HookSignature(detour::clMove, "engine.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8A F9", &hkClMove);

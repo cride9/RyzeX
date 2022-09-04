@@ -1,1 +1,12 @@
-﻿  misc.cpp
+﻿  Lagcompensation.cpp
+  ragebot.cpp
+  ESP.cpp
+  chams.cpp
+  hkUpdateClientSideAnimations.cpp
+  hkCreateMoveProxy.cpp
+  hkFireGameEvent.cpp
+  hkFrameStageNotify.cpp
+  hkOverrideView.cpp
+  hkPaintTraverse.cpp
+  Generating Code...
+  RyzeXTR.vcxproj -> E:\github\ryzex\RyzeX\RyzeXTR\Release\RyzeXTR.dll

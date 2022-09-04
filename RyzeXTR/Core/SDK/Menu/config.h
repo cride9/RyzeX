@@ -70,6 +70,12 @@ namespace cfg {
 		inline int desyncinverter = 0;
 
 		inline int fakelag = 0;
+		inline int fakelagmin = 0;
+		inline int fakelagmax = 0;
+		inline int fakelagType = 0;
+
+		inline bool defensive = false;
+
 		inline float fakewalk = 0;
 		inline bool fakeduck = false;
 		inline int fakeduckbind = 0;

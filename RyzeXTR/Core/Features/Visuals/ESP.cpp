@@ -1,6 +1,7 @@
 #include "ESP.h"
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../Rage/ragebot.h"
+#include "../Misc/misc.h"
 
 void visual::VisualRender() {
 
@@ -68,6 +69,8 @@ void visual::VisualRender() {
 				if (cfg::visual::localArmor) KevlarEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localArmorColor));
 				if (cfg::visual::localMoney) MoneyEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localMoneyColor));
 				if (cfg::visual::localAmmo) AmmoEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localAmmoColor));
+
+
 				continue;
 			}
 			if (!cfg::visual::teamEsp)
@@ -189,4 +192,12 @@ void visual::MoneyEsp(int& spacing, int left, int top, int right, int bot, CBase
 	i::Surface->DrawT(right + 2, top + spacing, color, g::fonts::NameESP, false, text.c_str());
 
 	spacing += 10;
+}
+
+void visual::AutoPeekCircle() {
+
+	if (misc::vecRecord == Vector(0.f, 0.f, 0.f))
+		return;
+
+
 }

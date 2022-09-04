@@ -1,1 +1,2 @@
 E:\RyzeXTR\Debug\RyzeXTR.dll
+E:\github\ryzex\RyzeX\RyzeXTR\Debug\RyzeXTR.dll

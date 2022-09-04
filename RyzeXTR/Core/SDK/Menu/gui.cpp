@@ -23,6 +23,7 @@ void Style() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	ImGuiIO& io = ImGui::GetIO();
 
+	io.IniFilename = "ryzeX";
 	io.Fonts->AddFontDefault(); //verdana.ttf
 	menu::logoFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\verdana.ttf", 20.0f);
 	menu::logoFontsmall = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\verdana.ttf", 15.0f);
@@ -90,7 +91,7 @@ void menu::Render() noexcept {
 			ImGui::BeginChild("##tabs", ImVec2(ImGui::GetContentRegionAvail().x, 37.f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 			{
 				ImGui::PushFont(buildDateFont);
-				ImGui::TextColored(ImColor(222, 153, 42), "Build Date: 8/28/2022");
+				ImGui::TextColored(ImColor(222, 153, 42), "Build Date: 09/04/2022");
 				ImGui::PopFont();
 				ImGui::SameLine();
 
@@ -715,7 +716,7 @@ void menu::Render() noexcept {
 			}
 			else if (tabindex == ANTIAIM_TAB) {
 
-				ImGui::BeginChild("##antiaimleft", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+				ImGui::BeginChild("##antiaimleft", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2), true);
 				{
 					ImGui::Checkbox("enable", &cfg::antiaim::enabled);
 
@@ -735,11 +736,10 @@ void menu::Render() noexcept {
 
 						ImGui::SliderFloat("range", &cfg::antiaim::desyncvalue, 0.f, 58.f, std::to_string((int)cfg::antiaim::desyncvalue).c_str());
 					}
-
-					ImGui::SliderInt("fakelag", &cfg::antiaim::fakelag, 0, 14, std::to_string(cfg::antiaim::fakelag).c_str());
-
 				}
 				ImGui::EndChild();
+
+				ImVec2 vecChildPosition = ImGui::GetCursorPos();
 
 				ImGui::SameLine();
 
@@ -754,6 +754,21 @@ void menu::Render() noexcept {
 
 					ImGui::Checkbox("ideal tick", &cfg::antiaim::idealTick);
 					ImGui::Keybind("##idealtickbind", &cfg::antiaim::idealTickBind);
+				}
+				ImGui::EndChild();
+
+				ImGui::SetCursorPos(vecChildPosition);
+
+				ImGui::BeginChild("##antiaimleftbot", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+				{
+					static const char* fakelagtype[] = { "maximum", "adaptive", "jitter" };
+
+					ImGui::Combo("##fakelagtype", &cfg::antiaim::fakelagType, fakelagtype, IM_ARRAYSIZE(fakelagtype));
+					ImGui::SliderInt("base", &cfg::antiaim::fakelag, 0, 14, std::to_string(cfg::antiaim::fakelag).c_str());
+					ImGui::SliderInt("minimum", &cfg::antiaim::fakelagmin, 0, 14, std::to_string(cfg::antiaim::fakelagmin).c_str());
+					ImGui::SliderInt("maximum", &cfg::antiaim::fakelagmax, 0, 14, std::to_string(cfg::antiaim::fakelagmax).c_str());
+					ImGui::Spacing(); ImGui::Spacing();
+					ImGui::Checkbox("defensive", &cfg::antiaim::defensive);
 				}
 				ImGui::EndChild();
 			}

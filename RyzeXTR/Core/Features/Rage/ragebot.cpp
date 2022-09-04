@@ -87,6 +87,7 @@ Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombat
 		if (flDamage > pEnt->GetHealth() + 10) {
 
 			resolver::targetedRecord = pRecord;
+			flSimulationTime = pRecord->flSimulationTime;
 			return vecHitboxPosition;
 		}
 
@@ -118,6 +119,7 @@ Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombat
 			if (flDamage > pEnt->GetHealth() + 10) {
 
 				resolver::targetedRecord = validBacktrackRecords.front();
+				flSimulationTime = validBacktrackRecords.front()->flSimulationTime;
 				return vecHitboxPosition;
 			}
 

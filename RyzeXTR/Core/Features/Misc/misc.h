@@ -15,6 +15,7 @@ namespace misc {
 
 	inline bool bFilter = false;
 	inline bool bRetreat = false;
+	inline Vector vecRecord = Vector(0.f, 0.f, 0.f);
 
 	void CreateMove(CUserCmd*, Vector&, bool&);
 
@@ -34,6 +35,8 @@ namespace misc {
 	void NightMode();
 	void OnlyCheatLogs();
 	void IdealTick(CUserCmd*);
+
+	void Security();
 
 	void PreserveKillfeed(IGameEvent*);
 	void BuyBot(IGameEvent*);

@@ -34,6 +34,7 @@ public:
 		float flLastShotTime;
 		float flSpawnTime;
 		float flPoseParamater[24];
+		float flMaxSpeed;
 
 		Vector vecOrigin;
 		Vector vecVelocity;
@@ -74,11 +75,13 @@ public:
 			vecAbsAngles = pEnt->GetAbsAngles();
 			vecMins = pEnt->GetCollideable()->OBBMins();
 			vecMaxs = pEnt->GetCollideable()->OBBMaxs();
+
 			flSimulationTime = pEnt->GetSimulationTime();
 			flInterpolation = 0.f;
 			flLastShotTime = pWeapon ? pWeapon->GetLastShotTime() : 0.f;
 			flDuckAmount = pEnt->GetDuckAmount();
 			flLowerBodyYawTarget = pEnt->GetLowerBodyYaw();
+			flMaxSpeed = pWeapon ? pWeapon->GetCSWpnData()->flMaxSpeed[0] : 260.f;
 
 			pAnimstate = pEnt->AnimState() ? pEnt->AnimState() : nullptr;
 
@@ -94,6 +97,7 @@ public:
 
 	void UpdateAnimations(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord);
 	void UpdatePlayer(CBaseEntity* pEnt);
+	void VelocityFix(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord);
 
 	std::deque<playerrecord_t> deqLagRecords[65];
 };
