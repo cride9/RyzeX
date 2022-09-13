@@ -5,28 +5,6 @@
 #include "../../../utilities.h"
 #include "../../../globals.h"
 
-//class VarMapEntry_t {
-//public:
-//	unsigned short type;
-//	unsigned short m_bNeedsToInterpolate; // Set to false when this var doesn't
-//										  // need Interpolate() called on it anymore.
-//	void* data;
-//	void* watcher;
-//};
-//
-//struct VarMapping_t {
-//	VarMapping_t() {
-//		m_nInterpolatedEntries = 0;
-//	}
-//
-//	VarMapEntry_t* m_Entries;
-//	int m_nInterpolatedEntries;
-//	float m_lastInterpolationTime;
-//};
-//VarMapping_t* GetVarMap(CBaseEntity* pBaseEntity) {
-//	return reinterpret_cast<VarMapping_t*>((DWORD)pBaseEntity + 0x24); //0x4C );
-//}
-
 class LagComp {
 public:
 

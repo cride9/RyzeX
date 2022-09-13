@@ -7,7 +7,7 @@ void localanimation::AnimlayerFix(CUserCmd* pCmd, CAnimState* pState) {
 	CAnimationLayer& jumpLayer = g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
 	CAnimationLayer& moveLayer = g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE];
 
-	if (!(g::pLocal->GetFlags() & 0x40)) {
+	if (!(g::pLocal->GetFlags() & FL_FROZEN)) {
 
 		const auto bCrouched = g::pLocal->GetDuckAmount() > .55f;
 		const auto bMoving = g::pLocal->GetVelocity().Length2D() >= 0.25f;

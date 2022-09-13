@@ -45,6 +45,6 @@ void __fastcall	h::hkUpdateClientSideAnimations(void* entityPointer, void* edx) 
 		return;
 		
 	}
-
-	original(entityPointer, edx);
+	else if (g::bAllowAnimations[pEnt->EntIndex()])
+		original(entityPointer, edx);
 }

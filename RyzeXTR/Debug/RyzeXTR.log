@@ -1,2 +1,47 @@
-﻿  hkSetupBones.cpp
+﻿  DLLMain.cpp
+  enginepred.cpp
+  misc.cpp
+  Lagcompensation.cpp
+  LocalAnimation.cpp
+  antiaim.cpp
+  autowall.cpp
+  doubletap.cpp
+  ragebot.cpp
+  ESP.cpp
+  chams.cpp
+  hkBuildTransformation.cpp
+  hkCalculateView.cpp
+  hkCheckForSequenceChange.cpp
+  hkEstimateAbsVelocity.cpp
+  hkInterpolateServerEntites.cpp
+  hkIsFollowingEntity.cpp
+  hkIsHltv.cpp
+  hkModifyEyePosition.cpp
+  hkSetupBones.cpp
+  Generating Code...
+  Compiling...
+  hkStandardBlendingRules.cpp
+  hkUpdateAnimationState.cpp
+  hkUpdateClientSideAnimations.cpp
+  hkClMove.cpp
+  hkCreateMoveProxy.cpp
+  hkDoExtraBoneProcessing.cpp
+  hkDrawModel.cpp
+  hkFireGameEvent.cpp
+  hkFrameStageNotify.cpp
+  hkGetViewModelFov.cpp
+  hkListLeavesInBox.cpp
+  hkOverrideView.cpp
+  hkPaintTraverse.cpp
+  hkPhysicsSimulate.cpp
+  hkRunCommand.cpp
+  hkWriteUserCmdDeltaToBuffer.cpp
+  hooks.cpp
+  entityListener.cpp
+  Entity.cpp
+  gui.cpp
+  Generating Code...
+  Compiling...
+  math.cpp
+  Generating Code...
   RyzeXTR.vcxproj -> E:\github\ryzex\RyzeX\RyzeXTR\Debug\RyzeXTR.dll

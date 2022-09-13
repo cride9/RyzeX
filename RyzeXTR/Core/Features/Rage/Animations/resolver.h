@@ -3,6 +3,8 @@
 #include "../../../SDK/Menu/config.h"
 #include "../../Misc/misc.h"
 
+// that's pasted from uc so I won't comment it ty
+
 enum EBRUTE {
 
 	RIGHT,

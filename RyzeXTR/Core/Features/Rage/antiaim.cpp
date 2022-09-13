@@ -10,6 +10,7 @@ static bool unevenInvert = false;
 
 void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle) {
 
+	// sanity checks
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::enabled) {
 
 		if (!cfg::antiaim::fakelag)
@@ -19,15 +20,16 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 		return;
 	}
 
+	// shooting checks
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
 
-		//bSendPacket = true;
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
 		bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
 		return;
 	}
 
+	// E, ladder, noclip check
 	if (g::pCmd->iButtons & IN_USE || g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP) {
 
 		desyncValue = 0.f;
@@ -37,6 +39,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 
 	g::bAntiaimEnabled = true;
 
+	// uneven, even fakelag jitter stuff
 	evenInvert = !evenInvert;
 	if (bSendPacket)
 		unevenInvert = !unevenInvert;
@@ -109,9 +112,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 		pCmd->angViewPoint.y = flAtTarget;
 	}
 
+	// no lby break sry its 2022 nobody stands still and breaks lby
 	if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)
 		pCmd->flForwardMove += evenInvert ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
 
+	// pure cancer 4line antiaim no shit why do ppl hit my head 100%
 	switch (cfg::antiaim::desynctype) {
 
 	case STATIC:

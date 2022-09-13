@@ -19,12 +19,13 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	SlideFix();
 	DefensiveDoubletap();
 	OnlyCheatLogs();
-	//Security();
+	Security();
 	//ViewModel();
 }
 
 void misc::Security() {
 
+	// dont even ask that
 	i::ConVar->FindVar("cl_showerror")->SetValue(0);
 }
 
@@ -190,6 +191,8 @@ void misc::DefensiveDoubletap() {
 
 			g::defensiveTickbase = 0;
 
+			// cycle reset aka when my tickbase goes back to normal
+			// so my old tickbase will be higher than the actual tickbase
 			if (CycleReset) {
 
 				doubletap::defensiveCommandNumberReset = g::pCmd->iCommandNumber;
@@ -322,13 +325,6 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 		if (_clear_notices)
 			_clear_notices(((DWORD)_death_notice - 20));
 	}
-}
-
-void misc::ViewModel() {
-
-	if (!g::pLocal || !g::pLocal->IsAlive())
-		return;
-
 }
 
 void misc::FakeDuck(CUserCmd* pCmd) {

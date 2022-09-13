@@ -167,6 +167,25 @@ enum EItemDefinitionIndex : short
 	SPECIAL_AGENT_B_SQUADRON_OFFICER = 5601
 };
 
+class VarMapEntry_t {
+public:
+	unsigned short type;
+	unsigned short m_bNeedsToInterpolate; // Set to false when this var doesn't
+										  // need Interpolate() called on it anymore.
+	void* data;
+	void* watcher;
+};
+
+struct VarMapping_t {
+	VarMapping_t() {
+		m_nInterpolatedEntries = 0;
+	}
+
+	VarMapEntry_t* m_Entries;
+	int m_nInterpolatedEntries;
+	float m_lastInterpolationTime;
+};
+
 class CBaseCombatWeapon;
 using CBaseHandle = std::uintptr_t;
 
@@ -511,6 +530,10 @@ public:
 	int& GetTakeDamage() {
 		static const std::uintptr_t uTakeDamageOffset = *reinterpret_cast<std::uintptr_t*>(util::FindSignature("client.dll", "80 BE ? ? ? ? ? 75 46 8B 86") + 0x2);
 		return *reinterpret_cast<int*>(reinterpret_cast<std::uintptr_t>(this) + uTakeDamageOffset);
+	}
+
+	VarMapping_t* GetVarMap() {
+		return reinterpret_cast<VarMapping_t*>((std::uintptr_t)(this) + 0x24); //0x4C );
 	}
 
 	bool IsAlive() {

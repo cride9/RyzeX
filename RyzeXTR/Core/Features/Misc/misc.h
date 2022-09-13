@@ -29,7 +29,6 @@ namespace misc {
 	void Slowwalk(CUserCmd*, float);
 	void FastStop(CUserCmd*);
 	void FakeDuck(CUserCmd*);
-	void ViewModel();
 	void BulletImpact();
 	void SlideFix();
 	void DefensiveDoubletap();
