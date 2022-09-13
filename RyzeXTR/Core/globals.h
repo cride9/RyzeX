@@ -15,7 +15,7 @@ namespace g {
 	inline bool bWaiting;
 	inline bool bAntiaimEnabled;
 
-	inline bool bSettingUpBones = false;
+	inline bool bSettingUpBones[65];
 
 	inline int nRestoreTickbase;
 	inline float flRestoreCurtime;

@@ -173,26 +173,12 @@ float M::ApproachAngle(float flTarget, float flValue, float flSpeed) {
 	return flValue;
 }
 
-float M::Approach(float flTarget, float flValue, float flSpeed) {
-
-	if (flTarget != flValue) {
-
-		if (flTarget > flValue)
-			return max(flTarget, flValue - flSpeed);
-
-		else if (flTarget < flValue)
-			return min(flTarget, flValue + flSpeed);
-	}
-	else
-		return flTarget;
-}
-
 // not the same as math::Lerp
 float M::Interpolate(const float from, const float to, const float percent) {
 	return to * percent + from * (1.f - percent);
 }
 
-void M::Extrapolate(CBaseEntity* pEnt , Vector vecOrigin, Vector vecVelocity, int fFlags, bool bOnGround) {
+void M::Extrapolate(CBaseEntity* pEnt , Vector& vecOrigin, Vector& vecVelocity, int& fFlags, bool bOnGround) {
 
 	Vector                start, end, normal;
 	CGameTrace            trace;
@@ -299,8 +285,7 @@ void M::RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutP
 	pOutPoint->y = y + vecCenter.y;
 }
 
-/*
-float Math::Approach(float target, float value, float speed) {
+float M::Approach(float target, float value, float speed) {
 	float delta = target - value;
 
 	if (delta > speed)
@@ -313,8 +298,9 @@ float Math::Approach(float target, float value, float speed) {
 	return value;
 }
 
-Vector Math::Approach(Vector target, Vector value, float speed) {
-	float delta = target.Dist(value);
+Vector M::Approach(Vector target, Vector value, float speed) {
+
+	float delta = target.DistTo(value);
 
 	if (delta > speed)
 		value += speed;
@@ -326,28 +312,27 @@ Vector Math::Approach(Vector target, Vector value, float speed) {
 	return value;
 }
 
-float Math::ApproachAngle(float target, float value, float speed) {
-	target = anglemod(target);
-	value = anglemod(value);
-
-	float delta = target - value;
-
-	// Speed is assumed to be positive
-	if (speed < 0)
-		speed = -speed;
-
-	if (delta < -180)
-		delta += 360;
-	else if (delta > 180)
-		delta -= 360;
-
-	if (delta > speed)
-		value += speed;
-	else if (delta < -speed)
-		value -= speed;
-	else
-		value = target;
-
-	return value;
-}
-*/
+//float M::ApproachAngle(float target, float value, float speed) {
+//
+//	target = anglemod(target);
+//	value = anglemod(value);
+//
+//	float delta = target - value;
+//
+//	if (speed < 0)
+//		speed = -speed;
+//
+//	if (delta < -180)
+//		delta += 360;
+//	else if (delta > 180)
+//		delta -= 360;
+//
+//	if (delta > speed)
+//		value += speed;
+//	else if (delta < -speed)
+//		value -= speed;
+//	else
+//		value = target;
+//
+//	return value;
+//}

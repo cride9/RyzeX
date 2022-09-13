@@ -64,9 +64,10 @@ namespace M
 
 	Vector Interpolate(const Vector, const Vector, const float);
 	float Interpolate(const float, const float, const float);
-	void Extrapolate(CBaseEntity*, Vector, Vector, int, bool);
+	void Extrapolate(CBaseEntity* pEnt, Vector& vecOrigin, Vector& vecVelocity, int& fFlags, bool bOnGround);
 
 	float Approach(float, float, float);
+	Vector Approach(Vector target, Vector value, float speed);
 	float ApproachAngle(float, float, float);
 
 	// Exports

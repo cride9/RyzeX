@@ -13,7 +13,6 @@ void LagComp::UpdateLagRecords() {
 		// sanity checks
 		if (!pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || !i::EngineClient->IsConnected()) {
 
-			g::bAllowAnimations[pEnt->EntIndex()] = true;
 			deqLagRecords[i].clear();
 			continue;
 		}
@@ -83,6 +82,8 @@ void LagComp::UpdatePlayer(CBaseEntity* pEnt) {
 	playerrecord_t* pRecord = &deqLagRecords[pEnt->EntIndex()].front();
 	playerrecord_t* pPreviousRecord = deqLagRecords[pEnt->EntIndex()].size() >= 2 ? &deqLagRecords[pEnt->EntIndex()].at(1) : nullptr;
 
+	static bool& bInvalidate = **reinterpret_cast<bool**>(util::FindSignature("client.dll", "C6 05 ? ? ? ? ? 89 47 70") + 2);
+
 	// bot check
 	bool bCanDesync = !pEnt->GetPlayerInfo().bFakePlayer;
 	CAnimState* pAnimstate = pEnt->AnimState();
@@ -106,12 +107,25 @@ void LagComp::UpdatePlayer(CBaseEntity* pEnt) {
 	// bypasses some bonesetup/accumulate layer stuff
 	pEnt->GetEFlags() &= ~EFL_DIRTY_ABSVELOCITY;
 
-	// thats just pure braincancer (absorigin updated every frame, but server only updated origin every tick)
-	// this fixes some origin differences that can cause aimbots to miss moving targets
-	pEnt->SetAbsOrigin(pEnt->GetVecOrigin());
-
 	// again, client fucks up velocity, we need to fix it manually (calculate like server does)
 	VelocityFix(pEnt, pRecord, pPreviousRecord);
+
+	// thats just pure braincancer (absorigin updated every frame, but server only updated origin every tick)
+	// this fixes some origin differences that can cause aimbots to miss moving targets
+	if (pPreviousRecord != nullptr) {
+
+		pEnt->SetAbsOrigin(M::Interpolate(pPreviousRecord->vecOrigin, pRecord->vecOrigin, lagcomp.LerpTime()));
+		pEnt->SetAbsAngles(M::Interpolate(pPreviousRecord->vecAbsAngles, pRecord->vecAbsAngles, lagcomp.LerpTime()));
+
+		// yeah against bhopping niggers
+		M::Extrapolate(pEnt, pPreviousRecord->vecOrigin, pEnt->GetVelocity(), pEnt->GetFlags(), pPreviousRecord->nFlags & FL_ONGROUND);
+	}
+
+	// ghetto fix
+	if (!(pEnt->GetFlags() & FL_ONGROUND))
+		pAnimstate->flDurationInAir = 0.1f;
+
+	const bool bBackupBoneCache = bInvalidate;
 
 	// allow animations this tick/frame whatever
 	g::bAllowAnimations[pEnt->EntIndex()] = true;
@@ -128,12 +142,19 @@ void LagComp::UpdatePlayer(CBaseEntity* pEnt) {
 
 	// disable animations if its not a valid update time
 	// SO CSGO WONT FUCK UP ANIMATIONS	
-	g::bAllowAnimations[pEnt->EntIndex()] = true;
+	g::bAllowAnimations[pEnt->EntIndex()] = false;
 
 	// build our fixed matrix for accurate ragebot matrix (delay is not fixed like this)
 	// TODO: fix the freaking delay in enemy and local animations
 	pEnt->SetupBonesFix(pRecord->matrix);
 	pEnt->SetAnimationLayers(pRecord->layer);
+
+	// thats just some shit when chaning animlayers
+	pEnt->InvalidatePhysicsRecursive(ANGLES_CHANGED);
+	pEnt->InvalidatePhysicsRecursive(ANIMATION_CHANGED);
+	pEnt->InvalidatePhysicsRecursive(SEQUENCE_CHANGED);
+
+	bInvalidate = bBackupBoneCache;
 
 	// backup globals to not fuck up the game
 	i::GlobalVars->flCurrentTime = flCurrentTime;

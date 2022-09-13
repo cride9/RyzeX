@@ -443,12 +443,12 @@ void CBaseEntity::SetupBonesFix(matrix3x4_t* pMatrix) {
 	//*reinterpret_cast<char*> (uintptr_t(this) + 0x68) |= 2;
 
 	///* use uninterpolated origin */
-	g::bSettingUpBones = true;
+	g::bSettingUpBones[this->EntIndex()] = true;
 
 	//this->InvalidateBoneCache();
 	this->SetupBones(pMatrix, 128, BONE_USED_BY_HITBOX, this->GetSimulationTime());
 
-	g::bSettingUpBones = false;
+	g::bSettingUpBones[this->EntIndex()] = false;
 
 	//*reinterpret_cast<char*> (uintptr_t(this) + 0x68) = b;
 	//*reinterpret_cast<int*>(uintptr_t(this) + 0x269C) = backup_mask_1;

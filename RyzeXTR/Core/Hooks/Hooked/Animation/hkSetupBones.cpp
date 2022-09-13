@@ -8,20 +8,23 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 
 	static auto original = detour::setupBones.GetOriginal<decltype(&h::hkSetupBones)>();
 
-	static auto retAddress = util::FindSignature("client.dll", "FF 75 08 E8 ? ? ? ? 5F 5E 5D C2 10 00") /*+ 8*/;
+	static auto retAddress = util::FindSignature("client.dll", "FF 75 08 E8 ? ? ? ? 5F 5E 5D C2 10 00") + 8;
 
 	if (_ReturnAddress() == (void*)retAddress || _AddressOfReturnAddress() == (void*)retAddress)
 		return false;
+
+	if (!g::pLocal)
+		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
 	const auto pEnt = reinterpret_cast<CBaseEntity*>((uintptr_t)ecx - 4);
 
 	if (!pEnt || !pEnt->IsPlayer())
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
-	if (pEnt->GetTeam() == g::pLocal->GetTeam())
+	if (pEnt->GetTeam() == g::pLocal->GetTeam() && pEnt != g::pLocal)
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
-	if (g::bSettingUpBones) {
+	if (g::bSettingUpBones[pEnt->EntIndex()]) {
 
 		const auto backupFirstMask = pEnt->GetOffset<int>(0x269C);
 		const auto backupSecondMask = pEnt->GetOffset<int>(0x26B0);
