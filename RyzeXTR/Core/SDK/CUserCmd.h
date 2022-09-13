@@ -89,3 +89,11 @@ public:
 	CUserCmd	userCmd;	// 0x00
 	CRC32_t		uHashCRC;	// 0x64
 };
+
+class CCommandContext
+{
+public:
+	bool bNeedsProcessing;
+	CUserCmd pCmd;
+	int nCommandNumber;
+};

@@ -2,6 +2,7 @@
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
 #include "../../../Features/Rage/Animations/LocalAnimation.h"
+#include "../../../Features/Rage/Animations/Lagcompensation.h"
 
 bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int maxbones, int bonemask, float curtime) {
 
@@ -14,47 +15,56 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 
 	const auto pEnt = reinterpret_cast<CBaseEntity*>((uintptr_t)ecx - 4);
 
-	if (!pEnt || !pEnt->IsPlayer() || bonemask != (BONE_USED_BY_ANYTHING || BONE_USED_BY_HITBOX))
+	if (!pEnt || !pEnt->IsPlayer())
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
-	const auto backupFirstMask = pEnt->GetOffset<int>(0x269C);
-	const auto backupSecondMask = pEnt->GetOffset<int>(0x26B0);
-	const auto backupFlags = pEnt->GetFlags();
-	const auto backupEffects = pEnt->GetEffects();
-	const auto backupUsedPredictionTime = pEnt->GetOffset<int>(0x2ee);
+	if (pEnt->GetTeam() == g::pLocal->GetTeam())
+		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
-	pEnt->GetOffset<int>(0xA68) = 0;
+	if (g::bSettingUpBones) {
 
-	const auto backupFrameTime = i::GlobalVars->flFrameTime;
+		const auto backupFirstMask = pEnt->GetOffset<int>(0x269C);
+		const auto backupSecondMask = pEnt->GetOffset<int>(0x26B0);
+		const auto backupFlags = pEnt->GetFlags();
+		const auto backupEffects = pEnt->GetEffects();
+		const auto backupUsedPredictionTime = pEnt->GetOffset<int>(0x2ee);
 
-	i::GlobalVars->flFrameTime = FLT_MAX;
+		pEnt->GetOffset<int>(0xA68) = 0;
 
-	pEnt->GetOffset<int>(0x269C) = 0;
-	pEnt->GetOffset<int>(0x26B0) |= 512;
-	pEnt->GetFlags() |= 8;
+		const auto backupFrameTime = i::GlobalVars->flFrameTime;
 
-	/* disable matrix interpolation */
-	pEnt->GetEffects() |= 8;
+		i::GlobalVars->flFrameTime = FLT_MAX;
 
-	/* use our setup time */
-	pEnt->GetOffset<bool>(0x2ee) = false;
+		pEnt->GetOffset<int>(0x269C) = 0;
+		pEnt->GetOffset<int>(0x26B0) |= 512;
+		pEnt->GetFlags() |= 8;
 
-	/* thanks chambers */
-	auto backup = pEnt->GetOffset<int>(0x68); // char -> int
-	pEnt->GetOffset<int>(0x68) |= 2;
+		/* disable matrix interpolation */
+		pEnt->GetEffects() |= 8;
 
-	/* use uninterpolated origin */
-	pEnt->InvalidateBoneCache();
-	const auto retValue = original(ecx, edx, matrix, maxbones, bonemask, curtime);
+		/* use our setup time */
+		pEnt->GetOffset<bool>(0x2ee) = false;
 
-	pEnt->GetOffset<char>(0x68) = backup;
-	pEnt->GetOffset<int>(0x269C) = backupFirstMask;
-	pEnt->GetOffset<int>(0x26B0) = backupSecondMask;
-	pEnt->GetFlags() = backupFlags;
-	pEnt->GetEffects() = backupEffects;
-	pEnt->GetOffset<int>(0x2ee) = backupUsedPredictionTime;
+		/* thanks chambers */
+		auto backup = pEnt->GetOffset<int>(0x68); // char -> int
+		pEnt->GetOffset<int>(0x68) |= 2;
 
-	i::GlobalVars->flFrameTime = backupFrameTime;
+		/* use uninterpolated origin */
+		pEnt->InvalidateBoneCache();
+		const auto retValue = original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
-	return retValue;
+		pEnt->GetOffset<char>(0x68) = backup;
+		pEnt->GetOffset<int>(0x269C) = backupFirstMask;
+		pEnt->GetOffset<int>(0x26B0) = backupSecondMask;
+		pEnt->GetFlags() = backupFlags;
+		pEnt->GetEffects() = backupEffects;
+		pEnt->GetOffset<int>(0x2ee) = backupUsedPredictionTime;
+
+		i::GlobalVars->flFrameTime = backupFrameTime;
+
+		return retValue;
+	}
+	else 
+		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
+
 }

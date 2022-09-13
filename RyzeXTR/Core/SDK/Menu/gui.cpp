@@ -91,7 +91,7 @@ void menu::Render() noexcept {
 			ImGui::BeginChild("##tabs", ImVec2(ImGui::GetContentRegionAvail().x, 37.f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 			{
 				ImGui::PushFont(buildDateFont);
-				ImGui::TextColored(ImColor(222, 153, 42), "Build Date: 09/04/2022");
+				ImGui::TextColored(ImColor(222, 153, 42), "Build Date: 09/05/2022");
 				ImGui::PopFont();
 				ImGui::SameLine();
 
@@ -451,7 +451,7 @@ void menu::Render() noexcept {
 					ImGui::BeginChild("##localrightbot", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
 					{
 						static int selectedOverlay = 0;
-						static const char* glowType[] = { "glow", "thin glow", "animated" };
+						static const char* glowType[] = { "glow", "thin glow", "animated", "ideal tick"};
 						ImGui::Combo("##glowtype", &selectedOverlay, glowType, IM_ARRAYSIZE(glowType));
 
 						if (selectedOverlay == 0) {
@@ -510,6 +510,12 @@ void menu::Render() noexcept {
 
 							if (cfg::model::localAnimOverlayXQZ && cfg::model::localAnimOverlay)
 								ImGui::Checkbox("wireframe trough wall", &cfg::model::localAnimOverlayXQZXhair);
+						}
+						else if (selectedOverlay == 3) {
+
+							ImGui::Checkbox("enable", &cfg::model::localIdealTick);
+							ImGui::ColorEdit4("before", cfg::model::localIdealTickColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
+							ImGui::ColorEdit4("after", cfg::model::localIdealTickColor2, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
 						}
 					}
 					ImGui::EndChild();
@@ -725,6 +731,8 @@ void menu::Render() noexcept {
 					static const char* desync[] = { "off", "static", "jitter" };
 
 					ImGui::Combo("##pitch", &cfg::antiaim::pitch, pitch, IM_ARRAYSIZE(pitch));
+
+					ImGui::Checkbox("at target", &cfg::antiaim::atTarget);
 
 					ImGui::Combo("##yaw", &cfg::antiaim::yaw, yaw, IM_ARRAYSIZE(yaw));
 

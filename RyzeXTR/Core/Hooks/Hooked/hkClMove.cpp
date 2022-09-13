@@ -25,22 +25,29 @@ void __cdecl h::hkClMove(float flSamples, bool bFinalTick) {
 			g::bShifting = false;
 			return;
 		}
-		else if (i::GlobalVars->iTickCount % 2 == 0 && !bCharged && rechargeAmount > 0 && !bCharged && !shiftAmount) {
+		else if (!bCharged && rechargeAmount > 0 && !bCharged && !shiftAmount) {
 
-			g::bWaiting = false;
-			g::bSendPacket = true;
-			g::pCmd->iButtons &= ~IN_ATTACK;
-			rechargeAmount--;
+			if (i::GlobalVars->iTickCount % 2 == 0) {
 
-			if (rechargeAmount == 0) {
-				bCharged = true;
+				g::bWaiting = false;
+				g::bSendPacket = true;
+				g::pCmd->iButtons &= ~IN_ATTACK;
+				rechargeAmount--;
+
+				if (rechargeAmount == 0) {
+					bCharged = true;
+				}
+
+				return;
+			}
+			else {
 
 				rechargeCommandNumber = g::pCmd->iCommandNumber;
 				rechargeTickbase = prediction.GetTickBase(g::pCmd, g::pLocal);
 				rechargeCurtime = i::GlobalVars->flCurrentTime;
-			}
 
-			return;
+				return original(flSamples, bFinalTick);
+			}
 		}
 
 		return original(flSamples, bFinalTick);

@@ -9,6 +9,14 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	switch (curStage) {
 
+	case FRAME_START:
+
+		break;
+
+	case FRAME_RENDER_END:
+
+		break;
+
 	case FRAME_RENDER_START:
 
 		if (cfg::misc::removals[1]) { // need menu element
@@ -33,6 +41,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
 
+		//lagcomp.DisableInterpolation();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
@@ -60,7 +69,7 @@ void hkPostFrameStageNotify(EStage curStage) {
 
 	case FRAME_NET_UPDATE_END:
 
-		lagcomp.PostPlayerUpdate();
+		lagcomp.UpdateLagRecords();
 		break;
 
 	case FRAME_RENDER_START:

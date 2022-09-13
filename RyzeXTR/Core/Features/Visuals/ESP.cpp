@@ -5,7 +5,7 @@
 
 void visual::VisualRender() {
 
-	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
+	for (int i = 0; i < 65; i++) {
 
 		CBaseEntity* pEnt = (CBaseEntity*)i::EntityList->GetClientEntity(i);
 
@@ -69,7 +69,7 @@ void visual::VisualRender() {
 				if (cfg::visual::localArmor) KevlarEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localArmorColor));
 				if (cfg::visual::localMoney) MoneyEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localMoneyColor));
 				if (cfg::visual::localAmmo) AmmoEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localAmmoColor));
-
+				AutoPeekCircle();
 
 				continue;
 			}
@@ -196,8 +196,13 @@ void visual::MoneyEsp(int& spacing, int left, int top, int right, int bot, CBase
 
 void visual::AutoPeekCircle() {
 
-	if (misc::vecRecord == Vector(0.f, 0.f, 0.f))
-		return;
+	//if (misc::vecRecord == Vector(0.f, 0.f, 0.f))
+	//	return;
 
+	//Vector vecDrawPosition;
+	//i::DebugOverlay->ScreenPosition(misc::vecRecord - Vector{ 0.f, 0.f, 9.f }, vecDrawPosition);
+
+	//i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
+	//i::Surface->DrawFilledRect(vecDrawPosition.x - 20, vecDrawPosition.y - 20, vecDrawPosition.x + 20, vecDrawPosition.y + 20);
 
 }

@@ -5,6 +5,27 @@
 #include "../../../utilities.h"
 #include "../../../globals.h"
 
+//class VarMapEntry_t {
+//public:
+//	unsigned short type;
+//	unsigned short m_bNeedsToInterpolate; // Set to false when this var doesn't
+//										  // need Interpolate() called on it anymore.
+//	void* data;
+//	void* watcher;
+//};
+//
+//struct VarMapping_t {
+//	VarMapping_t() {
+//		m_nInterpolatedEntries = 0;
+//	}
+//
+//	VarMapEntry_t* m_Entries;
+//	int m_nInterpolatedEntries;
+//	float m_lastInterpolationTime;
+//};
+//VarMapping_t* GetVarMap(CBaseEntity* pBaseEntity) {
+//	return reinterpret_cast<VarMapping_t*>((DWORD)pBaseEntity + 0x24); //0x4C );
+//}
 
 class LagComp {
 public:
@@ -52,9 +73,39 @@ public:
 			StoreData(pEnt);
 		}
 
-		bool IsValid(float flSimulationTime, bool bValid, float flRange = 0.2f);
-		void Restore(CBaseEntity* pEnt);
-		void Apply(CBaseEntity* pEnt);
+		bool IsValid() {
+
+			if (!bValid)
+				return false;
+
+			float flTime = i::GlobalVars->flCurrentTime;
+
+			float sv_maxunlag = i::ConVar->FindVar("sv_maxunlag")->GetFloat();
+
+			float flDelta = flTime - sv_maxunlag;
+
+			if (flDelta > sv_maxunlag)
+				return false;
+
+			return true;
+		}
+
+		void Apply(CBaseEntity* pEnt) {
+
+			pEnt->GetSimulationTime() = flSimulationTime;
+			pEnt->GetLowerBodyYaw() = flLowerBodyYawTarget;
+			pEnt->GetEyeAngles() = vecEyeAngles;
+			pEnt->SetAbsAngles(vecAbsAngles);
+			pEnt->GetVecOrigin() = vecOrigin;
+			pEnt->SetAbsOrigin(vecOrigin);
+			pEnt->GetCollideable()->OBBMins() = vecMins;
+			pEnt->GetCollideable()->OBBMaxs() = vecMaxs;
+
+			pEnt->SetPoseParameters(flPoseParamater);
+			pEnt->SetAnimationLayers(layer);
+			pEnt->SetBoneCache(matrix);
+		}
+
 		void StoreData(CBaseEntity* pEnt) {
 			
 			const auto pWeapon = pEnt->GetWeapon();
@@ -65,7 +116,7 @@ public:
 			nFlags = pEnt->GetFlags();
 			nEFlags = pEnt->GetEFlags();
 			nEffect = pEnt->GetEffects();
-			nChoked = TIME_TO_TICKS(pEnt->GetSimulationTime() - pEnt->GetOldSimulationTime());
+			nChoked = TIME_TO_TICKS(i::GlobalVars->flCurrentTime - pEnt->GetSimulationTime());
 
 			bDormant = pEnt->IsDormant();
 			vecVelocity = pEnt->GetVelocity();
@@ -93,12 +144,12 @@ public:
 		}
 	};
 
-	void PostPlayerUpdate();
-
-	void UpdateAnimations(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord);
+	void UpdateLagRecords();
 	void UpdatePlayer(CBaseEntity* pEnt);
 	void VelocityFix(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord);
+	void DisableInterpolation();
 
 	std::deque<playerrecord_t> deqLagRecords[65];
+	std::deque<playerrecord_t> deqValidLagRecords[65];
 };
 inline LagComp lagcomp;

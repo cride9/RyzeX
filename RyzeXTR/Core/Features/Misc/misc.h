@@ -16,6 +16,7 @@ namespace misc {
 	inline bool bFilter = false;
 	inline bool bRetreat = false;
 	inline Vector vecRecord = Vector(0.f, 0.f, 0.f);
+	inline matrix3x4_t matrixRecord[128];
 
 	void CreateMove(CUserCmd*, Vector&, bool&);
 

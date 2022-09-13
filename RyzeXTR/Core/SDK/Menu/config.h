@@ -61,6 +61,7 @@ namespace cfg {
 
 		inline int pitch = 2;
 		inline int yaw = 1;
+		inline bool atTarget = false;
 
 		inline int jittervalue = 0;
 		inline float invertangle = 0.f;
@@ -251,6 +252,10 @@ namespace cfg {
 		inline float localAnimOverlayXQZColor[4] = { 0.f, 24.f / 255.f, 1.f ,1.f };
 		inline bool localAnimOverlayXhair = true;
 		inline bool localAnimOverlayXQZXhair = true;
+
+		inline bool localIdealTick = false;
+		inline float localIdealTickColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline float localIdealTickColor2[4] = { 255.f, 255.f, 255.f, 255.f };
 	}
 	namespace misc {
 

@@ -27,10 +27,11 @@ namespace resolver {
 			Trace_t trace;
 			Ray_t ray(g::pLocal->GetEyePosition(), deqBulletImpacts.front());
 
-			//auto oldData = lagcomp.deqLagRecords[pEnt->EntIndex()].front();
-			//targetedRecord->Apply(pEnt); // adjusting data to trace 100% accuracy
+			auto oldData = lagcomp.deqLagRecords[pEnt->EntIndex()].front();
+			targetedRecord->Apply(pEnt); // adjusting data to trace 100% accuracy
 			i::EngineTrace->TraceRay(ray, MASK_SHOT, &filter, &trace);
 			CBaseEntity* hitEntity = trace.pHitEntity;
+			oldData.Apply(pEnt);
 
 			if (hitEntity && hitEntity->EntIndex() == pEnt->EntIndex() && !bPlayerHurt[pEnt->EntIndex()]) {
 
@@ -43,7 +44,6 @@ namespace resolver {
 				bPlayerHurt[pEnt->EntIndex()] = false;
 				deqBulletImpacts.clear();
 				targetedRecord = nullptr;
-				//oldData.Apply(pEnt);
 			}
 			else if (bPlayerHurt[pEnt->EntIndex()]) {
 
@@ -52,7 +52,6 @@ namespace resolver {
 				bPlayerHurt[pEnt->EntIndex()] = false;
 				deqBulletImpacts.clear();
 				targetedRecord = nullptr;
-				//oldData.Apply(pEnt);
 			}
 			else if (!bPlayerHurt[pEnt->EntIndex()] && hitEntity == nullptr) {
 
@@ -63,7 +62,6 @@ namespace resolver {
 				bPlayerHurt[pEnt->EntIndex()] = false;
 				deqBulletImpacts.clear();
 				targetedRecord = nullptr;
-				//oldData.Apply(pEnt);
 			}
 		}
 	}

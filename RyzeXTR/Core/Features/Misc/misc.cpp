@@ -19,7 +19,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	SlideFix();
 	DefensiveDoubletap();
 	OnlyCheatLogs();
-	Security();
+	//Security();
 	//ViewModel();
 }
 
@@ -36,45 +36,46 @@ void misc::IdealTick(CUserCmd* pCmd) {
 	if (!cfg::antiaim::idealTick)
 		return;
 
-	static bool position;
+	static bool bPositionSet;
 
-	static Vector origin;
+	static Vector vecOrigin;
 
-	static Vector FUCK_GO_BACK_WITH_TRANNY_CASES;
+	static Vector vecOriginDelta;
 
 	if (GetAsyncKeyState(cfg::antiaim::idealTickBind)) {
 
-		if (!position) {
+		if (!bPositionSet) {
 
-			position = true;
-			origin = g::pLocal->GetAbsOrigin();
-			vecRecord = origin;
-
+			bPositionSet = true;
+			vecOrigin = g::pLocal->GetAbsOrigin();
+			vecRecord = vecOrigin;
+			g::pLocal->SetupBonesFix(matrixRecord);
 		}
 
 	}
 	else {
 
-		position = false;
-		origin = Vector(0, 0, 0);
-		vecRecord = origin;
-
+		bPositionSet = false;
+		vecOrigin = Vector(0, 0, 0);
+		vecRecord = vecOrigin;
 	}
 
-	if (position && origin != Vector(0, 0, 0) && GetAsyncKeyState(cfg::antiaim::idealTickBind) && bRetreat) {
+	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && GetAsyncKeyState(cfg::antiaim::idealTickBind) && bRetreat) {
 
-		FUCK_GO_BACK_WITH_TRANNY_CASES = origin - g::pLocal->GetAbsOrigin();
+		vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
 
-		FUCK_GO_BACK_WITH_TRANNY_CASES.Normalize();
+		vecOriginDelta.Normalize();
 
-		auto sMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -FUCK_GO_BACK_WITH_TRANNY_CASES.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * FUCK_GO_BACK_WITH_TRANNY_CASES.x));
-		auto fMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * FUCK_GO_BACK_WITH_TRANNY_CASES.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * FUCK_GO_BACK_WITH_TRANNY_CASES.x));
+		auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
+		auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
 
-		pCmd->flSideMove = std::clamp(sMove * 50, -450.f, 450.f);
-		pCmd->flForwardMove = std::clamp(fMove * 50, -450.f, 450.f);
+		pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
+		pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
 
-		if (origin == g::pLocal->GetAbsOrigin())
+		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
+
 			bRetreat = false;
+		}
 	}
 }
 
@@ -187,6 +188,8 @@ void misc::DefensiveDoubletap() {
 		}
 		else {
 
+			g::defensiveTickbase = 0;
+
 			if (CycleReset) {
 
 				doubletap::defensiveCommandNumberReset = g::pCmd->iCommandNumber;
@@ -194,15 +197,13 @@ void misc::DefensiveDoubletap() {
 				doubletap::defensiveCurtimeReset = i::GlobalVars->flCurrentTime;
 				CycleReset = false;
 			}
-
-			g::defensiveTickbase = 0;
-
-			//std::string lmao = std::to_string(g::pLocal->GetOldSimulationTime());
-			//lmao += " : ";
-			//lmao += std::to_string(g::pLocal->GetSimulationTime());
-			//lmao += "\n";
-			//util::LogConsole(lmao.c_str());
 		}
+
+		//std::string lmao = std::to_string(TIME_TO_TICKS(g::pLocal->GetOldSimulationTime()));
+		//lmao += " : ";
+		//lmao += std::to_string(TIME_TO_TICKS(g::pLocal->GetSimulationTime()));
+		//lmao += "\n";
+		//util::LogConsole(lmao.c_str());
 	}
 }
 
@@ -350,7 +351,7 @@ void misc::FakeDuck(CUserCmd* pCmd) {
 
 void misc::FastStop(CUserCmd* pCmd) {
 
-	if (!cfg::misc::faststop)
+	if (!cfg::misc::faststop || bRetreat)
 		return;
 
 	if (!g::pLocal || !g::pLocal->IsAlive() || !pCmd || !pCmd->iCommandNumber)

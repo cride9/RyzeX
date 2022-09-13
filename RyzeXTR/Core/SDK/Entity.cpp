@@ -374,7 +374,6 @@ void CBaseEntity::InvalidateBoneCache() {
 	unsigned long g_iModelBoneCounter = **(unsigned long**)(addr + 10);
 	*(unsigned int*)((DWORD)this + 0x2924) = 0xFF7FFFFF; // m_flLastBoneSetupTime = -FLT_MAX;
 	*(unsigned int*)((DWORD)this + 0x2690) = (g_iModelBoneCounter - 1); // m_iMostRecentModelBoneCounter = g_iModelBoneCounter - 1;
-
 }
 
 float CBaseEntity::GetSequenceCycleRate(CStudioHdr* pStudioHdr, int iSequence) {
@@ -415,50 +414,50 @@ float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
 
 void CBaseEntity::SetupBonesFix(matrix3x4_t* pMatrix) {
 
-	const auto backup_mask_1 = *reinterpret_cast<int*>(uintptr_t(this) + 0x269C);
-	const auto backup_mask_2 = *reinterpret_cast<int*>(uintptr_t(this) + 0x26B0);
-	const auto backup_flags = *reinterpret_cast<int*>(uintptr_t(this) + 0xe8);
-	const auto backup_effects = *reinterpret_cast<int*>(uintptr_t(this) + 0xf0);
-	const auto backup_use_pred_time = *reinterpret_cast<int*>(uintptr_t(this) + 0x2ee);
+	//const auto backup_mask_1 = *reinterpret_cast<int*>(uintptr_t(this) + 0x269C);
+	//const auto backup_mask_2 = *reinterpret_cast<int*>(uintptr_t(this) + 0x26B0);
+	//const auto backup_flags = *reinterpret_cast<int*>(uintptr_t(this) + 0xe8);
+	//const auto backup_effects = *reinterpret_cast<int*>(uintptr_t(this) + 0xf0);
+	//const auto backup_use_pred_time = *reinterpret_cast<int*>(uintptr_t(this) + 0x2ee);
 
-	*reinterpret_cast<int*>(uintptr_t(this) + 0xA68) = 0;
-	const auto backup_frametime = i::GlobalVars->flFrameTime;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0xA68) = 0;
+	//const auto backup_frametime = i::GlobalVars->flFrameTime;
 
-	i::GlobalVars->flFrameTime = FLT_MAX;
+	//i::GlobalVars->flFrameTime = FLT_MAX;
 
-	*reinterpret_cast<int*>(uintptr_t(this) + 0x269C) = 0;
-	*reinterpret_cast<int*>(uintptr_t(this) + 0x26B0) |= 512;
-	*reinterpret_cast<int*>(uintptr_t(this) + 0xe8) |= 8;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0x269C) = 0;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0x26B0) |= 512;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0xe8) |= 8;
 
-	/* disable matrix interpolation */
-	*reinterpret_cast<int*>(uintptr_t(this) + 0xf0) |= 8;
+	///* disable matrix interpolation */
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0xf0) |= 8;
 
-	/* use our setup time */
-	*reinterpret_cast<bool*>(uintptr_t(this) + 0x2ee) = false;
+	///* use our setup time */
+	//*reinterpret_cast<bool*>(uintptr_t(this) + 0x2ee) = false;
 
-	/* thanks chambers */
-	auto b = *reinterpret_cast<char*> (uintptr_t(this) + 0x68);
+	///* thanks chambers */
+	//auto b = *reinterpret_cast<char*> (uintptr_t(this) + 0x68);
 
-	auto backup_num_ik_chains = 0;
+	//auto backup_num_ik_chains = 0;
 
-	*reinterpret_cast<char*> (uintptr_t(this) + 0x68) |= 2;
+	//*reinterpret_cast<char*> (uintptr_t(this) + 0x68) |= 2;
 
-	/* use uninterpolated origin */
+	///* use uninterpolated origin */
 	g::bSettingUpBones = true;
 
-	this->InvalidateBoneCache();
+	//this->InvalidateBoneCache();
 	this->SetupBones(pMatrix, 128, BONE_USED_BY_HITBOX, this->GetSimulationTime());
 
 	g::bSettingUpBones = false;
 
-	*reinterpret_cast<char*> (uintptr_t(this) + 0x68) = b;
-	*reinterpret_cast<int*>(uintptr_t(this) + 0x269C) = backup_mask_1;
-	*reinterpret_cast<int*>(uintptr_t(this) + 0x26B0) = backup_mask_2;
-	*reinterpret_cast<int*>(uintptr_t(this) + 0xe8) = backup_flags;
-	*reinterpret_cast<int*>(uintptr_t(this) + 0xf0) = backup_effects;
-	*reinterpret_cast<int*>(uintptr_t(this) + 0x2ee) = backup_use_pred_time;
+	//*reinterpret_cast<char*> (uintptr_t(this) + 0x68) = b;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0x269C) = backup_mask_1;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0x26B0) = backup_mask_2;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0xe8) = backup_flags;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0xf0) = backup_effects;
+	//*reinterpret_cast<int*>(uintptr_t(this) + 0x2ee) = backup_use_pred_time;
 
-	i::GlobalVars->flFrameTime = backup_frametime;
+	//i::GlobalVars->flFrameTime = backup_frametime;
 }
 
 bool CBaseEntity::IsBreakable()

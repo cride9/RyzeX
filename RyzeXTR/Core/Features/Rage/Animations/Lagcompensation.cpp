@@ -1,95 +1,61 @@
 #include "Lagcompensation.h"
 #include "resolver.h"
 
-bool LagComp::playerrecord_t::IsValid(float flSimulationTime, bool bValid, float flRange) {
+void LagComp::UpdateLagRecords() {
 
-	if (!bValid)
-		return false;
-
-	INetChannelInfo* pNetChannelInfo = i::EngineClient->GetNetChannelInfo();
-
-	if (!pNetChannelInfo)
-		return false;
-
-	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
-
-	const float flIncoming = pNetChannelInfo->GetLatency(FLOW_INCOMING);
-	const float flOutGoing = pNetChannelInfo->GetLatency(FLOW_OUTGOING);
-
-	const float flCorrect = std::clamp(flIncoming + flOutGoing + lagcomp.LerpTime(), 0.f, sv_maxunlag->GetFloat());
-
-	return fabsf(flCorrect - (i::GlobalVars->flCurrentTime - flSimulationTime)) < flRange;
-}
-
-void LagComp::playerrecord_t::Apply(CBaseEntity* pEnt) {
-
-	pEnt->SetPoseParameters(flPoseParamater);
-	pEnt->GetEyeAngles() = vecEyeAngles;
-	pEnt->GetVelocity() = vecVelocity;
-	pEnt->GetLowerBodyYaw() = flLowerBodyYawTarget;
-	pEnt->GetDuckAmount() = flDuckAmount;
-	pEnt->GetFlags() = nFlags;
-	pEnt->GetVecOrigin() = vecOrigin;
-	pEnt->SetAbsOrigin(vecOrigin);
-	if (pEnt->AnimState())
-		memcpy(pEnt->AnimState(), pAnimstate, sizeof(CAnimState));
-
-	memcpy(pEnt->GetCachedBoneData().Base(), matrix, pEnt->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
-}
-
-void LagComp::playerrecord_t::Restore(CBaseEntity* pEnt) {
-
-	pEnt->GetVelocity() = vecVelocity;
-	pEnt->GetFlags() = nFlags;
-	pEnt->GetEFlags() = nEFlags;
-	pEnt->GetDuckAmount() = flDuckAmount;
-	pEnt->SetAnimationLayers(layer);
-	pEnt->GetLowerBodyYaw() = flLowerBodyYawTarget;
-	pEnt->GetVecOrigin() = vecOrigin;
-	pEnt->SetAbsOrigin(vecOrigin);
-
-	memcpy(pEnt->GetCachedBoneData().Base(), matrix, pEnt->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
-}
-
-float LagComp::LerpTime() {
-
-	static CConVar* cl_interp = i::ConVar->FindVar("cl_interp");
-	static CConVar* cl_interp_ratio = i::ConVar->FindVar("cl_interp_ratio");
-	static CConVar* cl_updaterate = i::ConVar->FindVar("cl_updaterate");
-
-	return max(cl_interp->GetFloat(), cl_interp_ratio->GetFloat() / cl_updaterate->GetFloat());
-}
-
-void LagComp::PostPlayerUpdate() {
+	if (!g::pLocal)
+		return;
 
 	for (int i = 0; i < 65; i++) {
 
-		static float flOldSimulationTime[65];
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || pEnt->IsDormant() || g::pLocal->GetTeam() == pEnt->GetTeam() || !i::EngineClient->IsConnected() || !i::EngineClient->IsInGame()) {
+		if (!pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || !i::EngineClient->IsConnected()) {
 
-			if (!deqLagRecords[i].empty())
-				deqLagRecords[i].clear();
+			deqLagRecords[i].clear();
+			continue;
+		}
+
+		if (pEnt->IsDormant()) {
 
 			continue;
 		}
 
-		if (flOldSimulationTime[i] < pEnt->GetSimulationTime()) {
+		if (!deqLagRecords[i].empty()) {
 
+			for (int at = 0; at < deqLagRecords[i].size(); at++) {
+
+				auto pRecords = deqLagRecords[i];
+				auto pRecord = pRecords.at(at);
+
+				if (pRecord.bDormant)
+					pRecords.erase(pRecords.begin() + at);
+			}
+		}
+
+		bool bUpdate = deqLagRecords[i].empty() || pEnt->GetSimulationTime() > pEnt->GetOldSimulationTime();
+
+		if (bUpdate && !deqLagRecords[i].empty()) {
+
+			auto layer = pEnt->GetAnimationOverlays()[11];
+			auto previousLayer = deqLagRecords[i].front().layer;
+
+			if (layer.flCycle == previousLayer[11].flCycle) {
+
+				pEnt->GetSimulationTime() = pEnt->GetOldSimulationTime();
+				bUpdate = false;
+			}
+		}
+
+		if (bUpdate) {
+
+			if (!deqLagRecords[i].empty()) {
+
+				if ((pEnt->GetVecOrigin() - deqLagRecords[i].front().vecOrigin).LengthSqr() > 4096.f && pEnt->GetSimulationTime() > deqLagRecords[i].front().flSimulationTime)
+					deqLagRecords[i].front().bValid = false;
+			}
 			deqLagRecords[i].emplace_front(playerrecord_t(pEnt));
-			playerrecord_t pBackup = playerrecord_t(pEnt);
-			playerrecord_t* pRecord = &deqLagRecords[i].front();
-			playerrecord_t* pPrevious = deqLagRecords[i].size() >= 2 ? &deqLagRecords[i].at(1) : nullptr;
-
-			UpdateAnimations(pEnt, pRecord, pPrevious);
-
-			pEnt->SetAnimationLayers(pBackup.layer);
-			pEnt->SetupBonesFix(pRecord->matrix);
-
-			pBackup.Restore(pEnt);
-
-			flOldSimulationTime[i] = pEnt->GetSimulationTime();
+			UpdatePlayer(pEnt);
 		}
 
 		while (deqLagRecords[i].size() > 32)
@@ -97,119 +63,57 @@ void LagComp::PostPlayerUpdate() {
 	}
 }
 
-void LagComp::UpdateAnimations(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPrevious) {
-
-	if (pPrevious == nullptr) {
-
-		resolver::Resolver(pEnt, pRecord, pPrevious, true, pEnt->AnimState());
-
-		pRecord->vecVelocity = pEnt->GetVelocity();
-		pRecord->Apply(pEnt);
-
-		UpdatePlayer(pEnt);
-
-		return;
-	}
-
-	Vector vecVelocity = pEnt->GetVelocity();
-
-	pEnt->SetAnimationLayers(pRecord->layer);
-	pEnt->SetAbsOrigin(pRecord->vecOrigin);
-	pEnt->SetAbsAngles(pRecord->vecAbsAngles);
-	pEnt->GetVelocity() = pPrevious->vecVelocity;
-
-	pRecord->vecVelocity = vecVelocity;
-
-	pRecord->bDidShot = pRecord->flLastShotTime > pPrevious->flSimulationTime && pRecord->flLastShotTime <= pRecord->flSimulationTime;
-
-	Vector vecPrevOrigin = pPrevious->vecOrigin;
-	int nPrevFlags = pPrevious->nFlags;
-
-	for (int i = 0; i < pRecord->nChoked; ++i) {
-
-		const float flSimulationTime = pPrevious->flSimulationTime + TICKS_TO_TIME(i + 1);
-		const float flLerp = 1.f - (pRecord->flSimulationTime - flSimulationTime) / (pRecord->flSimulationTime - pPrevious->flSimulationTime);
-
-		if (!pRecord->bDidShot) {
-
-			Vector vecEyeAngles = M::Interpolate(pPrevious->vecEyeAngles, pRecord->vecEyeAngles, flLerp);
-			pEnt->GetEyeAngles().y = vecEyeAngles.y;
-		}
-
-		pEnt->GetDuckAmount() = M::Interpolate(pPrevious->flDuckAmount, pRecord->flDuckAmount, flLerp);
-
-		if (pRecord->nChoked - 1 == i) {
-
-			pEnt->GetVelocity() = vecVelocity;
-			pEnt->GetFlags() = pRecord->nFlags;
-		}
-		else {
-
-			M::Extrapolate(pEnt, vecPrevOrigin, pEnt->GetVelocity(), pEnt->GetFlags(), nPrevFlags & FL_ONGROUND);
-			nPrevFlags = pEnt->GetFlags();
-
-			pRecord->vecVelocity = (pRecord->vecOrigin - pPrevious->vecOrigin) * (1.f / TICKS_TO_TIME(pRecord->nChoked));
-		}
-
-		if (pRecord->bDidShot) {
-
-			pEnt->GetEyeAngles() = pPrevious->vecEyeAngles;
-
-			if (pRecord->flLastShotTime <= flSimulationTime) {
-				pEnt->GetEyeAngles() = pRecord->vecEyeAngles;
-			}
-		}
-
-		const float flBackupSimulationTime = pEnt->GetSimulationTime();
-
-		pEnt->GetSimulationTime() = flSimulationTime;
-
-		VelocityFix(pEnt, pRecord, pPrevious);
-		resolver::Resolver(pEnt, pRecord, pPrevious, true, pEnt->AnimState());
-		UpdatePlayer(pEnt);
-
-		pEnt->GetSimulationTime() = flBackupSimulationTime;
-	}
-}
-
 void LagComp::UpdatePlayer(CBaseEntity* pEnt) {
 
-	static bool& bInvalidateBoneCache = **reinterpret_cast<bool**>(util::FindSignature("client.dll", "C6 05 ? ? ? ? ? 89 47 70") + 0x2);
+	playerrecord_t* pRecord = &deqLagRecords[pEnt->EntIndex()].front();
+	playerrecord_t* pPreviousRecord = deqLagRecords[pEnt->EntIndex()].size() >= 2 ? &deqLagRecords[pEnt->EntIndex()].at(1) : nullptr;
 
-	const float flFrameTime = i::GlobalVars->flFrameTime;
-	const float flCurtime = i::GlobalVars->flCurrentTime;
+	bool bCanDesync = !pEnt->GetPlayerInfo().bFakePlayer;
+	CAnimState* pAnimstate = pEnt->AnimState();
 
-	CAnimState* const pAnimstate = pEnt->AnimState();
+	float flCurrentTime = i::GlobalVars->flCurrentTime;
+	float flFrameTime = i::GlobalVars->flFrameTime;
 
-	if (!pAnimstate)
-		return;
+	pEnt->GetAnimationLayers(pRecord->layer);
 
-	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
+	pAnimstate->flLastUpdateTime -= i::GlobalVars->flIntervalPerTick;
+
 	i::GlobalVars->flCurrentTime = pEnt->GetSimulationTime();
+	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
 
 	pEnt->GetEFlags() &= ~EFL_DIRTY_ABSVELOCITY;
-	pEnt->AnimState()->flDurationInAir = 0.1f;
-
-	if (pAnimstate->iLastUpdateFrame == i::GlobalVars->iFrameCount)
-		pAnimstate->iLastUpdateFrame -= 1;
-
-	const bool backupBoneCache = bInvalidateBoneCache;
+	pEnt->SetAbsOrigin(pEnt->GetVecOrigin());
+	VelocityFix(pEnt, pRecord, pPreviousRecord);
 
 	pEnt->IsClientSideAnimation() = true;
-
-	pEnt->AnimState()->Update(pEnt->GetEyeAngles());
+	pAnimstate->Update(pEnt->GetEyeAngles());
+	resolver::Resolver(pEnt, pRecord, pPreviousRecord, bCanDesync, pAnimstate);
 	pEnt->UpdateClientSideAnimations();
-
 	pEnt->IsClientSideAnimation() = false;
 
-	pEnt->InvalidatePhysicsRecursive(ANGLES_CHANGED);
-	pEnt->InvalidatePhysicsRecursive(ANIMATION_CHANGED);
-	pEnt->InvalidatePhysicsRecursive(SEQUENCE_CHANGED);
+	pEnt->SetupBonesFix(pRecord->matrix);
+	pEnt->SetAnimationLayers(pRecord->layer);
 
-	bInvalidateBoneCache = backupBoneCache;
-
+	i::GlobalVars->flCurrentTime = flCurrentTime;
 	i::GlobalVars->flFrameTime = flFrameTime;
-	i::GlobalVars->flCurrentTime = flCurtime;
+
+	pRecord->StoreData(pEnt);
+}
+
+float LagComp::LerpTime() {
+
+	static auto cl_interp = i::ConVar->FindVar(("cl_interp"));
+	static auto cl_interp_ratio = i::ConVar->FindVar(("cl_interp_ratio"));
+	static auto sv_client_min_interp_ratio = i::ConVar->FindVar(("sv_client_min_interp_ratio"));
+	static auto sv_client_max_interp_ratio = i::ConVar->FindVar(("sv_client_max_interp_ratio"));
+	static auto cl_updaterate = i::ConVar->FindVar(("cl_updaterate"));
+	static auto sv_minupdaterate = i::ConVar->FindVar(("sv_minupdaterate"));
+	static auto sv_maxupdaterate = i::ConVar->FindVar(("sv_maxupdaterate"));
+
+	auto flUpdateRate = std::clamp(cl_updaterate->GetFloat(), sv_minupdaterate->GetFloat(), sv_maxupdaterate->GetFloat());
+	auto flLerpRatio = std::clamp(cl_interp_ratio->GetFloat(), sv_client_min_interp_ratio->GetFloat(), sv_client_max_interp_ratio->GetFloat());
+
+	return std::clamp(flLerpRatio / flUpdateRate, cl_interp->GetFloat(), 1.0f);
 }
 
 void LagComp::VelocityFix(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord) {
@@ -242,3 +146,27 @@ void LagComp::VelocityFix(CBaseEntity* pEnt, playerrecord_t* pRecord, playerreco
 
 	pEnt->SetAbsVelocity(pEnt->GetVelocity());
 }
+
+//void LagComp::DisableInterpolation() {
+//
+//	if (!g::pLocal)
+//		return;
+//
+//	for (int i = 0; i < 65; i++) {
+//
+//		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+//
+//		if (!pEnt || !pEnt->IsAlive() || pEnt->IsDormant())
+//			continue;
+//
+//		VarMapping_t* pMap = GetVarMap(pEnt);
+//		if (!pMap)
+//			continue;
+//
+//		for (int i = 0; i < pMap->m_nInterpolatedEntries; i++) {
+//
+//			VarMapEntry_t* pEnt = &pMap->m_Entries[i];
+//			pEnt->m_bNeedsToInterpolate = false;
+//		}
+//	}
+//}

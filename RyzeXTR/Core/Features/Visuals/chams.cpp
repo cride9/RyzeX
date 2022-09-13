@@ -3,6 +3,7 @@
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../../SDK/math.h"
 #include "../Rage/ragebot.h"
+#include "../Misc/misc.h"
 
 enum EMATERIAL : int {
 
@@ -120,6 +121,15 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 				if (pEnt == pLocal) {
 
+					if (misc::vecRecord != Vector(0.f, 0.f, 0.f) && cfg::model::localIdealTick) {
+
+						if (misc::bRetreat)
+							MakeChams(materials[ANIMATED], cfg::model::localIdealTickColor2, false, true);
+						else
+							MakeChams(materials[ANIMATED], cfg::model::localIdealTickColor, false, true);
+						original(i::StudioRender, 0, pResults, info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					}
+
 					if (!cfg::visual::localEsp)
 						return false;
 
@@ -207,6 +217,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 							original(i::StudioRender, 0, pResults, info, localmatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 						}
 					}
+
 					return true;
 				}
 

@@ -76,6 +76,7 @@ void CConfig::Setup() {
 
 		SetupValue(pitch, 0, "antiaim", "pitch");
 		SetupValue(yaw, 0, "antiaim", "yaw");
+		SetupValue(atTarget, false, "antiaim", "atTarget");
 
 		SetupValue(jittervalue, 0, "antiaim", "jittervalue");
 		SetupValue(invertangle, 0, "antiaim", "invertangle");
@@ -459,6 +460,19 @@ void CConfig::Setup() {
 
 		SetupValue(localAnimOverlayXhair, false, "model", "localAnimOverlayXhair");
 		SetupValue(localAnimOverlayXQZXhair, false, "model", "localAnimOverlayXQZXhair");
+
+		// ideal tick
+		SetupValue(localIdealTick, false, "model", "localIdealTick");
+
+		SetupValue(localIdealTickColor[0], 1.f, "model", "localIdealTickColorR");
+		SetupValue(localIdealTickColor[1], 1.f, "model", "localIdealTickColorG");
+		SetupValue(localIdealTickColor[2], 1.f, "model", "localIdealTickColorB");
+		SetupValue(localIdealTickColor[3], 1.f, "model", "localIdealTickColorA");
+
+		SetupValue(localIdealTickColor2[0], 1.f, "model", "localIdealTickColor2R");
+		SetupValue(localIdealTickColor2[1], 1.f, "model", "localIdealTickColor2G");
+		SetupValue(localIdealTickColor2[2], 1.f, "model", "localIdealTickColor2B");
+		SetupValue(localIdealTickColor2[3], 1.f, "model", "localIdealTickColor2A");
 	}
 
 	// misc 

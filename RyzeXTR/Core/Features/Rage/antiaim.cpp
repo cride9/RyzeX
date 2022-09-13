@@ -1,5 +1,6 @@
 #include "antiaim.h"
 #include "doubletap.h"
+#include "../../SDK/math.h"
 #include "../../Features/Misc/enginepred.h"
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
@@ -7,7 +8,7 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
 static bool evenInvert = false;
 static bool unevenInvert = false;
 
-void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
+void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle) {
 
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::enabled) {
 
@@ -69,6 +70,43 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	case BACKWARD:
 		pCmd->angViewPoint.y += 180.f;
 		break;
+	}
+
+	// at target
+	if (cfg::antiaim::atTarget) {
+
+		float flAtTarget = pCmd->angViewPoint.y;
+		float flFov = 180.f;
+
+		// get all possible enemies
+		for (int i = 0; i < 65; i++) {
+
+			CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+			if (!pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || !pEnt->GetClientRenderable())
+				continue;
+
+			// get closest to fov
+
+			// get local players viewangle
+			Vector vecViewAngle = pCmd->angViewPoint;
+
+			// get enemy position
+			Vector vecEnemyPosition = pEnt->GetHitboxPosition(HITBOX_HEAD).value();
+			Vector vecAimPoint = M::CalcAngle(g::pLocal->GetEyePosition(), vecEnemyPosition).Normalize().Clamp();
+			Vector vecDelta = vecAimPoint - vecViewAngle;
+
+			// calculate fov
+			vecDelta.Normalize();
+			float flTemporaryFov = min(sqrtf(powf(vecDelta.x, 2.0f) + powf(vecDelta.y, 2.0f)), 180.f);
+
+			if (flTemporaryFov < flFov) {
+				flFov = flTemporaryFov;
+				flAtTarget = vecAimPoint.y + 180;
+			}
+		}
+
+		pCmd->angViewPoint.y = flAtTarget;
 	}
 
 	if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)

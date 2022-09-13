@@ -481,8 +481,8 @@ public:
 	}
 
 	template <typename T>
-	T& GetOffsetPointer(uintptr_t offset) {
-		return *reinterpret_cast<T*>(uint32_t(this) + offset);
+	T* GetOffsetPointer(uintptr_t offset) {
+		return reinterpret_cast<T*>(uint32_t(this) + offset);
 	}
 
 	CUtlVector <matrix3x4_t>& GetCachedBoneData() {
@@ -549,6 +549,22 @@ public:
 	void SetPoseParameters(float* flPoseParameter) {
 
 		memcpy(&this->GetPoseParameter(), flPoseParameter, 24 * sizeof(float));
+	}
+
+	void GetBoneCache(matrix3x4_t* matrix) {
+
+		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count())
+			return;
+
+		memcpy(matrix, this->GetCachedBoneData().Base(), this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
+	}
+
+	void SetBoneCache(matrix3x4_t* matrix) {
+
+		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count())
+			return;
+
+		memcpy(this->GetCachedBoneData().Base(), matrix, this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
 	}
 
 	// normal netvars

@@ -26,5 +26,5 @@ enum EDESYNC : int {
 namespace antiaim {
 
 	inline float desyncValue = 0.f;
-	void AntiAim(CUserCmd*, bool&);
+	void AntiAim(CUserCmd*, bool&, Vector);
 }

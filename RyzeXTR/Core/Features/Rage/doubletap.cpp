@@ -39,7 +39,7 @@ void doubletap::Doubletap() {
 
 			if (!(g::pCmd->iButtons & IN_ATTACK)) {
 
-				rechargeAmount = 17;
+				rechargeAmount = 16;
 				bCharged = false;
 				bReset = false;
 			}

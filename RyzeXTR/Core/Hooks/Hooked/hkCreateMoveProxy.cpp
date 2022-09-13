@@ -23,9 +23,15 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
 
+	CBaseEntity* pLocal = g::pLocal = (CBaseEntity*)i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer());
+
+	static bool goBackFast = false;
 	if (g::bShifting) {
 
-		//pCmd->flSideMove = std::clamp((pCmd->flSideMove * -1) * 500, -450.f, 450.f);
+		pCmd->iButtons &= ~IN_FORWARD;
+		pCmd->iButtons &= ~IN_MOVELEFT;
+		pCmd->iButtons &= ~IN_MOVERIGHT;
+		
 		misc::IdealTick(pCmd);
 		localanim.update = true;
 
@@ -36,8 +42,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
 		return;
 	}
+	else
+		goBackFast = true;
 
-	CBaseEntity* pLocal = g::pLocal = (CBaseEntity*)i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer());
 	g::pCmd = pCmd;
 
 	auto oldViewAngle = g::oldViewAngle = pCmd->angViewPoint;
@@ -50,7 +57,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.Start(pCmd, pLocal);
 	{
-		antiaim::AntiAim(pCmd, bSendPacket);
+		antiaim::AntiAim(pCmd, bSendPacket, oldViewAngle);
 
 		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
 	}

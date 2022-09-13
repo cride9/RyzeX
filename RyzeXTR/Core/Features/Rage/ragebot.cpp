@@ -48,7 +48,6 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 			if (CanShoot(pEnt, pWeapon, vecAimPoint, ConfigHitChance(pWeapon))) {
 
-				misc::bRetreat = true;
 				static CConVar* weapon_recoil_scale = i::ConVar->FindVar("weapon_recoil_scale");
 				vecAimPoint -= (pLocal->GetAimPunch() * weapon_recoil_scale->GetFloat());
 
@@ -77,6 +76,7 @@ Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombat
 	for (auto hitboxID : vecHitboxes) {
 
 		float flRadius = 0.f;
+		pRecord->Apply(pEnt);
 		Vector vecHitboxPosition = pEnt->GetHitboxPosition(hitboxID, pRecord->matrix, flRadius);
 
 		if (flRadius != 0)
@@ -84,7 +84,7 @@ Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombat
 
 		float flDamage = autowall.GetDamage(g::pLocal, vecHitboxPosition, hitboxID);
 
-		if (flDamage > pEnt->GetHealth() + 10) {
+		if (hitboxID != HITBOX_HEAD && flDamage > pEnt->GetHealth() + 10) {
 
 			resolver::targetedRecord = pRecord;
 			flSimulationTime = pRecord->flSimulationTime;
@@ -93,41 +93,44 @@ Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombat
 
 		if (flDamage < iMinimumDamage) {
 
-			std::vector<LagComp::playerrecord_t*> validBacktrackRecords;
+			LagComp::playerrecord_t* validBacktrackRecord = nullptr;
 
 			for (int tick = 0; tick < lagcomp.deqLagRecords[pEnt->EntIndex()].size(); tick++) {
 
 				auto pBacktrack = &lagcomp.deqLagRecords[pEnt->EntIndex()].at(tick);
 
-				if (pBacktrack->IsValid(pBacktrack->flSimulationTime, pBacktrack->bValid)) {
+				if (pBacktrack->IsValid()) {
 
-					validBacktrackRecords.push_back(pBacktrack);
+					validBacktrackRecord = pBacktrack;
 				}
+				else
+					break;
 			}
 
-			if (validBacktrackRecords.empty())
+			if (!validBacktrackRecord)
 				continue;
 
-			validBacktrackRecords.front()->Apply(pEnt);
-			vecHitboxPosition = pEnt->GetHitboxPosition(hitboxID, validBacktrackRecords.front()->matrix, flRadius);
+			validBacktrackRecord->Apply(pEnt);
+			vecHitboxPosition = pEnt->GetHitboxPosition(hitboxID, validBacktrackRecord->matrix, flRadius);
 
 			if (flRadius != 0)
 				vecHitboxPosition = CreatePoints(vecHitboxPosition, flRadius, hitboxID, pEnt->EntIndex());
 
 			flDamage = autowall.GetDamage(g::pLocal, vecHitboxPosition, hitboxID);
+			pRecord->Apply(pEnt);
 
-			if (flDamage > pEnt->GetHealth() + 10) {
+			if (hitboxID != HITBOX_HEAD && flDamage > pEnt->GetHealth() + 10) {
 
-				resolver::targetedRecord = validBacktrackRecords.front();
-				flSimulationTime = validBacktrackRecords.front()->flSimulationTime;
+				resolver::targetedRecord = validBacktrackRecord;
+				flSimulationTime = validBacktrackRecord->flSimulationTime;
 				return vecHitboxPosition;
 			}
 
 			if (flDamage > iMinimumDamage) {
 
-				resolver::targetedRecord = validBacktrackRecords.front();
+				resolver::targetedRecord = validBacktrackRecord;
 				DamageList.push_back(flDamage);
-				PositionList.push_back({ vecHitboxPosition, validBacktrackRecords.front() });
+				PositionList.push_back({ vecHitboxPosition, validBacktrackRecord });
 			}
 
 			continue;
@@ -223,7 +226,7 @@ int CRageBot::ConfigHitChance(CBaseCombatWeapon* pWeapon) {
 		return cfg::rage::pistolHitchance;
 	}
 	else if (iDefinitionIndex == WEAPON_TASER) {
-		return 100;
+		return 72;
 	}
 	else {
 		return cfg::rage::etcHitchance;
