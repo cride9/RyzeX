@@ -4,6 +4,7 @@
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Rage/doubletap.h"
 #include "../../SDK/Menu/config.h"
+#include "../../Features/Networking/networking.h"
 
 void hkPreFrameStageNotify(EStage curStage) {
 
@@ -37,6 +38,10 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 			g::bRestoreGlobals = false;
 		}
+
+		// restore netvar data
+		//networking.RestoreNetvarData( g::pLocal->GetTickBase( ) );
+
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:

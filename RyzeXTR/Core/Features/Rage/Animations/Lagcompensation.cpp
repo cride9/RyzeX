@@ -58,9 +58,10 @@ void LagComp::UpdateLagRecords() {
 		if (bUpdate) {
 
 			// another check for breaking lagcomp
-			if (!deqLagRecords[i].empty()) {
-
-				if ((pEnt->GetVecOrigin() - deqLagRecords[i].front().vecOrigin).LengthSqr() > 4096.f && pEnt->GetSimulationTime() > deqLagRecords[i].front().flSimulationTime)
+			if (!deqLagRecords[i].empty()) 
+			{
+				//if ((pEnt->GetVecOrigin() - deqLagRecords[i].front().vecOrigin).LengthSqr() > 4096.f && pEnt->GetSimulationTime() > deqLagRecords[i].front().flSimulationTime)
+				if ( IsBreakingLagcompensation( pEnt ) )
 					deqLagRecords[i].front().bValid = false;
 			}
 			// create a new record
@@ -74,6 +75,40 @@ void LagComp::UpdateLagRecords() {
 		while (deqLagRecords[i].size() > 32)
 			deqLagRecords[i].pop_back();
 	}
+}
+
+bool LagComp::IsBreakingLagcompensation( CBaseEntity* pEnt )
+{
+	// check if we have at least one entry.
+	if (deqLagRecords[ pEnt->EntIndex( ) ].size( ) <= 0 )
+		return false;
+
+	auto previousOrigin = deqLagRecords[ pEnt->EntIndex( ) ].front( ).pEnt->GetVecOrigin( );
+
+	// walk context looking for any invalidating event.
+	for ( auto& pRecord : deqLagRecords[ pEnt->EntIndex( ) ] )
+	{
+		auto delta = pRecord.vecOrigin - previousOrigin;
+		if ( delta.LengthSqr( ) > 4096.f )
+		{
+			// lost track, too much difference.
+			return true;
+		}
+
+		// player is abusing tickbase and breaking lagcompensation
+		if ( pRecord.flSimulationTime < pRecord.flOldSimulationTime )
+			return true;
+		else if ( deqLagRecords[ pEnt->EntIndex( ) ].empty( ) && ( deqLagRecords[ pEnt->EntIndex( ) ].front().pEnt->GetSimulationTime( ) == deqLagRecords[ pEnt->EntIndex( ) ].front( ).flSimulationTime ) )
+			return true;
+
+		// did we find a context smaller than target time?
+		if ( pRecord.flSimulationTime <= deqLagRecords[ pEnt->EntIndex( ) ].front().flSimulationTime )
+			break; // hurra, stop.
+
+		previousOrigin = pRecord.vecOrigin;
+	}
+
+	return false;
 }
 
 void LagComp::UpdatePlayer(CBaseEntity* pEnt) {
@@ -231,6 +266,49 @@ void LagComp::DisableInterpolation() {
 
 			VarMapEntry_t* pEnt = &pMap->m_Entries[i];
 			pEnt->m_bNeedsToInterpolate = false;
+		}
+	}
+}
+
+void LagComp::UpdateIncomingSequences( INetChannel* pNetChannel )
+{
+	if ( pNetChannel == nullptr )
+		return;
+
+	// set to real sequence to update, otherwise needs time to get it work again
+	if ( nLastIncomingSequence == 0 )
+		nLastIncomingSequence = pNetChannel->iInSequenceNr;
+
+	// check how much sequences we can spike
+	if ( pNetChannel->iInSequenceNr > nLastIncomingSequence )
+	{
+		nLastIncomingSequence = pNetChannel->iInSequenceNr;
+		vecSequences.emplace_front( SequenceObject_t( pNetChannel->iInReliableState, pNetChannel->iOutReliableState, pNetChannel->iInSequenceNr, i::GlobalVars->flRealTime ) );
+	}
+
+	// is cached too much sequences
+	if ( vecSequences.size( ) > 2048U )
+		vecSequences.pop_back( );
+}
+
+void LagComp::ClearIncomingSequences( )
+{
+	if ( !vecSequences.empty( ) )
+	{
+		nLastIncomingSequence = 0;
+		vecSequences.clear( );
+	}
+}
+
+void LagComp::AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency )
+{
+	for ( const auto& sequence : vecSequences )
+	{
+		if ( i::GlobalVars->flRealTime - sequence.flCurrentTime >= flLatency )
+		{
+			pNetChannel->iInReliableState = sequence.iInReliableState;
+			pNetChannel->iInSequenceNr = sequence.iSequenceNr;
+			break;
 		}
 	}
 }

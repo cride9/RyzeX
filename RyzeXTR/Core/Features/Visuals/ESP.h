@@ -14,6 +14,7 @@ namespace visual {
 	void NameEsp(int&, int, int, int, int, int, int, CBaseEntity*, Color);
 	void KevlarEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void AmmoEsp(int&, int, int, int, int, CBaseEntity*, Color);
+	void BreakLCESP( int&, int, int, int, int, CBaseEntity* );
 	void WeaponEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void MoneyEsp(int&, int, int, int, int, CBaseEntity*, Color);
 

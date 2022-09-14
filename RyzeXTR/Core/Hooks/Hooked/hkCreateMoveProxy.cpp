@@ -9,6 +9,7 @@
 #include "../../Features/Rage/ragebot.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Rage/doubletap.h"
+#include "../../Features/Networking/networking.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -22,6 +23,14 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
+
+	/*
+	 * CL_RunPrediction
+	 * correct prediction when framerate is lower than tickrate
+	 * https://github.com/VSES/SourceEngine2007/blob/master/se2007/engine/cl_pred.cpp#L41
+	 */
+	if ( i::ClientState->iDeltaTick > 0 )
+		i::Prediction->Update( i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands );
 
 	CBaseEntity* pLocal = g::pLocal = (CBaseEntity*)i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer());
 
@@ -53,6 +62,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (GetAsyncKeyState(VK_LBUTTON) && menu::open)
 		pCmd->iButtons &= ~IN_ATTACK;
 
+	prediction.SaveNetvars( pCmd->iCommandNumber );
+
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 
 	prediction.Start(pCmd, pLocal);
@@ -65,6 +76,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	doubletap::Doubletap();
 
+	prediction.RestoreNetvars( pCmd->iCommandNumber );
+
 	misc::MovementFix(pCmd, oldViewAngle);
 
 	// emergency bsendpacket to prevent server disconnecting
@@ -74,7 +87,50 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	}
 
 	if (bSendPacket)
+	{ 
+		packetManager.pCommandList.emplace_back( pCmd->iCommandNumber );
 		localanim.localdata.vecViewAngle = pCmd->angViewPoint;
+	}
+
+	// netchannel pointer
+	INetChannel* pNetChannel = i::ClientState->pNetChannel;
+
+	// @note: doesnt need rehook cuz detours here
+	if ( pNetChannel != nullptr )
+	{
+		if ( !detour::processPacket.IsHooked( ) )
+			detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
+
+		if ( !detour::sendNetMsg.IsHooked( ) )
+			detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
+
+		if ( !detour::setChoked.IsHooked( ) )
+			detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
+
+		if ( !detour::sendDatagram.IsHooked( ) )
+			detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
+	}
+
+	if ( cfg::misc::fakePing )
+		lagcomp.UpdateIncomingSequences( pNetChannel );
+	else
+		lagcomp.ClearIncomingSequences( );
+
+	static const auto clientStateHookable = ( void* )( uintptr_t( i::ClientState ) + 0x8 ); // ignore c-style casting
+
+	if ( clientStateHookable != nullptr )
+	{
+		// PacketStart Detour
+		if ( !detour::packetStart.IsHooked( ) )
+			detour::packetStart.Create( util::GetVFunc( clientStateHookable, table::packetStart ), &h::hkPacketStart );
+
+		// PacketEnd Detour
+		if ( !detour::packetEnd.IsHooked( ) )
+			detour::packetEnd.Create( util::GetVFunc( clientStateHookable, table::packetEnd ), &h::hkPacketEnd );
+
+		if ( !detour::temptEntities.IsHooked( ) )
+			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
+	}
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();

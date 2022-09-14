@@ -1,5 +1,6 @@
 #pragma once
 #include "../../SDK/DataTyes/Vector.h"
+#include "../../Interface/Classes/CClientModeShared.h"
 #define FLOW_OUTGOING	0
 #define FLOW_INCOMING	1
 #define MAX_FLOWS		2		// in & out
@@ -232,5 +233,5 @@ public:
 	std::byte		pad8[0x4F];				// 0x4D40
 	Vector			angViewPoint;			// 0x4D90
 	std::byte		pad9[0xD0];				// 0x4D9C
-	void*			pEvents;				// 0x4E6C
+	CEventInfo*		pEvents;				// 0x4E6C
 };

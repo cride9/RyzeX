@@ -2,6 +2,7 @@
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../Rage/ragebot.h"
 #include "../Misc/misc.h"
+#include "../Rage/Animations/Lagcompensation.h"
 
 void visual::VisualRender() {
 
@@ -53,6 +54,7 @@ void visual::VisualRender() {
 			if (cfg::visual::enemyMoney) MoneyEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyMoneyColor));
 			if (cfg::visual::enemyAmmo) AmmoEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyAmmoColor));
 			if (cfg::visual::enemyWeapon) WeaponEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyWeaponColor));
+			if (cfg::visual::enemyBreakLC ) BreakLCESP(enemySpacing, left, top.y, right, bot.y, pEnt);
 		}
 		else {
 
@@ -167,6 +169,14 @@ void visual::AmmoEsp(int& spacing, int left, int top, int right, int bot, CBaseE
 	spacing += 10;
 }
 
+void visual::BreakLCESP( int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt ) 
+{
+	if ( !lagcomp.IsBreakingLagcompensation( pEnt ) )
+		return;
+
+	i::Surface->DrawT( left, bot, Color{ 255, 255, 255, 255 }, g::fonts::NameESP, false, "Breaking Lagcomp" );
+}
+
 void visual::WeaponEsp(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
 
 	if (!pEnt->GetWeapon())
@@ -181,6 +191,8 @@ void visual::WeaponEsp(int& spacing, int left, int top, int right, int bot, CBas
 	text.erase(0, 7);
 
 	i::Surface->DrawT(left, bot, Color{ color[0], color[1], color[2], color[3] }, g::fonts::NameESP, false, text.c_str());
+
+	spacing += 10;
 }
 
 void visual::MoneyEsp(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {

@@ -109,6 +109,11 @@ public:
 		return util::CallVFunc<void*>(this, 43);
 	}
 
+	void* FireEvents( )
+	{
+		return util::CallVFunc<void*>( this, 59 );
+	}
+
 	bool IsHLTV() {
 
 		return util::CallVFunc<bool>(this, 93);

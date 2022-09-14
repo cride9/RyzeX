@@ -2,6 +2,8 @@
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 #include "../hooks.h"
+#include "../../Features/Misc/enginepred.h"
+#include "../../Features/Networking/networking.h"
 
 int IncrementTickBase(uint32_t pCommand) {
 
@@ -75,4 +77,7 @@ void __fastcall h::hkPhysicsSimulate(void* ecx, void* edx) {
 	}
 
 	original(ecx, edx);
+
+	prediction.SaveViewmodelData( );
+	return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 }

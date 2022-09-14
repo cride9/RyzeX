@@ -3,6 +3,7 @@
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
+#include "../../Features/Networking/networking.h"
 
 void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCmd* pCmd, IMoveHelper* pMovehelper) {
 
@@ -49,6 +50,9 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	//if (doubletap::cmdCommandNumber == pCmd->iCommandNumber || doubletap::rechargeCommandNumber == pCmd->iCommandNumber || doubletap::defensiveCommandNumber == pCmd->iCommandNumber || doubletap::defensiveCommandNumberReset == pCmd->iCommandNumber)
 	//	g::bRestoreGlobals = true;
+
+	prediction.SaveViewmodelData( );
+	networking.SaveNetvarData( pEnt->GetTickBase( ) );
 
 	if (!localanim.update)
 		pEnt->GetOffset<float>(0xA38C) = flVelocityModifier;

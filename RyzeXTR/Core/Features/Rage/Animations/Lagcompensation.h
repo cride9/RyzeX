@@ -5,6 +5,17 @@
 #include "../../../utilities.h"
 #include "../../../globals.h"
 
+struct SequenceObject_t
+{
+	SequenceObject_t( int iInReliableState, int iOutReliableState, int iSequenceNr, float flCurrentTime )
+		: iInReliableState( iInReliableState ), iOutReliableState( iOutReliableState ), iSequenceNr( iSequenceNr ), flCurrentTime( flCurrentTime ) { }
+
+	int iInReliableState;
+	int iOutReliableState;
+	int iSequenceNr;
+	float flCurrentTime;
+};
+
 class LagComp {
 public:
 
@@ -27,6 +38,7 @@ public:
 		int nEffect;
 
 		float flSimulationTime;
+		float flOldSimulationTime;
 		float flDuckAmount;
 		float flInterpolation;
 		float flLowerBodyYawTarget;
@@ -106,6 +118,7 @@ public:
 			vecMaxs = pEnt->GetCollideable()->OBBMaxs();
 
 			flSimulationTime = pEnt->GetSimulationTime();
+			flOldSimulationTime = pEnt->GetOldSimulationTime();
 			flInterpolation = 0.f;
 			flLastShotTime = pWeapon ? pWeapon->GetLastShotTime() : 0.f;
 			flDuckAmount = pEnt->GetDuckAmount();
@@ -123,9 +136,21 @@ public:
 	};
 
 	void UpdateLagRecords();
+	bool IsBreakingLagcompensation( CBaseEntity* pEnt );
 	void UpdatePlayer(CBaseEntity* pEnt);
 	void VelocityFix(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord);
 	void DisableInterpolation();
+
+	void UpdateIncomingSequences( INetChannel* pNetChannel );
+	void ClearIncomingSequences( );
+	void AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency );
+
+	// Values
+	std::deque<SequenceObject_t> vecSequences = { };
+	/* our real incoming sequences count */
+	int nRealIncomingSequence = 0;
+	/* count of incoming sequences what we can spike */
+	int nLastIncomingSequence = 0;
 
 	std::deque<playerrecord_t> deqLagRecords[65];
 	std::deque<playerrecord_t> deqValidLagRecords[65];

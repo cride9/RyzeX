@@ -67,17 +67,18 @@ public:
 	virtual void				StartTrackPredictionErrors(CBaseEntity* pEntity) = 0;
 	virtual void				FinishTrackPredictionErrors(CBaseEntity* pEntity) = 0;
 	virtual void				DiffPrint(char const* fmt, ...) = 0;
-	virtual Vector const& GetPlayerMins(bool bDucked) const = 0;
-	virtual Vector const& GetPlayerMaxs(bool bDucked) const = 0;
-	virtual Vector const& GetPlayerViewOffset(bool bDucked) const = 0;
+	virtual Vector const&		GetPlayerMins(bool bDucked) const = 0;
+	virtual Vector const&		GetPlayerMaxs(bool bDucked) const = 0;
+	virtual Vector const&		GetPlayerViewOffset(bool bDucked) const = 0;
 	virtual bool				IsMovingPlayerStuck() const = 0;
-	virtual CBaseEntity* GetMovingPlayer() const = 0;
+	virtual CBaseEntity*		GetMovingPlayer() const = 0;
 	virtual void				UnblockPusher(CBaseEntity* pEntity, CBaseEntity* pPusher) = 0;
 	virtual void				SetupMovementBounds(CMoveData* pMove) = 0;
 };
 
 using CBaseHandle = std::uintptr_t;
-class IPrediction {
+class IPrediction 
+{
 
 public:
 	std::byte		pad0[0x4];						// 0x0000

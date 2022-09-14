@@ -2,6 +2,28 @@
 #include "../../Interface/interfaces.h"
 #include "../../SDK/Entity.h"
 
+struct CNetvarData
+{
+	float flRecoilIndex = 0.f;
+	float flAccuracyPenalty = 0.f;
+	float flDuckAmount = 0.f;
+	float flDuckSpeed = 0.f;
+	float flFallVelocity = 0.f;
+
+	int nRenderMode = 0;
+	int nTickbase = 0;
+	int fFlags = 0;
+
+	Vector vecOrigin = Vector( 0.f, 0.f, 0.f );
+	Vector vecVelocity = Vector( 0.f, 0.f, 0.f );
+	Vector vecBaseVelocity = Vector( 0.f, 0.f, 0.f );
+	Vector vecViewOffset = Vector( 0.f, 0.f, 0.f );
+
+	Vector vecAimPunchAngleVel = Vector( 0.f, 0.f, 0.f );
+	Vector vecAimPunchAngle = Vector( 0.f, 0.f, 0.f );
+	Vector vecViewPunchAngle = Vector( 0.f, 0.f, 0.f );
+};
+
 enum EThinkMethods : int
 {
 	THINK_FIRE_ALL_FUNCTIONS = 0,
@@ -21,6 +43,16 @@ public:
 	void End(CUserCmd* pCmd, CBaseEntity* pLocal) const;
 
 	static int GetTickBase(CUserCmd* pCmd, CBaseEntity* pLocal);
+
+	CNetvarData GetNetvars( int iCommand ) { return this->pNetvarData[ iCommand % 150 ]; };
+
+	void SaveNetvars( int iCommand );
+	void RestoreNetvars( int iCommand );
+	void SaveViewmodelData( );
+	void AdjustViewmodelData( );
+
+	std::array < CNetvarData, 150 > pNetvarData = { };
+
 private:
 
 	int* uPredictionRandomSeed = nullptr;
@@ -32,5 +64,10 @@ private:
 	float flOldCurrentTime = 0.f;
 	float flOldFrameTime = 0.f;
 	int iOldTickCount = 0;
+
+	float flCycle = 0.f;
+	float flAnimTime = 0.f;
+	int	iSequence = 0;
+	int	iAnimationParity = 0;
 };
 inline Prediction prediction;

@@ -22,6 +22,18 @@ namespace table {
 	inline constexpr auto isPaused = 50;
 	inline constexpr auto writeUserCmd = 24;
 
+	inline constexpr auto fireEvent = 24;
+
+
+	inline constexpr auto processPacket = 39;
+	inline constexpr auto sendNetMsg = 40;
+	inline constexpr auto setChoked = 45;
+	inline constexpr auto sendDatagram = 46;
+
+	inline constexpr auto packetStart = 5;
+	inline constexpr auto packetEnd = 6;
+	inline constexpr auto temptEntities = 36;
+
 	inline constexpr auto runCommand = 19;			// for tickbase fix and getting movehelper interface
 	inline constexpr auto allocKeyValues = 2;		// fixing keyvalues error while fakelaging
 }
@@ -47,6 +59,18 @@ namespace detour {
 	inline CDetourHook isPaused;			// engineclient -> 90
 	inline CDetourHook physicsSimulate;		// CBasePlayer::PhysicsSimulate(void);
 	inline CDetourHook writeUserCmd;		// client -> 24
+	inline CDetourHook fireEvent;			// gamevent -> 9
+
+	// netchannel table
+	inline CDetourHook processPacket;		// netchannel -> 39
+	inline CDetourHook sendNetMsg;			// netchannel -> 40
+	inline CDetourHook setChoked;			// netchannel -> 45
+	inline CDetourHook sendDatagram;		// netchannel -> 46
+
+	/*  inetchannelhandler table */
+	inline CDetourHook packetStart;			// inetchannelhandler -> 5
+	inline CDetourHook packetEnd;			// inetchannelhandler -> 6
+	inline CDetourHook temptEntities;		// inetchannelhandler -> 36
 
 	// animation hooks
 	inline CDetourHook skipAnimation;
@@ -99,6 +123,18 @@ namespace h {
 	void __fastcall		hkRunCommand(void*, void*, CBaseEntity*, CUserCmd*, IMoveHelper*);
 	float __fastcall	hkGetViewModelFov(void*, void*);
 	bool __fastcall		hkWriteUserCmdDeltaToBuffer(void*, void*, int, bf_write*, int, int, bool);
+	bool __fastcall		hkFireEvent( void*, void*, IGameEvent* );
+
+	// netchannel table
+	void __fastcall		hkProcessPacket( void*, void*, void*, bool );
+	bool __fastcall		hkSendNetMsg( INetChannel*, int, INetMessage*, bool, bool );
+	void __fastcall		hkSetChoked( void*, void* );
+	int	__fastcall		hkSendDatagram( INetChannel*, int, bf_write* );
+
+	// inetchannelhandler
+	void __fastcall		hkPacketStart( void*, void*, int, int );
+	void __fastcall		hkPacketEnd( void*, void* );
+	bool __fastcall		hkTemptEntities( void*, void*, void* );
 
 	// animation hooks
 	bool __fastcall		hkShouldSkipAnimationFrame(void*, void*);

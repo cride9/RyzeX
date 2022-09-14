@@ -253,7 +253,7 @@ void CBaseEntity::PostThink()
 		this->UpdateCollisionBounds();
 
 		if (this->GetFlags() & FL_ONGROUND)
-			*this->GetFallVelocity() = 0.f;
+			this->GetFallVelocity() = 0.f;
 
 		if (this->GetSequence() == -1)
 			this->SetSequence(0);

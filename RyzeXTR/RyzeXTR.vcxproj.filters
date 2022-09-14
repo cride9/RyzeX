@@ -216,6 +216,15 @@
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Hooks\Hooked\hkINetchannelHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Features\Networking\networking.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Hooks\Hooked\hkNetChannel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\utilities.h">
@@ -456,6 +465,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Networking\networking.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

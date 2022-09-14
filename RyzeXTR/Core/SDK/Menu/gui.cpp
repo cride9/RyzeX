@@ -276,6 +276,8 @@ void menu::Render() noexcept {
 						ImGui::Checkbox("weapon", &cfg::visual::enemyWeapon); ImGui::SameLine(); ImGui::SetCursorPosX(childLeft);
 						ImGui::ColorEdit4("##enemyWeaponColor", cfg::visual::enemyWeaponColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
 
+						ImGui::Checkbox( "breaking lagcomp", &cfg::visual::enemyBreakLC ); ImGui::SameLine( ); ImGui::SetCursorPosX( childLeft );
+
 						ImGui::Checkbox("ammo", &cfg::visual::enemyAmmo); ImGui::SameLine(); ImGui::SetCursorPosX(childLeft);
 						ImGui::ColorEdit4("##enemyAmmoColor", cfg::visual::enemyAmmoColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
 
@@ -573,6 +575,10 @@ void menu::Render() noexcept {
 						ImGui::SliderInt("##ratio", &cfg::misc::aspectRatioValue, 0, 100);
 					ImGui::SliderInt("viewmodel fov", &cfg::misc::viewmodelFov, 65, 140);
 					ImGui::SliderInt("fov", &cfg::misc::fov, 80, 140);
+
+					ImGui::Checkbox( "fakeping", &cfg::misc::fakePing );
+					if ( cfg::misc::fakePing )
+						ImGui::SliderFloat( "##ratio", &cfg::misc::fakePingFactor, 0.f, 200.f, "%.1f ms" );
 
 					static const char* items[] = { "smoke", "flash", "recoil", "zoom" };
 					static std::string selectedPreview = "";

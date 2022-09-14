@@ -77,37 +77,6 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
 	{
 		*iNextThinkTick = TICK_NEVER_THINK;
 
-		/*
-		 * handle no think function
-		 * pseudo i guess didnt seen before but not sure, most likely unnecessary
-		nEFlags = pPlayer->GetEFlags();
-		result = pPlayer->GetEFlags() & EFL_NO_THINK_FUNCTION;
-		if (!result)
-		{
-			result = [&]()
-			{
-				if (pPlayer->GetNextThinkTick() > 0)
-					return 1;
-				v3 = *(_DWORD *)(pPlayer + 0x2BC);
-				v4 = 0;
-				if (v3 > 0)
-				{
-				v5 = (_DWORD *)(*(_DWORD *)(pPlayer + 0x2B0) + 0x14);
-				while (*v5 <= 0)
-				{
-					++v4;
-					v5 += 8;
-					if (v4 >= v3)
-						return 0;
-				}
-				return 1;
-			}();
-			if (!result)
-				pPlayer->GetEFlags() = nEFlags | EFL_NO_THINK_FUNCTION;
-		}
-
-		 */
-
 		pLocal->Think();
 	}
 
@@ -182,4 +151,75 @@ int Prediction::GetTickBase(CUserCmd* pCmd, CBaseEntity* pLocal)
 	}
 
 	return iTick;
+}
+
+void Prediction::SaveNetvars( int iCommand )
+{
+	pNetvarData[ iCommand % 150 ].fFlags = g::pLocal->GetFlags( );
+	pNetvarData[ iCommand % 150 ].flDuckAmount = g::pLocal->GetDuckAmount( );
+	pNetvarData[ iCommand % 150 ].flDuckSpeed = g::pLocal->GetDuckSpeed( );
+	pNetvarData[ iCommand % 150 ].vecOrigin = g::pLocal->GetVecOrigin( );
+	pNetvarData[ iCommand % 150 ].vecVelocity = g::pLocal->GetVelocity( );
+	pNetvarData[ iCommand % 150 ].vecBaseVelocity = g::pLocal->GetVecBaseVelocity( );
+	pNetvarData[ iCommand % 150 ].flFallVelocity = g::pLocal->GetFallVelocity( );
+	pNetvarData[ iCommand % 150 ].vecViewOffset = g::pLocal->GetViewOffset( );
+	pNetvarData[ iCommand % 150 ].vecAimPunchAngle = g::pLocal->GetAimPunch( );
+	pNetvarData[ iCommand % 150 ].vecAimPunchAngleVel = g::pLocal->GetAimPunchVelocity( );
+	pNetvarData[ iCommand % 150 ].vecViewPunchAngle = g::pLocal->GetViewPunch( );
+
+	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon( );
+	if ( !pWeapon )
+		return;
+
+	pNetvarData[ iCommand % 150 ].flRecoilIndex = static_cast< CWeaponCSBase* >(pWeapon)->GetRecoilIndex( );
+	pNetvarData[ iCommand % 150 ].flAccuracyPenalty = static_cast< CWeaponCSBase* >(pWeapon)->GetAccuracyPenalty( );
+}
+
+void Prediction::RestoreNetvars( int iCommand )
+{
+	g::pLocal->GetFlags( ) = pNetvarData[ iCommand % 150 ].fFlags;
+	g::pLocal->GetDuckAmount( ) = pNetvarData[ iCommand % 150 ].flDuckAmount;
+	g::pLocal->GetDuckSpeed( ) = pNetvarData[ iCommand % 150 ].flDuckSpeed;
+	g::pLocal->GetVecOrigin( ) = pNetvarData[ iCommand % 150 ].vecOrigin;
+	g::pLocal->GetVelocity( ) = pNetvarData[ iCommand % 150 ].vecVelocity;
+	g::pLocal->GetVecBaseVelocity( ) = pNetvarData[ iCommand % 150 ].vecBaseVelocity;
+	g::pLocal->GetFallVelocity( ) = pNetvarData[ iCommand % 150 ].flFallVelocity;
+	g::pLocal->GetViewOffset( ) = pNetvarData[ iCommand % 150 ].vecViewOffset;
+	g::pLocal->GetAimPunch( ) = pNetvarData[ iCommand % 150 ].vecAimPunchAngle;
+	g::pLocal->GetAimPunchVelocity( ) = pNetvarData[ iCommand % 150 ].vecAimPunchAngleVel;
+	g::pLocal->GetViewPunch( ) = pNetvarData[ iCommand % 150 ].vecViewPunchAngle;
+
+	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon( );
+	if ( !pWeapon )
+		return;
+
+	static_cast< CWeaponCSBase* >( pWeapon )->GetRecoilIndex( ) = pNetvarData[ iCommand % 150 ].flRecoilIndex;
+	static_cast< CWeaponCSBase* >( pWeapon )->GetAccuracyPenalty( ) = pNetvarData[ iCommand % 150 ].flAccuracyPenalty;
+}
+
+void Prediction::SaveViewmodelData( )
+{
+	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( g::pLocal->GetViewModel( ) );
+
+	if ( !hViewmodel )
+		return;
+
+	iAnimationParity = hViewmodel->iAnimationParity( );
+	iSequence = hViewmodel->iSequence( );
+	//flCycle = hViewmodel->flCycle( );
+	//flAnimTime = hViewmodel->flAnimTime( );
+}
+
+void Prediction::AdjustViewmodelData( )
+{
+	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( g::pLocal->GetViewModel( ) );
+
+	if ( !hViewmodel )
+		return;
+
+	if ( iSequence != hViewmodel->iSequence( ) || iAnimationParity != hViewmodel->iAnimationParity( ) )
+		return;
+
+	//hViewmodel->flCycle( ) = flCycle;
+	//hViewmodel->flAnimTime( ) = flAnimTime;
 }

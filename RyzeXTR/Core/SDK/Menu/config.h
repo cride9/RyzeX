@@ -113,6 +113,8 @@ namespace cfg {
 		inline bool enemyWeapon = false;
 		inline float enemyWeaponColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
+		inline bool enemyBreakLC = false;
+
 		// Team
 		inline bool teamEsp = false;
 
@@ -283,6 +285,10 @@ namespace cfg {
 		inline int snipers;
 		inline bool equipments[] = { false, false, false };
 		inline bool grenades[] = { false, false, false, false, false };
+
+		inline bool fakePing = false;
+		inline float fakePingFactor = 0.f;
+
 	}
 	namespace skin {
 

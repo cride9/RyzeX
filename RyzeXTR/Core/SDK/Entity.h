@@ -453,12 +453,13 @@ public:
 	ADD_OFFSET(MaintainSequenceTransition, bool, 0x9F0);
 	ADD_OFFSET(InverseKinematics, LPVOID, 0x2670);
 	ADD_OFFSET(GeFinalPredictedTick, int, 0x3434);
-	ADD_POFFSET(AnimState, CAnimState, 0x9960);
+	//ADD_POFFSET(AnimState, CAnimState, 0x9960); You are fr a handicapped fuck, just fucking netvar it
 	//ADD_OFFSET(GetEFlags, int, 0xE8);
 
 	// normal netvars
 	ADD_NETVAR(GetViewPunch, Vector, "CBasePlayer->m_viewPunchAngle");
 	ADD_NETVAR(GetAimPunch, Vector, "CBasePlayer->m_aimPunchAngle");
+	ADD_NETVAR(GetAimPunchVelocity, Vector, "CBasePlayer->m_aimPunchAngleVel" );
 	ADD_NETVAR(GetViewOffset, Vector, "CBasePlayer->m_vecViewOffset[0]");
 	ADD_NETVAR(GetFriction, float, "CBasePlayer->m_flFriction");
 	ADD_NETVAR(GetTickBase, int, "CBasePlayer->m_nTickBase");
@@ -472,15 +473,18 @@ public:
 	ADD_NETVAR(GetObserverTarget, CBaseHandle, "CBasePlayer->m_hObserverTarget");
 	ADD_NETVAR(GetViewModel, CBaseHandle, "CBasePlayer->m_hViewModel[0]");
 	ADD_NETVAR(GetDuckAmount, float, "CBasePlayer->m_flDuckAmount");
+	ADD_NETVAR(GetDuckSpeed, float, "CBasePlayer->m_flDuckSpeed");
+	ADD_NETVAR(GetFallVelocity, float, "CBasePlayer->m_flFallVelocity");
 
 	// pointer netvars
-	ADD_PNETVAR(GetFallVelocity, float, "CBasePlayer->m_flFallVelocity");
+	//ADD_PNETVAR(GetFallVelocity, float, "CBasePlayer->m_flFallVelocity"); Tf is going on here? Leaving it commented out incase you don't like the change
 	ADD_PNETVAR(GetObserverMode, int, "CBasePlayer->m_iObserverMode");
 	ADD_PNETVAR(GetLastPlace, const char, "CBasePlayer->m_szLastPlaceName");
 
 	// offset variables
 	ADD_NETVAROFFSET(GetButtonDisabled, int, "CBasePlayer->m_hViewEntity", -0xC);
 	ADD_NETVAROFFSET(GetButtonForced, int, "CBasePlayer->m_hViewEntity", -0x8);
+	ADD_NETVAROFFSET(AnimState, CAnimState*, "CCSPlayer->m_bIsScoped", -0x14); // @ida: 8B 8E ? ? ? ? F3 0F 10 48 ? E8 ? ? ? ? C7 + 0x2
 
 	// pointer offset variables
 	ADD_PNETVAROFFSET(GetViewAngles, Vector, "CBasePlayer->deadflag", 0x4);
@@ -492,6 +496,7 @@ public:
 	ADD_DATAMAP(GetButtonPressed, int, this->GetPredictionDescMap(), "m_afButtonPressed");
 	ADD_DATAMAP(GetButtonReleased, int, this->GetPredictionDescMap(), "m_afButtonReleased");
 	ADD_PDATAMAP(GetImpulse, int, this->GetPredictionDescMap(), "m_nImpulse");
+	ADD_DATAMAP(GetVecBaseVelocity, Vector, this->GetPredictionDescMap( ), "m_vecBaseVelocity" );
 	ADD_DATAMAP(GetSurfaceFriction, float, this->GetPredictionDescMap(), "m_surfaceFriction");
 
 	template <typename T>
@@ -1007,6 +1012,7 @@ public:
 
 	ADD_NETVAR(IsBurstMode, bool, "CWeaponCSBase->m_bBurstMode");
 	ADD_NETVAR(GetAccuracyPenalty, float, "CWeaponCSBase->m_fAccuracyPenalty");
+	ADD_NETVAR(GetRecoilIndex, float, "CWeaponCSBase->m_flRecoilIndex" );
 	ADD_NETVAR(GetFireReadyTime, float, "CWeaponCSBase->m_flPostponeFireReadyTime");
 
 	void OnFireEvent(CBaseViewModel* pViewModel, const Vector& vecOrigin, const Vector& vecAngles, int iEvent, const char* szOptions) {
@@ -1073,6 +1079,12 @@ public:
 	ADD_NETVAR(GetOwnerHandle, CBaseHandle, "CBaseViewModel->m_hOwner");
 	ADD_NETVAR(GetWeaponHandle, CBaseHandle, "CBaseViewModel->m_hWeapon");
 
+	ADD_NETVAR( iSequence, int, "CBaseViewModel->m_nSequence" );
+	ADD_NETVAR( iAnimationParity, int, "CBaseViewModel->m_nAnimationParity" );
+	
+	// fix this yourself bozo
+	//ADD_NETVAR( flCycle, float&, "CCSPlayer->m_flCycle" );
+	//ADD_NETVAR( flAnimTime, float&, "CCSPlayer->m_flAnimTime" );
 
 	void SendViewModelMatchingSequence(int nSequence) {
 		util::CallVFunc<void>(this, 247, nSequence);
