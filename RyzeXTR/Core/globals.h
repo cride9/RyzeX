@@ -23,10 +23,18 @@ namespace g {
 
 	inline Vector multiPoint[65][18][9];
 
-	namespace predicted {
+	namespace localprediction {
 
-		inline int nFlags;
-		inline int nMoveType;
+		namespace before {
+
+			inline int nFlags;
+			inline int nMoveType;
+		}
+		namespace after {
+
+			inline int nFlags;
+			inline int nMoveType;
+		}
 	}
 
 	namespace fonts {

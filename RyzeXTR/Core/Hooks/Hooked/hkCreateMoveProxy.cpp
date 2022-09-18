@@ -6,7 +6,6 @@
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Rage/antiaim.h"
-#include "../../Features/Rage/ragebot.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Rage/doubletap.h"
 #include "../../Features/Networking/networking.h"
@@ -70,7 +69,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	{
 		antiaim::AntiAim(pCmd, bSendPacket, oldViewAngle);
 
-		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
+		//ragebot.CreateMove(pCmd, pLocal, bSendPacket);
 	}
 	prediction.End(pCmd, pLocal);
 
@@ -111,10 +110,10 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 			detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
 	}
 
-	if ( cfg::misc::fakePing )
-		lagcomp.UpdateIncomingSequences( pNetChannel );
-	else
-		lagcomp.ClearIncomingSequences( );
+	//if ( cfg::misc::fakePing )
+	//	lagcomp.UpdateIncomingSequences( pNetChannel );
+	//else
+	//	lagcomp.ClearIncomingSequences( );
 
 	static const auto clientStateHookable = ( void* )( uintptr_t( i::ClientState ) + 0x8 ); // ignore c-style casting
 

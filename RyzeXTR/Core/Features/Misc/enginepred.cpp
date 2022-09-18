@@ -1,12 +1,26 @@
 #include "enginepred.h"
 #include "../../globals.h"
 
+void PrePrediction() {
+
+	g::localprediction::before::nFlags = g::pLocal->GetFlags();
+	g::localprediction::before::nMoveType = g::pLocal->GetMoveType();
+}
+
+void PostPrediction() {
+
+	g::localprediction::after::nFlags = g::pLocal->GetFlags();
+	g::localprediction::after::nMoveType = g::pLocal->GetMoveType();
+}
+
 void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
 {
 	// @xref: "CPrediction::ProcessMovement"
 
 	if (!pLocal->IsAlive() || i::MoveHelper == nullptr)
 		return;
+
+	PrePrediction();
 
 	// start command
 	*pLocal->GetCurrentCommand() = pCmd;
@@ -80,9 +94,6 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
 		pLocal->Think();
 	}
 
-	g::predicted::nFlags = pLocal->GetFlags();
-	g::predicted::nMoveType = pLocal->GetMoveType();
-
 	// set host player
 	i::MoveHelper->SetHost(pLocal);
 
@@ -131,6 +142,8 @@ void Prediction::End(CUserCmd* pCmd, CBaseEntity* pLocal) const
 
 	// reset move
 	i::GameMovement->Reset();
+
+	PostPrediction();
 }
 
 int Prediction::GetTickBase(CUserCmd* pCmd, CBaseEntity* pLocal)

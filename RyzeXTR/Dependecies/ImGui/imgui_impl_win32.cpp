@@ -511,6 +511,10 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     {
     case WM_MOUSEMOVE:
         // We need to call TrackMouseEvent in order to receive WM_MOUSELEAVE events
+
+		while (bd != ImGui_ImplWin32_GetBackendData())
+			Sleep(200);
+
         bd->MouseHwnd = hwnd;
         if (!bd->MouseTracked)
         {

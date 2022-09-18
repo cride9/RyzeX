@@ -1,3 +1,3 @@
 E:\RyzeXTR\Debug\RyzeXTR.dll
-E:\github\ryzex\RyzeX\RyzeXTR\Debug\RyzeXTR.dll
 C:\Users\sunds\OneDrive\E-postvedlegg\Documents\GitHub\RyzeX\RyzeXTR\Debug\RyzeXTR.dll
+E:\github\ryzex\RyzeX\RyzeXTR\Debug\RyzeXTR.dll

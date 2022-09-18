@@ -1,314 +1,210 @@
 #include "Lagcompensation.h"
-#include "resolver.h"
 
-void LagComp::UpdateLagRecords() {
+void Lagcompensation::FrameStageNotify(EStage curStage) {
 
-	if (!g::pLocal)
-		return;
-
-	for (int i = 0; i < 65; i++) {
+	/* Get every entity */
+	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		// sanity checks
-		if (!pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || !i::EngineClient->IsConnected()) {
+		/* Check if that entity is valid or not */
+		if (!pEnt || !pEnt->GetHealth() || !pEnt->IsAlive() || !pEnt->AnimState() || !g::pLocal) {
 
-			deqLagRecords[i].clear();
+			deqRecords[i].clear();
+			g::bAllowAnimations[i] = true;
 			continue;
 		}
 
-		// check if this dude is dormant or not
+		if (pEnt->GetTeam() == g::pLocal->GetTeam()) {
+
+			if (pEnt == g::pLocal) {
+
+				g::bAllowAnimations[i] = true;
+			}
+			deqRecords[i].clear();
+			continue;
+		}
+
 		if (pEnt->IsDormant()) {
 
-			g::bAllowAnimations[pEnt->EntIndex()] = true;
+			g::bAllowAnimations[i] = true;
 			continue;
 		}
 
-		// check for dormancy inside lagrecords and delete them
-		if (!deqLagRecords[i].empty()) {
+		static bool bUpdate[65];
+		/* Get important information before interpolation */
+		if (curStage == FRAME_NET_UPDATE_POSTDATAUPDATE_END) {
 
-			for (int at = 0; at < deqLagRecords[i].size(); at++) {
+			bUpdate[i] = deqRecords[i].empty() || pEnt->GetSimulationTime() != pEnt->GetOldSimulationTime();
 
-				auto pRecords = deqLagRecords[i];
-				auto pRecord = pRecords.at(at);
+			if (bUpdate) {
 
-				if (pRecord.bDormant)
-					pRecords.erase(pRecords.begin() + at);
+				if (deqRecords[i].size() >= 2) {
+
+					record_t previousRecord = deqRecords[i].front();
+
+					/* if cycle is the same but simtime is not equal, its a tickbase shifting guy */
+					if (pEnt->GetAnimationOverlays()[11].flCycle == previousRecord.pLayers[11].flCycle) {
+
+						pEnt->GetSimulationTime() = pEnt->GetOldSimulationTime();
+						bUpdate[i] = false;
+						break;
+					}
+
+					/* lagcomp breaking ppl check */
+					if ((pEnt->GetVecOrigin() - previousRecord.vecOrigin).LengthSqr() > 4096.f && pEnt->GetSimulationTime() > previousRecord.flSimulationTime) {
+
+						previousRecord.bValid = false;
+					}
+				}
+				/* let's create a new record and start updating some stuff in the right time */
+				deqRecords[i].emplace_front(record_t());
+				GetAnimationLayers(pEnt);
+			}
+
+			if (deqRecords[i].size() > 32)
+				deqRecords[i].pop_back();
+		}
+		/* Update animations */
+		else if (curStage == FRAME_NET_UPDATE_END) {
+
+			if (bUpdate[i]) {
+
+				/* Not animationfix!!! just animation update */
+				UpdateAnimation(pEnt);
+
+				bUpdate[i] = false;
 			}
 		}
+		/* Restore every animation at render start */
+		else if (curStage == FRAME_RENDER_START) {
 
-		// check if there is time for an update (lets assume the guy is not using break lagcomp)
-		bool bUpdate = deqLagRecords[i].empty() || pEnt->GetSimulationTime() > pEnt->GetOldSimulationTime();
+			if (!bUpdate[i] && !deqRecords[i].empty()) {
 
-		// check if he's cycle is the same as the old cycle, and somehow we got an update
-		// this update is a false alert :/// probably breaking lagcomp and simtime going crazy
-		if (bUpdate && !deqLagRecords[i].empty()) {
-
-			auto layer = pEnt->GetAnimationOverlays()[11];
-			auto previousLayer = deqLagRecords[i].front().layer;
-
-			if (layer.flCycle == previousLayer[11].flCycle) {
-
-				pEnt->GetSimulationTime() = pEnt->GetOldSimulationTime();
-				bUpdate = false;
+				deqRecords[i].front().ApplyRecord(pEnt);
+				pEnt->UpdateClientSideAnimations();
 			}
 		}
-
-		// let's update
-		if (bUpdate) {
-
-			// another check for breaking lagcomp
-			if (!deqLagRecords[i].empty()) 
-			{
-				//if ((pEnt->GetVecOrigin() - deqLagRecords[i].front().vecOrigin).LengthSqr() > 4096.f && pEnt->GetSimulationTime() > deqLagRecords[i].front().flSimulationTime)
-				if ( IsBreakingLagcompensation( pEnt ) )
-					deqLagRecords[i].front().bValid = false;
-			}
-			// create a new record
-			deqLagRecords[i].emplace_front(playerrecord_t(pEnt));
-			// update this records "animation" and save it
-			UpdatePlayer(pEnt);
-		}
-
-		// if there's too much record delete the old ones
-		// kys
-		while (deqLagRecords[i].size() > 32)
-			deqLagRecords[i].pop_back();
 	}
 }
 
-bool LagComp::IsBreakingLagcompensation( CBaseEntity* pEnt )
-{
-	// check if we have at least one entry.
-	if (deqLagRecords[ pEnt->EntIndex( ) ].size( ) <= 0 )
-		return false;
+void Lagcompensation::UpdateAnimation(CBaseEntity* pEnt) {
 
-	auto previousOrigin = deqLagRecords[ pEnt->EntIndex( ) ].front( ).pEnt->GetVecOrigin( );
+	if (deqRecords[pEnt->EntIndex()].size() < 2) {
 
-	// walk context looking for any invalidating event.
-	for ( auto& pRecord : deqLagRecords[ pEnt->EntIndex( ) ] )
-	{
-		auto delta = pRecord.vecOrigin - previousOrigin;
-		if ( delta.LengthSqr( ) > 4096.f )
-		{
-			// lost track, too much difference.
-			return true;
-		}
-
-		// player is abusing tickbase and breaking lagcompensation
-		if ( pRecord.flSimulationTime < pRecord.flOldSimulationTime )
-			return true;
-		else if ( deqLagRecords[ pEnt->EntIndex( ) ].empty( ) && ( deqLagRecords[ pEnt->EntIndex( ) ].front().pEnt->GetSimulationTime( ) == deqLagRecords[ pEnt->EntIndex( ) ].front( ).flSimulationTime ) )
-			return true;
-
-		// did we find a context smaller than target time?
-		if ( pRecord.flSimulationTime <= deqLagRecords[ pEnt->EntIndex( ) ].front().flSimulationTime )
-			break; // hurra, stop.
-
-		previousOrigin = pRecord.vecOrigin;
+		deqRecords[pEnt->EntIndex()].front().StoreRecord(pEnt);
+		g::bAllowAnimations[pEnt->EntIndex()] = true;
+		return;
 	}
 
-	return false;
-}
+	/* Get records */
+	record_t* pCurrent = &deqRecords[pEnt->EntIndex()].front();
+	record_t* pPrevious = &deqRecords[pEnt->EntIndex()].at(1);
 
-void LagComp::UpdatePlayer(CBaseEntity* pEnt) {
+	/* Backup globals to not mess with the game */
+	const float flCurrentTime = i::GlobalVars->flCurrentTime;
+	const float flFrameTime = i::GlobalVars->flFrameTime;
 
-	// get record pointers
-	playerrecord_t* pRecord = &deqLagRecords[pEnt->EntIndex()].front();
-	playerrecord_t* pPreviousRecord = deqLagRecords[pEnt->EntIndex()].size() >= 2 ? &deqLagRecords[pEnt->EntIndex()].at(1) : nullptr;
-
-	static bool& bInvalidate = **reinterpret_cast<bool**>(util::FindSignature("client.dll", "C6 05 ? ? ? ? ? 89 47 70") + 2);
-
-	// bot check
-	bool bCanDesync = !pEnt->GetPlayerInfo().bFakePlayer;
-	CAnimState* pAnimstate = pEnt->AnimState();
-
-	float flCurrentTime = i::GlobalVars->flCurrentTime;
-	float flFrameTime = i::GlobalVars->flFrameTime;
-
-	pEnt->GetAnimationLayers(pRecord->layer);
-
-	// force a full animation this tick
-	pAnimstate->flLastUpdateTime -= i::GlobalVars->flIntervalPerTick;
-	// bypass framecount check
-	pAnimstate->iLastUpdateFrame--;
-	// when calling UpdateClientSideAnimations those values will be updated to the actual last update values that we updated
-
-	// fake lagging player fixes (not proper but does the job against normal fakelags)
+	/* Fixing networked players (fakelagging) */
 	i::GlobalVars->flCurrentTime = pEnt->GetSimulationTime();
-	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
+	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
 
-	// retarded valve things
-	// bypasses some bonesetup/accumulate layer stuff
+	/* Skip C_BaseEntity::CalcAbsoluteVelocity (we will also fix this) */
 	pEnt->GetEFlags() &= ~EFL_DIRTY_ABSVELOCITY;
 
-	// again, client fucks up velocity, we need to fix it manually (calculate like server does)
-	VelocityFix(pEnt, pRecord, pPreviousRecord);
+	/* Absolute origin/velocity fix just in case if this shit game already messed it up */
+	FixAbsoluteAngVec(pEnt, pPrevious, pCurrent);
+		
+	/* Force full update this frame */
+	if (pEnt->AnimState()->iLastUpdateFrame == i::GlobalVars->iFrameCount)
+		pEnt->AnimState()->iLastUpdateFrame--;
 
-	// thats just pure braincancer (absorigin updated every frame, but server only updated origin every tick)
-	// this fixes some origin differences that can cause aimbots to miss moving targets
-	if (pPreviousRecord != nullptr) {
+	///* Force full animation update this tick */
+	//if (pEnt->AnimState()->flLastUpdateTime == i::GlobalVars->flCurrentTime)
+	//	pEnt->AnimState()->flLastUpdateTime -= i::GlobalVars->flIntervalPerTick;
 
-		pEnt->SetAbsOrigin(M::Interpolate(pPreviousRecord->vecOrigin, pRecord->vecOrigin, lagcomp.LerpTime()));
-		pEnt->SetAbsAngles(M::Interpolate(pPreviousRecord->vecAbsAngles, pRecord->vecAbsAngles, lagcomp.LerpTime()));
+	/* To save some FPS we only call this once */
+	Vector vecEyeAngles = pEnt->GetEyeAngles();
 
-		// yeah against bhopping niggers
-		M::Extrapolate(pEnt, pPreviousRecord->vecOrigin, pEnt->GetVelocity(), pEnt->GetFlags(), pPreviousRecord->nFlags & FL_ONGROUND);
-	}
-
-	// ghetto fix
-	if (!(pEnt->GetFlags() & FL_ONGROUND))
-		pAnimstate->flDurationInAir = 0.1f;
-
-	const bool bBackupBoneCache = bInvalidate;
-
-	// allow animations this tick/frame whatever
+	/* Update animation */
 	g::bAllowAnimations[pEnt->EntIndex()] = true;
 
-	// update animationstate to get the latest animationlayers (idk why but this function does update animationlayers)
-	pAnimstate->Update(pEnt->GetEyeAngles());
-
-	// do resolver before updating animations so we already have a good resolved angle
-	resolver::Resolver(pEnt, pRecord, pPreviousRecord, bCanDesync, pAnimstate);
-
-	// update the data that we want to feed with the server
-	// https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/game/client/cstrike15/c_cs_player.cpp#L5950
+	/* x = pitch */ /* y = yaw */ /* z = roll */
+	/* FORMULA: "z = y +- roll" (setting Z to the Y removes the infamous roll animation) */
+	pEnt->AnimState()->Update(Vector(vecEyeAngles.x, vecEyeAngles.y, vecEyeAngles.y));
 	pEnt->UpdateClientSideAnimations();
 
-	// disable animations if its not a valid update time
-	// SO CSGO WONT FUCK UP ANIMATIONS	
 	g::bAllowAnimations[pEnt->EntIndex()] = false;
 
-	// build our fixed matrix for accurate ragebot matrix (delay is not fixed like this)
-	// TODO: fix the freaking delay in enemy and local animations
-	pEnt->SetupBonesFix(pRecord->matrix);
-	pEnt->SetAnimationLayers(pRecord->layer);
+	/* Set the uninterpolated layers back after interpolation */
+	pEnt->SetAnimationLayers(pCurrent->pLayers);
 
-	// thats just some shit when chaning animlayers
-	pEnt->InvalidatePhysicsRecursive(ANGLES_CHANGED);
-	pEnt->InvalidatePhysicsRecursive(ANIMATION_CHANGED);
-	pEnt->InvalidatePhysicsRecursive(SEQUENCE_CHANGED);
+	/* Build matrix for the aimbot */
+	pEnt->SetupBonesFix(pCurrent->pMatrix);
 
-	bInvalidate = bBackupBoneCache;
-
-	// backup globals to not fuck up the game
+	/* Set globals back to normal values */
 	i::GlobalVars->flCurrentTime = flCurrentTime;
 	i::GlobalVars->flFrameTime = flFrameTime;
 
-	// store this data
-	pRecord->StoreData(pEnt);
+	/* Store this record */
+	pCurrent->StoreRecord(pEnt);
 }
 
-float LagComp::LerpTime() {
+void Lagcompensation::GetAnimationLayers(CBaseEntity* pEnt) {
 
-	static auto cl_interp = i::ConVar->FindVar(("cl_interp"));
-	static auto cl_interp_ratio = i::ConVar->FindVar(("cl_interp_ratio"));
-	static auto sv_client_min_interp_ratio = i::ConVar->FindVar(("sv_client_min_interp_ratio"));
-	static auto sv_client_max_interp_ratio = i::ConVar->FindVar(("sv_client_max_interp_ratio"));
-	static auto cl_updaterate = i::ConVar->FindVar(("cl_updaterate"));
-	static auto sv_minupdaterate = i::ConVar->FindVar(("sv_minupdaterate"));
-	static auto sv_maxupdaterate = i::ConVar->FindVar(("sv_maxupdaterate"));
+	/* duh ye I needed another function for that */
+	pEnt->GetAnimationLayers(deqRecords[pEnt->EntIndex()].front().pLayers);
 
-	auto flUpdateRate = std::clamp(cl_updaterate->GetFloat(), sv_minupdaterate->GetFloat(), sv_maxupdaterate->GetFloat());
-	auto flLerpRatio = std::clamp(cl_interp_ratio->GetFloat(), sv_client_min_interp_ratio->GetFloat(), sv_client_max_interp_ratio->GetFloat());
-
-	return std::clamp(flLerpRatio / flUpdateRate, cl_interp->GetFloat(), 1.0f);
+	/* TODO: animationlayer fixes */
+	/* relavant ones: jump fall, shoot, moving */
 }
 
-void LagComp::VelocityFix(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord) {
+void Lagcompensation::FixAbsoluteAngVec(CBaseEntity* pEnt, record_t* pPrevious, record_t* pLatest) {
 
-	if (pPreviousRecord == nullptr)
+	/* AbsOrigin -> set every frame */
+	/* vecOrigin -> set every tick  */
+	pEnt->SetAbsOrigin(pEnt->GetVecOrigin()); 
+	/* this fixes the client updating frames while server updating ticks difference */
+
+	if (pPrevious->flSimulationTime == pLatest->flSimulationTime)
 		return;
 
-	auto vecOriginDifference = pEnt->GetVecOrigin() - pPreviousRecord->vecOrigin;
-	auto flTimeDifference = pEnt->GetSimulationTime() - pPreviousRecord->flSimulationTime;
+	/* Calculate current and old delta */
+	Vector vecOriginDelta = pEnt->GetVecOrigin() - pPrevious->vecOrigin;
+	float flTimeDelta = pEnt->GetSimulationTime() - pPrevious->flSimulationTime;
 
-	pEnt->GetVelocity() = vecOriginDifference / flTimeDifference;
+	/* Sync client data how the server calculates */
+	pEnt->GetVelocity() = vecOriginDelta / flTimeDelta;
 
-	float flAnimationSpeed = 0.f;
+	float flSpeed = 0.f;
+	if (pEnt->GetFlags() & FL_ONGROUND && 
+		pPrevious->iFlags & FL_ONGROUND &&
+		pLatest->pLayers[11].flWeight > 0.f &&
+		pLatest->pLayers[11].flWeight < 1.f &&
+		pLatest->pLayers[11].flPlaybackRate == pPrevious->pLayers[11].flPlaybackRate) {
 
-	if (pEnt->GetFlags() & FL_ONGROUND && pPreviousRecord->nFlags & FL_ONGROUND && pRecord->layer[11].flWeight > 0.f && pRecord->layer[11].flWeight < 1.f && pRecord->layer[11].flPlaybackRate == pPreviousRecord->layer[11].flPlaybackRate) {
-
-		auto flAnimationModifier = 0.35f * (1.f - pRecord->layer[11].flWeight);
-
-		if (flAnimationModifier > 0.f && flAnimationModifier < 1.f)
-			flAnimationSpeed = pRecord->flMaxSpeed * (flAnimationModifier + 0.55f);
+		float flModifier = 0.35f * (1.f - pLatest->pLayers[11].flWeight);
+		if (flModifier > 0.f && flModifier < 1.f)
+			flSpeed = pLatest->flMaxSpeed * (flModifier + 0.55f);
 	}
 
-	if (flAnimationSpeed > 0.f) {
-		pEnt->GetVelocity().x *= flAnimationSpeed;
-		pEnt->GetVelocity().y *= flAnimationSpeed;
+	/* If the player is moving let's fix the values */
+	if (flSpeed > 0.f) {
+
+		pEnt->GetVelocity().x *= flSpeed;
+		pEnt->GetVelocity().y *= flSpeed;
 	}
 
+	/* If player is in air lets also calculate and predict gravity */
 	if (!(pEnt->GetFlags() & FL_ONGROUND))
-		pEnt->GetVelocity().z -= i::ConVar->FindVar("sv_gravity")->GetFloat() * flTimeDifference * 0.5f;
+		pEnt->GetVelocity().z -= i::ConVar->FindVar("sv_gravity")->GetFloat() * flTimeDelta * 0.5f;
 
+	/* Set abs velocity to the velocity we calculated */
 	pEnt->SetAbsVelocity(pEnt->GetVelocity());
-}
 
-void LagComp::DisableInterpolation() {
+	/* AbsVelocity -> set every frame */
+	/* vecVelocity -> set every tick  */
 
-	if (!g::pLocal)
-		return;
-
-	for (int i = 0; i < 65; i++) {
-
-		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-
-		if (!pEnt || !pEnt->IsAlive() || pEnt->IsDormant())
-			continue;
-
-		VarMapping_t* pMap = pEnt->GetVarMap();
-		if (!pMap)
-			continue;
-
-		for (int i = 0; i < pMap->m_nInterpolatedEntries; i++) {
-
-			VarMapEntry_t* pEnt = &pMap->m_Entries[i];
-			pEnt->m_bNeedsToInterpolate = false;
-		}
-	}
-}
-
-void LagComp::UpdateIncomingSequences( INetChannel* pNetChannel )
-{
-	if ( pNetChannel == nullptr )
-		return;
-
-	// set to real sequence to update, otherwise needs time to get it work again
-	if ( nLastIncomingSequence == 0 )
-		nLastIncomingSequence = pNetChannel->iInSequenceNr;
-
-	// check how much sequences we can spike
-	if ( pNetChannel->iInSequenceNr > nLastIncomingSequence )
-	{
-		nLastIncomingSequence = pNetChannel->iInSequenceNr;
-		vecSequences.emplace_front( SequenceObject_t( pNetChannel->iInReliableState, pNetChannel->iOutReliableState, pNetChannel->iInSequenceNr, i::GlobalVars->flRealTime ) );
-	}
-
-	// is cached too much sequences
-	if ( vecSequences.size( ) > 2048U )
-		vecSequences.pop_back( );
-}
-
-void LagComp::ClearIncomingSequences( )
-{
-	if ( !vecSequences.empty( ) )
-	{
-		nLastIncomingSequence = 0;
-		vecSequences.clear( );
-	}
-}
-
-void LagComp::AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency )
-{
-	for ( const auto& sequence : vecSequences )
-	{
-		if ( i::GlobalVars->flRealTime - sequence.flCurrentTime >= flLatency )
-		{
-			pNetChannel->iInReliableState = sequence.iInReliableState;
-			pNetChannel->iInSequenceNr = sequence.iSequenceNr;
-			break;
-		}
-	}
+	/* NOTE: it won't update since we return nothing in update client side animations hook */
+	/*		 so it will really only update when we want it								   */	
 }

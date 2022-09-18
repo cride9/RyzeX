@@ -35,6 +35,7 @@ namespace misc {
 	void NightMode();
 	void OnlyCheatLogs();
 	void IdealTick(CUserCmd*);
+	void ServerHitboxes();
 
 	void Security();
 

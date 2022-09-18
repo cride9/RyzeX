@@ -3,88 +3,91 @@
 
 void localanimation::AnimlayerFix(CUserCmd* pCmd, CAnimState* pState) {
 
-	CAnimationLayer& landLayer = g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
-	CAnimationLayer& jumpLayer = g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
-	CAnimationLayer& moveLayer = g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE];
+	if (!g::pLocal || !g::pLocal->GetHealth())
+		return;
 
-	if (!(g::pLocal->GetFlags() & FL_FROZEN)) {
+	auto pLocal = g::pLocal;
 
-		const auto bCrouched = g::pLocal->GetDuckAmount() > .55f;
-		const auto bMoving = g::pLocal->GetVelocity().Length2D() >= 0.25f;
-		const auto iPreviousFlags = g::predicted::nFlags;
-		const auto bWasOnGround = iPreviousFlags & FL_ONGROUND;
+	if (pLocal->GetAnimationOverlays()) {
 
-		if (g::pLocal->GetMoveType() != MOVETYPE_LADDER) {
+		CAnimationLayer& pLand = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+		CAnimationLayer& pJumpFall = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+		CAnimationLayer& pMoving = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE];
 
-			const auto bOnGround = g::pLocal->GetFlags() & FL_ONGROUND;
+		if (!(pLocal->GetFlags() & FL_FROZEN)) {
 
-			if (bWasOnGround && !bOnGround) {
+			const int iPrevious = g::localprediction::before::nFlags;
 
-				if (pCmd->iButtons & IN_JUMP) {
+			const bool bCrouched = pLocal->GetDuckAmount() > .55f;
+			const bool bMoving = pLocal->GetVelocity().Length2D() >= 0.25f;
 
-					int iSequence = bCrouched ? bMoving ? 18 : 17 : bMoving ? 16 : 15;
+			if (pLocal->GetMoveType() != MOVETYPE_LADDER) {
 
-					landLayer.flPlaybackRate = g::pLocal->GetLayerSequenceCycleRate(&landLayer, iSequence);
-					landLayer.nSequence = iSequence;
-					landLayer.flCycle = landLayer.flWeight = 0.f;
+				const bool bOnGround = (pLocal->GetFlags() & FL_ONGROUND);
+				const bool bWasOnGround = (iPrevious & FL_ONGROUND);
 
-					flLastLayerFix = i::GlobalVars->flRealTime;
-					g::pLocal->GetAnimationOverlays()[4] = landLayer;
+				if (bWasOnGround && !bOnGround) {
+
+					if (pCmd->iButtons & IN_JUMP) {
+
+						int iSeq = bMoving ? 16 : 15;
+
+						if (bCrouched)
+							iSeq = bMoving ? 18 : 17;
+
+						pLand.flPlaybackRate = pLocal->GetLayerSequenceCycleRate(&pLand, iSeq);
+						pLand.nSequence = iSeq;
+						pLand.flCycle = pLand.flWeight = 0.f;
+						localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB] = pLand;
+					}
+					else {
+
+						int iSeq = 14;
+
+						pLand.flPlaybackRate = pLocal->GetLayerSequenceCycleRate(&pLand, iSeq);
+						pLand.nSequence = iSeq;
+						pLand.flCycle = pLand.flWeight = 0.f;
+						localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB] = pLand;
+					}
 				}
-				else {
+				else if (bOnGround) {
 
-					static int iSequence = 14;
+					if (!bWasOnGround && !pState->bHitGroundAnimation) {
 
-					landLayer.flPlaybackRate = g::pLocal->GetLayerSequenceCycleRate(&landLayer, iSequence);
-					landLayer.nSequence = iSequence;
-					landLayer.flCycle = landLayer.flWeight = 0.f;
+						int iSeq = bMoving ? 22 : 20;
 
-					flLastLayerFix = i::GlobalVars->flRealTime;
-					g::pLocal->GetAnimationOverlays()[4] = landLayer;
+						if (bCrouched)
+							iSeq = bMoving ? 19 : 21;
+
+						if (pState->flDurationInAir > 1.f)
+							iSeq = bMoving ? 14 : 23;
+
+						pJumpFall.flPlaybackRate = pLocal->GetLayerSequenceCycleRate(&pJumpFall, iSeq);
+						pJumpFall.nSequence = iSeq;
+						pJumpFall.flCycle = pLand.flWeight = 0.f;
+						localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL] = pJumpFall;
+					}
+				}
+
+				if (!(!bWasOnGround && bOnGround) && !(pCmd->iButtons & IN_JUMP)) {
+
+					pJumpFall.flWeight = 0;
+					localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL] = pJumpFall;
 				}
 			}
-			else if (bOnGround) {
+			else {
 
-				if (!bWasOnGround && !pState->bHitGroundAnimation) {
+				bool bWasOnLadder = false;
+				if (g::localprediction::before::nMoveType != MOVETYPE_LADDER || (bWasOnLadder = true, iPrevious & FL_ONGROUND))
+					bWasOnLadder = false;
 
-					auto iSequence = bMoving ? 22 : 20;
-
-					if (bCrouched)
-						iSequence = bMoving ? 19 : 21;
-
-					if (pState->flDurationInAir > 1)
-						iSequence = bCrouched ? 24 : 23;
-
-					jumpLayer.flPlaybackRate = g::pLocal->GetLayerSequenceCycleRate(&jumpLayer, iSequence);
-					jumpLayer.nSequence = iSequence;
-					jumpLayer.flCycle = jumpLayer.flWeight = 0.f;
-
-					flLastLayerFix = i::GlobalVars->flRealTime;
-					g::pLocal->GetAnimationOverlays()[5] = jumpLayer;
+				if (!bWasOnLadder && !(pLocal->GetFlags() & FL_ONGROUND))
+				{
+					pJumpFall.flPlaybackRate = pLocal->GetLayerSequenceCycleRate(&pJumpFall, 13);
+					pJumpFall.nSequence = 13;
+					pJumpFall.flCycle = pLand.flWeight = 0.f;
+					localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL] = pJumpFall;
 				}
-			}
-
-			if (!(!bWasOnGround && bOnGround) && !(pCmd->iButtons & IN_JUMP)) {
-
-				flLastLayerFix = i::GlobalVars->flRealTime;
-				jumpLayer.flWeight = 0;
-				g::pLocal->GetAnimationOverlays()[5] = jumpLayer;
-			}
-		}
-		else {
-
-			bool bWasOnLadder = false;
-			if (g::predicted::nMoveType != MOVETYPE_LADDER || (bWasOnLadder = true, iPreviousFlags & FL_ONGROUND))
-				bWasOnLadder = false;
-
-			if (!bWasOnLadder && !(g::pLocal->GetFlags() & FL_ONGROUND)) {
-
-				jumpLayer.flPlaybackRate = g::pLocal->GetLayerSequenceCycleRate(&jumpLayer, 13);
-				jumpLayer.nSequence = 13;
-				jumpLayer.flCycle = jumpLayer.flWeight = 0.f;
-
-				flLastLayerFix = i::GlobalVars->flRealTime;
-				g::pLocal->GetAnimationOverlays()[5] = jumpLayer;
 			}
 		}
 	}

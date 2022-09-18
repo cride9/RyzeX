@@ -1,8 +1,8 @@
 #include "chams.h"
 #include "../../Interface/Classes/CKeyValues.h"
 #include "../Rage/Animations/LocalAnimation.h"
+#include "../Rage/Animations/Lagcompensation.h"
 #include "../../SDK/math.h"
-#include "../Rage/ragebot.h"
 #include "../Misc/misc.h"
 
 enum EMATERIAL : int {
@@ -288,27 +288,11 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			}
 			else {
 
-				//if (lagcomp.deqPlayerRecords[pEnt->EntIndex()].size() >= 2) {
+				if (lagcomp.deqRecords[pEnt->EntIndex()].size() >= 2) {
 
-				//	MakeChams(materials[1], new float[] {0.f, 0.f, 1.f, 0.5f}, true, false);
-				//	original(i::StudioRender, 0, pResults, info, lagcomp.deqPlayerRecords[pEnt->EntIndex()].front().safeLeft, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-
-				//	MakeChams(materials[1], new float[] {0.f, 1.f, 0.f, 0.5f}, true, false);
-				//	original(i::StudioRender, 0, pResults, info, lagcomp.deqPlayerRecords[pEnt->EntIndex()].front().safeRight, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-
-				//	MakeChams(materials[1], new float[] {1.f, 1.f, 1.f, 0.5f}, true, false);
-				//	original(i::StudioRender, 0, pResults, info, lagcomp.deqPlayerRecords[pEnt->EntIndex()].front().safeMid, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-				//}
-
-				//if (lagcomp.deqLagRecords[pEnt->EntIndex()].size() >= 2) {
-
-				//	MakeChams(materials[1], new float[] {1.f, 1.f, 1.f, 0.5f}, true, false);
-				//	original(i::StudioRender, 0, pResults, info, lagcomp.deqLagRecords[pEnt->EntIndex()].front().matrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-
-				//	MakeChams(materials[1], new float[] {0.f, 1.f, 0.f, 0.5f}, true, false);
-				//	original(i::StudioRender, 0, pResults, info, lagcomp.deqLagRecords[pEnt->EntIndex()].back().matrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-
-				//}
+					MakeChams(materials[1], new float[] {1.f, 1.f, 1.f, 0.5f}, true, false);
+					original(i::StudioRender, 0, pResults, info, lagcomp.deqRecords[pEnt->EntIndex()].front().pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				}
 
 				if (!cfg::visual::enemyEsp)
 					return false;

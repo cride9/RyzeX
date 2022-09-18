@@ -1,8 +1,6 @@
 #include "ESP.h"
 #include "../Rage/Animations/LocalAnimation.h"
-#include "../Rage/ragebot.h"
 #include "../Misc/misc.h"
-#include "../Rage/Animations/Lagcompensation.h"
 
 void visual::VisualRender() {
 
@@ -171,8 +169,8 @@ void visual::AmmoEsp(int& spacing, int left, int top, int right, int bot, CBaseE
 
 void visual::BreakLCESP( int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt ) 
 {
-	if ( !lagcomp.IsBreakingLagcompensation( pEnt ) )
-		return;
+	//if ( !lagcomp.IsBreakingLagcompensation( pEnt ) )
+	//	return;
 
 	i::Surface->DrawT( left, bot, Color{ 255, 255, 255, 255 }, g::fonts::NameESP, false, "Breaking Lagcomp" );
 }

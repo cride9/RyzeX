@@ -27,11 +27,11 @@ void __cdecl h::hkClMove(float flSamples, bool bFinalTick) {
 		}
 		else if (!bCharged && rechargeAmount > 0 && !bCharged && !shiftAmount) {
 
+			g::pCmd->iButtons &= ~IN_ATTACK;
 			if (i::GlobalVars->iTickCount % 2 == 0) {
 
 				g::bWaiting = false;
 				g::bSendPacket = true;
-				g::pCmd->iButtons &= ~IN_ATTACK;
 				rechargeAmount--;
 
 				if (rechargeAmount == 0) {

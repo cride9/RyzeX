@@ -10,7 +10,7 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 
 	misc::PreserveKillfeed(pEvent);
 	misc::BuyBot(pEvent);
-	resolver::EventManager(pEvent);
+	//resolver::EventManager(pEvent);
 
 	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
 		return;

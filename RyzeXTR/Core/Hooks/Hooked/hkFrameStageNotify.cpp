@@ -20,13 +20,14 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 
+		//misc::ServerHitboxes();
+
 		if (cfg::misc::removals[1]) { // need menu element
 			if (g::pLocal)
 				*g::pLocal->GetFlashMaxAlpha() = 0.f;
 		}
 
 		misc::NightMode();
-
 		break;
 
 	case FRAME_NET_UPDATE_END:
@@ -38,15 +39,11 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 			g::bRestoreGlobals = false;
 		}
-
-		// restore netvar data
 		//networking.RestoreNetvarData( g::pLocal->GetTickBase( ) );
-
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
 
-		//lagcomp.DisableInterpolation();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
@@ -54,6 +51,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 		localanim.FixVelocityModifer();
 		break;
 	}
+	lagcomp.FrameStageNotify(curStage);
 }
 
 void hkPostFrameStageNotify(EStage curStage) {
@@ -74,7 +72,6 @@ void hkPostFrameStageNotify(EStage curStage) {
 
 	case FRAME_NET_UPDATE_END:
 
-		lagcomp.UpdateLagRecords();
 		break;
 
 	case FRAME_RENDER_START:

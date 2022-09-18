@@ -2,7 +2,6 @@
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
 #include "../../../Features/Rage/Animations/LocalAnimation.h"
-#include "../../../Features/Rage/Animations/Lagcompensation.h"
 
 bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int maxbones, int bonemask, float curtime) {
 

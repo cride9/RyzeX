@@ -1,158 +1,100 @@
 #pragma once
 #include <deque>
 #include "../../../SDK/Entity.h"
-#include "../../../SDK/Math.h"
-#include "../../../utilities.h"
 #include "../../../globals.h"
 
-struct SequenceObject_t
-{
-	SequenceObject_t( int iInReliableState, int iOutReliableState, int iSequenceNr, float flCurrentTime )
-		: iInReliableState( iInReliableState ), iOutReliableState( iOutReliableState ), iSequenceNr( iSequenceNr ), flCurrentTime( flCurrentTime ) { }
+struct record_t {
 
-	int iInReliableState;
-	int iOutReliableState;
-	int iSequenceNr;
-	float flCurrentTime;
+	/* Validity check to not shoot lagcomp breaking ppl */
+	bool bValid;
+
+	/* Later usage: fix Jumpfall animationlayer */
+	int iFlags;
+
+	Vector vecOrigin;
+	Vector vecAngles;
+	Vector vecMins;
+	Vector vecMaxs;
+	Vector vecVelocity;
+	Vector vecAbsAngles;
+
+	/* For backtrack / updatetime / choke calculation */
+	float flSimulationTime;
+	float flOldSimulationTime;
+	float flMaxSpeed;
+	float flLowerBody;
+
+	/* Getting accurate poses */
+	float flPoseParameters[24];
+
+	/* Will be replaced with uninterpolated layers (easier to make a resolver for it) */
+	CAnimationLayer pLayers[13];
+
+	/* Aimbot will shoot the generated matrix */
+	matrix3x4_t pMatrix[128];
+
+	void StoreRecord(CBaseEntity* pEnt) {
+
+		bValid = true;
+
+		iFlags = pEnt->GetFlags();
+
+		vecOrigin = pEnt->GetVecOrigin();
+		vecAngles = pEnt->GetEyeAngles();
+		vecMins = pEnt->GetCollideable()->OBBMins();
+		vecMaxs = pEnt->GetCollideable()->OBBMaxs();
+		vecVelocity = pEnt->GetVelocity();
+		vecAbsAngles = pEnt->GetAbsAngles();
+
+		flSimulationTime = pEnt->GetSimulationTime();
+		flOldSimulationTime = pEnt->GetOldSimulationTime();
+		flMaxSpeed = pEnt->GetWeapon() ? pEnt->GetWeapon()->GetCSWpnData()->flMaxSpeed[0] : 260.f;
+		flLowerBody = pEnt->GetLowerBodyYaw();
+
+		pEnt->GetPoseParameters(flPoseParameters);
+		pEnt->GetAnimationLayers(pLayers);
+	}
+
+	void ApplyRecord(CBaseEntity* pEnt) {
+
+		pEnt->GetFlags() = iFlags;
+
+		pEnt->GetVecOrigin() = vecOrigin;
+		pEnt->GetEyeAngles() = vecAngles;
+		pEnt->GetCollideable()->OBBMins() = vecMins;
+		pEnt->GetCollideable()->OBBMaxs() = vecMaxs;
+		pEnt->GetVelocity() = vecVelocity;
+		pEnt->SetAbsAngles(vecAbsAngles);
+
+		pEnt->GetSimulationTime() = flSimulationTime;
+		pEnt->GetOldSimulationTime() = flOldSimulationTime;
+		pEnt->GetLowerBodyYaw() = flLowerBody;
+
+		pEnt->SetPoseParameters(flPoseParameters);
+		pEnt->SetAnimationLayers(pLayers);
+		pEnt->SetBoneCache(pMatrix);
+	}
 };
 
-class LagComp {
+class Lagcompensation {
+
 public:
 
-	float LerpTime();
+	/* Everything will be ran inside this */
+	void FrameStageNotify(EStage curStage);
 
-	struct playerrecord_t {
+	/* Every entity data will be placed into this deque */
+	std::deque<record_t> deqRecords[65];
 
-		CBaseEntity* pEnt;
+private:
 
-		bool bValid;
-		bool bDormant;
-		bool bDidShot;
-		bool bAllowAnimationUpdate;
-		bool bAnimatePlayer;
+	/* Will be called with the function upper */
+	void UpdateAnimation(CBaseEntity* pEnt);
 
-		int EntIndex;
-		int nFlags;
-		int nEFlags;
-		int nChoked;
-		int nEffect;
+	/* Backup animationlayers before interpolation */
+	void GetAnimationLayers(CBaseEntity*);
 
-		float flSimulationTime;
-		float flOldSimulationTime;
-		float flDuckAmount;
-		float flInterpolation;
-		float flLowerBodyYawTarget;
-		float flLastShotTime;
-		float flSpawnTime;
-		float flPoseParamater[24];
-		float flMaxSpeed;
-
-		Vector vecOrigin;
-		Vector vecVelocity;
-		Vector vecEyeAngles;
-		Vector vecAbsOrigin;
-		Vector vecAbsAngles;
-		Vector vecMins;
-		Vector vecMaxs;
-
-		CAnimationLayer layer[13];
-		CAnimState* pAnimstate;
-		matrix3x4_t matrix[128];
-
-		explicit playerrecord_t(CBaseEntity* pEnt) {
-			StoreData(pEnt);
-		}
-
-		bool IsValid() {
-
-			if (!bValid)
-				return false;
-
-			float flTime = i::GlobalVars->flCurrentTime;
-
-			float sv_maxunlag = i::ConVar->FindVar("sv_maxunlag")->GetFloat();
-
-			float flDelta = flTime - sv_maxunlag;
-
-			if (flDelta > sv_maxunlag)
-				return false;
-
-			return true;
-		}
-
-		void Apply(CBaseEntity* pEnt) {
-
-			pEnt->GetSimulationTime() = flSimulationTime;
-			pEnt->GetLowerBodyYaw() = flLowerBodyYawTarget;
-			pEnt->GetEyeAngles() = vecEyeAngles;
-			pEnt->SetAbsAngles(vecAbsAngles);
-			pEnt->GetVecOrigin() = vecOrigin;
-			pEnt->SetAbsOrigin(vecOrigin);
-			pEnt->GetCollideable()->OBBMins() = vecMins;
-			pEnt->GetCollideable()->OBBMaxs() = vecMaxs;
-
-			pEnt->SetPoseParameters(flPoseParamater);
-			pEnt->SetAnimationLayers(layer);
-			pEnt->SetBoneCache(matrix);
-		}
-
-		void StoreData(CBaseEntity* pEnt) {
-			
-			const auto pWeapon = pEnt->GetWeapon();
-
-			this->pEnt = pEnt;
-			EntIndex = pEnt->EntIndex();
-
-			nFlags = pEnt->GetFlags();
-			nEFlags = pEnt->GetEFlags();
-			nEffect = pEnt->GetEffects();
-			nChoked = TIME_TO_TICKS(i::GlobalVars->flCurrentTime - pEnt->GetSimulationTime());
-
-			bDormant = pEnt->IsDormant();
-			vecVelocity = pEnt->GetVelocity();
-			vecOrigin = pEnt->GetVecOrigin();
-			vecAbsOrigin = pEnt->GetAbsOrigin();
-			vecEyeAngles = pEnt->GetEyeAngles();
-			vecAbsAngles = pEnt->GetAbsAngles();
-			vecMins = pEnt->GetCollideable()->OBBMins();
-			vecMaxs = pEnt->GetCollideable()->OBBMaxs();
-
-			flSimulationTime = pEnt->GetSimulationTime();
-			flOldSimulationTime = pEnt->GetOldSimulationTime();
-			flInterpolation = 0.f;
-			flLastShotTime = pWeapon ? pWeapon->GetLastShotTime() : 0.f;
-			flDuckAmount = pEnt->GetDuckAmount();
-			flLowerBodyYawTarget = pEnt->GetLowerBodyYaw();
-			flMaxSpeed = pWeapon ? pWeapon->GetCSWpnData()->flMaxSpeed[0] : 260.f;
-
-			pAnimstate = pEnt->AnimState() ? pEnt->AnimState() : nullptr;
-
-			pEnt->GetPoseParameters(flPoseParamater);
-			pEnt->GetAnimationLayers(layer);
-
-			nChoked = std::clamp(nChoked, 0, 17);
-			bValid = nChoked >= 0 && nChoked <= 17;
-		}
-	};
-
-	void UpdateLagRecords();
-	bool IsBreakingLagcompensation( CBaseEntity* pEnt );
-	void UpdatePlayer(CBaseEntity* pEnt);
-	void VelocityFix(CBaseEntity* pEnt, playerrecord_t* pRecord, playerrecord_t* pPreviousRecord);
-	void DisableInterpolation();
-
-	void UpdateIncomingSequences( INetChannel* pNetChannel );
-	void ClearIncomingSequences( );
-	void AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency );
-
-	// Values
-	std::deque<SequenceObject_t> vecSequences = { };
-	/* our real incoming sequences count */
-	int nRealIncomingSequence = 0;
-	/* count of incoming sequences what we can spike */
-	int nLastIncomingSequence = 0;
-
-	std::deque<playerrecord_t> deqLagRecords[65];
-	std::deque<playerrecord_t> deqValidLagRecords[65];
+	/* Fix animation time (velocity) and origin */
+	void FixAbsoluteAngVec(CBaseEntity*, record_t*, record_t*);
 };
-inline LagComp lagcomp;
+inline Lagcompensation lagcomp;

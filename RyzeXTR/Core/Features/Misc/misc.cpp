@@ -23,6 +23,40 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	//ViewModel();
 }
 
+CBaseEntity* UTIL_PlayerByIndex(int index)
+{
+	typedef CBaseEntity* (__fastcall* PlayerByIndex)(int);
+	static PlayerByIndex UTIL_PlayerByIndex = reinterpret_cast<PlayerByIndex>(util::FindSignature("server.dll", "85 C9 7E 32 A1"));
+
+	if (!UTIL_PlayerByIndex)
+		return nullptr;
+
+	return UTIL_PlayerByIndex(index);
+}
+
+void misc::ServerHitboxes() {
+
+	static auto pCall = (uintptr_t*)(util::FindSignature("server.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8B 35 ? ? ? ? 8B D9 57 8B CE"));
+	float fDuration = i::GlobalVars->flIntervalPerTick;
+
+	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
+
+		PVOID pTEntity = UTIL_PlayerByIndex(i);
+		if (pTEntity)
+		{
+			__asm
+			{
+				pushad
+				movss xmm1, fDuration
+				push 1
+				mov ecx, pTEntity
+				call pCall
+				popad
+			}
+		}
+	}
+}
+
 void misc::Security() {
 
 	// dont even ask that

@@ -224,7 +224,7 @@ public:
 		if (oUpdateAnimationState == nullptr)
 			return;
 
-		oUpdateAnimationState(this, nullptr, 0.0f, angView.y, angView.x, nullptr);
+		oUpdateAnimationState(this, nullptr, angView.z, angView.y, angView.x, nullptr);
 	}
 
 	void Reset() {
