@@ -1,5 +1,11 @@
 #include "LocalAnimation.h"
+#include "../../Misc/enginepred.h"
 #include "../../../SDK/math.h"
+
+enum nSequenceStages {
+
+
+};
 
 void localanimation::AnimlayerFix(CUserCmd* pCmd, CAnimState* pState) {
 
@@ -20,90 +26,25 @@ void localanimation::AnimlayerFix(CUserCmd* pCmd, CAnimState* pState) {
 
 			const bool bCrouched = pLocal->GetDuckAmount() > .55f;
 			const bool bMoving = pLocal->GetVelocity().Length2D() >= 0.25f;
+			const bool bJumped = (!(pLocal->GetFlags() & FL_ONGROUND) && iPrevious & FL_ONGROUND);
+			
+			if (bJumped && (pLocal->GetMoveType() != MOVETYPE_LADDER)) {
 
-			if (pLocal->GetMoveType() != MOVETYPE_LADDER) {
 
-				const bool bOnGround = (pLocal->GetFlags() & FL_ONGROUND);
-				const bool bWasOnGround = (iPrevious & FL_ONGROUND);
-
-				if (bWasOnGround && !bOnGround) {
-
-					if (pCmd->iButtons & IN_JUMP) {
-
-						int iSeq = bMoving ? 16 : 15;
-
-						if (bCrouched)
-							iSeq = bMoving ? 18 : 17;
-
-						pLand.flPlaybackRate = pLocal->GetLayerSequenceCycleRate(&pLand, iSeq);
-						pLand.nSequence = iSeq;
-						pLand.flCycle = pLand.flWeight = 0.f;
-						localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB] = pLand;
-					}
-					else {
-
-						int iSeq = 14;
-
-						pLand.flPlaybackRate = pLocal->GetLayerSequenceCycleRate(&pLand, iSeq);
-						pLand.nSequence = iSeq;
-						pLand.flCycle = pLand.flWeight = 0.f;
-						localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB] = pLand;
-					}
-				}
-				else if (bOnGround) {
-
-					if (!bWasOnGround && !pState->bHitGroundAnimation) {
-
-						int iSeq = bMoving ? 22 : 20;
-
-						if (bCrouched)
-							iSeq = bMoving ? 19 : 21;
-
-						if (pState->flDurationInAir > 1.f)
-							iSeq = bMoving ? 14 : 23;
-
-						pJumpFall.flPlaybackRate = pLocal->GetLayerSequenceCycleRate(&pJumpFall, iSeq);
-						pJumpFall.nSequence = iSeq;
-						pJumpFall.flCycle = pLand.flWeight = 0.f;
-						localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL] = pJumpFall;
-					}
-				}
-
-				if (!(!bWasOnGround && bOnGround) && !(pCmd->iButtons & IN_JUMP)) {
-
-					pJumpFall.flWeight = 0;
-					localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL] = pJumpFall;
-				}
-			}
-			else {
-
-				bool bWasOnLadder = false;
-				if (g::localprediction::before::nMoveType != MOVETYPE_LADDER || (bWasOnLadder = true, iPrevious & FL_ONGROUND))
-					bWasOnLadder = false;
-
-				if (!bWasOnLadder && !(pLocal->GetFlags() & FL_ONGROUND))
-				{
-					pJumpFall.flPlaybackRate = pLocal->GetLayerSequenceCycleRate(&pJumpFall, 13);
-					pJumpFall.nSequence = 13;
-					pJumpFall.flCycle = pLand.flWeight = 0.f;
-					localanim.localdata.AnimationLayer[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL] = pJumpFall;
-				}
 			}
 		}
 	}
 }
 
-void localanimation::SetLayerSequence(int layer, int sequence) {
+void localanimation::SetLayerSequence(CAnimationLayer* layer, int sequence) {
 
 	if (sequence >= 2) {
 
-		CAnimationLayer* pLayer = &g::pLocal->GetAnimationOverlays()[layer];
-
-		if (pLayer) {
-			SetSequence(pLayer, sequence);
-			pLayer->flPlaybackRate = g::pLocal->GetLayerSequenceCycleRate(pLayer, sequence);
-			SetCycle(pLayer, 0.f);
-			SetWeight(pLayer, 0.f);
+		if (layer) {
+			SetSequence(layer, sequence);
+			layer->flPlaybackRate = g::pLocal->GetLayerSequenceCycleRate(layer, sequence);
+			SetCycle(layer, 0.f);
+			SetWeight(layer, 0.f);
 		}
 	}
 }
@@ -127,6 +68,43 @@ void localanimation::UpdateLocal() {
 	if (!g::pLocal || !g::pLocal->IsAlive() || !g::pLocal->AnimState() || i::ClientState->iDeltaTick < 0)
 		return;
 
+	/* Update only each tick */
+	if (update) {
+
+		AnimlayerFix(g::pCmd, g::pLocal->AnimState());
+
+		/* Store current animationlayers */
+		g::pLocal->GetAnimationLayers(localdata.AnimationLayer);
+
+		/* Allow client to animate local player */
+		g::bAllowAnimations[g::pLocal->EntIndex()] = g::pLocal->IsClientSideAnimation() = true;
+
+		/* Update animstate with current viewangles */
+		g::pLocal->AnimState()->Update(g::pCmd->angViewPoint);
+		g::pLocal->UpdateClientSideAnimations();
+
+		/* Disallow client to animate local player */
+		g::bAllowAnimations[g::pLocal->EntIndex()] = g::pLocal->IsClientSideAnimation() = false;
+
+		/* Store networked data */
+		if (!i::ClientState->nChokedCommands) {
+
+			g::pLocal->GetPoseParameters(localdata.flPoseParameters);
+			localdata.flGoalFeetYaw = g::pLocal->AnimState()->flGoalFeetYaw;
+		}
+		update = false;
+	}
+	/* Restore every frame with the updated ticks animation */
+	g::pLocal->SetAnimationLayers(localdata.AnimationLayer);
+	g::pLocal->SetPoseParameters(localdata.flPoseParameters);
+	g::pLocal->SetAbsAngles(Vector(0.f, localdata.flGoalFeetYaw, 0.f));
+
+	/* Only allow bone setup when we send packet */
+	if (!i::ClientState->nChokedCommands)
+		g::pLocal->SetupBonesFix(localdata.Matrix);
+
+	/* Use latest setupbones */
+	g::pLocal->SetBoneCache(localdata.Matrix);
 }
 
 void localanimation::SetSequence(CAnimationLayer* pLayer, int iSequence) {

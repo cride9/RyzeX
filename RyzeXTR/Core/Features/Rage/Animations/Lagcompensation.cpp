@@ -11,7 +11,6 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 		if (!pEnt || !pEnt->GetHealth() || !pEnt->IsAlive() || !pEnt->AnimState() || !g::pLocal) {
 
 			deqRecords[i].clear();
-			g::bAllowAnimations[i] = true;
 			continue;
 		}
 
@@ -35,6 +34,17 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 		/* Get important information before interpolation */
 		if (curStage == FRAME_NET_UPDATE_POSTDATAUPDATE_END) {
 
+			VarMapping_t* pVarMap = pEnt->GetVarMap();
+
+			if (!pVarMap)
+				continue;
+
+			for (int i = 0; i < pVarMap->m_nInterpolatedEntries; i++) {
+
+				VarMapEntry_t* pEntry = &pVarMap->m_Entries[i];
+				pEntry->m_bNeedsToInterpolate = false;
+			}
+
 			bUpdate[i] = deqRecords[i].empty() || pEnt->GetSimulationTime() != pEnt->GetOldSimulationTime();
 
 			if (bUpdate) {
@@ -42,14 +52,6 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 				if (deqRecords[i].size() >= 2) {
 
 					record_t previousRecord = deqRecords[i].front();
-
-					/* if cycle is the same but simtime is not equal, its a tickbase shifting guy */
-					if (pEnt->GetAnimationOverlays()[11].flCycle == previousRecord.pLayers[11].flCycle) {
-
-						pEnt->GetSimulationTime() = pEnt->GetOldSimulationTime();
-						bUpdate[i] = false;
-						break;
-					}
 
 					/* lagcomp breaking ppl check */
 					if ((pEnt->GetVecOrigin() - previousRecord.vecOrigin).LengthSqr() > 4096.f && pEnt->GetSimulationTime() > previousRecord.flSimulationTime) {
@@ -70,7 +72,7 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 
 			if (bUpdate[i]) {
 
-				/* Not animationfix!!! just animation update */
+				/* Not animationfix!!! just animation update at the right time */
 				UpdateAnimation(pEnt);
 
 				bUpdate[i] = false;
@@ -79,7 +81,7 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 		/* Restore every animation at render start */
 		else if (curStage == FRAME_RENDER_START) {
 
-			if (!bUpdate[i] && !deqRecords[i].empty()) {
+			if (!bUpdate[i] && !deqRecords[i].empty() && deqRecords[i].front().bValid) {
 
 				deqRecords[i].front().ApplyRecord(pEnt);
 				pEnt->UpdateClientSideAnimations();
@@ -90,7 +92,10 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 
 void Lagcompensation::UpdateAnimation(CBaseEntity* pEnt) {
 
-	if (deqRecords[pEnt->EntIndex()].size() < 2) {
+	if (deqRecords[pEnt->EntIndex()].empty())
+		return;
+
+	if (deqRecords[pEnt->EntIndex()].size() < 2 && !deqRecords[pEnt->EntIndex()].empty()) {
 
 		deqRecords[pEnt->EntIndex()].front().StoreRecord(pEnt);
 		g::bAllowAnimations[pEnt->EntIndex()] = true;
@@ -207,4 +212,20 @@ void Lagcompensation::FixAbsoluteAngVec(CBaseEntity* pEnt, record_t* pPrevious, 
 
 	/* NOTE: it won't update since we return nothing in update client side animations hook */
 	/*		 so it will really only update when we want it								   */	
+}
+
+float Lagcompensation::LerpTime() {
+
+	static auto cl_interp = i::ConVar->FindVar("cl_interp");
+	static auto cl_interp_ratio = i::ConVar->FindVar("cl_interp_ratio");
+	static auto sv_client_min_interp_ratio = i::ConVar->FindVar("sv_client_min_interp_ratio");
+	static auto sv_client_max_interp_ratio = i::ConVar->FindVar("sv_client_max_interp_ratio");
+	static auto cl_updaterate = i::ConVar->FindVar("cl_updaterate");
+	static auto sv_minupdaterate = i::ConVar->FindVar("sv_minupdaterate");
+	static auto sv_maxupdaterate = i::ConVar->FindVar("sv_maxupdaterate");
+
+	auto updaterate = std::clamp(cl_updaterate->GetFloat(), sv_minupdaterate->GetFloat(), sv_maxupdaterate->GetFloat());
+	auto lerp_ratio = std::clamp(cl_interp_ratio->GetFloat(), sv_client_min_interp_ratio->GetFloat(), sv_client_max_interp_ratio->GetFloat());
+
+	return std::clamp(lerp_ratio / updaterate, cl_interp->GetFloat(), 1.0f);
 }

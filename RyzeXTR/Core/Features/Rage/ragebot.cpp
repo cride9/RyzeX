@@ -25,7 +25,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 		if (!pEnt || !pEnt->IsAlive() || pEnt->IsDormant() || pEnt->GetTeam() == pLocal->GetTeam() || pEnt->HasImmunity())
 			continue;
 
-		if (lagcomp.deqLagRecords[i].size() < 2)
+		if (lagcomp.deqRecords[i].size() < 2)
 			continue;
 
 		float flSimtime = 0.f;
@@ -63,92 +63,31 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombatWeapon* pWeapon) {
 
-	auto pRecord = &lagcomp.deqLagRecords[pEnt->EntIndex()].front();
+	auto pRecord = &lagcomp.deqRecords[pEnt->EntIndex()].front();
 
 	int iMinimumDamage = ConfigMinimumDamage(pWeapon);
 	auto vecHitboxes = ConfigHitboxes(pWeapon);
 	std::pair<int, int> pMultipoints = ConfigMultipoint(pWeapon);
 
-	std::vector<float> DamageList;
-	std::vector<std::pair<Vector, LagComp::playerrecord_t*>> PositionList;
-
-	// loop trough all hitbox
+	// loop through all hitbox
 	for (auto hitboxID : vecHitboxes) {
 
 		float flRadius = 0.f;
-		pRecord->Apply(pEnt);
-		Vector vecHitboxPosition = pEnt->GetHitboxPosition(hitboxID, pRecord->matrix, flRadius);
 
-		if (flRadius != 0)
-			vecHitboxPosition = CreatePoints(vecHitboxPosition, flRadius, hitboxID, pEnt->EntIndex());
-
+		Vector vecHitboxPosition = pEnt->GetHitboxPosition(hitboxID, pRecord->pMatrix, flRadius);
+		//vecHitboxPosition = CreatePoints(vecHitboxPosition, flRadius, hitboxID, pEnt->EntIndex());
 		float flDamage = autowall.GetDamage(g::pLocal, vecHitboxPosition, hitboxID);
 
 		if (hitboxID != HITBOX_HEAD && flDamage > pEnt->GetHealth() + 10) {
 
-			resolver::targetedRecord = pRecord;
 			flSimulationTime = pRecord->flSimulationTime;
 			return vecHitboxPosition;
 		}
 
-		if (flDamage < iMinimumDamage) {
-
-			LagComp::playerrecord_t* validBacktrackRecord = nullptr;
-
-			for (int tick = 0; tick < lagcomp.deqLagRecords[pEnt->EntIndex()].size(); tick++) {
-
-				auto pBacktrack = &lagcomp.deqLagRecords[pEnt->EntIndex()].at(tick);
-
-				if (pBacktrack->IsValid()) {
-
-					validBacktrackRecord = pBacktrack;
-				}
-				else
-					break;
-			}
-
-			if (!validBacktrackRecord)
-				continue;
-
-			validBacktrackRecord->Apply(pEnt);
-			vecHitboxPosition = pEnt->GetHitboxPosition(hitboxID, validBacktrackRecord->matrix, flRadius);
-
-			if (flRadius != 0)
-				vecHitboxPosition = CreatePoints(vecHitboxPosition, flRadius, hitboxID, pEnt->EntIndex());
-
-			flDamage = autowall.GetDamage(g::pLocal, vecHitboxPosition, hitboxID);
-			pRecord->Apply(pEnt);
-
-			if (hitboxID != HITBOX_HEAD && flDamage > pEnt->GetHealth() + 10) {
-
-				resolver::targetedRecord = validBacktrackRecord;
-				flSimulationTime = validBacktrackRecord->flSimulationTime;
-				return vecHitboxPosition;
-			}
-
-			if (flDamage > iMinimumDamage) {
-
-				resolver::targetedRecord = validBacktrackRecord;
-				DamageList.push_back(flDamage);
-				PositionList.push_back({ vecHitboxPosition, validBacktrackRecord });
-			}
-
+		if (flDamage > iMinimumDamage)
+			return vecHitboxPosition;
+		else
 			continue;
-		}
-
-		DamageList.push_back(flDamage);
-		PositionList.push_back({ vecHitboxPosition, pRecord});
-	}
-
-	if (!DamageList.empty()) {
-		int highestDamage = 0;
-		for (int i = 1; i < DamageList.size(); i++)
-			if (DamageList.at(highestDamage) < DamageList.at(i))
-				highestDamage = i;
-
-		resolver::targetedRecord = PositionList.at(highestDamage).second;
-		flSimulationTime = PositionList.at(highestDamage).second->flSimulationTime;
-		return PositionList.at(highestDamage).first;
 	}
 
 	return Vector(0.f, 0.f, 0.f);

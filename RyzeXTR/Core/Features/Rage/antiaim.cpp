@@ -164,7 +164,10 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) {
 
 		if (g::pLocal->GetNextAttack() > time || pWeapon->GetNextPrimaryAttack() > time)
 			return false;
-		else if (pCmd->iButtons & IN_ATTACK && info->nWeaponType != WEAPONTYPE_GRENADE) {
+
+
+
+		if (pCmd->iButtons & IN_ATTACK && info->nWeaponType != WEAPONTYPE_GRENADE) {
 
 			bSendPacket = true;
 			return true;

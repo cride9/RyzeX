@@ -9,6 +9,7 @@
 #include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Rage/doubletap.h"
 #include "../../Features/Networking/networking.h"
+#include "../../Features/Rage/ragebot.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -69,7 +70,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	{
 		antiaim::AntiAim(pCmd, bSendPacket, oldViewAngle);
 
-		//ragebot.CreateMove(pCmd, pLocal, bSendPacket);
+		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
 	}
 	prediction.End(pCmd, pLocal);
 

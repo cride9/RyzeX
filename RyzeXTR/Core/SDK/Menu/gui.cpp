@@ -276,7 +276,7 @@ void menu::Render() noexcept {
 						ImGui::Checkbox("weapon", &cfg::visual::enemyWeapon); ImGui::SameLine(); ImGui::SetCursorPosX(childLeft);
 						ImGui::ColorEdit4("##enemyWeaponColor", cfg::visual::enemyWeaponColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
 
-						ImGui::Checkbox( "breaking lagcomp", &cfg::visual::enemyBreakLC ); ImGui::SameLine( ); ImGui::SetCursorPosX( childLeft );
+						//ImGui::Checkbox( "breaking lagcomp", &cfg::visual::enemyBreakLC );
 
 						ImGui::Checkbox("ammo", &cfg::visual::enemyAmmo); ImGui::SameLine(); ImGui::SetCursorPosX(childLeft);
 						ImGui::ColorEdit4("##enemyAmmoColor", cfg::visual::enemyAmmoColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);

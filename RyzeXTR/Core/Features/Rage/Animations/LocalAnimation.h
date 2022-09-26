@@ -8,6 +8,8 @@ struct animationData_t {
 	float flGoalFeetYaw;
 	float flVelocityModifier;
 
+	int lastUpdateTime[15];
+
 	CAnimationLayer AnimationLayer[15];
 	matrix3x4_t Matrix[128];
 	Vector vecViewAngle;
@@ -35,7 +37,7 @@ public:
 	void SetOrder(CAnimationLayer*, int);
 	void SetWeight(CAnimationLayer*, float);
 	void AnimlayerFix(CUserCmd*, CAnimState*);
-	void SetLayerSequence(int, int);
+	void SetLayerSequence(CAnimationLayer*, int);
 	
 private:
 

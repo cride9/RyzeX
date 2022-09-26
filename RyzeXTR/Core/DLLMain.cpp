@@ -74,6 +74,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	menu::open = false;
 	h::DestroyHooks();
 	menu::Destroy();
+	i::EngineClient->ClientCmdUnrestricted("cl_fullupdate");
 	
 	CloseConsole();
 	FreeLibraryAndExitThread(static_cast<HMODULE>(hinstDLL), 0);

@@ -143,6 +143,7 @@
     <ClCompile Include="Core\Features\Rage\antiaim.cpp" />
     <ClCompile Include="Core\Features\Rage\autowall.cpp" />
     <ClCompile Include="Core\Features\Rage\doubletap.cpp" />
+    <ClCompile Include="Core\Features\Rage\ragebot.cpp" />
     <ClCompile Include="Core\Features\Visuals\chams.cpp" />
     <ClCompile Include="Core\Features\Visuals\ESP.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkBuildTransformation.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="Core\Features\Rage\antiaim.h" />
     <ClInclude Include="Core\Features\Rage\autowall.h" />
     <ClInclude Include="Core\Features\Rage\doubletap.h" />
+    <ClInclude Include="Core\Features\Rage\ragebot.h" />
     <ClInclude Include="Core\Features\Visuals\chams.h" />
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
     <ClInclude Include="Core\globals.h" />

@@ -83,6 +83,9 @@ public:
 	/* Everything will be ran inside this */
 	void FrameStageNotify(EStage curStage);
 
+	/* Lerp Time */
+	float LerpTime();
+
 	/* Every entity data will be placed into this deque */
 	std::deque<record_t> deqRecords[65];
 

@@ -20,14 +20,16 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 
-		//misc::ServerHitboxes();
+		misc::ServerHitboxes();
 
-		if (cfg::misc::removals[1]) { // need menu element
+		if (cfg::misc::removals[1]) {
 			if (g::pLocal)
 				*g::pLocal->GetFlashMaxAlpha() = 0.f;
 		}
 
 		misc::NightMode();
+
+		localanim.UpdateLocal();
 		break;
 
 	case FRAME_NET_UPDATE_END:
@@ -39,7 +41,6 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 			g::bRestoreGlobals = false;
 		}
-		//networking.RestoreNetvarData( g::pLocal->GetTickBase( ) );
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
