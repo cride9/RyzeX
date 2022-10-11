@@ -14,13 +14,8 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 			continue;
 		}
 
-		if (pEnt->GetTeam() == g::pLocal->GetTeam()) {
+		if (pEnt == g::pLocal) {
 
-			if (pEnt == g::pLocal) {
-
-				g::bAllowAnimations[i] = true;
-			}
-			deqRecords[i].clear();
 			continue;
 		}
 
@@ -124,10 +119,6 @@ void Lagcompensation::UpdateAnimation(CBaseEntity* pEnt) {
 	if (pEnt->AnimState()->iLastUpdateFrame == i::GlobalVars->iFrameCount)
 		pEnt->AnimState()->iLastUpdateFrame--;
 
-	///* Force full animation update this tick */
-	//if (pEnt->AnimState()->flLastUpdateTime == i::GlobalVars->flCurrentTime)
-	//	pEnt->AnimState()->flLastUpdateTime -= i::GlobalVars->flIntervalPerTick;
-
 	/* To save some FPS we only call this once */
 	Vector vecEyeAngles = pEnt->GetEyeAngles();
 
@@ -152,7 +143,8 @@ void Lagcompensation::UpdateAnimation(CBaseEntity* pEnt) {
 	i::GlobalVars->flFrameTime = flFrameTime;
 
 	/* Store this record */
-	pCurrent->StoreRecord(pEnt);
+	if (pEnt->GetTeam() != g::pLocal->GetTeam())
+		pCurrent->StoreRecord(pEnt);
 }
 
 void Lagcompensation::GetAnimationLayers(CBaseEntity* pEnt) {

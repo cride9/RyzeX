@@ -62,6 +62,7 @@ void visual::VisualRender() {
 			if (cfg::visual::enemyAmmo) AmmoEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyAmmoColor));
 			if (cfg::visual::enemyWeapon) WeaponEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyWeaponColor));
 			if (cfg::visual::enemyBreakLC ) BreakLCESP(enemySpacing, left, top.y, right, bot.y, pEnt);
+			DrawMultipoints(pEnt);
 		}
 		else {
 
@@ -101,23 +102,44 @@ void visual::VisualRender() {
 	}
 }
 
-//void visual::DrawMultipoints(CBaseEntity* pEnt) {
-//
-//	for (int nHitbox = 0; nHitbox < multiPoints[pEnt->EntIndex()][nHitbox].size(); nHitbox++) {
-//
-//		if (multiPoints[pEnt->EntIndex()][nHitbox].size() > nHitbox == HITBOX_HEAD ? 6 : 9)
-//			multiPoints[pEnt->EntIndex()][nHitbox].pop_back();
-//
-//		for (Vector vecPosition : multiPoints[pEnt->EntIndex()][nHitbox]) {
-//
-//			Vector dotPosition;
-//			i::DebugOverlay->ScreenPosition(vecPosition, dotPosition);
-//
-//			i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
-//			i::Surface->DrawFilledRect(dotPosition.x - 5, dotPosition.y - 5, dotPosition.x + 5, dotPosition.y + 5);
-//		}
-//	}
-//}
+void visual::DrawMultipoints(CBaseEntity* pEnt) {
+
+	for (int i = 0; i < 18; i++) {
+
+		if (!headPoints[pEnt->EntIndex()][i].empty()) {
+			for (Vector vecPosition : headPoints[pEnt->EntIndex()][i]) {
+
+				Vector dotPosition;
+				i::DebugOverlay->ScreenPosition(vecPosition, dotPosition);
+
+				if (selectedPoint[pEnt->EntIndex()][i] == vecPosition) {
+					i::Surface->DrawSetColor(255.f, 0.f, 0.f, 255.f);
+					i::Surface->DrawFilledRect(dotPosition.x - 2, dotPosition.y - 2, dotPosition.x + 2, dotPosition.y + 2);
+				}
+				else {
+					i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
+					i::Surface->DrawFilledRect(dotPosition.x, dotPosition.y, dotPosition.x + 1, dotPosition.y + 1);
+				}
+			}
+		}
+		if (!bodyPoints[pEnt->EntIndex()][i].empty()) {
+			for (Vector vecPosition : bodyPoints[pEnt->EntIndex()][i]) {
+
+				Vector dotPosition;
+				i::DebugOverlay->ScreenPosition(vecPosition, dotPosition);
+
+				if (selectedPoint[pEnt->EntIndex()][i] == vecPosition) {
+					i::Surface->DrawSetColor(255.f, 0.f, 0.f, 255.f);
+					i::Surface->DrawFilledRect(dotPosition.x - 2, dotPosition.y - 2, dotPosition.x + 2, dotPosition.y + 2);
+				}
+				else {
+					i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
+					i::Surface->DrawFilledRect(dotPosition.x, dotPosition.y, dotPosition.x + 1, dotPosition.y + 1);
+				}
+			}
+		}
+	}
+}
 
 void visual::BoxEsp(int left, int top, int right, int bot, Color color) {
 

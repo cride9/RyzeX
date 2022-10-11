@@ -22,5 +22,7 @@ namespace visual {
 
 	void DrawMultipoints(CBaseEntity*);
 
-	inline std::deque<Vector> multiPoints[65][18];
+	inline std::vector<Vector> headPoints[65][18];
+	inline std::vector<Vector> bodyPoints[65][18];
+	inline Vector selectedPoint[65][18];
 }

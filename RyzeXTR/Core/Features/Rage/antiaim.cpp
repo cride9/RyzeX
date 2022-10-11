@@ -21,11 +21,12 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 	}
 
 	// shooting checks
-	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
+	if (ShouldDisableAntiaim(pCmd, bSendPacket) && pCmd->iButtons & IN_ATTACK) {
 
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
 		bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
+		
 		return;
 	}
 
@@ -34,6 +35,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
+
 		return;
 	}
 
@@ -120,11 +122,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 	switch (cfg::antiaim::desynctype) {
 
 	case STATIC:
-			desyncValue = GetKeyState(cfg::antiaim::desyncinverter) ? (cfg::antiaim::desyncvalue * 2) : -(cfg::antiaim::desyncvalue * 2);
+			desyncValue = GetKeyState(cfg::antiaim::desyncinverter) ? (58 + cfg::antiaim::desyncvalue) : -(58 + cfg::antiaim::desyncvalue);
 		break;
 
 	case JITTER:
-			desyncValue = cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? (cfg::antiaim::desyncvalue * 2) : -(cfg::antiaim::desyncvalue * 2) : unevenInvert ? (cfg::antiaim::desyncvalue * 2) : -(cfg::antiaim::desyncvalue * 2);
+			desyncValue = cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? (58 + cfg::antiaim::desyncvalue) : -(58 + cfg::antiaim::desyncvalue) : unevenInvert ? (58 + cfg::antiaim::desyncvalue) : -(58 + cfg::antiaim::desyncvalue);
 		break;
 
 	default:
@@ -138,7 +140,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) {
 
-	const auto time = TICKS_TO_TIME(prediction.GetTickBase(pCmd, g::pLocal));
+	const auto time = TICKS_TO_TIME(g::pLocal->GetTickBase());
 
 	if (g::pLocal->GetWeapon()) {
 
@@ -162,13 +164,10 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) {
 			}
 		}
 
-		if (g::pLocal->GetNextAttack() > time || pWeapon->GetNextPrimaryAttack() > time)
+		if (g::pLocal->GetNextAttack() > time || pWeapon->GetNextPrimaryAttack() > time || pWeapon->GetNextSecondaryAttack() > time)
 			return false;
 
-
-
 		if (pCmd->iButtons & IN_ATTACK && info->nWeaponType != WEAPONTYPE_GRENADE) {
-
 			bSendPacket = true;
 			return true;
 		}

@@ -21,8 +21,6 @@ namespace g {
 	inline float flRestoreCurtime;
 	inline bool bRestoreGlobals;
 
-	inline Vector multiPoint[65][18][9];
-
 	namespace localprediction {
 
 		namespace before {

@@ -11,15 +11,15 @@ public:
 
 private:
 
-	Vector HitScan(CBaseEntity*, float&, CBaseCombatWeapon*);
+	Vector HitScan(CBaseEntity*, float&, CBaseCombatWeapon*, Vector);
 
 	int		ConfigMinimumDamage(CBaseCombatWeapon*);
 	int		ConfigHitChance(CBaseCombatWeapon*);
 	std::vector<int> ConfigHitboxes(CBaseCombatWeapon*);
 	std::pair<int, int> ConfigMultipoint(CBaseCombatWeapon*);
 
-	bool	CanShoot(CBaseEntity*, CBaseCombatWeapon*, Vector, int);
+	bool	CanShoot(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector);
 	void	AutoStop(CUserCmd*, float);
-	Vector	CreatePoints(Vector, float, int, int);
+	Vector	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, int, Vector);
 };
 inline CRageBot ragebot;

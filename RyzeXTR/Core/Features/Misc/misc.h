@@ -13,6 +13,7 @@ enum ECONFIG : int {
 
 namespace misc {
 
+	inline bool bDefensive = false;
 	inline bool bFilter = false;
 	inline bool bRetreat = false;
 	inline Vector vecRecord = Vector(0.f, 0.f, 0.f);

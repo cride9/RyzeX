@@ -22,15 +22,21 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEnt || !pEnt->IsAlive() || pEnt->IsDormant() || pEnt->GetTeam() == pLocal->GetTeam() || pEnt->HasImmunity())
+		if (!pEnt || !pEnt->IsAlive() || pEnt->IsDormant() || pEnt->GetTeam() == pLocal->GetTeam() || pEnt->HasImmunity()) {
+			for (int j = 0; j < 18; j++) {
+				visual::bodyPoints[i][j];
+				visual::headPoints[i][j];
+			}
 			continue;
+		}
 
 		if (lagcomp.deqRecords[i].size() < 2)
 			continue;
 
 		float flSimtime = 0.f;
 
-		Vector vecHitboxPosition = HitScan(pEnt, flSimtime, pWeapon);
+		Vector vecEyePosition = g::pLocal->GetEyePosition();
+		Vector vecHitboxPosition = HitScan(pEnt, flSimtime, pWeapon, vecEyePosition);
 
 		if (vecHitboxPosition == Vector(0.f, 0.f, 0.f))
 			continue;
@@ -39,14 +45,14 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 		if (CheckShootingCondition(pCmd)) {
 
-			if (!GetAsyncKeyState(cfg::antiaim::idealTickBind))
+			if (cfg::rage::autostop) {
+				misc::bDefensive = true;
 				AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
-			else
-				misc::bRetreat = true;
+			}
 
-			Vector vecAimPoint = M::CalcAngle(pLocal->GetEyePosition(), vecHitboxPosition).Normalize().Clamp();
+			Vector vecAimPoint = M::CalcAngle(vecEyePosition, vecHitboxPosition).Normalize().Clamp();
 
-			if (CanShoot(pEnt, pWeapon, vecAimPoint, ConfigHitChance(pWeapon))) {
+			if (CanShoot(pEnt, pWeapon, vecAimPoint, ConfigHitChance(pWeapon), vecEyePosition)) {
 
 				static CConVar* weapon_recoil_scale = i::ConVar->FindVar("weapon_recoil_scale");
 				vecAimPoint -= (pLocal->GetAimPunch() * weapon_recoil_scale->GetFloat());
@@ -61,13 +67,32 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 	}
 }
 
-Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombatWeapon* pWeapon) {
+Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombatWeapon* pWeapon, Vector vecEyePosition) {
 
 	auto pRecord = &lagcomp.deqRecords[pEnt->EntIndex()].front();
 
 	int iMinimumDamage = ConfigMinimumDamage(pWeapon);
 	auto vecHitboxes = ConfigHitboxes(pWeapon);
 	std::pair<int, int> pMultipoints = ConfigMultipoint(pWeapon);
+	
+	/* Loop trough all index */
+	for (int i = 0; i < 18; i++) {
+
+		/* Make a helper variable */
+		bool bMatch = false;
+
+		/* Check every vector value */
+		for (int index : vecHitboxes)
+			if (i == index)
+				bMatch = true;
+				/* We had a match */
+
+		/* Delete the value if it didn't match */
+		if (!bMatch) {
+			visual::headPoints[pEnt->EntIndex()][i].clear();
+			visual::bodyPoints[pEnt->EntIndex()][i].clear();
+		}
+	}
 
 	// loop through all hitbox
 	for (auto hitboxID : vecHitboxes) {
@@ -75,8 +100,8 @@ Vector CRageBot::HitScan(CBaseEntity* pEnt, float& flSimulationTime, CBaseCombat
 		float flRadius = 0.f;
 
 		Vector vecHitboxPosition = pEnt->GetHitboxPosition(hitboxID, pRecord->pMatrix, flRadius);
-		//vecHitboxPosition = CreatePoints(vecHitboxPosition, flRadius, hitboxID, pEnt->EntIndex());
-		float flDamage = autowall.GetDamage(g::pLocal, vecHitboxPosition, hitboxID);
+		vecHitboxPosition = CreatePoints(pEnt, g::pLocal, pWeapon, vecHitboxPosition, flRadius, hitboxID, pEnt->EntIndex(), vecEyePosition);
+		float flDamage = autowall.GetDamage(g::pLocal, vecHitboxPosition, hitboxID, vecEyePosition);
 
 		if (hitboxID != HITBOX_HEAD && flDamage > pEnt->GetHealth() + 10) {
 
@@ -184,18 +209,18 @@ std::vector<int> CRageBot::ConfigHitboxes(CBaseCombatWeapon* pWeapon) {
 		if (index == 0) {
 			vecHitboxList.push_back(HITBOX_HEAD);
 		}
-		else if (index == 1) {
+		if (index == 1) {
 			vecHitboxList.push_back(HITBOX_UPPER_CHEST);
 		}
-		else if (index == 2) {
+		if (index == 2) {
 			vecHitboxList.push_back(HITBOX_CHEST);
 			vecHitboxList.push_back(HITBOX_THORAX);
 		}
-		else if (index == 3) {
+		if (index == 3) {
 			vecHitboxList.push_back(HITBOX_STOMACH);
 			vecHitboxList.push_back(HITBOX_PELVIS);
 		}
-		else if (index == 4) {
+		if (index == 4) {
 			vecHitboxList.push_back(HITBOX_RIGHT_FOREARM);
 			vecHitboxList.push_back(HITBOX_LEFT_FOREARM);
 
@@ -205,7 +230,7 @@ std::vector<int> CRageBot::ConfigHitboxes(CBaseCombatWeapon* pWeapon) {
 			vecHitboxList.push_back(HITBOX_RIGHT_HAND);
 			vecHitboxList.push_back(HITBOX_LEFT_HAND);
 		}
-		else if (index == 5) {
+		if (index == 5) {
 			vecHitboxList.push_back(HITBOX_RIGHT_THIGH);
 			vecHitboxList.push_back(HITBOX_LEFT_THIGH);
 
@@ -263,29 +288,34 @@ std::vector<int> CRageBot::ConfigHitboxes(CBaseCombatWeapon* pWeapon) {
 
 bool CheckShootingCondition(CUserCmd* pCmd) {
 
-	if (!g::pLocal->GetWeapon())
+	auto local = g::pLocal;
+	auto pWeapon = g::pLocal->GetWeapon();
+
+	if (!local || !pWeapon)
 		return false;
 
-	const auto time = TICKS_TO_TIME(prediction.GetTickBase(g::pCmd, g::pLocal));
+	auto time = TICKS_TO_TIME(local->GetTickBase());
 
-	const auto info = g::pLocal->GetWeapon()->GetCSWpnData();
+	const auto info = pWeapon->GetCSWpnData();
 
 	if (!info)
 		return false;
 
-	if (g::pLocal->GetNextAttack() > time || g::pLocal->GetWeapon()->GetNextPrimaryAttack() > time)
+	const auto is_zeus = pWeapon->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_TASER;
+
+	if (pWeapon->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_C4)
 		return false;
 
-	if (g::pLocal->GetWeapon()->GetAmmo() < 1)
+	if (pWeapon->GetAmmo() < 1)
 		return false;
 
-	if (pCmd->iButtons & IN_ATTACK)
+	if (pWeapon->GetNextPrimaryAttack() > time || pWeapon->GetNextSecondaryAttack() > time)
 		return false;
 
 	return true;
 }
 
-bool CRageBot::CanShoot(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector vecFrom, int iChance) {
+bool CRageBot::CanShoot(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector vecFrom, int iChance, Vector vecEyePosition) {
 
 	auto final_hitchance = 0;
 	auto weapon_info = pWeapon->GetCSWpnData();
@@ -353,11 +383,11 @@ bool CRageBot::CanShoot(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector ve
 		direction.y = forward.y + right.y * spread_x + up.y * spread_y;
 		direction.z = forward.z + right.z * spread_x + up.z * spread_y; //-V778
 
-		auto end = g::pLocal->GetEyePosition() + direction * weapon_info->flRange;
+		auto end = vecEyePosition + direction * weapon_info->flRange;
 
 		Trace_t Trace;
 
-		i::EngineTrace->ClipRayToEntity(Ray_t(g::pLocal->GetEyePosition(), end), MASK_SHOT | CONTENTS_GRATE, pEnt, &Trace);
+		i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, end), MASK_SHOT | CONTENTS_GRATE, pEnt, &Trace);
 
 		if (Trace.pHitEntity == pEnt)
 			hits++;
@@ -376,9 +406,11 @@ void CRageBot::AutoStop(CUserCmd* pCmd, float IdealSpeed) {
 	// Credit to @Monthyx
 	// Fast stop source from obelus
 
-	if (g::pLocal->GetWeapon()->GetItemDefinitionIndex() == (WEAPON_SSG08 || WEAPON_AWP))
-		if (!CheckShootingCondition(pCmd))
-			return;
+	//if (g::pLocal->GetWeapon()->GetItemDefinitionIndex() == (WEAPON_SSG08 || WEAPON_AWP))
+	//	if (!CheckShootingCondition(pCmd))
+	//		return;
+
+	pCmd->iButtons &= ~IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT;
 
 	// Get the ideal speed for shooting (playstyle)
 	Vector velocity = g::pLocal->GetVelocity();
@@ -409,120 +441,142 @@ void CRageBot::AutoStop(CUserCmd* pCmd, float IdealSpeed) {
 	pCmd->flSideMove = negative_side_direction.y;
 }
 
-Vector CRageBot::CreatePoints(Vector vecAngle, float flRadius, int nHitbox, int entIndex) {
+Vector CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector vecAngle, float flRadius, int nHitbox, int entIndex, Vector vecEyePosition) {
 
 	if (flRadius <= 0)
 		return vecAngle;
 
 	std::pair<int, int> multiPoints = ConfigMultipoint(g::pLocal->GetWeapon());
-	static int multiPoint[18];
+	std::vector<Vector> points;
+	int iMinimumDamage = ConfigMinimumDamage(pWeapon);
+
+	int* pHeadPoints = &multiPoints.first;
+	int* pBodyPoints = &multiPoints.second;
+	Vector vecOriginalAngle = vecAngle;
 
 	if (nHitbox == HITBOX_HEAD) {
 
-		switch (multiPoint[nHitbox]) {
-			
-		case 0: vecAngle;
-			g::multiPoint[entIndex][nHitbox][0] = vecAngle;
-			break;
+		/* First check if we can hit the hitbox middle */
+		points.push_back(vecOriginalAngle);
 
-		case 1: vecAngle.x += (flRadius * (multiPoints.first / 200.f)); // left
-			vecAngle.y += (flRadius * (multiPoints.first / 200.f));
-			g::multiPoint[entIndex][nHitbox][1] = vecAngle;
-			break;
+		/* Check every point of the hitbox by making a 3D cube inside the hitbox */
+		/* I'm too lazy to actually make it perfectly round like hitboxes are */
 
-		case 2: vecAngle.x -= (flRadius * (multiPoints.first / 200.f)); // right
-			vecAngle.y -= (flRadius * (multiPoints.first / 200.f));
-			g::multiPoint[entIndex][nHitbox][2] = vecAngle;
-			break;
+		float flHeadDistance = flRadius * (*pHeadPoints / 150.f);
 
-		case 3: vecAngle.z += (flRadius * (multiPoints.first / 200.f)); // up
-			g::multiPoint[entIndex][nHitbox][3] = vecAngle;
-			break;
+		/* Single axises */
+		{
+			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y, vecOriginalAngle.z + flHeadDistance));
 
-		case 4: vecAngle.x += (flRadius * (multiPoints.first / 200.f)); // upper left
-				vecAngle.y += (flRadius * (multiPoints.first / 200.f));
-				vecAngle.z += (flRadius * (multiPoints.first / 200.f));
-				g::multiPoint[entIndex][nHitbox][4] = vecAngle;
-			break;
-
-		case 5: vecAngle.x -= (flRadius * (multiPoints.first / 200.f)); // upper right
-				vecAngle.y -= (flRadius * (multiPoints.first / 200.f));
-				vecAngle.z += (flRadius * (multiPoints.first / 200.f));
-				g::multiPoint[entIndex][nHitbox][5] = vecAngle;
-			break;
-
-		case 6: vecAngle.x += (flRadius * (multiPoints.first / 200.f)); // downer left
-			vecAngle.y += (flRadius * (multiPoints.first / 200.f));
-			vecAngle.z -= (flRadius * (multiPoints.first / 200.f));
-			g::multiPoint[entIndex][nHitbox][6] = vecAngle;
-			break;
-
-		case 7: vecAngle.x -= (flRadius * (multiPoints.first / 200.f)); // downer right
-			vecAngle.y -= (flRadius * (multiPoints.first / 200.f));
-			vecAngle.z -= (flRadius * (multiPoints.first / 200.f));
-			g::multiPoint[entIndex][nHitbox][7] = vecAngle;
-			break;
+			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y, vecOriginalAngle.z - flHeadDistance));
 		}
-		multiPoint[nHitbox]++;		
+		/* Double axises */
+		{
+			/* X and Y */
+			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z));
 
-		if (multiPoint[nHitbox] > 7)
-			multiPoint[nHitbox] = 0;
+			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z));
+
+			/* X and Z */
+			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z + flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z + flHeadDistance));
+
+			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z - flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z - flHeadDistance));
+
+			/* Y and Z */
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z + flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z + flHeadDistance));
+
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z - flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z - flHeadDistance));
+		}
+		/* Triple axises */
+		{
+			/* X and Y and Z */
+			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z + flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z + flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z - flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z - flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z + flHeadDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z + flHeadDistance));
+		}
+
+		visual::headPoints[pTarget->EntIndex()][nHitbox] = points;
+
+		for (Vector vecPoint : points)
+			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, vecPoint, vecEyePosition, iMinimumDamage)) {
+				visual::selectedPoint[pTarget->EntIndex()][nHitbox] = vecPoint;
+				return vecPoint;
+			}
 	}
 	else {
 
-		switch (multiPoint[nHitbox]) {
+		/* First check if we can hit the hitbox middle */
+		points.push_back(vecOriginalAngle);
 
-		case 0: vecAngle;
-			g::multiPoint[entIndex][nHitbox][0] = vecAngle;
-			break;
+		/* Check every point of the hitbox by making a 3D cube inside the hitbox */
+		/* I'm too lazy to actually make it perfectly round like hitboxes are */
 
-		case 1: vecAngle.x += (flRadius * (multiPoints.second / 200.f)); // left
-			vecAngle.y += (flRadius * (multiPoints.second / 200.f));
-			g::multiPoint[entIndex][nHitbox][1] = vecAngle;
-			break;
+		float flBodyDistance = flRadius * (*pBodyPoints / 150.f);
 
-		case 2: vecAngle.x -= (flRadius * (multiPoints.second / 200.f)); // right
-			vecAngle.y -= (flRadius * (multiPoints.second / 200.f));
-			g::multiPoint[entIndex][nHitbox][2] = vecAngle;
-			break;
+		/* Single axises */
+		{
+			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y, vecOriginalAngle.z + flBodyDistance));
 
-
-		case 3: vecAngle.z += (flRadius * (multiPoints.second / 200.f)); // up
-			g::multiPoint[entIndex][nHitbox][3] = vecAngle;
-			break;
-
-		case 4: vecAngle.z -= (flRadius * (multiPoints.second / 200.f)); // down
-			g::multiPoint[entIndex][nHitbox][4] = vecAngle;
-			break;
-
-		case 5: vecAngle.x += (flRadius * (multiPoints.second / 200.f)); // upper left
-				vecAngle.y += (flRadius * (multiPoints.second / 200.f));
-				vecAngle.z += (flRadius * (multiPoints.second / 200.f));
-				g::multiPoint[entIndex][nHitbox][5] = vecAngle;
-			break;
-
-		case 6: vecAngle.x -= (flRadius * (multiPoints.second / 200.f)); // upper right
-				vecAngle.y -= (flRadius * (multiPoints.second / 200.f));
-				vecAngle.z += (flRadius * (multiPoints.second / 200.f));
-				g::multiPoint[entIndex][nHitbox][6] = vecAngle;
-			break;
-
-		case 7: vecAngle.x += (flRadius * (multiPoints.second / 200.f)); // downer left
-				vecAngle.y += (flRadius * (multiPoints.second / 200.f));
-				vecAngle.z -= (flRadius * (multiPoints.second / 200.f));
-				g::multiPoint[entIndex][nHitbox][7] = vecAngle;
-			break;
-
-		case 8: vecAngle.x -= (flRadius * (multiPoints.second / 200.f)); // downer right
-				vecAngle.y -= (flRadius * (multiPoints.second / 200.f));
-				vecAngle.z -= (flRadius * (multiPoints.second / 200.f));
-				g::multiPoint[entIndex][nHitbox][8] = vecAngle;
-			break;
+			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y, vecOriginalAngle.z - flBodyDistance));
 		}
-		multiPoint[nHitbox]++;
+		/* Double axises */
+		{
+			/* X and Y */
+			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z));
 
-		if (multiPoint[nHitbox] > 8)
-			multiPoint[nHitbox] = 0;
+			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z));
+			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z));
+
+			/* X and Z */
+			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z + flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z + flBodyDistance));
+
+			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z - flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z - flBodyDistance));
+
+			/* Y and Z */
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z + flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z + flBodyDistance));
+
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z - flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z - flBodyDistance));
+		}
+		/* Triple axises */
+		{
+			/* X and Y and Z */
+			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z + flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z + flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z - flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z - flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z + flBodyDistance));
+			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z + flBodyDistance));
+		}
+
+		visual::bodyPoints[pTarget->EntIndex()][nHitbox] = points;
+
+		for (Vector vecPoint : points)
+			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, vecPoint, vecEyePosition, iMinimumDamage)) {
+				visual::selectedPoint[pTarget->EntIndex()][nHitbox] = vecPoint;
+				return vecPoint;
+			}
 	}
 
 	return vecAngle;

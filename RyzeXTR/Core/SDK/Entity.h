@@ -982,6 +982,7 @@ public:
 
 	CCSWeaponInfo* GetCSWpnData() {
 		return i::WeaponSystem->GetWpnData(this->GetItemDefinitionIndex());
+		// i::WeaponSystem->GetWpnData(pWeapon->GetItemDefinitionIndex());
 	}
 };
 

@@ -35,6 +35,15 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CBaseEntity* pLocal = g::pLocal = (CBaseEntity*)i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer());
 
 	static bool goBackFast = false;
+	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && !doubletap::bCharged && doubletap::rechargeAmount > 0 && !doubletap::shiftAmount) {
+
+		bSendPacket = true;
+		pCmd->iButtons &= ~(IN_ATTACK | IN_SECOND_ATTACK);
+
+		pVerifiedCmd->userCmd = *pCmd;
+		pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
+		return;
+	}
 	if (g::bShifting) {
 
 		pCmd->iButtons &= ~IN_FORWARD;
@@ -116,7 +125,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	//else
 	//	lagcomp.ClearIncomingSequences( );
 
-	static const auto clientStateHookable = ( void* )( uintptr_t( i::ClientState ) + 0x8 ); // ignore c-style casting
+	static const auto clientStateHookable = (void*)(uintptr_t(i::ClientState) + 0x8); // ignore c-style casting
 
 	if ( clientStateHookable != nullptr )
 	{

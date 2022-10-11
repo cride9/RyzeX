@@ -25,10 +25,10 @@ void __cdecl h::hkClMove(float flSamples, bool bFinalTick) {
 			g::bShifting = false;
 			return;
 		}
-		else if (!bCharged && rechargeAmount > 0 && !bCharged && !shiftAmount) {
+		else if (!bCharged && rechargeAmount > 0 && !shiftAmount) {
 
 			g::pCmd->iButtons &= ~IN_ATTACK;
-			if (i::GlobalVars->iTickCount % 2 == 0) {
+			//if (i::GlobalVars->iTickCount % 2 == 0) {
 
 				g::bWaiting = false;
 				g::bSendPacket = true;
@@ -39,15 +39,7 @@ void __cdecl h::hkClMove(float flSamples, bool bFinalTick) {
 				}
 
 				return;
-			}
-			else {
-
-				rechargeCommandNumber = g::pCmd->iCommandNumber;
-				rechargeTickbase = prediction.GetTickBase(g::pCmd, g::pLocal);
-				rechargeCurtime = i::GlobalVars->flCurrentTime;
-
-				return original(flSamples, bFinalTick);
-			}
+			//}
 		}
 
 		return original(flSamples, bFinalTick);

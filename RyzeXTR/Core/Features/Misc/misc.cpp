@@ -191,7 +191,7 @@ void misc::NightMode() {
 
 void misc::DefensiveDoubletap() {
 
-	if (!cfg::antiaim::defensive)
+	if (!cfg::antiaim::defensive || !bDefensive)
 		return;
 
 	static int timer = 0;
@@ -200,8 +200,10 @@ void misc::DefensiveDoubletap() {
 
 	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && doubletap::bCharged) {
 
-		if (++timer >= 14)
+		if (++timer >= 14) {
+			bDefensive = false;
 			timer = 0;
+		}
 
 		if (timer > 0) {
 
