@@ -13,6 +13,14 @@ struct animationData_t {
 	CAnimationLayer AnimationLayer[15];
 	matrix3x4_t Matrix[128];
 	Vector vecViewAngle;
+
+	int oldFlags;
+	Vector oldAbsOrigin;
+	float oldSpawnTime;
+	CAnimState* oldAnimstate;
+	CAnimationLayer oldAnimationLayer[15];
+	float oldPoseParameters[24];
+	int oldMoveType;
 };
 
 class localanimation {

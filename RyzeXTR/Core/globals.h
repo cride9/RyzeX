@@ -1,16 +1,19 @@
 #pragma once
 #include "SDK/CUserCmd.h"
 #include "SDK/Entity.h"
+#include "Interface/Interfaces/entityListener.h"
+
 namespace g {
 
 	inline CUserCmd* pCmd;
 	inline CBaseEntity* pLocal;
 	inline Vector oldViewAngle;
+	inline CEntityListener entityListener;
 
 	inline int defensiveTickbase;
 
 	inline bool bAllowAnimations[65];
-	inline bool bSendPacket;
+	inline bool* bSendPacket;
 	inline bool bShifting;
 	inline bool bWaiting;
 	inline bool bAntiaimEnabled;

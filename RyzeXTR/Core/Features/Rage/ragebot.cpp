@@ -441,6 +441,15 @@ void CRageBot::AutoStop(CUserCmd* pCmd, float IdealSpeed) {
 	pCmd->flSideMove = negative_side_direction.y;
 }
 
+bool CheckOverlap(Vector vecOriginalAngle, Vector vecPointAngle, Vector vecEyePosition) {
+
+	Vector originalAimposition = M::CalcAngle(vecEyePosition, vecOriginalAngle).Normalize().Clamp();
+	Vector pointAimposition = M::CalcAngle(vecEyePosition, vecPointAngle).Normalize().Clamp();
+
+	if (std::abs(originalAimposition.x - pointAimposition.x) < 0.0005f)
+		return true;
+}
+
 Vector CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector vecAngle, float flRadius, int nHitbox, int entIndex, Vector vecEyePosition) {
 
 	if (flRadius <= 0)
@@ -466,55 +475,31 @@ Vector CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCo
 
 		/* Single axises */
 		{
-			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y, vecOriginalAngle.z + flHeadDistance));
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle + Vector(flHeadDistance, 0.f, 0.f), vecEyePosition))
+				points.push_back(vecOriginalAngle + Vector(flHeadDistance, 0.f, 0.f));
 
-			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y, vecOriginalAngle.z - flHeadDistance));
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle + Vector(0.f, flHeadDistance, 0.f), vecEyePosition))
+				points.push_back(vecOriginalAngle + Vector(0.f, flHeadDistance, 0.f));
+
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle + Vector(0.f, 0.f, flHeadDistance), vecEyePosition))
+				points.push_back(vecOriginalAngle + Vector(0.f, 0.f, flHeadDistance));
+
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle - Vector(0.f, flHeadDistance, 0.f), vecEyePosition))
+				points.push_back(vecOriginalAngle - Vector(0.f, flHeadDistance, 0.f));
+
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle - Vector(flHeadDistance, 0.f, 0.f), vecEyePosition))
+				points.push_back(vecOriginalAngle - Vector(flHeadDistance, 0.f, 0.f));
+
 		}
-		/* Double axises */
-		{
-			/* X and Y */
-			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z));
-
-			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z));
-
-			/* X and Z */
-			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z + flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z + flHeadDistance));
-
-			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z - flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y, vecOriginalAngle.z - flHeadDistance));
-
-			/* Y and Z */
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z + flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z + flHeadDistance));
-
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z - flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z - flHeadDistance));
-		}
-		/* Triple axises */
-		{
-			/* X and Y and Z */
-			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z + flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z + flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x + flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z - flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z - flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y + flHeadDistance, vecOriginalAngle.z + flHeadDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flHeadDistance, vecOriginalAngle.y - flHeadDistance, vecOriginalAngle.z + flHeadDistance));
-		}
-
 		visual::headPoints[pTarget->EntIndex()][nHitbox] = points;
 
-		for (Vector vecPoint : points)
+		for (Vector vecPoint : points) {
+
 			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, vecPoint, vecEyePosition, iMinimumDamage)) {
 				visual::selectedPoint[pTarget->EntIndex()][nHitbox] = vecPoint;
 				return vecPoint;
 			}
+		}
 	}
 	else {
 
@@ -528,48 +513,18 @@ Vector CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCo
 
 		/* Single axises */
 		{
-			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y, vecOriginalAngle.z + flBodyDistance));
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle + Vector(flBodyDistance, 0.f, 0.f), vecEyePosition))
+				points.push_back(vecOriginalAngle + Vector(flBodyDistance, 0.f, 0.f));
 
-			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y, vecOriginalAngle.z - flBodyDistance));
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle + Vector(0.f, flBodyDistance, 0.f), vecEyePosition))
+				points.push_back(vecOriginalAngle + Vector(0.f, flBodyDistance, 0.f));
+
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle - Vector(0.f, flBodyDistance, 0.f), vecEyePosition))
+				points.push_back(vecOriginalAngle - Vector(0.f, flBodyDistance, 0.f));
+
+			if (CheckOverlap(vecOriginalAngle, vecOriginalAngle - Vector(flBodyDistance, 0.f, 0.f), vecEyePosition))
+				points.push_back(vecOriginalAngle - Vector(flBodyDistance, 0.f, 0.f));
 		}
-		/* Double axises */
-		{
-			/* X and Y */
-			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z));
-
-			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z));
-			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z));
-
-			/* X and Z */
-			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z + flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z + flBodyDistance));
-
-			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z - flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y, vecOriginalAngle.z - flBodyDistance));
-
-			/* Y and Z */
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z + flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z + flBodyDistance));
-
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z - flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z - flBodyDistance));
-		}
-		/* Triple axises */
-		{
-			/* X and Y and Z */
-			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z + flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z + flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x + flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z - flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z - flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y + flBodyDistance, vecOriginalAngle.z + flBodyDistance));
-			points.push_back(Vector(vecOriginalAngle.x - flBodyDistance, vecOriginalAngle.y - flBodyDistance, vecOriginalAngle.z + flBodyDistance));
-		}
-
 		visual::bodyPoints[pTarget->EntIndex()][nHitbox] = points;
 
 		for (Vector vecPoint : points)

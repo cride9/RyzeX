@@ -288,11 +288,11 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			}
 			else {
 
-				if (lagcomp.deqRecords[pEnt->EntIndex()].size() >= 2) {
+				//if (lagcomp.deqRecords[pEnt->EntIndex()].size() >= 2) {
 
-					MakeChams(materials[1], new float[] {1.f, 1.f, 1.f, 0.5f}, true, false);
-					original(i::StudioRender, 0, pResults, info, lagcomp.deqRecords[pEnt->EntIndex()].front().pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-				}
+				//	MakeChams(materials[1], new float[] {1.f, 1.f, 1.f, 0.5f}, true, false);
+				//	original(i::StudioRender, 0, pResults, info, lagcomp.deqRecords[pEnt->EntIndex()].front().pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				//}
 
 				if (!cfg::visual::enemyEsp)
 					return false;

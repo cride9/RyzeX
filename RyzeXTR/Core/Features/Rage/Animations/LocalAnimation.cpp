@@ -12,28 +12,63 @@ void localanimation::AnimlayerFix(CUserCmd* pCmd, CAnimState* pState) {
 	if (!g::pLocal || !g::pLocal->GetHealth())
 		return;
 
-	auto pLocal = g::pLocal;
+	CAnimationLayer* pLandOrClimbLayer = &g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	if (!pLandOrClimbLayer)
+		return;
 
-	if (pLocal->GetAnimationOverlays()) {
+	CAnimationLayer* pJumpOrFallLayer = &g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	if (!pJumpOrFallLayer)
+		return;
 
-		CAnimationLayer& pLand = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
-		CAnimationLayer& pJumpFall = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
-		CAnimationLayer& pMoving = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE];
-
-		if (!(pLocal->GetFlags() & FL_FROZEN)) {
-
-			const int iPrevious = g::localprediction::before::nFlags;
-
-			const bool bCrouched = pLocal->GetDuckAmount() > .55f;
-			const bool bMoving = pLocal->GetVelocity().Length2D() >= 0.25f;
-			const bool bJumped = (!(pLocal->GetFlags() & FL_ONGROUND) && iPrevious & FL_ONGROUND);
-			
-			if (bJumped && (pLocal->GetMoveType() != MOVETYPE_LADDER)) {
-
-
-			}
+	if (localanim.localdata.oldMoveType != MOVETYPE_LADDER && g::pLocal->GetMoveType() == MOVETYPE_LADDER)
+		SetLayerSequence(pLandOrClimbLayer, ACT_CSGO_CLIMB_LADDER);
+	else if (localanim.localdata.oldMoveType == MOVETYPE_LADDER && g::pLocal->GetMoveType() != MOVETYPE_LADDER)
+		SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_FALL);
+	else
+	{
+		if (g::pLocal->GetFlags() & FL_ONGROUND)
+		{
+			if (!(localanim.localdata.oldFlags & FL_ONGROUND))
+				SetLayerSequence
+				(
+					pLandOrClimbLayer,
+					g::pLocal->AnimState()->flDurationInAir > 1.0f ? ACT_CSGO_LAND_HEAVY : ACT_CSGO_LAND_LIGHT
+				);
+		}
+		else if (localanim.localdata.oldFlags & FL_ONGROUND)
+		{
+			if (g::pLocal->GetVelocity().z > 0.0f)
+				SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_JUMP);
+			else
+				SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_FALL);
 		}
 	}
+
+	localanim.localdata.oldFlags = g::pLocal->GetFlags();
+	localanim.localdata.oldMoveType = g::pLocal->GetMoveType();
+
+	//auto pLocal = g::pLocal;
+
+	//if (pLocal->GetAnimationOverlays()) {
+
+	//	CAnimationLayer& pLand = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	//	CAnimationLayer& pJumpFall = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	//	CAnimationLayer& pMoving = pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE];
+
+	//	if (!(pLocal->GetFlags() & FL_FROZEN)) {
+
+	//		const int iPrevious = g::localprediction::before::nFlags;
+
+	//		const bool bCrouched = pLocal->GetDuckAmount() > .55f;
+	//		const bool bMoving = pLocal->GetVelocity().Length2D() >= 0.25f;
+	//		const bool bJumped = (!(pLocal->GetFlags() & FL_ONGROUND) && iPrevious & FL_ONGROUND);
+	//		
+	//		if (bJumped && (pLocal->GetMoveType() != MOVETYPE_LADDER)) {
+
+
+	//		}
+	//	}
+	//}
 }
 
 void localanimation::SetLayerSequence(CAnimationLayer* layer, int sequence) {
@@ -71,7 +106,7 @@ void localanimation::UpdateLocal() {
 	/* Update only each tick */
 	if (update) {
 
-		AnimlayerFix(g::pCmd, g::pLocal->AnimState());
+		//AnimlayerFix(g::pCmd, g::pLocal->AnimState());
 
 		/* Store current animationlayers */
 		g::pLocal->GetAnimationLayers(localdata.AnimationLayer);

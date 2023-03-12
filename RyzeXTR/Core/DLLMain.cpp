@@ -67,10 +67,12 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	menu::Setup();
 	M::Setup();
 	h::SetupHooks();
+	g::entityListener.Setup();
 
 	while (!GetAsyncKeyState(VK_DELETE))
 		Sleep(200);
-
+	
+	g::entityListener.Destroy();
 	menu::open = false;
 	h::DestroyHooks();
 	menu::Destroy();

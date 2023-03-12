@@ -141,6 +141,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
 	}
 
+	g::bSendPacket = &bSendPacket;
+
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();
 
