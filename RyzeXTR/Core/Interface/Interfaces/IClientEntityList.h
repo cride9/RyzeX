@@ -59,6 +59,8 @@ public:
 		vecEntityListeners.FindAndRemove(pListener);
 	}
 
-private:
 	CUtlVector<IClientEntityListener*> vecEntityListeners;
+
+private:
+
 };

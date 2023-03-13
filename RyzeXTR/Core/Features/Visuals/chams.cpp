@@ -1,7 +1,7 @@
 #include "chams.h"
 #include "../../Interface/Classes/CKeyValues.h"
 #include "../Rage/Animations/LocalAnimation.h"
-#include "../Rage/Animations/Lagcompensation.h"
+#include "../Rage/Animations/Lagcomp.h"
 #include "../../SDK/math.h"
 #include "../Misc/misc.h"
 

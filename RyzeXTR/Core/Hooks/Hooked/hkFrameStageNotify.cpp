@@ -1,7 +1,7 @@
 #include "../hooks.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
-#include "../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../Features/Rage/Animations/LagComp.h"
 #include "../../Features/Rage/doubletap.h"
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Networking/networking.h"
@@ -34,13 +34,6 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_NET_UPDATE_END:
 
-		if (g::bRestoreGlobals) {
-
-			g::pLocal->GetTickBase() = g::nRestoreTickbase;
-			i::GlobalVars->flCurrentTime = g::flRestoreCurtime;
-
-			g::bRestoreGlobals = false;
-		}
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
@@ -52,7 +45,6 @@ void hkPreFrameStageNotify(EStage curStage) {
 		localanim.FixVelocityModifer();
 		break;
 	}
-	lagcomp.FrameStageNotify(curStage);
 }
 
 void hkPostFrameStageNotify(EStage curStage) {

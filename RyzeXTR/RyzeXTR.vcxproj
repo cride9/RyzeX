@@ -139,7 +139,6 @@
     <ClCompile Include="Core\Features\Misc\enginepred.cpp" />
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
-    <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\LocalAnimation.cpp" />
     <ClCompile Include="Core\Features\Rage\antiaim.cpp" />
     <ClCompile Include="Core\Features\Rage\autowall.cpp" />
@@ -205,12 +204,12 @@
     <ClCompile Include="Dependecies\Minhook\hde\hde64.c" />
     <ClCompile Include="Dependecies\Minhook\hook.c" />
     <ClCompile Include="Dependecies\Minhook\trampoline.c" />
+    <ClCompile Include="Core\Features\Rage\Animations\LagComp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
     <ClInclude Include="Core\Features\Misc\misc.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
-    <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\LocalAnimation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\resolver.h" />
     <ClInclude Include="Core\Features\Rage\antiaim.h" />
@@ -288,6 +287,7 @@
     <ClInclude Include="Dependecies\Minhook\hde\table64.h" />
     <ClInclude Include="Dependecies\Minhook\minhook.h" />
     <ClInclude Include="Dependecies\Minhook\trampoline.h" />
+    <ClInclude Include="Core\Features\Rage\Animations\LagComp.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

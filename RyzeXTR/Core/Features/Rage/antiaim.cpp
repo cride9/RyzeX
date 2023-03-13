@@ -84,9 +84,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 		float flFov = 180.f;
 
 		// get all possible enemies
-		for (int i = 0; i < 65; i++) {
+		for (auto pEntity : g::entityListener.vecEntities) {
 
-			CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+			//CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+			CBaseEntity* pEnt = pEntity.pEntity;
+			int i = pEnt->EntIndex();
 
 			if (!pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || !pEnt->GetClientRenderable())
 				continue;
