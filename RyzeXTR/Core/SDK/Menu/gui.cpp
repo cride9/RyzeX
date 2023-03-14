@@ -91,7 +91,7 @@ void menu::Render() noexcept {
 			ImGui::BeginChild("##tabs", ImVec2(ImGui::GetContentRegionAvail().x, 37.f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 			{
 				ImGui::PushFont(buildDateFont);
-				ImGui::TextColored(ImColor(222, 153, 42), "Build Date: 09/05/2022");
+				ImGui::TextColored(ImColor(222, 153, 42), "Build Date: \n", __DATE__ );
 				ImGui::PopFont();
 				ImGui::SameLine();
 
@@ -173,6 +173,8 @@ void menu::Render() noexcept {
 
 							ImGui::Checkbox("through wall", &cfg::model::enemyXQZ); ImGui::SameLine(); ImGui::SetCursorPosX(rightbotX);
 							ImGui::ColorEdit4("##enemyXQZColor", cfg::model::enemyXQZColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
+
+							ImGui::Checkbox( "through wall", &cfg::model::m_bDrawMatrix );
 						}
 
 						ImGui::SetCursorPosY(rightboxY);
@@ -565,6 +567,11 @@ void menu::Render() noexcept {
 						ImGui::SameLine();
 						ImGui::Keybind("##tpkey", &cfg::misc::thirdpersonbind);
 					}
+					
+					ImGui::Checkbox( "draw server hitbox", &cfg::misc::m_bDrawServerHitbox);
+					if ( cfg::misc::m_bDrawServerHitbox );
+						ImGui::Checkbox( "draw server hitbox on all entities", &cfg::misc::m_bDrawServerHitboxOnAllEntities );
+					
 					ImGui::Checkbox("nightmode", &cfg::misc::nightmode); ImGui::SameLine();
 					ImGui::ColorEdit4("##nightmodecolor", cfg::misc::nightmodeColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
 					ImGui::Checkbox("preserve killfeed", &cfg::misc::preserveKillfeed);
@@ -795,6 +802,7 @@ void menu::Render() noexcept {
 					if (cfg::rage::autostop) {
 						ImGui::SameLine();
 						ImGui::Checkbox("always", &cfg::rage::betweenshots);
+						ImGui::Checkbox( "in air", &cfg::rage::m_bAutoStopInAir );
 					}
 					ImGui::Checkbox("resolver", &cfg::rage::resolver);
 					//ImGui::Checkbox("aimstep", &cfg::rage::aimstep);

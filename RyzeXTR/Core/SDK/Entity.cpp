@@ -412,52 +412,74 @@ float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
 	return vecReturn.Length();
 }
 
-void CBaseEntity::SetupBonesFix(matrix3x4_t* pMatrix) {
+bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int boneMask, float currentTime )
+{
+	auto hdr = target->GetModelPtr( );
+	if ( !hdr )
+		return false;
 
-	//const auto backup_mask_1 = *reinterpret_cast<int*>(uintptr_t(this) + 0x269C);
-	//const auto backup_mask_2 = *reinterpret_cast<int*>(uintptr_t(this) + 0x26B0);
-	//const auto backup_flags = *reinterpret_cast<int*>(uintptr_t(this) + 0xe8);
-	//const auto backup_effects = *reinterpret_cast<int*>(uintptr_t(this) + 0xf0);
-	//const auto backup_use_pred_time = *reinterpret_cast<int*>(uintptr_t(this) + 0x2ee);
+	const auto oldBones = target->GetBoneAccessor()->matBones;
+	const auto o_abs = target->GetAbsAngles( );
+	const auto o_origin = target->GetAbsOrigin( );
 
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0xA68) = 0;
-	//const auto backup_frametime = i::GlobalVars->flFrameTime;
+	CAnimationLayer layers[ 13 ];
 
-	//i::GlobalVars->flFrameTime = FLT_MAX;
+	target->GetAnimationLayers( layers );
+	float poses[ 24 ];
+	target->GetPoseParameters( poses );
 
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0x269C) = 0;
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0x26B0) |= 512;
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0xe8) |= 8;
+	matrix3x4_t baseMatrix;
+	M::AngleMatrix( target->GetAbsAngles( ), target->GetAbsOrigin( ), baseMatrix );
 
-	///* disable matrix interpolation */
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0xf0) |= 8;
+	target->GetEffects( ) |= 0x008;
 
-	///* use our setup time */
-	//*reinterpret_cast<bool*>(uintptr_t(this) + 0x2ee) = false;
+	IKContext* IK_context = target->GetIKContext( );
+	if ( IK_context )
+	{
 
-	///* thanks chambers */
-	//auto b = *reinterpret_cast<char*> (uintptr_t(this) + 0x68);
+		auto absAngles = const_cast< Vector& >( target->GetAbsAngles( ) );
 
-	//auto backup_num_ik_chains = 0;
+		IK_context->ClearTargets( );
+		IK_context->Init( hdr, absAngles, target->GetVecOrigin( ),
+			currentTime, i::GlobalVars->iFrameCount, BONE_USED_BY_HITBOX | BONE_USED_BY_VERTEX_LOD0 | BONE_USED_BY_VERTEX_LOD1 | BONE_USED_BY_VERTEX_LOD2
+			| BONE_USED_BY_VERTEX_LOD3 | BONE_USED_BY_VERTEX_LOD4 | BONE_USED_BY_VERTEX_LOD5 | BONE_USED_BY_VERTEX_LOD6 | BONE_USED_BY_VERTEX_LOD7 );
+		target->SetAbsAngles( absAngles );
+	}
 
-	//*reinterpret_cast<char*> (uintptr_t(this) + 0x68) |= 2;
+	Vector pos[ 128 ]{};
+	__declspec( align( 16 ) ) Quaternion     q[ 128 ];
+	uint8_t boneComputed[ 0x100 ];
+	std::memset( boneComputed, 0, 0x100 );
 
-	///* use uninterpolated origin */
-	g::bSettingUpBones[this->EntIndex()] = true;
+	target->GetBoneAccessor( )->matBones = pBoneToWorldOut;
+	target->StandardBlendingRules( hdr, pos, q, currentTime, boneMask );
 
-	//this->InvalidateBoneCache();
-	this->SetupBones(pMatrix, 128, BONE_USED_BY_HITBOX, this->GetSimulationTime());
+	if ( IK_context )
+	{
+		target->UpdateIKLocks( currentTime );
+		IK_context->UpdateTargets( pos, q, pBoneToWorldOut, boneComputed );
+		target->CalculateIKLocks( currentTime );
+		IK_context->SolveDependencies( pos, q, pBoneToWorldOut, boneComputed );
+	}
 
-	g::bSettingUpBones[this->EntIndex()] = false;
+	target->BuildTransformations( hdr, pos, q, baseMatrix, boneMask, boneComputed );
 
-	//*reinterpret_cast<char*> (uintptr_t(this) + 0x68) = b;
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0x269C) = backup_mask_1;
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0x26B0) = backup_mask_2;
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0xe8) = backup_flags;
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0xf0) = backup_effects;
-	//*reinterpret_cast<int*>(uintptr_t(this) + 0x2ee) = backup_use_pred_time;
+	target->GetEffects( ) &= ~0x008;
 
-	//i::GlobalVars->flFrameTime = backup_frametime;
+	target->SetAnimationLayers( layers );
+	target->SetPoseParameters( poses );
+	target->SetAbsOrigin( o_origin );
+	target->SetAbsAngles( o_abs );
+	target->GetBoneAccessor( )->matBones = oldBones;
+	return true;
+}
+
+bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut )
+{
+	alignas( 16 ) matrix3x4_t bone_out[ 128 ];
+	const auto ret = HandleBoneSetup( target, bone_out, boneMask, currentTime );
+	memcpy( pBoneToWorldOut, bone_out, sizeof( matrix3x4_t[ 128 ] ) );
+	return ret;
 }
 
 bool CBaseEntity::IsBreakable()

@@ -11,12 +11,12 @@ void __fastcall	h::hkUpdateClientSideAnimations(void* entityPointer, void* edx) 
 
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 
-	if (!pEnt || !pEnt->AnimState())
+	if (!pEnt || !pEnt->AnimState() )
 		return original(entityPointer, edx);
 
 	// like this the client wont fuck up animations since WE DO NOT ALLOW it to happen LOL
 	if (g::bAllowAnimations[pEnt->EntIndex()])
-		return original(entityPointer, edx);
+		original(entityPointer, edx);
 	else
 		return;
 }

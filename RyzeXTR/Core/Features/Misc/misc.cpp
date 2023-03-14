@@ -36,12 +36,22 @@ CBaseEntity* UTIL_PlayerByIndex(int index)
 
 void misc::ServerHitboxes() {
 
-	static auto pCall = (uintptr_t*)(util::FindSignature("server.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8B 35 ? ? ? ? 8B D9 57 8B CE"));
-	float fDuration = i::GlobalVars->flIntervalPerTick;
+	static uintptr_t* pCall = (uintptr_t*)(util::FindSignature("server.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8B 35 ? ? ? ? 8B D9 57 8B CE"));
+	float fDuration = i::GlobalVars->flIntervalPerTick * 2.0f;
+
+	PVOID pTEntity = nullptr;
+
+	if ( g::pLocal == nullptr )
+		return;
 
 	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
-		PVOID pTEntity = UTIL_PlayerByIndex(i);
+		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
+		if ( !pEntity || pEntity == g::pLocal || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || !pEntity->IsPlayer( ) /*|| !pEntity->IsEnemy( g::pLocal )*/ || pEntity->HasImmunity( ) || !pEntity->EntIndex( ) )
+			continue;
+
+		pTEntity = UTIL_PlayerByIndex(cfg::misc::m_bDrawServerHitboxOnAllEntities ? pEntity->EntIndex() : g::pLocal->EntIndex() );
+		
 		if (pTEntity)
 		{
 			__asm
@@ -84,7 +94,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 			bPositionSet = true;
 			vecOrigin = g::pLocal->GetAbsOrigin();
 			vecRecord = vecOrigin;
-			g::pLocal->SetupBonesFix(matrixRecord);
+			g::pLocal->SetupBonesFix(g::pLocal, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, matrixRecord);
 		}
 
 	}

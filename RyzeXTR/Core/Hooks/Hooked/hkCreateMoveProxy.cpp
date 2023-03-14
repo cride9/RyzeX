@@ -10,6 +10,7 @@
 #include "../../Features/Rage/doubletap.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/ragebot.h"
+#include "../../Features/Rage/Animations/Lagcompensation.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -105,10 +106,10 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		//	detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
 	}
 
-	//if ( cfg::misc::fakePing )
-	//	lagcomp.UpdateIncomingSequences( pNetChannel );
-	//else
-	//	lagcomp.ClearIncomingSequences( );
+	if ( cfg::misc::fakePing )
+		lagcomp.UpdateIncomingSequences( pNetChannel );
+	else
+		lagcomp.ClearIncomingSequences( );
 
 	static const auto clientStateHookable = (void*)(uintptr_t(i::ClientState) + 0x8); // ignore c-style casting
 

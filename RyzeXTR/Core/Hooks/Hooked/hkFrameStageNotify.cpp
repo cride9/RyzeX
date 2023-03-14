@@ -4,6 +4,7 @@
 #include "../../Features/Rage/doubletap.h"
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Networking/networking.h"
+#include "../../Features/Rage/Animations/Lagcompensation.h"
 
 void hkPreFrameStageNotify(EStage curStage) {
 
@@ -44,6 +45,8 @@ void hkPreFrameStageNotify(EStage curStage) {
 		localanim.FixVelocityModifer();
 		break;
 	}
+
+	lagcomp.FrameStageNotify( curStage );
 }
 
 void hkPostFrameStageNotify(EStage curStage) {

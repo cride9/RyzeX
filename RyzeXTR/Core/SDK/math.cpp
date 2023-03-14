@@ -84,6 +84,41 @@ void M::AngleVectors(const Vector& angView, Vector* pForward, Vector* pRight, Ve
 	}
 }
 
+void AngleMatrixCalculation( const Vector& angles, matrix3x4_t& matrix )
+{
+	float sr, sp, sy, cr, cp, cy;
+
+	DirectX::XMScalarSinCos( &sp, &cp, M_DEG2RAD( angles.x ) );
+	DirectX::XMScalarSinCos( &sy, &cy, M_DEG2RAD( angles.y ) );
+	DirectX::XMScalarSinCos( &sr, &cr, M_DEG2RAD( angles.z ) );
+
+	// matrix = (YAW * PITCH) * ROLL
+	matrix[ 0 ][ 0 ] = cp * cy;
+	matrix[ 1 ][ 0 ] = cp * sy;
+	matrix[ 2 ][ 0 ] = -sp;
+
+	float crcy = cr * cy;
+	float crsy = cr * sy;
+	float srcy = sr * cy;
+	float srsy = sr * sy;
+	matrix[ 0 ][ 1 ] = sp * srcy - crsy;
+	matrix[ 1 ][ 1 ] = sp * srsy + crcy;
+	matrix[ 2 ][ 1 ] = sr * cp;
+
+	matrix[ 0 ][ 2 ] = ( sp * crcy + srsy );
+	matrix[ 1 ][ 2 ] = ( sp * crsy - srcy );
+	matrix[ 2 ][ 2 ] = cr * cp;
+
+	matrix[ 0 ][ 3 ] = 0.0f;
+	matrix[ 1 ][ 3 ] = 0.0f;
+	matrix[ 2 ][ 3 ] = 0.0f;
+}
+
+void M::AngleMatrix( const Vector& ang, const Vector& pos, matrix3x4_t& out ) {
+	AngleMatrixCalculation( ang, out );
+	out.SetOrigin( pos );
+}
+
 void M::AngleMatrix(const Vector& angView, matrix3x4_t& matOutput, const Vector& vecOrigin)
 {
 	float sp, sy, sr, cp, cy, cr;

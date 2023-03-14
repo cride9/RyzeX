@@ -5,8 +5,6 @@ void __fastcall h::hkDoExtraBoneProcessing(void* entityPointer, void* edx, int a
 
 	static auto original = detour::extraBoneProcessing.GetOriginal<decltype(&h::hkDoExtraBoneProcessing)>();
 
-	return;
-
 	CBaseEntity* pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 
 	if (!pEnt)

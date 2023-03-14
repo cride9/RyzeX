@@ -358,9 +358,9 @@ public:
 class IClientEntity : public IClientUnknown, public IClientRenderable, public IClientNetworkable, public IClientThinkable
 {
 public:
-	virtual const Vector& GetAbsOrigin() const = 0;
-	virtual const Vector& GetAbsAngles() const = 0;
-	virtual void* GetMouth() = 0;
+	virtual const Vector&			GetAbsOrigin() const = 0;
+	virtual const Vector&			GetAbsAngles() const = 0;
+	virtual void*					GetMouth() = 0;
 	virtual bool					GetSoundSpatialization(struct SpatializationInfo_t& info) = 0;
 	virtual bool					IsBlurred() = 0;
 
@@ -438,6 +438,40 @@ public:
 	return reinterpret_cast<type*>(uint32_t(this) + offset);		\
 }
 
+class IKContext
+{
+public:
+	void Init( CStudioHdr* hdr, Vector& angles, Vector& origin, float curtime, int framecount, int boneMask ) {
+		static const auto ik_init_address = util::FindSignature( "client.dll", "55 8B EC 83 EC 08 8B 45 08 56 57 8B F9 8D 8F" );
+		reinterpret_cast< void( __thiscall* )( IKContext*, CStudioHdr*, Vector&, Vector&, float, int, int ) >( ik_init_address )( this, hdr, angles, origin, curtime, framecount, boneMask );
+	}
+
+	void UpdateTargets( Vector* pos, Quaternion* q, matrix3x4_t* bone_array, byte* computed ) {
+		static const auto update_targets_address = util::FindSignature( "client.dll", "55 8B EC 83 E4 F0 81 EC ? ? ? ? 33 D2 89" );
+		reinterpret_cast< void( __thiscall* )( IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte* ) >( update_targets_address )( this, pos, q, bone_array, computed );
+	}
+
+	void SolveDependencies( Vector* pos, Quaternion* q, matrix3x4_t* bone_array, byte* computed ) {
+		static const auto solve_dependencies_address = util::FindSignature( "client.dll", "55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81" );
+		reinterpret_cast< void( __thiscall* )( IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte* ) >( solve_dependencies_address )( this, pos, q, bone_array, computed );
+	}
+
+	void ClearTargets( )
+	{
+		auto v56 = 0;
+		if ( *( int* )( ( DWORD )this + 4080 ) > 0 )
+		{
+			auto v57 = ( int* )( ( DWORD )this + 208 );
+			do
+			{
+				*v57 = -9999;
+				v57 += 85;
+				++v56;
+			} while ( v56 < *( int* )( ( DWORD )this + 4080 ) );
+		}
+	}
+};
+
 class CWeaponCSBase;
 class CBaseEntity : public IClientEntity{
 
@@ -475,6 +509,7 @@ public:
 	ADD_NETVAR(GetDuckAmount, float, "CBasePlayer->m_flDuckAmount");
 	ADD_NETVAR(GetDuckSpeed, float, "CBasePlayer->m_flDuckSpeed");
 	ADD_NETVAR(GetFallVelocity, float, "CBasePlayer->m_flFallVelocity");
+	ADD_NETVAR( GetVelocityModifier, float, "CBasePlayer->m_flVelocityModifier" );
 
 	// pointer netvars
 	//ADD_PNETVAR(GetFallVelocity, float, "CBasePlayer->m_flFallVelocity"); Tf is going on here? Leaving it commented out incase you don't like the change
@@ -595,6 +630,30 @@ public:
 		memcpy(this->GetCachedBoneData().Base(), matrix, this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
 	}
 
+	void UpdateIKLocks( float curtime ) {
+		using o_fn = void( __thiscall* )( void*, float );
+		util::CallVFunc<o_fn>( this, 191, curtime );
+	}
+
+	void CalculateIKLocks( float curtime ) {
+		using o_fn = void( __thiscall* )( void*, float );
+		util::CallVFunc<o_fn>( this, 192, curtime );
+	}
+
+	IKContext* GetIKContext( ) {
+		return *( IKContext** )( ( uintptr_t )this + 9836 + 0x4 );
+	}
+
+	CStudioHdr* GetModelPtr( )
+	{
+		using LockStudioHdr_t = void( __thiscall* )( decltype( this ) );
+
+		if ( !GetStudioHdr( ) )
+			reinterpret_cast< LockStudioHdr_t >( util::FindSignature( "client.dll", "55 8B EC 51 53 8B D9 56 57 8D B3" ) );
+
+		return GetStudioHdr( );
+	}
+
 	// normal netvars
 	ADD_NETVAR(GetShotsFired, int, "CCSPlayer->m_iShotsFired");
 	ADD_NETVAR(GetMoney, int, "CCSPlayer->m_iAccount");
@@ -673,6 +732,9 @@ public:
 	ADD_NETVAROFFSET(GetOldSimulationTime, float, "CBaseEntity->m_flSimulationTime", 0x4);
 	ADD_NETVAROFFSET(GetMoveType, int, "CBaseEntity->m_nRenderMode", 0x1);
 
+	ADD_NETVAR( vecMaxs, Vector, "CBaseEntity->m_vecMaxs" );
+	ADD_NETVAR( vecMins, Vector, "CBaseEntity->m_vecMins" );
+
 	ADD_NETVAR(GetNextAttack, float, "CBaseCombatCharacter->m_flNextAttack");
 	ADD_NETVAR(GetActiveWeaponHandle, CBaseHandle, "CBaseCombatCharacter->m_hActiveWeapon");
 
@@ -696,6 +758,22 @@ public:
 		auto& arrPose = this->GetPoseParameter();
 		arrPose.at(11U) = (flPitch + 90.f) / 180.f;
 		arrPose.at(2U) = (flYaw + 180.f) / 360.f;
+	}
+	
+	void BuildTransformations( CStudioHdr* hdr, Vector* pos, Quaternion* q, const matrix3x4_t& transform, int mask, uint8_t* computed ) {
+
+		using BuildTransformations_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, Quaternion*, matrix3x4_t const&, int, uint8_t* );
+		return util::GetVFunc< BuildTransformations_t >( this, 190 )( this, hdr, pos, q, transform, mask, computed );
+	}
+
+	void StandardBlendingRules( CStudioHdr* hdr, Vector* pos, Quaternion* q, float time, int mask ) {
+
+		using StandardBlendingRules_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, Quaternion*, float, int );
+		return util::GetVFunc< StandardBlendingRules_t >( this, 206 )( this, hdr, pos, q, time, mask );
+	}
+
+	int& GetSimulationTick( ) {
+		return *reinterpret_cast< int* >( reinterpret_cast< std::uintptr_t >( this ) + 0x2AC );
 	}
 
 	CAnimationLayer* GetAnimationOverlays() {
@@ -791,7 +869,7 @@ public:
 	bool					CanShoot(CWeaponCSBase* pBaseWeapon);
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecEnd, bool bSmokeCheck = false);
 	bool					IsBreakable();
-	void					SetupBonesFix(matrix3x4_t*);
+	bool					SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut );
 	void					InvalidateBoneCache();
 	float					GetSequenceCycleRate(CStudioHdr*, int);
 	float					GetLayerSequenceCycleRate(CAnimationLayer*, int);

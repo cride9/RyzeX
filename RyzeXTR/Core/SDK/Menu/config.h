@@ -13,6 +13,7 @@ namespace cfg {
 
 		inline bool enable;
 		inline bool autostop;
+		inline bool m_bAutoStopInAir;
 		inline bool betweenshots;
 		inline bool doubletap;
 		inline int  doubletapkey;
@@ -195,6 +196,8 @@ namespace cfg {
 		inline bool enemyAnimOverlayXhair = true;
 		inline bool enemyAnimOverlayXQZXhair = false;
 
+		inline bool m_bDrawMatrix = false;
+
 		// team
 		inline int teamType = 0;
 		inline bool team = false;
@@ -264,6 +267,9 @@ namespace cfg {
 		inline bool bunnyhop = false;
 		inline bool autoStrafe = false;
 		inline bool faststop = false;
+
+		inline bool m_bDrawServerHitbox = false;
+		inline bool m_bDrawServerHitboxOnAllEntities = false;
 
 		inline bool nightmode = false;
 		inline float nightmodeColor[4] = { 1.f, 1.f, 1.f, 1.f };

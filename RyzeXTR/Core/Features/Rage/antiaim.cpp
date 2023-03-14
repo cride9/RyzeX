@@ -138,8 +138,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 		pCmd->angViewPoint.y += desyncValue;
 }
 
-bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) {
-
+bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 
+{
 	const auto time = TICKS_TO_TIME(g::pLocal->GetTickBase());
 
 	if (g::pLocal->GetWeapon()) {

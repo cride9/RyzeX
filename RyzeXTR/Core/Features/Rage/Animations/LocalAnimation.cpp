@@ -104,7 +104,8 @@ void localanimation::UpdateLocal() {
 		return;
 
 	/* Update only each tick */
-	if (update) {
+	//if (update) 
+	{
 
 		//AnimlayerFix(g::pCmd, g::pLocal->AnimState());
 
@@ -136,7 +137,7 @@ void localanimation::UpdateLocal() {
 
 	/* Only allow bone setup when we send packet */
 	if (!i::ClientState->nChokedCommands)
-		g::pLocal->SetupBonesFix(localdata.Matrix);
+		g::pLocal->SetupBonesFix( g::pLocal, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, localdata.Matrix );
 
 	/* Use latest setupbones */
 	g::pLocal->SetBoneCache(localdata.Matrix);

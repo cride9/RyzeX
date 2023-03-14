@@ -3,6 +3,17 @@
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
 
+struct SequenceObject_t
+{
+	SequenceObject_t( int iInReliableState, int iOutReliableState, int iSequenceNr, float flCurrentTime )
+		: iInReliableState( iInReliableState ), iOutReliableState( iOutReliableState ), iSequenceNr( iSequenceNr ), flCurrentTime( flCurrentTime ) { }
+
+	int iInReliableState;
+	int iOutReliableState;
+	int iSequenceNr;
+	float flCurrentTime;
+};
+
 struct record_t {
 
 	/* Validity check to not shoot lagcomp breaking ppl */
@@ -76,21 +87,48 @@ struct record_t {
 	}
 };
 
+class CSimulationData
+{
+public:
+	CSimulationData( ) : pEntity( nullptr ), bOnGround( false )
+	{
+	}
+
+	~CSimulationData( )
+	{
+	}
+
+	CBaseEntity* pEntity;
+
+	Vector vecOrigin;
+	Vector vecVelocity;
+
+	bool bOnGround;
+
+	bool bDataFilled = false;
+};
+
 class Lagcompensation {
 
 public:
-
 	/* Everything will be ran inside this */
 	void FrameStageNotify(EStage curStage);
+	// extrapolate players breaking lagcomp
+	void ExtrapolatePlayer( CBaseEntity* m_pEntity, record_t* m_pCurrentRecord, record_t* m_pPrevious ) const;
 
+	
 	/* Lerp Time */
 	float LerpTime();
+
+	void UpdateIncomingSequences( INetChannel* pNetChannel );
+	void ClearIncomingSequences( );
+	void AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency );
 
 	/* Every entity data will be placed into this deque */
 	std::deque<record_t> deqRecords[65];
 
 private:
-
+	void RebuildWalkToRunTransition( CBaseEntity* pEntity, record_t* pRecord );
 	/* Will be called with the function upper */
 	void UpdateAnimation(CBaseEntity* pEnt);
 
@@ -99,5 +137,12 @@ private:
 
 	/* Fix animation time (velocity) and origin */
 	void FixAbsoluteAngVec(CBaseEntity*, record_t*, record_t*);
+
+	// Values
+	std::deque<SequenceObject_t> vecSequences = { };
+	/* our real incoming sequences count */
+	int nRealIncomingSequence = 0;
+	/* count of incoming sequences what we can spike */
+	int nLastIncomingSequence = 0;
 };
 inline Lagcompensation lagcomp;
