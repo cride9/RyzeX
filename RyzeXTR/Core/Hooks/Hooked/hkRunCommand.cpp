@@ -9,6 +9,9 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	static auto original = detour::runCommand.GetOriginal<decltype(&h::hkRunCommand)>();
 
+	if (!g::pCmd)
+		return original(ecx, edx, pEnt, pCmd, pMovehelper);
+
 	if (!i::MoveHelper && pMovehelper)
 		i::MoveHelper = pMovehelper;
 
@@ -51,7 +54,7 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 	//if (doubletap::cmdCommandNumber == pCmd->iCommandNumber || doubletap::rechargeCommandNumber == pCmd->iCommandNumber || doubletap::defensiveCommandNumber == pCmd->iCommandNumber || doubletap::defensiveCommandNumberReset == pCmd->iCommandNumber)
 	//	g::bRestoreGlobals = true;
 
-	prediction.SaveViewmodelData( );
+	prediction.SaveViewmodelData( g::pLocal );
 	networking.SaveNetvarData( pEnt->GetTickBase( ) );
 
 	if (!localanim.update)

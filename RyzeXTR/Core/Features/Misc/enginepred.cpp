@@ -2,16 +2,16 @@
 #include "../../globals.h"
 #include "../Rage/Animations/LocalAnimation.h"
 
-void PrePrediction() {
+void PrePrediction(CBaseEntity* pLocal) {
 
-	g::localprediction::before::nFlags = g::pLocal->GetFlags();
-	g::localprediction::before::nMoveType = g::pLocal->GetMoveType();
+	g::localprediction::before::nFlags = pLocal->GetFlags();
+	g::localprediction::before::nMoveType = pLocal->GetMoveType();
 }
 
-void PostPrediction() {
+void PostPrediction(CBaseEntity* pLocal) {
 
-	g::localprediction::after::nFlags = g::pLocal->GetFlags();
-	g::localprediction::after::nMoveType = g::pLocal->GetMoveType();
+	g::localprediction::after::nFlags = pLocal->GetFlags();
+	g::localprediction::after::nMoveType = pLocal->GetMoveType();
 }
 
 void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
@@ -21,7 +21,7 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
 	if (!pLocal->IsAlive() || i::MoveHelper == nullptr)
 		return;
 
-	PrePrediction();
+	PrePrediction(pLocal);
 
 	// start command
 	*pLocal->GetCurrentCommand() = pCmd;
@@ -144,7 +144,7 @@ void Prediction::End(CUserCmd* pCmd, CBaseEntity* pLocal) const
 	// reset move
 	i::GameMovement->Reset();
 
-	PostPrediction();
+	PostPrediction(pLocal);
 }
 
 int Prediction::GetTickBase(CUserCmd* pCmd, CBaseEntity* pLocal)
@@ -167,24 +167,24 @@ int Prediction::GetTickBase(CUserCmd* pCmd, CBaseEntity* pLocal)
 	return iTick;
 }
 
-void Prediction::SaveNetvars( int iCommand )
+void Prediction::SaveNetvars( int iCommand, CBaseEntity* pLocal)
 {
-	localanim.localdata.oldAbsOrigin = g::pLocal->GetAbsOrigin();
-	localanim.localdata.oldSpawnTime = g::pLocal->GetSpawnTime();
+	localanim.localdata.oldAbsOrigin = pLocal->GetAbsOrigin();
+	localanim.localdata.oldSpawnTime = pLocal->GetSpawnTime();
 
-	pNetvarData[ iCommand % 150 ].fFlags = g::pLocal->GetFlags( );
-	pNetvarData[ iCommand % 150 ].flDuckAmount = g::pLocal->GetDuckAmount( );
-	pNetvarData[ iCommand % 150 ].flDuckSpeed = g::pLocal->GetDuckSpeed( );
-	pNetvarData[ iCommand % 150 ].vecOrigin = g::pLocal->GetVecOrigin( );
-	pNetvarData[ iCommand % 150 ].vecVelocity = g::pLocal->GetVelocity( );
-	pNetvarData[ iCommand % 150 ].vecBaseVelocity = g::pLocal->GetVecBaseVelocity( );
-	pNetvarData[ iCommand % 150 ].flFallVelocity = g::pLocal->GetFallVelocity( );
-	pNetvarData[ iCommand % 150 ].vecViewOffset = g::pLocal->GetViewOffset( );
-	pNetvarData[ iCommand % 150 ].vecAimPunchAngle = g::pLocal->GetAimPunch( );
-	pNetvarData[ iCommand % 150 ].vecAimPunchAngleVel = g::pLocal->GetAimPunchVelocity( );
-	pNetvarData[ iCommand % 150 ].vecViewPunchAngle = g::pLocal->GetViewPunch( );
+	pNetvarData[ iCommand % 150 ].fFlags = pLocal->GetFlags( );
+	pNetvarData[ iCommand % 150 ].flDuckAmount = pLocal->GetDuckAmount( );
+	pNetvarData[ iCommand % 150 ].flDuckSpeed = pLocal->GetDuckSpeed( );
+	pNetvarData[ iCommand % 150 ].vecOrigin = pLocal->GetVecOrigin( );
+	pNetvarData[ iCommand % 150 ].vecVelocity = pLocal->GetVelocity( );
+	pNetvarData[ iCommand % 150 ].vecBaseVelocity = pLocal->GetVecBaseVelocity( );
+	pNetvarData[ iCommand % 150 ].flFallVelocity = pLocal->GetFallVelocity( );
+	pNetvarData[ iCommand % 150 ].vecViewOffset = pLocal->GetViewOffset( );
+	pNetvarData[ iCommand % 150 ].vecAimPunchAngle = pLocal->GetAimPunch( );
+	pNetvarData[ iCommand % 150 ].vecAimPunchAngleVel = pLocal->GetAimPunchVelocity( );
+	pNetvarData[ iCommand % 150 ].vecViewPunchAngle = pLocal->GetViewPunch( );
 
-	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon( );
+	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon( );
 	if ( !pWeapon )
 		return;
 
@@ -192,21 +192,21 @@ void Prediction::SaveNetvars( int iCommand )
 	pNetvarData[ iCommand % 150 ].flAccuracyPenalty = static_cast< CWeaponCSBase* >(pWeapon)->GetAccuracyPenalty( );
 }
 
-void Prediction::RestoreNetvars( int iCommand )
+void Prediction::RestoreNetvars(int iCommand, CBaseEntity* pLocal)
 {
-	g::pLocal->GetFlags( ) = pNetvarData[ iCommand % 150 ].fFlags;
-	g::pLocal->GetDuckAmount( ) = pNetvarData[ iCommand % 150 ].flDuckAmount;
-	g::pLocal->GetDuckSpeed( ) = pNetvarData[ iCommand % 150 ].flDuckSpeed;
-	g::pLocal->GetVecOrigin( ) = pNetvarData[ iCommand % 150 ].vecOrigin;
-	g::pLocal->GetVelocity( ) = pNetvarData[ iCommand % 150 ].vecVelocity;
-	g::pLocal->GetVecBaseVelocity( ) = pNetvarData[ iCommand % 150 ].vecBaseVelocity;
-	g::pLocal->GetFallVelocity( ) = pNetvarData[ iCommand % 150 ].flFallVelocity;
-	g::pLocal->GetViewOffset( ) = pNetvarData[ iCommand % 150 ].vecViewOffset;
-	g::pLocal->GetAimPunch( ) = pNetvarData[ iCommand % 150 ].vecAimPunchAngle;
-	g::pLocal->GetAimPunchVelocity( ) = pNetvarData[ iCommand % 150 ].vecAimPunchAngleVel;
-	g::pLocal->GetViewPunch( ) = pNetvarData[ iCommand % 150 ].vecViewPunchAngle;
+	pLocal->GetFlags( ) = pNetvarData[ iCommand % 150 ].fFlags;
+	pLocal->GetDuckAmount( ) = pNetvarData[ iCommand % 150 ].flDuckAmount;
+	pLocal->GetDuckSpeed( ) = pNetvarData[ iCommand % 150 ].flDuckSpeed;
+	pLocal->GetVecOrigin( ) = pNetvarData[ iCommand % 150 ].vecOrigin;
+	pLocal->GetVelocity( ) = pNetvarData[ iCommand % 150 ].vecVelocity;
+	pLocal->GetVecBaseVelocity( ) = pNetvarData[ iCommand % 150 ].vecBaseVelocity;
+	pLocal->GetFallVelocity( ) = pNetvarData[ iCommand % 150 ].flFallVelocity;
+	pLocal->GetViewOffset( ) = pNetvarData[ iCommand % 150 ].vecViewOffset;
+	pLocal->GetAimPunch( ) = pNetvarData[ iCommand % 150 ].vecAimPunchAngle;
+	pLocal->GetAimPunchVelocity( ) = pNetvarData[ iCommand % 150 ].vecAimPunchAngleVel;
+	pLocal->GetViewPunch( ) = pNetvarData[ iCommand % 150 ].vecViewPunchAngle;
 
-	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon( );
+	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon( );
 	if ( !pWeapon )
 		return;
 
@@ -214,9 +214,9 @@ void Prediction::RestoreNetvars( int iCommand )
 	static_cast< CWeaponCSBase* >( pWeapon )->GetAccuracyPenalty( ) = pNetvarData[ iCommand % 150 ].flAccuracyPenalty;
 }
 
-void Prediction::SaveViewmodelData( )
+void Prediction::SaveViewmodelData(CBaseEntity* pLocal)
 {
-	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( g::pLocal->GetViewModel( ) );
+	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( pLocal->GetViewModel( ) );
 
 	if ( !hViewmodel )
 		return;
@@ -227,9 +227,9 @@ void Prediction::SaveViewmodelData( )
 	//flAnimTime = hViewmodel->flAnimTime( );
 }
 
-void Prediction::AdjustViewmodelData( )
+void Prediction::AdjustViewmodelData(CBaseEntity* pLocal)
 {
-	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( g::pLocal->GetViewModel( ) );
+	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( pLocal->GetViewModel( ) );
 
 	if ( !hViewmodel )
 		return;

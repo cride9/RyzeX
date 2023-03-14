@@ -41,6 +41,9 @@ void __fastcall h::hkPhysicsSimulate(void* ecx, void* edx) {
 		}
 	*/
 
+	if (!g::pLocal || !g::pCmd)
+		return original(ecx, edx);
+
 	CCommandContext* pCommandContext = g::pLocal->GetOffsetPointer<CCommandContext>(0x350C);
 
 	if (!pCommandContext || !pCommandContext->bNeedsProcessing)
@@ -78,6 +81,6 @@ void __fastcall h::hkPhysicsSimulate(void* ecx, void* edx) {
 
 	original(ecx, edx);
 
-	prediction.SaveViewmodelData( );
+	prediction.SaveViewmodelData( g::pLocal );
 	return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 }

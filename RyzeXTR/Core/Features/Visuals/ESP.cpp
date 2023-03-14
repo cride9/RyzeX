@@ -17,11 +17,9 @@ void DebugAnimationLayers() {
 
 void visual::VisualRender() {
 
-	for (auto pEntity : g::entityListener.vecEntities) {
+	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
-		//CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-		CBaseEntity* pEnt = pEntity.pEntity;
-		int i = pEnt->EntIndex();
+		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!pEnt || !g::pLocal)
 			continue;

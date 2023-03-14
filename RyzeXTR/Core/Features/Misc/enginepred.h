@@ -46,10 +46,10 @@ public:
 
 	CNetvarData GetNetvars( int iCommand ) { return this->pNetvarData[ iCommand % 150 ]; };
 
-	void SaveNetvars( int iCommand );
-	void RestoreNetvars( int iCommand );
-	void SaveViewmodelData( );
-	void AdjustViewmodelData( );
+	void SaveNetvars( int iCommand , CBaseEntity* pLocal);
+	void RestoreNetvars( int iCommand, CBaseEntity* pLocal);
+	void SaveViewmodelData(CBaseEntity* pLocal);
+	void AdjustViewmodelData(CBaseEntity* pLocal);
 
 	std::array < CNetvarData, 150 > pNetvarData = { };
 

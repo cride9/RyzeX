@@ -106,7 +106,7 @@ void CNetworking::OnPacketEnd( CClientState* ClientState )
 	if ( *( int* )( ( DWORD )( ClientState )+0x16C ) != *( int* )( ( DWORD )( ClientState )+0x164 ) )
 		return;
 
-	prediction.AdjustViewmodelData( );
+	prediction.AdjustViewmodelData( g::pLocal );
 	return this->RestoreNetvarData( i::ClientState->iLastCommandAck );
 }
 

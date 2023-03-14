@@ -24,26 +24,13 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
 
-	/*
-	 * CL_RunPrediction
-	 * correct prediction when framerate is lower than tickrate
-	 * https://github.com/VSES/SourceEngine2007/blob/master/se2007/engine/cl_pred.cpp#L41
-	 */
 	if ( i::ClientState->iDeltaTick > 0 )
 		i::Prediction->Update( i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands );
 
 	CBaseEntity* pLocal = g::pLocal = (CBaseEntity*)i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer());
+	g::pCmd = pCmd;
 
 	static bool goBackFast = false;
-	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && !doubletap::bCharged && doubletap::rechargeAmount > 0 && !doubletap::shiftAmount) {
-
-		bSendPacket = true;
-		pCmd->iButtons &= ~(IN_ATTACK | IN_SECOND_ATTACK);
-
-		pVerifiedCmd->userCmd = *pCmd;
-		pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
-		return;
-	}
 	if (g::bShifting) {
 
 		pCmd->iButtons &= ~IN_FORWARD;
@@ -63,15 +50,13 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	else
 		goBackFast = true;
 
-	g::pCmd = pCmd;
-
 	auto oldViewAngle = g::oldViewAngle = pCmd->angViewPoint;
 
 	// for now that is the fix for the menu xddxdx
 	if (GetAsyncKeyState(VK_LBUTTON) && menu::open)
 		pCmd->iButtons &= ~IN_ATTACK;
 
-	prediction.SaveNetvars( pCmd->iCommandNumber );
+	prediction.SaveNetvars( pCmd->iCommandNumber, pLocal);
 
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 
@@ -85,7 +70,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	doubletap::Doubletap();
 
-	prediction.RestoreNetvars( pCmd->iCommandNumber );
+	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
 	misc::MovementFix(pCmd, oldViewAngle);
 

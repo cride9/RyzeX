@@ -8,6 +8,14 @@
 
 bool CheckShootingCondition(CUserCmd* pCmd);
 
+bool LowestHealth(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
+	return pEnt1->GetHealth() < pEnt2->GetHealth();
+}
+
+bool HighestDamage(std::pair<Vector, float> damage1, std::pair<Vector, float> damage2) {
+	return damage1.second > damage2.second;
+}
+
 void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket) {
 
 	if (!pLocal || !cfg::rage::enable)
@@ -18,15 +26,225 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 	if (!pWeapon || !pWeapon->GetCSWpnData())
 		return;
 
-	for (auto pEntity : g::entityListener.vecEntities) {
+	Vector vecEyePosition = pLocal->GetEyePosition();
 
+	if (CBaseEntity* pTarget = SelectTarget(pLocal, pWeapon, vecEyePosition); pTarget != nullptr) {
 
+		if (cfg::rage::autostop && cfg::rage::betweenshots) {
+			AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
+		}
+
+		if (CheckShootingCondition(pCmd)) {
+
+			if (cfg::rage::autostop && !cfg::rage::betweenshots) {
+				AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
+			}
+
+			Vector shootAngle = M::CalcAngle(vecEyePosition, Hitscan(pLocal, pTarget, pWeapon, vecEyePosition)).Normalize().Clamp();
+
+			if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
+				
+				static CConVar* recoilScale = i::ConVar->FindVar("weapon_recoil_scale");
+				pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
+				pCmd->iButtons |= IN_ATTACK;
+
+				pCmd->iTickCount = TIME_TO_TICKS(pTarget->GetSimulationTime());
+				bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
+			}
+		}
 	}
 }
 
-bool LowestHealth(std::pair<CBaseEntity*, int> first, std::pair<CBaseEntity*, int> second) {
+Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
 
-	return first.second < first.second;
+	std::vector<std::pair<Vector, float>> vectorDamagePairs = {};
+
+	/* Loop through enemy hitboxes and scale damage, then return a valid position to shoot to */
+	for (int hitboxID : ConfigHitboxes(pWeapon)) {
+
+		Vector vecHitboxPosition = pTarget->GetHitboxPosition(hitboxID, pTarget->GetCachedBoneData().Base());
+
+		if (float flDamage = autowall.GetDamage(pLocal, vecHitboxPosition, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon))
+			/* Get highest damage */
+
+			vectorDamagePairs.push_back(std::make_pair(vecHitboxPosition, flDamage));
+	}
+
+	/* Don't need to check if the vector is empty */
+	/* Look at SelectTarget(..) code */
+
+	/* Sort highest damage */
+	std::sort(vectorDamagePairs.begin(), vectorDamagePairs.end(), HighestDamage);
+
+	return vectorDamagePairs.front().first;
+}
+
+CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
+
+	std::vector<CBaseEntity*> entityHealths = {};
+	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
+
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+		/* Sanity checks */
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant())
+			continue;
+
+		/* Ignore teammates */
+		if (pEntity->GetTeam() == pLocal->GetTeam())
+			continue;
+
+		/* Add targetable entity */
+		entityHealths.push_back(pEntity);
+	}
+
+	/* Check if we have any record */
+	if (entityHealths.empty())
+		return nullptr;
+
+	/* Sort lowest health entities */
+	std::sort(entityHealths.begin(), entityHealths.end(), LowestHealth);
+
+	/* Loop through saved entites */
+	for (CBaseEntity* curEnt : entityHealths)
+		/* Loop through the selected hitboxes while we can hit something */
+		for (int hitboxID : ConfigHitboxes(pWeapon))
+			/* Trace player with its current bonedata */
+			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, ConfigMinimumDamage(pWeapon)))
+				return curEnt;
+
+	/* If we reach here, that means we cannot hit any player */
+	/* TODO: backtrackable entity checks */
+	return nullptr;
+}
+
+bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector vecFrom, int iChance, Vector vecEyePosition) {
+
+	float flFinalHitchance = 0;
+	CCSWeaponInfo* pWeaponInfo = pWeapon->GetCSWpnData();
+
+	if (!pWeaponInfo)
+		return false;
+
+	Vector vecForward = Vector(0, 0, 0);
+	Vector vecRight = Vector(0, 0, 0);
+	Vector vecUp = Vector(0, 0, 0);
+
+	M::AngleVectors(vecFrom, &vecForward, &vecRight, &vecUp);
+
+	vecForward.Normalize();
+	vecRight.Normalize();
+	vecUp.Normalize();
+
+	//auto is_special_weapon = pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_AWP || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_G3SG1 || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_SCAR20 || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_SSG08;
+
+	static bool bSetupSpreadValues = true;
+	static float flSpreadValues[256][6];
+
+	if (bSetupSpreadValues)
+	{
+		bSetupSpreadValues = false;
+
+		for (auto i = 0; i < 256; ++i)
+		{
+			M::RandomSeed(i + 1);
+
+			float a = M::RandomFloat(0.0f, 1.0f);
+			float b = M::RandomFloat(0.0f, 6.283185307f);
+			float c = M::RandomFloat(0.0f, 1.0f);
+			float d = M::RandomFloat(0.0f, 6.283185307f);
+
+			flSpreadValues[i][0] = a;
+			flSpreadValues[i][1] = c;
+
+			auto flSinB = 0.0f, flCosB = 0.0f;
+			M::SinCos(b, &flSinB, &flCosB);
+
+			auto flSinD = 0.0f, flCosD = 0.0f;
+			M::SinCos(b, &flSinD, &flCosD);
+
+			flSpreadValues[i][2] = flSinB;
+			flSpreadValues[i][3] = flCosB;
+			flSpreadValues[i][4] = flSinD;
+			flSpreadValues[i][5] = flCosD;
+		}
+	}
+
+	int iHits = 0;
+
+	for (auto i = 0; i < 256; ++i)
+	{
+		float flInacc = flSpreadValues[i][0] * pWeapon->GetInaccuracy();
+		float flSpread = flSpreadValues[i][1] * pWeapon->GetSpread();
+
+		float flSpreadX = flSpreadValues[i][3] * flInacc + flSpreadValues[i][5] * flSpread;
+		float flSpreadY = flSpreadValues[i][2] * flInacc + flSpreadValues[i][4] * flSpread;
+
+		Vector vecDirection = Vector(0, 0, 0);
+
+		vecDirection.x = vecForward.x + vecRight.x * flSpreadX + vecUp.x * flSpreadY;
+		vecDirection.y = vecForward.y + vecRight.y * flSpreadX + vecUp.y * flSpreadY;
+		vecDirection.z = vecForward.z + vecRight.z * flSpreadX + vecUp.z * flSpreadY; //-V778
+
+		Vector vecEnd = vecEyePosition + vecDirection * pWeaponInfo->flRange;
+
+		Trace_t Trace;
+
+		i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, vecEnd), MASK_SHOT | CONTENTS_GRATE, pEnt, &Trace);
+
+		if (Trace.pHitEntity == pEnt)
+			iHits++;
+	}
+
+	flFinalHitchance = (int)((float)iHits / 2.56f);
+
+	if (flFinalHitchance > iChance)
+		return true;
+
+	return false;
+}
+
+void CRageBot::AutoStop(CUserCmd* pCmd, float IdealSpeed) {
+
+	// Credit to @Monthyx
+	// Fast stop source from obelus
+
+	//if (g::pLocal->GetWeapon()->GetItemDefinitionIndex() == (WEAPON_SSG08 || WEAPON_AWP))
+	//	if (!CheckShootingCondition(pCmd))
+	//		return;
+
+	if (!(g::pLocal->GetFlags() & FL_ONGROUND))
+		return;
+
+	pCmd->iButtons &= ~IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT;
+
+	// Get the ideal speed for shooting (playstyle)
+	Vector velocity = g::pLocal->GetVelocity();
+	Vector direction;
+	Vector real_view;
+
+	if (IdealSpeed > velocity.Length2D())
+		return;
+
+	M::VectorAngles(velocity, direction);
+	i::EngineClient->GetViewAngles(real_view);
+
+	direction.y = real_view.y - direction.y;
+
+	Vector forward;
+	M::AngleVectors(direction, &forward);
+
+	static auto cl_forwardspeed = i::ConVar->FindVar("cl_forwardspeed");
+	static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
+
+	auto negative_forward_speed = -cl_forwardspeed->GetFloat();
+	auto negative_side_speed = -cl_sidespeed->GetFloat();
+
+	auto negative_forward_direction = forward * negative_forward_speed;
+	auto negative_side_direction = forward * negative_side_speed;
+
+	pCmd->flForwardMove = negative_forward_direction.x;
+	pCmd->flSideMove = negative_side_direction.y;
 }
 
 std::pair<int, int> CRageBot::ConfigMultipoint(CBaseCombatWeapon* pWeapon) {

@@ -15,6 +15,11 @@ public:
 
 private:
 
+	CBaseEntity*		SelectTarget(CBaseEntity*, CBaseCombatWeapon*, Vector&);
+	Vector				Hitscan(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector&);
+	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector);
+	void				AutoStop(CUserCmd*, float);
+
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);
 	int					ConfigHitChance(CBaseCombatWeapon*);
 	std::vector<int>	ConfigHitboxes(CBaseCombatWeapon*);

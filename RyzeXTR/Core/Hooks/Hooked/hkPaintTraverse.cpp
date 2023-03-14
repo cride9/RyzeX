@@ -12,6 +12,9 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
+		if (g::pLocal != nullptr && !i::EngineClient->IsInGame())
+			g::pLocal = nullptr;
+
 		visual::VisualRender();
 
 		if (g::pLocal) {

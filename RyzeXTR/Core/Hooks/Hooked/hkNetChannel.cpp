@@ -29,13 +29,13 @@ void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool hea
 
 bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMessage, bool bForceReliable, bool bVoice )
 {
-	static auto original = detour::sendNetMsg.GetOriginal<decltype( &hkSendNetMsg )>( );
+	static auto original = detour::sendNetMsg.GetOriginal<decltype(&hkSendNetMsg)>();
 
 	/*
 	 * @note: disable files crc check (sv_pure)
 	 * dont send message if it has FileCRCCheck type
 	 */
-	if ( pMessage->GetType( ) == 14 )
+	if ( pMessage->GetType( ) == INetChannelInfo::PAINTMAP)
 		return false;
 
 	/*

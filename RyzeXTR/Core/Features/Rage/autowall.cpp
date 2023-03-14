@@ -93,11 +93,9 @@ void CAutoWall::ClipTraceToPlayers(const Vector& vecAbsStart, const Vector& vecA
 
 	const Ray_t ray(vecAbsStart, vecAbsEnd);
 
-	for (auto pEnt : g::entityListener.vecEntities) {
+	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
-		//CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-		CBaseEntity* pEntity = pEnt.pEntity;
-		int i = pEntity->EntIndex();
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (pEntity == nullptr)
 			continue;

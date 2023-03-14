@@ -1,7 +1,6 @@
 #include "../hooks.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
-#include "../../Features/Rage/Animations/LagComp.h"
 #include "../../Features/Rage/doubletap.h"
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Networking/networking.h"

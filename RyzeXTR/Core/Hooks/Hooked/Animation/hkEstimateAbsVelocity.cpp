@@ -14,9 +14,9 @@ void __fastcall h::hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector
 	if (pPlayer->GetEffects() & EF_NOINTERP)
 		return;
 
-	// setting up bones, we dont want to estimate abs velocity
-	if (g::bSettingUpBones)
-		return;
+	//// setting up bones, we dont want to estimate abs velocity
+	//if (g::bSettingUpBones)
+	//	return;
 
 	// player is abusing tickbase, we dont want to estimate abs velocity
 	if (pPlayer->GetSimulationTime() < pPlayer->GetOldSimulationTime())

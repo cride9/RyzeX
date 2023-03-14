@@ -22,8 +22,7 @@ namespace table {
 	inline constexpr auto isPaused = 50;
 	inline constexpr auto writeUserCmd = 24;
 
-	inline constexpr auto fireEvent = 24;
-
+	inline constexpr auto fireEvent = 9;
 
 	inline constexpr auto processPacket = 39;
 	inline constexpr auto sendNetMsg = 40;
