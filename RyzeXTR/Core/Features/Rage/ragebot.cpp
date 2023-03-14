@@ -30,26 +30,27 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 	if (CBaseEntity* pTarget = SelectTarget(pLocal, pWeapon, vecEyePosition); pTarget != nullptr) {
 
-		if (cfg::rage::autostop && cfg::rage::betweenshots) {
-			AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
-		}
+		if (Vector vecHitscan = Hitscan(pLocal, pTarget, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
 
-		if (CheckShootingCondition(pCmd)) {
+			Vector shootAngle = M::CalcAngle(vecEyePosition, vecHitscan).Normalize().Clamp();
 
-			if (cfg::rage::autostop && !cfg::rage::betweenshots) {
+			if (cfg::rage::autostop && cfg::rage::betweenshots)
 				AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
-			}
 
-			Vector shootAngle = M::CalcAngle(vecEyePosition, Hitscan(pLocal, pTarget, pWeapon, vecEyePosition)).Normalize().Clamp();
+			if (CheckShootingCondition(pCmd)) {
 
-			if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
-				
-				static CConVar* recoilScale = i::ConVar->FindVar("weapon_recoil_scale");
-				pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
-				pCmd->iButtons |= IN_ATTACK;
+				if (cfg::rage::autostop && !cfg::rage::betweenshots)
+					AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
 
-				pCmd->iTickCount = TIME_TO_TICKS(pTarget->GetSimulationTime());
-				bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
+				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
+
+					static CConVar* recoilScale = i::ConVar->FindVar("weapon_recoil_scale");
+					pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
+					pCmd->iButtons |= IN_ATTACK;
+
+					pCmd->iTickCount = TIME_TO_TICKS(pTarget->GetSimulationTime());
+					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
+				}
 			}
 		}
 	}
@@ -66,12 +67,11 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 
 		if (float flDamage = autowall.GetDamage(pLocal, vecHitboxPosition, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon))
 			/* Get highest damage */
-
 			vectorDamagePairs.push_back(std::make_pair(vecHitboxPosition, flDamage));
 	}
 
-	/* Don't need to check if the vector is empty */
-	/* Look at SelectTarget(..) code */
+	if (vectorDamagePairs.empty())
+		return Vector(0, 0, 0);
 
 	/* Sort highest damage */
 	std::sort(vectorDamagePairs.begin(), vectorDamagePairs.end(), HighestDamage);
