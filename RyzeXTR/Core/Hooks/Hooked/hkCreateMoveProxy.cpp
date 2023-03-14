@@ -92,17 +92,17 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	// @note: doesnt need rehook cuz detours here
 	if ( pNetChannel != nullptr )
 	{
-		if ( !detour::processPacket.IsHooked( ) )
-			detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
+		//if ( !detour::processPacket.IsHooked( ) )
+		//	detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
 
 		if ( !detour::sendNetMsg.IsHooked( ) )
 			detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
 
-		if ( !detour::setChoked.IsHooked( ) )
-			detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
+		//if ( !detour::setChoked.IsHooked( ) )
+		//	detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
 
-		if ( !detour::sendDatagram.IsHooked( ) )
-			detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
+		//if ( !detour::sendDatagram.IsHooked( ) )
+		//	detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
 	}
 
 	//if ( cfg::misc::fakePing )
@@ -115,12 +115,12 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if ( clientStateHookable != nullptr )
 	{
 		// PacketStart Detour
-		if ( !detour::packetStart.IsHooked( ) )
-			detour::packetStart.Create( util::GetVFunc( clientStateHookable, table::packetStart ), &h::hkPacketStart );
+		//if ( !detour::packetStart.IsHooked( ) )
+		//	detour::packetStart.Create( util::GetVFunc( clientStateHookable, table::packetStart ), &h::hkPacketStart );
 
-		// PacketEnd Detour
-		if ( !detour::packetEnd.IsHooked( ) )
-			detour::packetEnd.Create( util::GetVFunc( clientStateHookable, table::packetEnd ), &h::hkPacketEnd );
+		//// PacketEnd Detour
+		//if ( !detour::packetEnd.IsHooked( ) )
+		//	detour::packetEnd.Create( util::GetVFunc( clientStateHookable, table::packetEnd ), &h::hkPacketEnd );
 
 		if ( !detour::temptEntities.IsHooked( ) )
 			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );

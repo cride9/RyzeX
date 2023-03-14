@@ -63,11 +63,14 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 	/* Loop through enemy hitboxes and scale damage, then return a valid position to shoot to */
 	for (int hitboxID : ConfigHitboxes(pWeapon)) {
 
-		Vector vecHitboxPosition = pTarget->GetHitboxPosition(hitboxID, pTarget->GetCachedBoneData().Base());
+		float flRadius = 0.f;
+		Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, pTarget->GetCachedBoneData().Base(), flRadius);
+		std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
 
-		if (float flDamage = autowall.GetDamage(pLocal, vecHitboxPosition, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon))
-			/* Get highest damage */
-			vectorDamagePairs.push_back(std::make_pair(vecHitboxPosition, flDamage));
+		for (Vector currentPoint : vecHitboxPosition)
+			if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon))
+				/* Get highest damage */
+				vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
 	}
 
 	if (vectorDamagePairs.empty())
@@ -442,4 +445,79 @@ bool CheckShootingCondition(CUserCmd* pCmd) {
 		return false;
 
 	return true;
+}
+
+std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector vecAngle, float flRadius, int nHitbox, int entIndex, Vector vecEyePosition) {
+
+	if (flRadius <= 0)
+		return std::vector<Vector>{vecAngle};
+
+	std::pair<int, int> multiPoints = ConfigMultipoint(g::pLocal->GetWeapon());
+	std::vector<Vector> points;
+	int iMinimumDamage = ConfigMinimumDamage(pWeapon);
+
+	int* pHeadPoints = &multiPoints.first;
+	int* pBodyPoints = &multiPoints.second;
+	Vector vecOriginalAngle = vecAngle;
+
+	if (nHitbox == HITBOX_HEAD) {
+
+		/* First check if we can hit the hitbox middle */
+		points.push_back(vecOriginalAngle);
+
+		/* Check every point of the hitbox by making a 3D cube inside the hitbox */
+		/* I'm too lazy to actually make it perfectly round like hitboxes are */
+
+		float flHeadDistance = flRadius * (*pHeadPoints / 150.f);
+
+		/* Single axises */
+		{
+			points.push_back(vecOriginalAngle + Vector(flHeadDistance, 0.f, 0.f));
+			points.push_back(vecOriginalAngle + Vector(0.f, flHeadDistance, 0.f));
+			points.push_back(vecOriginalAngle + Vector(0.f, 0.f, flHeadDistance));
+			points.push_back(vecOriginalAngle - Vector(0.f, flHeadDistance, 0.f));
+			points.push_back(vecOriginalAngle - Vector(flHeadDistance, 0.f, 0.f));
+
+		}
+
+		return points;
+		//visual::headPoints[pTarget->EntIndex()][nHitbox] = points;
+
+		//for (Vector vecPoint : points) {
+
+		//	if (autowall.CanHitFloatingPoint(pLocal, pWeapon, vecPoint, vecEyePosition, iMinimumDamage)) {
+		//		visual::selectedPoint[pTarget->EntIndex()][nHitbox] = vecPoint;
+		//		return vecPoint;
+		//	}
+		//}
+	}
+	else {
+
+		/* First check if we can hit the hitbox middle */
+		points.push_back(vecOriginalAngle);
+
+		/* Check every point of the hitbox by making a 3D cube inside the hitbox */
+		/* I'm too lazy to actually make it perfectly round like hitboxes are */
+
+		float flBodyDistance = flRadius * (*pBodyPoints / 150.f);
+
+		/* Single axises */
+		{
+			points.push_back(vecOriginalAngle + Vector(flBodyDistance, 0.f, 0.f));
+			points.push_back(vecOriginalAngle + Vector(0.f, flBodyDistance, 0.f));
+			points.push_back(vecOriginalAngle - Vector(0.f, flBodyDistance, 0.f));
+			points.push_back(vecOriginalAngle - Vector(flBodyDistance, 0.f, 0.f));
+		}
+
+		return points;
+		/*visual::bodyPoints[pTarget->EntIndex()][nHitbox] = points;
+
+		for (Vector vecPoint : points)
+			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, vecPoint, vecEyePosition, iMinimumDamage)) {
+				visual::selectedPoint[pTarget->EntIndex()][nHitbox] = vecPoint;
+				return vecPoint;
+			}*/
+	}
+
+	return std::vector<Vector>{vecAngle};
 }
