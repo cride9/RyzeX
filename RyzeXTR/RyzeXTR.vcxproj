@@ -212,7 +212,6 @@
     <ClInclude Include="Core\Features\Networking\networking.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\LocalAnimation.h" />
-    <ClInclude Include="Core\Features\Rage\Animations\resolver.h" />
     <ClInclude Include="Core\Features\Rage\antiaim.h" />
     <ClInclude Include="Core\Features\Rage\autowall.h" />
     <ClInclude Include="Core\Features\Rage\doubletap.h" />

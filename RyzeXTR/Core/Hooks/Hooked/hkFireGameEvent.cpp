@@ -1,7 +1,7 @@
 #include "../hooks.h"
 #include "../../globals.h"
 #include "../../Features/Misc/misc.h"
-#include "../../Features/Rage/Animations/resolver.h"
+#include "../../Features/Rage/Animations/Lagcompensation.h"
 
 void Event::FireGameEvent(IGameEvent* pEvent) {
 
@@ -10,7 +10,7 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 
 	misc::PreserveKillfeed(pEvent);
 	misc::BuyBot(pEvent);
-	//resolver::EventManager(pEvent);
+	lagcomp.ResolverHandler(pEvent);
 
 	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
 		return;

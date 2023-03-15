@@ -487,6 +487,7 @@ public:
 	ADD_OFFSET(MaintainSequenceTransition, bool, 0x9F0);
 	ADD_OFFSET(InverseKinematics, LPVOID, 0x2670);
 	ADD_OFFSET(GeFinalPredictedTick, int, 0x3434);
+	ADD_OFFSET(m_nOcclusionMask, int, 0xA28);
 	//ADD_POFFSET(AnimState, CAnimState, 0x9960); You are fr a handicapped fuck, just fucking netvar it
 	//ADD_OFFSET(GetEFlags, int, 0xE8);
 
@@ -520,6 +521,8 @@ public:
 	ADD_NETVAROFFSET(GetButtonDisabled, int, "CBasePlayer->m_hViewEntity", -0xC);
 	ADD_NETVAROFFSET(GetButtonForced, int, "CBasePlayer->m_hViewEntity", -0x8);
 	ADD_NETVAROFFSET(AnimState, CAnimState*, "CCSPlayer->m_bIsScoped", -0x14); // @ida: 8B 8E ? ? ? ? F3 0F 10 48 ? E8 ? ? ? ? C7 + 0x2
+	ADD_NETVAR(m_flThirdpersonRecoil, float, "CCSPlayer->m_flThirdpersonRecoil");
+	ADD_NETVAR(m_bStrafing, bool, "CCSPlayer->m_bStrafing");
 
 	// pointer offset variables
 	ADD_PNETVAROFFSET(GetViewAngles, Vector, "CBasePlayer->deadflag", 0x4);
@@ -533,6 +536,7 @@ public:
 	ADD_PDATAMAP(GetImpulse, int, this->GetPredictionDescMap(), "m_nImpulse");
 	ADD_DATAMAP(GetVecBaseVelocity, Vector, this->GetPredictionDescMap( ), "m_vecBaseVelocity" );
 	ADD_DATAMAP(GetSurfaceFriction, float, this->GetPredictionDescMap(), "m_surfaceFriction");
+	ADD_DATAMAP(m_vecAbsVelocity, Vector, this->GetPredictionDescMap(), "m_vecAbsVelocity");
 
 	template <typename T>
 	T& GetOffset(uintptr_t offset) {
@@ -628,6 +632,13 @@ public:
 			return;
 
 		memcpy(this->GetCachedBoneData().Base(), matrix, this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
+	}
+
+	void SetupBones_AttachmentHelper()
+	{// 55 8B EC 83 EC 48 53 8B 5D 08 89 4D F4
+		
+		static auto sig = util::FindSignature("client.dll", "55 8B EC 83 EC 48 53 8B 5D");
+		return ((void(__thiscall*)(void*, void*))(sig))(this, this->GetStudioHdr());
 	}
 
 	void UpdateIKLocks( float curtime ) {
@@ -746,6 +757,11 @@ public:
 	ADD_NETVAR(GetHitboxSet, int, "CBaseAnimating->m_nHitboxSet");
 	ADD_NETVAR(IsClientSideAnimation, bool, "CBaseAnimating->m_bClientSideAnimation");
 	ADD_NETVAR(GetCycle, float, "CBaseAnimating->m_flCycle");
+
+	Vector& m_angVisualAngles()
+	{
+		return *(Vector*)((DWORD)(this) + 0x31E8);
+	}
 
 	std::array<float, 24>& GetPoseParameter() {
 
@@ -872,8 +888,8 @@ public:
 	bool					SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut );
 	void					InvalidateBoneCache();
 	float					GetSequenceCycleRate(CStudioHdr*, int);
-	float					GetLayerSequenceCycleRate(CAnimationLayer*, int);
 	float					GetSequenceMoveDist(CStudioHdr*, int);
+	float					GetLayerSequenceCycleRate(CAnimationLayer*, int);
 
 	/*    
 	N_ADD_VARIABLE(int, GetSequence, "CBaseAnimating->m_nSequence");
@@ -1041,6 +1057,27 @@ public:
 	ADD_NETVAR(GetFallbackWear, float, "CBaseAttributableItem->m_flFallbackWear");
 	ADD_NETVAR(GetFallbackStatTrak, int, "CBaseAttributableItem->m_nFallbackStatTrak");
 	ADD_PNETVAR(GetEconItemView, CEconItemView, "CBaseAttributableItem->m_Item");
+
+	int16_t& m_nItemID()
+	{
+		return *(int16_t*)((DWORD)(this) + 0x2FBA);
+	}
+
+	bool IsGrenade() {
+
+		return this->GetCSWpnData()->nWeaponType == WEAPONTYPE_GRENADE;
+	}
+
+	bool IsKnife() {
+
+		int idx = this->m_nItemID();
+		return idx == WEAPON_KNIFE || idx == WEAPON_KNIFE_BAYONET || idx == WEAPON_KNIFE_BUTTERFLY || idx == WEAPON_KNIFE_FALCHION
+			|| idx == WEAPON_KNIFE_FLIP || idx == WEAPON_KNIFE_GUT || idx == WEAPON_KNIFE_KARAMBIT || idx == WEAPON_KNIFE_M9_BAYONET
+			|| idx == WEAPON_KNIFE_PUSH || idx == WEAPON_KNIFE_SURVIVAL_BOWIE || idx == WEAPON_KNIFE_T || idx == WEAPON_KNIFE_TACTICAL
+			|| idx == WEAPON_KNIFE_GG || idx == WEAPON_KNIFE_GHOST || idx == WEAPON_KNIFE_GYPSY_JACKKNIFE || idx == WEAPON_KNIFE_STILETTO
+			|| idx == WEAPON_KNIFE_URSUS || idx == WEAPON_KNIFE_WIDOWMAKER || idx == WEAPON_KNIFE_CSS || idx == WEAPON_KNIFE_CANIS
+			|| idx == WEAPON_KNIFE_CORD || idx == WEAPON_KNIFE_OUTDOOR || idx == WEAPON_KNIFE_SKELETON;
+	}
 
 	void SetModelIndex(int nModelIndex) {
 		util::CallVFunc<void>(this, 75, nModelIndex);

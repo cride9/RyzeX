@@ -126,3 +126,13 @@ bool CPacketManager::ShouldProcessPacketStart( int iCommand )
 
 	return false;
 }
+
+int CNetworking::GetServerTick() {
+
+	INetChannelInfo* m_NetChannel = i::EngineClient->GetNetChannelInfo();
+	if (m_NetChannel) {
+
+		return i::GlobalVars->iTickCount + TIME_TO_TICKS(m_NetChannel->GetLatency(FLOW_OUTGOING) + m_NetChannel->GetLatency(FLOW_INCOMING));
+	}
+	return i::GlobalVars->iTickCount;
+}

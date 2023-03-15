@@ -785,9 +785,9 @@ void menu::Render() noexcept {
 					static const char* fakelagtype[] = { "maximum", "adaptive", "jitter" };
 
 					ImGui::Combo("##fakelagtype", &cfg::antiaim::fakelagType, fakelagtype, IM_ARRAYSIZE(fakelagtype));
-					ImGui::SliderInt("base", &cfg::antiaim::fakelag, 0, 14, std::to_string(cfg::antiaim::fakelag).c_str());
-					ImGui::SliderInt("minimum", &cfg::antiaim::fakelagmin, 0, 14, std::to_string(cfg::antiaim::fakelagmin).c_str());
-					ImGui::SliderInt("maximum", &cfg::antiaim::fakelagmax, 0, 14, std::to_string(cfg::antiaim::fakelagmax).c_str());
+					ImGui::SliderInt("base", &cfg::antiaim::fakelag, 0, GetAsyncKeyState(VK_RSHIFT) ? 64 : 14, std::to_string(cfg::antiaim::fakelag).c_str());
+					ImGui::SliderInt("minimum", &cfg::antiaim::fakelagmin, 0, GetAsyncKeyState(VK_RSHIFT) ? 64 : 14, std::to_string(cfg::antiaim::fakelagmin).c_str());
+					ImGui::SliderInt("maximum", &cfg::antiaim::fakelagmax, 0, GetAsyncKeyState(VK_RSHIFT) ? 64 : 14, std::to_string(cfg::antiaim::fakelagmax).c_str());
 					ImGui::Spacing(); ImGui::Spacing();
 					ImGui::Checkbox("defensive", &cfg::antiaim::defensive);
 				}

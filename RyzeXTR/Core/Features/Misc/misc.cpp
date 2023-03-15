@@ -3,6 +3,7 @@
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/math.h"
 #include "../Rage/doubletap.h"
+
 #define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
@@ -362,6 +363,8 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 			*(float*)((DWORD)_death_notice + 0x50) = cfg::misc::preserveKillfeed ? FLT_MAX : 1.5; // need menu element
 	}
 	else if (!strcmp(event->GetName(), "round_start")) {
+
+		g_LocalAnimations->ResetData();
 
 		static DWORD* _death_notice = (DWORD*)FindHudElement("CCSGO_HudDeathNotice");
 		static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))util::FindSignature("client.dll", "55 8B EC 83 EC 0C 53 56 8B 71 58");
@@ -733,6 +736,11 @@ void misc::FakeLag(bool& bSendPacket) {
 
 	if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
 		bSendPacket = i::ClientState->nChokedCommands >= 14;
+		return;
+	}
+
+	if (!doubletap::bCharged && doubletap::rechargeAmount > 0 && !doubletap::shiftAmount && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
+		bSendPacket = true;
 		return;
 	}
 

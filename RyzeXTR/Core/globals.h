@@ -17,6 +17,7 @@ namespace g {
 	inline bool bShifting;
 	inline bool bWaiting;
 	inline bool bAntiaimEnabled;
+	inline int onetapV2ShotHiding;
 
 	inline bool bSettingUpBones[65];
 

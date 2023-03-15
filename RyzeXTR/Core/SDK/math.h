@@ -64,6 +64,22 @@ namespace M
 
 	float NormalizeYaw(float);
 
+	float NormalizeAngle(float flAngle);
+
+	template< class T >
+	void Normalize3(T& vec);
+
+	template <class T>
+	T Lerp(float flPercent, T const& A, T const& B);
+
+	void ClampAngles(Vector& angAngles);
+
+	float RemapValClamped(float val, float A, float B, float C, float D);
+
+	float AngleDiff(float destAngle, float srcAngle);
+
+	float DotProduct(Vector v1, Vector v2);
+
 	Vector Interpolate(const Vector, const Vector, const float);
 	float Interpolate(const float, const float, const float);
 	void Extrapolate(CBaseEntity* pEnt, Vector& vecOrigin, Vector& vecVelocity, int& fFlags, bool bOnGround);

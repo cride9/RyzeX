@@ -29,7 +29,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 		misc::NightMode();
 
-		localanim.UpdateLocal();
+		//localanim.UpdateLocal();
 		break;
 
 	case FRAME_NET_UPDATE_END:

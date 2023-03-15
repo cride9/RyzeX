@@ -115,7 +115,6 @@ public:
 	void FrameStageNotify(EStage curStage);
 	// extrapolate players breaking lagcomp
 	void ExtrapolatePlayer( CBaseEntity* m_pEntity, record_t* m_pCurrentRecord, record_t* m_pPrevious ) const;
-
 	
 	/* Lerp Time */
 	float LerpTime();
@@ -124,8 +123,15 @@ public:
 	void ClearIncomingSequences( );
 	void AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency );
 
+	void ResolverHandler(IGameEvent*);
+	void ResolverLogic();
+	float Resolver(CBaseEntity*, int);
+
 	/* Every entity data will be placed into this deque */
 	std::deque<record_t> deqRecords[65];
+	int missedShots[65];
+	bool didHurt = false;
+	Vector bulletImpact = Vector(0, 0, 0);
 
 private:
 	void RebuildWalkToRunTransition( CBaseEntity* pEntity, record_t* pRecord );

@@ -134,7 +134,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 					bool justOverlay = true;
 
-					matrix3x4_t* localmatrix = pBoneToWorld;
+					matrix3x4_t* localmatrix = /*pBoneToWorld*/localanim.localdata.Matrix;
 
 					//float curangle = g::oldViewAngle.y;
 					//int angle = 0;

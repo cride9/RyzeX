@@ -1,6 +1,7 @@
 #pragma once
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/Entity.h"
+#include "Animations/Lagcompensation.h"
 
 struct aimbotData_t {
 
@@ -12,6 +13,11 @@ class CRageBot {
 public:
 
 	void CreateMove(CUserCmd*, CBaseEntity*, bool&);
+
+	CBaseEntity* aimbotTarget;
+	matrix3x4_t* targetMatrix;
+	float		 flTargetSimulation;
+	record_t*	 backtrackRecord;
 
 private:
 

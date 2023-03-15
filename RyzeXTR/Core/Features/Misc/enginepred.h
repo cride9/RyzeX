@@ -1,4 +1,5 @@
 #pragma once
+#include "../Rage/Animations/LocalAnimation.h"
 #include "../../Interface/interfaces.h"
 #include "../../SDK/Entity.h"
 

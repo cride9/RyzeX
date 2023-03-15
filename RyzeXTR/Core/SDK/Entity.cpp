@@ -1,6 +1,7 @@
 #include "Entity.h"
 #include "math.h"
 #include "../globals.h"
+#include "../Hooks/hooks.h"
 
 CBaseEntity* CBaseEntity::GetLocalPlayer()
 {
@@ -418,6 +419,12 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 	if ( !hdr )
 		return false;
 
+	if (!detour::blendingRules.IsHooked() || !detour::buildTransform.IsHooked())
+		return false;
+
+	static auto standardBlendingRulesOriginal = detour::blendingRules.GetOriginal<decltype(&h::hkStandardBlendingRules)>();
+	static auto buildTransformationOriginal = detour::buildTransform.GetOriginal<decltype(&h::hkBuildTransformation)>();
+
 	const auto oldBones = target->GetBoneAccessor()->matBones;
 	const auto o_abs = target->GetAbsAngles( );
 	const auto o_origin = target->GetAbsOrigin( );
@@ -436,7 +443,6 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 	IKContext* IK_context = target->GetIKContext( );
 	if ( IK_context )
 	{
-
 		auto absAngles = const_cast< Vector& >( target->GetAbsAngles( ) );
 
 		IK_context->ClearTargets( );
@@ -446,23 +452,23 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 		target->SetAbsAngles( absAngles );
 	}
 
-	Vector pos[ 128 ]{};
+	static Vector pos[ 128 ];
 	__declspec( align( 16 ) ) Quaternion     q[ 128 ];
 	uint8_t boneComputed[ 0x100 ];
 	std::memset( boneComputed, 0, 0x100 );
 
 	target->GetBoneAccessor( )->matBones = pBoneToWorldOut;
-	target->StandardBlendingRules( hdr, pos, q, currentTime, boneMask );
+	standardBlendingRulesOriginal(target, 0, hdr, pos, q, currentTime, boneMask);
 
 	if ( IK_context )
 	{
 		target->UpdateIKLocks( currentTime );
 		IK_context->UpdateTargets( pos, q, pBoneToWorldOut, boneComputed );
 		target->CalculateIKLocks( currentTime );
-		IK_context->SolveDependencies( pos, q, pBoneToWorldOut, boneComputed );
+		//IK_context->SolveDependencies( pos, q, pBoneToWorldOut, boneComputed);
 	}
 
-	target->BuildTransformations( hdr, pos, q, baseMatrix, boneMask, boneComputed );
+	buildTransformationOriginal(target, 0, hdr, pos, q, &baseMatrix, boneMask, boneComputed);
 
 	target->GetEffects( ) &= ~0x008;
 

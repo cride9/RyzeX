@@ -222,7 +222,7 @@
     <ClCompile Include="Core\Features\Rage\ragebot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Features\Rage\Animations\LagComp.cpp">
+    <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -458,16 +458,13 @@
     <ClInclude Include="Core\Interface\Interfaces\entityListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Features\Rage\Animations\resolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Features\Networking\networking.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Features\Rage\ragebot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Features\Rage\Animations\LagComp.h">
+    <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,7 +4,7 @@ void doubletap::Doubletap() {
 
 	if (!cfg::rage::doubletap || !GetKeyState(cfg::rage::doubletapkey)) {
 
-		rechargeAmount = 17;
+		rechargeAmount = 20;
 		bCharged = false;
 		bReset = false;
 		return;
@@ -27,7 +27,7 @@ void doubletap::Doubletap() {
 		cmdTickbase = prediction.GetTickBase(g::pCmd, g::pLocal);
 		cmdCurtime = i::GlobalVars->flCurrentTime;
 
-		shiftAmount = 15;
+		shiftAmount = 14;
 		bReset = true;
 	}
 
@@ -39,7 +39,7 @@ void doubletap::Doubletap() {
 
 			if (!(g::pCmd->iButtons & IN_ATTACK)) {
 
-				rechargeAmount = 16;
+				rechargeAmount = 25;
 				bCharged = false;
 				bReset = false;
 			}

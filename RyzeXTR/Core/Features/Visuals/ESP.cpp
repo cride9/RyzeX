@@ -2,19 +2,6 @@
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../Misc/misc.h"
 
-void DebugAnimationLayers() {
-
-	for (int i = 0; i < 13; i++) {
-
-		i::Surface->DrawT(50 + (i * 75), 200, Color(255, 255, 255), g::fonts::NameESP, false, std::to_string(g::pLocal->GetAnimationOverlays()[i].nSequence).c_str());
-		i::Surface->DrawT(50 + (i * 75), 250, Color(255, 255, 255), g::fonts::NameESP, false, std::to_string(g::pLocal->GetAnimationOverlays()[i].flPlaybackRate).c_str());
-		i::Surface->DrawT(50 + (i * 75), 300, Color(255, 255, 255), g::fonts::NameESP, false, std::to_string(g::pLocal->GetAnimationOverlays()[i].flCycle).c_str());
-		i::Surface->DrawT(50 + (i * 75), 350, Color(255, 255, 255), g::fonts::NameESP, false, std::to_string(g::pLocal->GetAnimationOverlays()[i].flWeight).c_str());
-
-		i::Surface->DrawT(50 + (i * 75), 500, Color(255, 255, 255), g::fonts::NameESP, false, std::to_string(static_cast<EAlayers>(i)).c_str());
-	}
-}
-
 void visual::VisualRender() {
 
 	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
@@ -67,9 +54,6 @@ void visual::VisualRender() {
 		else {
 
 			if (pEnt == g::pLocal) { // Local
-
-				//if (pEnt->AnimState() && pEnt->GetAnimationOverlays())
-				//	DebugAnimationLayers();
 
 				if (!cfg::visual::localEsp)
 					continue;

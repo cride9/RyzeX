@@ -1,6 +1,5 @@
 #include "enginepred.h"
 #include "../../globals.h"
-#include "../Rage/Animations/LocalAnimation.h"
 
 void PrePrediction(CBaseEntity* pLocal) {
 
@@ -22,6 +21,7 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
 		return;
 
 	PrePrediction(pLocal);
+	g_LocalAnimations->BeforePrediction();
 
 	// start command
 	*pLocal->GetCurrentCommand() = pCmd;
@@ -169,8 +169,6 @@ int Prediction::GetTickBase(CUserCmd* pCmd, CBaseEntity* pLocal)
 
 void Prediction::SaveNetvars( int iCommand, CBaseEntity* pLocal)
 {
-	localanim.localdata.oldAbsOrigin = pLocal->GetAbsOrigin();
-	localanim.localdata.oldSpawnTime = pLocal->GetSpawnTime();
 
 	pNetvarData[ iCommand % 150 ].fFlags = pLocal->GetFlags( );
 	pNetvarData[ iCommand % 150 ].flDuckAmount = pLocal->GetDuckAmount( );

@@ -10,7 +10,9 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 
 	if (g::pLocal) { // need menu element
 
-		if (!g::pLocal->IsScoped())
+		if (cfg::misc::removals[3])
+			pSetup->flFOV = cfg::misc::fov;
+		else if (!g::pLocal->IsScoped())
 			pSetup->flFOV = cfg::misc::fov;
 
 		if (cfg::misc::removals[2]) {

@@ -347,6 +347,81 @@ Vector M::Approach(Vector target, Vector value, float speed) {
 	return value;
 }
 
+float M::AngleDiff(float destAngle, float srcAngle)
+{
+	float delta = fmodf(destAngle - srcAngle, 360.0f);
+	if (destAngle > srcAngle)
+	{
+		if (delta >= 180)
+			delta -= 360;
+	}
+	else
+	{
+		if (delta <= -180)
+			delta += 360;
+	}
+	return delta;
+}
+
+float M::NormalizeAngle(float flAngle)
+{
+	flAngle = fmod(flAngle, 360.0f);
+	if (flAngle > 180.0f)
+		flAngle -= 360.0f;
+	if (flAngle < -180.0f)
+		flAngle += 360.0f;
+
+	return flAngle;
+}
+
+float M::DotProduct(Vector v1, Vector v2)
+{
+	return ((v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z));
+};
+
+template< class T >
+void M::Normalize3(T& vec)
+{
+	for (auto i = 0; i < 2; i++) {
+		while (vec[i] < -180.0f) vec[i] += 360.0f;
+		while (vec[i] > 180.0f) vec[i] -= 360.0f;
+	}
+
+	while (vec[2] < -50.0f) vec[2] += 100.0f;
+	while (vec[2] > 50.0f) vec[2] -= 100.0f;
+}
+
+void M::ClampAngles(Vector& angAngles)
+{
+	if (angAngles.x > 89.0f)
+		angAngles.x = 89.0f;
+	else if (angAngles.x < -89.0f)
+		angAngles.x = -89.0f;
+
+	if (angAngles.y > 180.0f)
+		angAngles.y = 180.0f;
+	else if (angAngles.y < -180.0f)
+		angAngles.y = -180.0f;
+
+	angAngles.z = std::clamp(angAngles.z, -45.0f, 45.0f);
+}
+
+template <class T>
+T M::Lerp(float flPercent, T const& A, T const& B)
+{
+	return A + (B - A) * flPercent;
+}
+
+float M::RemapValClamped(float val, float A, float B, float C, float D)
+{
+	if (A == B)
+		return val >= B ? D : C;
+	float cVal = (val - A) / (B - A);
+	cVal = std::clamp(cVal, 0.0f, 1.0f);
+
+	return C + (D - C) * cVal;
+}
+
 //float M::ApproachAngle(float target, float value, float speed) {
 //
 //	target = anglemod(target);

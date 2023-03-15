@@ -2,6 +2,7 @@
 #include "doubletap.h"
 #include "../../SDK/math.h"
 #include "../../Features/Misc/enginepred.h"
+#include "Animations/LocalAnimation.h"
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
 
@@ -26,7 +27,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
 		bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
-		
+		g::onetapV2ShotHiding = pCmd->iCommandNumber;
+
 		return;
 	}
 
@@ -63,7 +65,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 	}
 
 	if (cfg::antiaim::jittervalue)
-		pCmd->angViewPoint.y += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? (cfg::antiaim::jittervalue) : -(cfg::antiaim::jittervalue) : unevenInvert ? (cfg::antiaim::jittervalue) : -(cfg::antiaim::jittervalue);
+		pCmd->angViewPoint.y += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue) : unevenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
 
 	// yaw
 	switch (cfg::antiaim::yaw) {
@@ -77,43 +79,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 		break;
 	}
 
-	// at target
-	if (cfg::antiaim::atTarget) {
-
-		float flAtTarget = pCmd->angViewPoint.y;
-		float flFov = 180.f;
-
-		// get all possible enemies
-		for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
-
-			CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-
-			if (!pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || !pEnt->GetClientRenderable())
-				continue;
-
-			// get closest to fov
-
-			// get local players viewangle
-			Vector vecViewAngle = pCmd->angViewPoint;
-
-			// get enemy position
-			Vector vecEnemyPosition = pEnt->GetHitboxPosition(HITBOX_HEAD).value();
-			Vector vecAimPoint = M::CalcAngle(g::pLocal->GetEyePosition(), vecEnemyPosition).Normalize().Clamp();
-			Vector vecDelta = vecAimPoint - vecViewAngle;
-
-			// calculate fov
-			vecDelta.Normalize();
-			float flTemporaryFov = min(sqrtf(powf(vecDelta.x, 2.0f) + powf(vecDelta.y, 2.0f)), 180.f);
-
-			if (flTemporaryFov < flFov) {
-				flFov = flTemporaryFov;
-				flAtTarget = vecAimPoint.y + 180;
-			}
-		}
-
-		pCmd->angViewPoint.y = flAtTarget;
-	}
-
 	// no lby break sry its 2022 nobody stands still and breaks lby
 	if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)
 		pCmd->flForwardMove += evenInvert ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
@@ -122,11 +87,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 	switch (cfg::antiaim::desynctype) {
 
 	case STATIC:
-			desyncValue = GetKeyState(cfg::antiaim::desyncinverter) ? (58 + cfg::antiaim::desyncvalue) : -(58 + cfg::antiaim::desyncvalue);
+			desyncValue = GetKeyState(cfg::antiaim::desyncinverter) ? (g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue) : -(g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue);
 		break;
 
 	case JITTER:
-			desyncValue = cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? (58 + cfg::antiaim::desyncvalue) : -(58 + cfg::antiaim::desyncvalue) : unevenInvert ? (58 + cfg::antiaim::desyncvalue) : -(58 + cfg::antiaim::desyncvalue);
+			desyncValue = cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? (g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue) : -(g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue) : unevenInvert ? (g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue) : -(g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue);
 		break;
 
 	default:
@@ -134,8 +99,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 		break;
 	}
 
-	if (!bSendPacket)
-		pCmd->angViewPoint.y += desyncValue;
+	if (g::onetapV2ShotHiding + 1 != pCmd->iCommandNumber) {
+		if (!bSendPacket) {
+			pCmd->angViewPoint.y = localanim.localdata.vecViewAngle.y + desyncValue;
+		}
+	}
 }
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 

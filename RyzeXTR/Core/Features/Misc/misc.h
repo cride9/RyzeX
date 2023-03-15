@@ -2,6 +2,7 @@
 #include "../../SDK/CUserCmd.h"
 #include "../../globals.h"
 #include "../../SDK/Enums.h"
+#include "../Rage/Animations/LocalAnimation.h"
 
 enum ECONFIG : int {
 

@@ -39,7 +39,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		pCmd->iButtons &= ~IN_MOVERIGHT;
 		
 		misc::IdealTick(pCmd);
-		localanim.update = true;
 
 		bSendPacket = doubletap::shiftAmount == 1; // Only send on the last shifted
 		pCmd->iButtons &= ~(IN_ATTACK | IN_SECOND_ATTACK);
@@ -63,6 +62,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.Start(pCmd, pLocal);
 	{
+		g_LocalAnimations->CopyPlayerAnimationData(false);
+
 		antiaim::AntiAim(pCmd, bSendPacket, oldViewAngle);
 
 		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
@@ -76,15 +77,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	misc::MovementFix(pCmd, oldViewAngle);
 
 	// emergency bsendpacket to prevent server disconnecting
-	if (i::ClientState->nChokedCommands > 15) {
+	if (i::ClientState->nChokedCommands > cfg::antiaim::fakelagmax) {
 		bSendPacket = true;
 		util::Print("Emergency!");
-	}
-
-	if (bSendPacket)
-	{ 
-		packetManager.pCommandList.emplace_back( pCmd->iCommandNumber );
-		localanim.localdata.vecViewAngle = pCmd->angViewPoint;
 	}
 
 	// netchannel pointer
@@ -93,17 +88,17 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	// @note: doesnt need rehook cuz detours here
 	if ( pNetChannel != nullptr )
 	{
-		//if ( !detour::processPacket.IsHooked( ) )
-		//	detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
+		if ( !detour::processPacket.IsHooked( ) )
+			detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
 
 		if ( !detour::sendNetMsg.IsHooked( ) )
 			detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
 
-		//if ( !detour::setChoked.IsHooked( ) )
-		//	detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
+		if ( !detour::setChoked.IsHooked( ) )
+			detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
 
-		//if ( !detour::sendDatagram.IsHooked( ) )
-		//	detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
+		if ( !detour::sendDatagram.IsHooked( ) )
+			detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
 	}
 
 	if ( cfg::misc::fakePing )
@@ -116,24 +111,38 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if ( clientStateHookable != nullptr )
 	{
 		// PacketStart Detour
-		//if ( !detour::packetStart.IsHooked( ) )
-		//	detour::packetStart.Create( util::GetVFunc( clientStateHookable, table::packetStart ), &h::hkPacketStart );
+		if ( !detour::packetStart.IsHooked( ) )
+			detour::packetStart.Create( util::GetVFunc( clientStateHookable, table::packetStart ), &h::hkPacketStart );
 
-		//// PacketEnd Detour
-		//if ( !detour::packetEnd.IsHooked( ) )
-		//	detour::packetEnd.Create( util::GetVFunc( clientStateHookable, table::packetEnd ), &h::hkPacketEnd );
+		// PacketEnd Detour
+		if ( !detour::packetEnd.IsHooked( ) )
+			detour::packetEnd.Create( util::GetVFunc( clientStateHookable, table::packetEnd ), &h::hkPacketEnd );
 
 		if ( !detour::temptEntities.IsHooked( ) )
 			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
 	}
 
+	if (g::onetapV2ShotHiding + 1 == pCmd->iCommandNumber) {
+		bSendPacket = true;
+	}
+
 	g::bSendPacket = &bSendPacket;
+
+	if (bSendPacket)
+	{
+		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
+	}
+
+	g_LocalAnimations->OnCreateMove();
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();
 
 	pVerifiedCmd->userCmd = *pCmd;
 	pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
+
+	if (bSendPacket)
+		localanim.localdata.vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
 
 	localanim.update = true;
 }

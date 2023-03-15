@@ -1,4 +1,6 @@
 #include "Lagcompensation.h"
+#include "../ragebot.h"
+#include "../../../SDK/math.h"
 
 void Lagcompensation::FrameStageNotify(EStage curStage) {
 
@@ -25,6 +27,12 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 			continue;
 		}
 
+		if (pEnt->GetPlayerInfo().bFakePlayer) {
+
+			g::bAllowAnimations[i] = true;
+			continue;
+		}
+
 		static bool bUpdate[65];
 		/* Get important information before interpolation */
 		if (curStage == FRAME_NET_UPDATE_POSTDATAUPDATE_END) {
@@ -39,50 +47,43 @@ void Lagcompensation::FrameStageNotify(EStage curStage) {
 				VarMapEntry_t* pEntry = &pVarMap->m_Entries[i];
 				pEntry->m_bNeedsToInterpolate = false;
 			}
+		}
+		/* Update animations */
+		if (curStage == FRAME_NET_UPDATE_END) {
 
-			bUpdate[i] = deqRecords[i].empty() || pEnt->GetSimulationTime() != pEnt->GetOldSimulationTime();
+			if (pEnt->GetTeam() == g::pLocal->GetTeam()) {
 
-			if (bUpdate) {
+				g::bAllowAnimations[i] = true;
+				continue;
+			}
+
+			bUpdate[i] = deqRecords[i].empty() || pEnt->GetSimulationTime() > deqRecords[pEnt->EntIndex()].front().flSimulationTime;
+
+			if (bUpdate[i]) {
 
 				if (deqRecords[i].size() >= 2) {
 
-					record_t previousRecord = deqRecords[i].at(1 );
+					record_t previousRecord = deqRecords[i].at(1);
 
 					/* lagcomp breaking ppl check */
 					if ((pEnt->GetVecOrigin() - previousRecord.vecOrigin).LengthSqr() > 4096.f && pEnt->GetSimulationTime() > previousRecord.flSimulationTime) {
 
-						ExtrapolatePlayer( pEnt, &deqRecords[ i ].front( ), &previousRecord );
+						ExtrapolatePlayer(pEnt, &deqRecords[i].front(), &previousRecord);
 
 						previousRecord.bValid = false;
 					}
 				}
 				/* let's create a new record and start updating some stuff in the right time */
 				deqRecords[i].emplace_front(record_t());
+
 				GetAnimationLayers(pEnt);
-			}
-
-			if (deqRecords[i].size() > 32)
-				deqRecords[i].pop_back();
-		}
-		/* Update animations */
-		else if (curStage == FRAME_NET_UPDATE_END) {
-
-			if (bUpdate[i]) {
-
-				/* Not animationfix!!! just animation update at the right time */
 				UpdateAnimation(pEnt);
 
 				bUpdate[i] = false;
 			}
-		}
-		/* Restore every animation at render start */
-		else if (curStage == FRAME_RENDER_START) {
 
-			if (!bUpdate[i] && !deqRecords[i].empty() && deqRecords[i].front().bValid) {
-
-				deqRecords[i].front().ApplyRecord(pEnt);
-				pEnt->UpdateClientSideAnimations();
-			}
+			if (deqRecords[i].size() > 32)
+				deqRecords[i].pop_back();
 		}
 	}
 }
@@ -207,6 +208,9 @@ void Lagcompensation::RebuildWalkToRunTransition( CBaseEntity* pEntity, record_t
 
 void Lagcompensation::UpdateAnimation(CBaseEntity* pEnt) {
 
+	if (pEnt->GetTeam() == g::pLocal->GetTeam())
+		return;
+
 	if (deqRecords[pEnt->EntIndex()].empty())
 		return;
 
@@ -243,6 +247,8 @@ void Lagcompensation::UpdateAnimation(CBaseEntity* pEnt) {
 	// just get the feet weight.
 	pEnt->AnimState( )->flMoveWeight = pCurrent->pLayers[ 6 ].flWeight / pEnt->AnimState( )->flInAirSmoothValue;
 
+	pEnt->AnimState()->flDurationInAir = 0.f;
+
 	/* Force full update this frame */
 	if (pEnt->AnimState()->iLastUpdateFrame == i::GlobalVars->iFrameCount)
 		pEnt->AnimState()->iLastUpdateFrame--;
@@ -255,7 +261,8 @@ void Lagcompensation::UpdateAnimation(CBaseEntity* pEnt) {
 
 	/* x = pitch */ /* y = yaw */ /* z = roll */
 	/* FORMULA: "z = y +- roll" (setting Z to the Y removes the infamous roll animation) */
-	pEnt->AnimState()->Update(Vector(vecEyeAngles.x, vecEyeAngles.y, vecEyeAngles.y));
+	ResolverLogic();
+	pEnt->AnimState()->flGoalFeetYaw = vecEyeAngles.y + Resolver(pEnt, missedShots[pEnt->EntIndex()]);
 	pEnt->UpdateClientSideAnimations();
 
 	g::bAllowAnimations[pEnt->EntIndex()] = false;
@@ -273,6 +280,22 @@ void Lagcompensation::UpdateAnimation(CBaseEntity* pEnt) {
 	/* Store this record */
 	if (pEnt->GetTeam() != g::pLocal->GetTeam())
 		pCurrent->StoreRecord(pEnt);
+}
+
+float Lagcompensation::Resolver(CBaseEntity* pEnt, int brutePhase) {
+
+	static float randomResolve = (i::GlobalVars->iTickCount % 16 != 0 ? 0 : M::RandomFloat(-20, 20));
+	if (i::GlobalVars->iTickCount % 16 == 0)
+		randomResolve = M::RandomFloat(-20, 20);
+
+	switch (brutePhase % 3) {
+
+	case 0: return (pEnt->AnimState()->GetMaxDesync() / 2) + randomResolve;
+		break;
+
+	case 1: return -(pEnt->AnimState()->GetMaxDesync() / 2) + randomResolve;
+		break;
+	}
 }
 
 void Lagcompensation::GetAnimationLayers(CBaseEntity* pEnt) {
@@ -390,5 +413,70 @@ void Lagcompensation::AddLatencyToNetChannel( INetChannel* pNetChannel, float fl
 			pNetChannel->iInSequenceNr = sequence.iSequenceNr;
 			break;
 		}
+	}
+}
+
+void Lagcompensation::ResolverLogic() {
+
+	if (!ragebot.aimbotTarget || !g::pLocal || bulletImpact == Vector(0, 0, 0) || !ragebot.targetMatrix || didHurt)
+		return;
+
+	Ray_t ray(g::pLocal->GetEyePosition(), bulletImpact);
+	CTraceFilter filter(g::pLocal);
+
+	Trace_t trace;
+
+	i::EngineTrace->TraceRay(ray, MASK_SHOT, &filter, &trace);
+
+	if (trace.pHitEntity == ragebot.aimbotTarget) {
+
+		ragebot.aimbotTarget = nullptr;
+		bulletImpact = Vector(0, 0, 0);
+		ragebot.targetMatrix = nullptr;
+		util::Print("Missed shot due to animation desyncronaztion");
+	}
+	else {
+
+		missedShots[ragebot.aimbotTarget->EntIndex()]--;
+		ragebot.aimbotTarget = nullptr;
+		ragebot.targetMatrix = nullptr;
+		bulletImpact = Vector(0, 0, 0);
+	}
+}
+
+void Lagcompensation::ResolverHandler(IGameEvent* pEvent) {
+
+	if (!ragebot.aimbotTarget || !g::pLocal)
+		return;
+
+	if (!strcmp(pEvent->GetName(), "weapon_fire")) {
+
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+
+		if (iUser == i::EngineClient->GetLocalPlayer()) {
+
+			missedShots[ragebot.aimbotTarget->EntIndex()]++;
+		}
+	}
+	if (!strcmp(pEvent->GetName(), "player_hurt")) {
+
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+
+		if (iAttacker == i::EngineClient->GetLocalPlayer() && iUser == i::EngineClient->GetPlayerForUserID(ragebot.aimbotTarget->EntIndex())) {
+
+			missedShots[ragebot.aimbotTarget->EntIndex()]--;
+			didHurt = true;
+		}
+	}
+	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		
+		if (iUser != i::EngineClient->GetLocalPlayer())
+			return;
+
+		didHurt = false;
+		bulletImpact = Vector(pEvent->GetFloat("x"), pEvent->GetFloat("y"), pEvent->GetFloat("z"));
 	}
 }

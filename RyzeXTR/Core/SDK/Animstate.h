@@ -308,4 +308,139 @@ public:
 
 		oResetAnimationState(this);
 	}
+
+	void IncrementLayerCycle(CAnimationLayer* Layer, bool bIsLoop)
+	{
+		float_t flNewCycle = (Layer->flPlaybackRate * this->flLastUpdateIncrement) + Layer->flCycle;
+		if (!bIsLoop && flNewCycle >= 1.0f)
+			flNewCycle = 0.999f;
+
+		flNewCycle -= (int32_t)(flNewCycle);
+		if (flNewCycle < 0.0f)
+			flNewCycle += 1.0f;
+
+		if (flNewCycle > 1.0f)
+			flNewCycle -= 1.0f;
+
+		Layer->flCycle = flNewCycle;
+	}
+	bool IsLayerSequenceFinished(CAnimationLayer* Layer, float_t flTime)
+	{
+		return (Layer->flPlaybackRate * flTime) + Layer->flCycle >= 1.0f;
+	}
+	void SetLayerCycle(CAnimationLayer* pAnimationLayer, float_t flCycle)
+	{
+		if (pAnimationLayer)
+			pAnimationLayer->flCycle = flCycle;
+	}
+	void SetLayerRate(CAnimationLayer* pAnimationLayer, float_t flRate)
+	{
+		if (pAnimationLayer)
+			pAnimationLayer->flPlaybackRate = flRate;
+	}
+	void SetLayerWeight(CAnimationLayer* pAnimationLayer, float_t flWeight)
+	{
+		if (pAnimationLayer)
+			pAnimationLayer->flWeight = flWeight;
+	}
+	void SetLayerWeightRate(CAnimationLayer* pAnimationLayer, float_t flPrevious)
+	{
+		if (pAnimationLayer)
+			pAnimationLayer->flWeightDeltaRate = (pAnimationLayer->flWeight - flPrevious) / flLastUpdateIncrement;
+	}
+	int SelectSequenceFromActivityModifier(int iActivity)
+	{
+		bool bIsPlayerDucked = flDuckAmount > 0.55f;
+		bool bIsPlayerRunning = flRunningSpeed > 0.25f;
+
+		int iLayerSequence = -1;
+		switch (iActivity)
+		{
+		case ACT_CSGO_JUMP:
+		{
+			iLayerSequence = 15 + static_cast <int>(bIsPlayerRunning);
+			if (bIsPlayerDucked)
+				iLayerSequence = 17 + static_cast <int>(bIsPlayerRunning);
+		}
+		break;
+
+		case ACT_CSGO_ALIVE_LOOP:
+		{
+			iLayerSequence = 9;
+			if (pLastActiveWeapon != pActiveWeapon)
+				iLayerSequence = 8;
+		}
+		break;
+
+		case ACT_CSGO_IDLE_ADJUST_STOPPEDMOVING:
+		{
+			iLayerSequence = 6;
+		}
+		break;
+
+		case ACT_CSGO_FALL:
+		{
+			iLayerSequence = 14;
+		}
+		break;
+
+		case ACT_CSGO_IDLE_TURN_BALANCEADJUST:
+		{
+			iLayerSequence = 4;
+		}
+		break;
+
+		case ACT_CSGO_LAND_LIGHT:
+		{
+			iLayerSequence = 20;
+			if (bIsPlayerRunning)
+				iLayerSequence = 22;
+
+			if (bIsPlayerDucked)
+			{
+				iLayerSequence = 21;
+				if (bIsPlayerRunning)
+					iLayerSequence = 19;
+			}
+		}
+		break;
+
+		case ACT_CSGO_LAND_HEAVY:
+		{
+			iLayerSequence = 23;
+			if (bIsPlayerDucked)
+				iLayerSequence = 24;
+		}
+		break;
+
+		case ACT_CSGO_CLIMB_LADDER:
+		{
+			iLayerSequence = 13;
+		}
+		break;
+		default: break;
+		}
+
+		return iLayerSequence;
+	}
+	float GetLayerSequenceCycleRate(CBaseEntity* thisptr, CAnimationLayer* pLayer, int iSequence) {
+
+		using GetLayerSequenceCycleRateFn = float(__thiscall*)(void*, CAnimationLayer*, int);
+		static auto original = reinterpret_cast<GetLayerSequenceCycleRateFn>(util::FindSignature("client.dll", "55 8B EC 56 57 FF 75 0C 8B 7D 08 8B F1 57 E8"));
+		return original(thisptr, pLayer, iSequence);
+
+		//using GetLayerSequenceCycleRateFn = float(__thiscall*)(void*, CAnimationLayer*, int);
+		//return util::CallVFunc< GetLayerSequenceCycleRateFn >(this, 223)(this, pLayer, iSequence);
+	}
+	void SetLayerSequence(CAnimationLayer* pAnimationLayer, int iActivity)
+	{
+		int iSequence = this->SelectSequenceFromActivityModifier(iActivity);
+		if (iSequence < 2)
+			return;
+
+		pAnimationLayer->flCycle = 0.0f;
+		pAnimationLayer->flWeight = 0.0f;
+		pAnimationLayer->nSequence = iSequence;
+		pAnimationLayer->flPlaybackRate = GetLayerSequenceCycleRate(pEntity, pAnimationLayer, iSequence);
+	}
 };

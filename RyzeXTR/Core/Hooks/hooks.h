@@ -5,6 +5,7 @@
 #include "../../Dependecies/Minhook/minhook.h"
 #include "../../Dependecies/Minhook/detour.hpp"
 #include "../../Dependecies/Minhook/trampoline.h"
+#include "../Features/Rage/Animations/LocalAnimation.h"
 
 namespace table {
 

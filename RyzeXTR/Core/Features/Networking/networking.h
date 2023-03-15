@@ -11,6 +11,8 @@ public:
 	void OnPacketEnd( CClientState* pClientState );
 	void SaveNetvarData( int iCommand );
 	void RestoreNetvarData( int iCommand );
+
+	int GetServerTick();
 private:
 	std::array < CNetvarData, 150 > pCompressData = { };
 };

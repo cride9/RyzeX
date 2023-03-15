@@ -4,7 +4,6 @@
 #include "../../SDK/math.h"
 #include "../Visuals/ESP.h"
 #include "doubletap.h"
-#include "Animations/resolver.h"
 
 bool CheckShootingCondition(CUserCmd* pCmd);
 
@@ -44,12 +43,16 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
 
+					aimbotTarget = pTarget;
+					targetMatrix = backtrackRecord ? backtrackRecord->pMatrix : pTarget->GetCachedBoneData().Base();
+
 					static CConVar* recoilScale = i::ConVar->FindVar("weapon_recoil_scale");
 					pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 					pCmd->iButtons |= IN_ATTACK;
 
-					pCmd->iTickCount = TIME_TO_TICKS(pTarget->GetSimulationTime());
+					pCmd->iTickCount = TIME_TO_TICKS(flTargetSimulation + lagcomp.LerpTime());
 					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
+					g::onetapV2ShotHiding = pCmd->iCommandNumber;
 				}
 			}
 		}
@@ -64,13 +67,27 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 	for (int hitboxID : ConfigHitboxes(pWeapon)) {
 
 		float flRadius = 0.f;
-		Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, pTarget->GetCachedBoneData().Base(), flRadius);
-		std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
+		if (!backtrackRecord) {
 
-		for (Vector currentPoint : vecHitboxPosition)
-			if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon))
-				/* Get highest damage */
-				vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
+			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, pTarget->GetCachedBoneData().Base(), flRadius);
+			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
+
+			for (Vector currentPoint : vecHitboxPosition)
+				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon))
+					/* Get highest damage */
+					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
+		}
+		else {
+
+			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, backtrackRecord->pMatrix, flRadius);
+			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
+
+			backtrackRecord->ApplyRecord(pTarget);
+			for (Vector currentPoint : vecHitboxPosition)
+				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon))
+					/* Get highest damage */
+					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
+		}
 	}
 
 	if (vectorDamagePairs.empty())
@@ -109,12 +126,27 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	std::sort(entityHealths.begin(), entityHealths.end(), LowestHealth);
 
 	/* Loop through saved entites */
-	for (CBaseEntity* curEnt : entityHealths)
+	for (CBaseEntity* curEnt : entityHealths) {
 		/* Loop through the selected hitboxes while we can hit something */
-		for (int hitboxID : ConfigHitboxes(pWeapon))
+		for (int hitboxID : ConfigHitboxes(pWeapon)) {
 			/* Trace player with its current bonedata */
-			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, ConfigMinimumDamage(pWeapon)))
+			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, ConfigMinimumDamage(pWeapon))) {
+				flTargetSimulation = curEnt->GetSimulationTime();
+				backtrackRecord = nullptr;
 				return curEnt;
+			}
+			else if (!lagcomp.deqRecords[curEnt->EntIndex()].empty() && lagcomp.deqRecords[curEnt->EntIndex()].size() >= 2){
+				if (record_t* recordScan = &lagcomp.deqRecords[curEnt->EntIndex()].back(); recordScan != nullptr) {
+					if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, ConfigMinimumDamage(pWeapon))) {
+						flTargetSimulation = recordScan->flSimulationTime;
+						backtrackRecord = recordScan;
+						return curEnt;
+					}
+				}
+			}
+		}
+	}
+
 
 	/* If we reach here, that means we cannot hit any player */
 	/* TODO: backtrackable entity checks */
