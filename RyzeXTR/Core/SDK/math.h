@@ -69,8 +69,11 @@ namespace M
 	template< class T >
 	void Normalize3(T& vec);
 
-	template <class T>
-	T Lerp(float flPercent, T const& A, T const& B);
+	template < typename t >
+	t Lerp( const t& t1, const t& t2, float progress )
+	{
+		return t1 + ( t2 - t1 ) * progress;
+	}
 
 	void ClampAngles(Vector& angAngles);
 

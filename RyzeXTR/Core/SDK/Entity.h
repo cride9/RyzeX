@@ -432,6 +432,15 @@ public:
 	return *reinterpret_cast<type*>(uint32_t(this) + offset);		\
 }
 
+/* add function to get datamap variable */
+#define ADD_DATAFIELD( szFunctionName, Type, pMap, szDataField )										\
+[[nodiscard]] std::add_lvalue_reference_t<Type> szFunctionName()										\
+{																										\
+	static constexpr uint32_t uHash = fnv::HashConst(szDataField);										\
+	static std::uintptr_t uOffset = n::FindInDataMap(pMap, uHash);										\
+	return *(std::add_pointer_t<Type>)(reinterpret_cast<std::uintptr_t>(this) + uOffset);				\
+}
+
 #define ADD_PDATAMAP(name, type, map, datafield) type* name() {		\
 	static constexpr uint32_t hash = fnv::HashConst(datafield);		\
 	static uintptr_t offset = n::FindInDataMap(map, hash);			\
@@ -535,6 +544,7 @@ public:
 	ADD_DATAMAP(GetButtonReleased, int, this->GetPredictionDescMap(), "m_afButtonReleased");
 	ADD_PDATAMAP(GetImpulse, int, this->GetPredictionDescMap(), "m_nImpulse");
 	ADD_DATAMAP(GetVecBaseVelocity, Vector, this->GetPredictionDescMap( ), "m_vecBaseVelocity" );
+	ADD_DATAFIELD(GetVecAbsVelocity, Vector&, this->GetPredictionDescMap( ), "m_vecAbsVelocity" );
 	ADD_DATAMAP(GetSurfaceFriction, float, this->GetPredictionDescMap(), "m_surfaceFriction");
 	ADD_DATAMAP(m_vecAbsVelocity, Vector, this->GetPredictionDescMap(), "m_vecAbsVelocity");
 

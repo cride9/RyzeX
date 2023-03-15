@@ -15,7 +15,7 @@ void __fastcall h::hkCalculateView(void* entityPointer, void* edx, Vector& unuse
 
 	pEnt->UseNewAnimationState() = false;
 
-	return original(entityPointer, edx, unused1, unused2, unused3, unused4, unused5);
+	original(entityPointer, edx, unused1, unused2, unused3, unused4, unused5);
 
 	pEnt->UseNewAnimationState() = backup;
 }

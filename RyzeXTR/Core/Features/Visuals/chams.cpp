@@ -3,6 +3,7 @@
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../../SDK/math.h"
 #include "../Misc/misc.h"
+#include "../Rage/Animations/Lagcompensation.h"
 
 enum EMATERIAL : int {
 
@@ -69,6 +70,59 @@ IMaterial* chams::CreateMaterial(std::string_view szName, std::string_view szSha
 
 	// create from buffer
 	return i::MaterialSystem->CreateMaterial(szName.data(), pKeyValues);
+}
+
+void MatrixSetOrigin( Vector pos, matrix3x4_t& matrix )
+{
+	matrix[ 0 ][ 3 ] = pos.x;
+	matrix[ 1 ][ 3 ] = pos.y;
+	matrix[ 2 ][ 3 ] = pos.z;
+}
+
+bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out) 
+{
+	if (!pEntity)
+		return false;
+
+	auto& pLog = lagcomp.GetLog(pEntity->EntIndex());
+	if (!&pLog || !pLog.pRecord.size() || pLog.iLastValid + 1 >= pLog.pRecord.size())
+		return false;
+
+	const auto& FirstInvalid = &pLog.pRecord[pLog.iLastValid];
+	const auto& LastInvalid = &pLog.pRecord[pLog.iLastValid + 1];
+
+	if (FirstInvalid->bDormant)
+		return false;
+
+	if (LastInvalid->flSimulationTime - FirstInvalid->flSimulationTime > 0.5f)
+		return false;
+
+	if (!LastInvalid->bDidShot && (!LastInvalid->vecOrigin.DistTo(FirstInvalid->vecOrigin) || LastInvalid->flDuck == FirstInvalid->flDuck && LastInvalid->vecEyeAngles == FirstInvalid->vecEyeAngles && LastInvalid->vecOrigin == FirstInvalid->vecOrigin))
+		return false;
+
+	const auto NextOrigin = LastInvalid->vecOrigin;
+	const auto curtime = i::GlobalVars->flCurrentTime;
+
+	auto flDelta = 1.f - (curtime - LastInvalid->flInterpTime) / (LastInvalid->flSimulationTime - FirstInvalid->flSimulationTime);
+	if (flDelta < 0.f || flDelta > 1.f)
+		LastInvalid->flInterpTime = curtime;
+
+	flDelta = 1.f - (curtime - LastInvalid->flInterpTime) / (LastInvalid->flSimulationTime - FirstInvalid->flSimulationTime);
+
+	flDelta = std::clamp( flDelta, 0.f, 1.f );
+
+	const auto lerp = M::Lerp(NextOrigin, FirstInvalid->vecOrigin, flDelta );
+
+	matrix3x4_t ret[128];
+	memcpy(ret, FirstInvalid->pMatrix, sizeof(matrix3x4_t[128]));
+
+	for (size_t i{ }; i < 128; ++i) {
+		const auto matrix_delta = Vector( FirstInvalid->pMatrix[ i ][ 0 ][ 3 ], FirstInvalid->pMatrix[ i ][ 1 ][ 3 ], FirstInvalid->pMatrix[ i ][ 2 ][ 3 ] ) - FirstInvalid->vecOrigin;
+		MatrixSetOrigin(matrix_delta + lerp, ret[i]);
+	}
+
+	memcpy(out, ret, sizeof(matrix3x4_t[128]));
+	return true;
 }
 
 bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags) {
@@ -321,8 +375,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					}
 
 					MakeChams(materials[cfg::model::enemyType], cfg::model::enemyColor, false, cfg::model::enemyXhair);
-
-					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original( i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags );	
 					justOverlay = false;
 				}
 				if (cfg::model::enemyOverlay || cfg::model::enemyThinOverlay || cfg::model::enemyAnimOverlay) {

@@ -194,6 +194,15 @@ public:
 	virtual bool	ChangeSplitscreenUser(int nSplitScreenUserSlot) = 0; // interleaved networking used by SS system is changing the SS player slot that the subsequent messages pertain to
 };
 
+class CClockDriftMgr
+{
+public:
+	float flClockOffsets[ 17 ]; //0x0000
+	uint32_t iCurClockOffset; //0x0044
+	uint32_t nServerTick;     //0x0048
+	uint32_t nClientTick;     //0x004C
+}; //Size: 0x0050
+
 class CClientState {
 public:
 	std::byte		pad0[0x9C];				// 0x0000
@@ -205,7 +214,8 @@ public:
 	float			flNextCmdTime;			// 0x0114
 	int				nServerCount;			// 0x0118
 	int				iCurrentSequence;		// 0x011C
-	std::byte		pad3[0x54];				// 0x0120
+	char			pad_0120[ 0x4 ];               //0x0120
+	CClockDriftMgr	clockDriftMgr; //0x0128
 	int				iDeltaTick;				// 0x0174
 	bool			bPaused;				// 0x0178
 	std::byte		pad4[0x7];				// 0x0179

@@ -14,10 +14,10 @@ public:
 
 	void CreateMove(CUserCmd*, CBaseEntity*, bool&);
 
-	CBaseEntity* aimbotTarget;
-	matrix3x4_t* targetMatrix;
-	float		 flTargetSimulation;
-	record_t*	 backtrackRecord;
+	CBaseEntity*					 aimbotTarget;
+	matrix3x4_t*					 targetMatrix;
+	float							 flTargetSimulation;
+	Lagcompensation::LagRecord_t*	 backtrackRecord;
 
 private:
 

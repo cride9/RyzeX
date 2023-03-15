@@ -2,6 +2,7 @@
 #include "../../globals.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../Features/Rage/Animations/EnemyAnimations.h"
 
 void Event::FireGameEvent(IGameEvent* pEvent) {
 
@@ -10,7 +11,7 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 
 	misc::PreserveKillfeed(pEvent);
 	misc::BuyBot(pEvent);
-	lagcomp.ResolverHandler(pEvent);
+	anims.ResolverHandler(pEvent);
 
 	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
 		return;

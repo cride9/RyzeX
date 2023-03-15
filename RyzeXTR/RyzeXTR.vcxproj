@@ -139,6 +139,7 @@
     <ClCompile Include="Core\Features\Misc\enginepred.cpp" />
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
+    <ClCompile Include="Core\Features\Rage\Animations\EnemyAnimations.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\LocalAnimation.cpp" />
     <ClCompile Include="Core\Features\Rage\antiaim.cpp" />
@@ -210,6 +211,7 @@
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
     <ClInclude Include="Core\Features\Misc\misc.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
+    <ClInclude Include="Core\Features\Rage\Animations\EnemyAnimations.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\LocalAnimation.h" />
     <ClInclude Include="Core\Features\Rage\antiaim.h" />

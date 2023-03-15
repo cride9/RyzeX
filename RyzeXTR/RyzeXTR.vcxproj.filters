@@ -223,6 +223,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp">
+<<<<<<< Updated upstream
+=======
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Features\Rage\Animations\EnemyAnimations.cpp">
+>>>>>>> Stashed changes
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -465,6 +471,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h">
+<<<<<<< Updated upstream
+=======
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Features\Rage\Animations\EnemyAnimations.h">
+>>>>>>> Stashed changes
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

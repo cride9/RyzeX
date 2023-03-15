@@ -406,12 +406,6 @@ void M::ClampAngles(Vector& angAngles)
 	angAngles.z = std::clamp(angAngles.z, -45.0f, 45.0f);
 }
 
-template <class T>
-T M::Lerp(float flPercent, T const& A, T const& B)
-{
-	return A + (B - A) * flPercent;
-}
-
 float M::RemapValClamped(float val, float A, float B, float C, float D)
 {
 	if (A == B)

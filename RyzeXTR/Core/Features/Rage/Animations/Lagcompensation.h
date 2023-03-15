@@ -2,6 +2,13 @@
 #include <deque>
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
+#include "../../../SDK/math.h"
+
+#pragma region lagcompensation_definitions
+#define LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR ( 64.0f * 64.0f )
+#define LAG_COMPENSATION_EPS_SQR ( 0.1f * 0.1f )
+#define LAG_COMPENSATION_ERROR_EPS_SQR ( 4.0f * 4.0f )
+#pragma endregion
 
 struct SequenceObject_t
 {
@@ -12,79 +19,6 @@ struct SequenceObject_t
 	int iOutReliableState;
 	int iSequenceNr;
 	float flCurrentTime;
-};
-
-struct record_t {
-
-	/* Validity check to not shoot lagcomp breaking ppl */
-	bool bValid;
-
-	/* Later usage: fix Jumpfall animationlayer */
-	int iFlags;
-
-	Vector vecOrigin;
-	Vector vecAngles;
-	Vector vecMins;
-	Vector vecMaxs;
-	Vector vecVelocity;
-	Vector vecAbsAngles;
-
-	/* For backtrack / updatetime / choke calculation */
-	float flSimulationTime;
-	float flOldSimulationTime;
-	float flMaxSpeed;
-	float flLowerBody;
-
-	/* Getting accurate poses */
-	float flPoseParameters[24];
-
-	/* Will be replaced with uninterpolated layers (easier to make a resolver for it) */
-	CAnimationLayer pLayers[13];
-
-	/* Aimbot will shoot the generated matrix */
-	matrix3x4_t pMatrix[128];
-
-	void StoreRecord(CBaseEntity* pEnt) {
-
-		bValid = true;
-
-		iFlags = pEnt->GetFlags();
-
-		vecOrigin = pEnt->GetVecOrigin();
-		vecAngles = pEnt->GetEyeAngles();
-		vecMins = pEnt->GetCollideable()->OBBMins();
-		vecMaxs = pEnt->GetCollideable()->OBBMaxs();
-		vecVelocity = pEnt->GetVelocity();
-		vecAbsAngles = pEnt->GetAbsAngles();
-
-		flSimulationTime = pEnt->GetSimulationTime();
-		flOldSimulationTime = pEnt->GetOldSimulationTime();
-		flMaxSpeed = pEnt->GetWeapon() ? pEnt->GetWeapon()->GetCSWpnData()->flMaxSpeed[0] : 260.f;
-		flLowerBody = pEnt->GetLowerBodyYaw();
-
-		pEnt->GetPoseParameters(flPoseParameters);
-		pEnt->GetAnimationLayers(pLayers);
-	}
-
-	void ApplyRecord(CBaseEntity* pEnt) {
-
-		pEnt->GetFlags() = iFlags;
-
-		pEnt->GetVecOrigin() = vecOrigin;
-		pEnt->GetEyeAngles() = vecAngles;
-		pEnt->GetCollideable()->OBBMins() = vecMins;
-		pEnt->GetCollideable()->OBBMaxs() = vecMaxs;
-		pEnt->GetVelocity() = vecVelocity;
-		pEnt->SetAbsAngles(vecAbsAngles);
-
-		pEnt->GetSimulationTime() = flSimulationTime;
-		pEnt->GetOldSimulationTime() = flOldSimulationTime;
-		pEnt->GetLowerBodyYaw() = flLowerBody;
-
-		pEnt->SetPoseParameters(flPoseParameters);
-		pEnt->SetAnimationLayers(pLayers);
-		pEnt->SetBoneCache(pMatrix);
-	}
 };
 
 class CSimulationData
@@ -111,44 +45,138 @@ public:
 class Lagcompensation {
 
 public:
-	/* Everything will be ran inside this */
-	void FrameStageNotify(EStage curStage);
-	// extrapolate players breaking lagcomp
-	void ExtrapolatePlayer( CBaseEntity* m_pEntity, record_t* m_pCurrentRecord, record_t* m_pPrevious ) const;
-	
-	/* Lerp Time */
-	float LerpTime();
 
+	struct LagRecord_t {
+
+		struct LayerData_t
+		{
+			int nSequence;
+			float flPlaybackRate;
+			float flCycle;
+			float flWeight;
+			float flWeightWithAirSmooth;
+			float flFeetWeight;
+
+			float flMovementSide;
+			Vector angMoveYaw;
+			Vector vecDirection;
+		};
+
+		LagRecord_t( ) = default;
+		LagRecord_t( CBaseEntity* pEntity );
+
+		void Apply( CBaseEntity* pEntity, bool Backup );
+		void Restore( CBaseEntity* pEntity );
+		void Apply( CBaseEntity* pEntity );
+
+		CBaseEntity* pEntity{};
+		matrix3x4_t pMatrix[ 128 ];
+
+		bool bBreakingLagcompensation{};
+		bool bFakewalking{};
+		bool bValid{};
+		bool bDormant{};
+		bool bBackwards{};
+		bool bSideways{};
+		bool bForwards{};
+		bool bDidShot{};
+
+		Vector vecVelocity{};
+		Vector vecAbsVelocity{};
+		Vector vecOrigin{};
+		Vector vecAbsOrigin{};
+		Vector vecMins{};
+		Vector vecMaxs{};
+
+		Vector vecLastReliableAngle{};
+		Vector vecEyeAngles{};
+		Vector vecAbsAngles{};
+
+		float pResolverPlaybackrate[ 3 ];
+		CAnimationLayer pResolverLayers[ 3 ][ 13 ];
+		CAnimationLayer pResolverLayers2[ 3 ][ 13 ];
+		LayerData_t LayerData[ 3 ];
+
+		CAnimationLayer pLayers[ 13 ];
+		float flPoses[ 24 ];
+
+		float flServerTick{};
+		float flAnimationTime{};
+		float flSimulationTime{};
+		float flOldSimulationTime{};
+		float flInterpTime{};
+		float flDuck{};
+		float flLowerBodyYawTarget{};
+		float flLastShotTime{};
+		float flSpawnTime{};
+		float flDeltaAngle{};
+
+		int iCachedCount{};
+		int iWritableBones{};
+
+		int fFlags{};
+		int iEFlags{};
+		int iEffects{};
+		int iEntIndex{};
+		int iChoked{};
+	};
+
+	struct AnimationInfo_t
+	{
+		CBaseEntity* pEntity;
+		int iLastValid;
+		float flSpawntime;
+		std::deque<Lagcompensation::LagRecord_t> pRecord;
+
+		// resolve data.
+		int iShots;
+		int iMissedShots;
+		float flTimeSinceLegit;
+		float flTimeSinceNoDesync;
+		float flTimeSinceBreakingLBY;
+		float flTimeSinceBodySwaying;
+		float flTimeSinceBodySwayLeft;
+		float flTimeSinceBodySwayRight;
+		int iWalkToRunTransitionState;
+		float flWalkToRunTransition;
+		int iDesyncSide;
+	};
+
+	/* Everything will be ran inside this */
+	void FrameStageNotify();
+	// get animation info
+	AnimationInfo_t& GetLog( const int iEntIndex );
+	// check if player is breaking lagcomp
+	bool IsBreakingLagcompensation( Lagcompensation::LagRecord_t* pLagRecord );
+	// fix tickcount so we can backtrack
+	int FixTickCount( const float& flSimulationTime );
+	
 	void UpdateIncomingSequences( INetChannel* pNetChannel );
 	void ClearIncomingSequences( );
 	void AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency );
 
-	void ResolverHandler(IGameEvent*);
-	void ResolverLogic();
-	float Resolver(CBaseEntity*, int);
-
-	/* Every entity data will be placed into this deque */
-	std::deque<record_t> deqRecords[65];
-	int missedShots[65];
-	bool didHurt = false;
-	Vector bulletImpact = Vector(0, 0, 0);
-
 private:
-	void RebuildWalkToRunTransition( CBaseEntity* pEntity, record_t* pRecord );
-	/* Will be called with the function upper */
-	void UpdateAnimation(CBaseEntity* pEnt);
-
-	/* Backup animationlayers before interpolation */
-	void GetAnimationLayers(CBaseEntity*);
-
-	/* Fix animation time (velocity) and origin */
-	void FixAbsoluteAngVec(CBaseEntity*, record_t*, record_t*);
+	// filter records after updating them
+	void FilterRecords( );
+	// fuck interpolation
+	void SetInterpolationFlags( CBaseEntity* pEnemy, int iFlag );
+	// extrapolate players breaking lagcomp
+	void ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious ) const;
+	// get client interp amount
+	static float GetClientInterpAmount( );
+	// check if record is valid
+	static bool IsValidRecord( float m_flSimulationTime, float m_flRange = 0.2f );
 
 	// Values
+	/* animation info */
+	AnimationInfo_t pPlayerLogs[ 65 ];
+	/* stored sequences */
 	std::deque<SequenceObject_t> vecSequences = { };
 	/* our real incoming sequences count */
 	int nRealIncomingSequence = 0;
 	/* count of incoming sequences what we can spike */
 	int nLastIncomingSequence = 0;
+	
+	int nInvalidateFlags{};
 };
 inline Lagcompensation lagcomp;

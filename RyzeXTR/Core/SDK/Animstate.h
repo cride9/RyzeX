@@ -2,6 +2,9 @@
 #include <cstddef>
 class CBaseCombatWeapon;
 
+/* max animation layers */
+#define MAXOVERLAYS 15
+
 enum EAlayers
 {
 	ANIMATION_LAYER_AIMMATRIX = 0,
