@@ -155,17 +155,19 @@ public:
 	void ClearIncomingSequences( );
 	void AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency );
 
+	void RemoveInterpolation();
+
 private:
 	// filter records after updating them
 	void FilterRecords( );
-	// fuck interpolation
-	void SetInterpolationFlags( CBaseEntity* pEnemy, int iFlag );
 	// extrapolate players breaking lagcomp
 	void ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious ) const;
 	// get client interp amount
 	static float GetClientInterpAmount( );
 	// check if record is valid
 	static bool IsValidRecord( float m_flSimulationTime, float m_flRange = 0.2f );
+	// fuck interpolation
+	void SetInterpolationFlags(CBaseEntity* pEnemy);
 
 	// Values
 	/* animation info */

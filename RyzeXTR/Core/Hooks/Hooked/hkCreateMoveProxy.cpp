@@ -88,8 +88,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	// @note: doesnt need rehook cuz detours here
 	if ( pNetChannel != nullptr )
 	{
-		if ( !detour::processPacket.IsHooked( ) )
-			detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
+		//if ( !detour::processPacket.IsHooked( ) )
+		//	detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
 
 		if ( !detour::sendNetMsg.IsHooked( ) )
 			detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );

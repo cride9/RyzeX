@@ -83,6 +83,9 @@ void Lagcompensation::FrameStageNotify() {
 	
 	bool bChanged = false;
 
+	if (!g::pLocal)
+		return;
+
 	for ( int i = 1; i <= i::GlobalVars->nMaxClients; i++ )
 	{
 		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>( i::EntityList->GetClientEntity( i ) );
@@ -156,9 +159,6 @@ void Lagcompensation::FrameStageNotify() {
 			// reset data.
 			continue;
 		}
-
-		// the game sets it true.
-		SetInterpolationFlags( pPlayerLogs[ i ].pEntity, 0 );
 
 		// this is the first data update we are receving
 		bool bUpdate = ( pPlayerLogs[ i ].pRecord.empty( ) || anims.NewDataRecievedFromServer( pEntity ) );
@@ -249,14 +249,18 @@ void Lagcompensation::FilterRecords( )
 	}
 }
 
-void Lagcompensation::SetInterpolationFlags( CBaseEntity* pEnemy, int iFlag )
+void Lagcompensation::SetInterpolationFlags(CBaseEntity* pEnemy)
 {
-	VarMapping_t* pVarMapping = reinterpret_cast< VarMapping_t* >( uintptr_t( pEnemy ) + 0x24 );
-	if ( !pVarMapping )
+	VarMapping_t* pVarMap = pEnemy->GetVarMap();
+
+	if (!pVarMap)
 		return;
 
-	// set flag.
-	pVarMapping->m_nInterpolatedEntries = iFlag;
+	for (int i = 0; i < pVarMap->m_nInterpolatedEntries; i++) {
+
+		VarMapEntry_t* pEntry = &pVarMap->m_Entries[i];
+		pEntry->m_bNeedsToInterpolate = false;
+	}
 }
 
 bool Lagcompensation::IsBreakingLagcompensation( Lagcompensation::LagRecord_t* pLagRecord )
@@ -486,5 +490,18 @@ void Lagcompensation::AddLatencyToNetChannel( INetChannel* pNetChannel, float fl
 			pNetChannel->iInSequenceNr = sequence.iSequenceNr;
 			break;
 		}
+	}
+}
+
+void Lagcompensation::RemoveInterpolation() {
+
+	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++) {
+
+		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant())
+			continue;
+
+		SetInterpolationFlags(pEntity);
 	}
 }
