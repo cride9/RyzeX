@@ -1,34 +1,12 @@
-#include "../../Features/Rage/doubletap.h"
+#include "../../Features/Rage/exploits.h"
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 #include "../hooks.h"
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Networking/networking.h"
+#undef max
 
-int IncrementTickBase(uint32_t pCommand) {
-
-	int iTickbase = g::pLocal->GetTickBase();
-
-	return iTickbase;
-
-	if (pCommand == doubletap::cmdCommandNumber) {
-		return iTickbase - 15;
-	}
-	else if (pCommand == doubletap::defensiveCommandNumber) {
-		return iTickbase - 13;
-	}
-
-	if (pCommand == doubletap::cmdCommandNumber + 1) {
-		return iTickbase + 15;
-	}
-	else if (pCommand == doubletap::defensiveCommandNumber + 1) {
-		return iTickbase + 13;
-	}
-
-	return iTickbase;
-}
-
-void __fastcall h::hkPhysicsSimulate(void* ecx, void* edx) {
+void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 
 	static auto original = detour::physicsSimulate.GetOriginal<decltype(&h::hkPhysicsSimulate)>();
 
@@ -44,40 +22,29 @@ void __fastcall h::hkPhysicsSimulate(void* ecx, void* edx) {
 	if (!g::pLocal || !g::pCmd)
 		return original(ecx, edx);
 
+	int& SimulationTick = *g::pLocal->GetOffsetPointer<int>( 0x2ACU );
 	CCommandContext* pCommandContext = g::pLocal->GetOffsetPointer<CCommandContext>(0x350C);
 
-	if (!pCommandContext || !pCommandContext->bNeedsProcessing)
-		return original(ecx, edx);
+	if ( SimulationTick == i::GlobalVars->iTickCount )
+		return original( ecx, edx );
 
-	// doubletap shooting fix
-	if (doubletap::cmdCommandNumber == pCommandContext->nCommandNumber) {
+	if ( !pCommandContext || !pCommandContext->bNeedsProcessing )
+		return original( ecx, edx );
 
-		g::pLocal->GetTickBase() -= 13;
+	if ( pCommandContext->pCmd.iTickCount >= std::numeric_limits< int >::max( ) )
+	{
+		SimulationTick = i::GlobalVars->iTickCount;
+		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
-	else if (doubletap::cmdCommandNumber == pCommandContext->nCommandNumber + 1) {
+		
+	if ( pCommandContext->pCmd.iCommandNumber == ( i::ClientState->iCommandAck + 1 ) )
+		g::pLocal->GetVelocityModifier( ) = localanim.localdata.flVelocityModifier;
 
-		g::pLocal->GetTickBase() += 13;
-	}
+	networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
 
-	// defensive CHOKE fix (unchoke is not fixed)
-	if (doubletap::defensiveCommandNumber == pCommandContext->nCommandNumber) {
-
-		g::pLocal->GetTickBase() -= 13;
-	}
-	else if (doubletap::defensiveCommandNumber == pCommandContext->nCommandNumber + 1) {
-
-		g::pLocal->GetTickBase() += 13;
-	}
-
-	// recharge fix
-	if (doubletap::rechargeCommandNumber == pCommandContext->nCommandNumber) {
-
-		g::pLocal->GetTickBase() += 6;
-	}
-	else if (doubletap::rechargeCommandNumber == pCommandContext->nCommandNumber + 1) {
-
-		g::pLocal->GetTickBase() -= 6;
-	}
+	const int iTickBaseBackup = g::pLocal->GetTickBase( );
+	/*if ( exploits::bIsShiftingTicks )*/
+		g::pLocal->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
 
 	original(ecx, edx);
 

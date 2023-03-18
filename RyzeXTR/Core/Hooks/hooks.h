@@ -150,7 +150,7 @@ namespace h {
 	bool __fastcall		hkSetupBones(void*, void*, matrix3x4_t*, int, int, float);
 	void __fastcall		hkDoExtraBoneProcessing(void*, void*, int, int, int, int, int, int);
 	bool __stdcall		hkIsPaused();
-	void __fastcall		hkPhysicsSimulate(void*, void*);
+	void __fastcall		hkPhysicsSimulate(CBaseEntity*, void*);
 	void __fastcall		hkInterpolateServerEntites(void*, void*);
 	bool __fastcall		hkIsFollowingEntity(void* ecx, void* edx);
 	void __fastcall		hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector& vecVelocity);

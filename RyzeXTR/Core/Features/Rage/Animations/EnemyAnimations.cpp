@@ -270,7 +270,7 @@ void Animations::FixVelocity( CBaseEntity* pEntity, Lagcompensation::LagRecord_t
 
 	// its from servers velocity.
 	if ( pRecord->pLayers[ 6 ].flPlaybackRate < 0.000001f )
-		pRecord->vecVelocity.IsZero( );
+		pRecord->vecVelocity = Vector(0, 0, 0);
 
 	// fix velocity for abs.
 	pEntity->GetVecAbsVelocity( ) = pEntity->GetVelocity( ) = pRecord->vecVelocity;

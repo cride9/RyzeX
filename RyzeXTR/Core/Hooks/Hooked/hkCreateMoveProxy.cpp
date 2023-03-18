@@ -7,7 +7,7 @@
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Rage/antiaim.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
-#include "../../Features/Rage/doubletap.h"
+#include "../../Features/Rage/exploits.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/ragebot.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
@@ -32,7 +32,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	g::pCmd = pCmd;
 
 	static bool goBackFast = false;
-	if (g::bShifting) {
+	if ( exploits::bIsShiftingTicks ) {
 
 		pCmd->iButtons &= ~IN_FORWARD;
 		pCmd->iButtons &= ~IN_MOVELEFT;
@@ -40,7 +40,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		
 		misc::IdealTick(pCmd);
 
-		bSendPacket = doubletap::shiftAmount == 1; // Only send on the last shifted
+		bSendPacket = exploits::iShiftAmount == 1; // Only send on the last shifted
 		pCmd->iButtons &= ~(IN_ATTACK | IN_SECOND_ATTACK);
 
 		pVerifiedCmd->userCmd = *pCmd;
@@ -50,7 +50,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	else
 		goBackFast = true;
 
-	auto oldViewAngle = g::oldViewAngle = pCmd->angViewPoint;
+	Vector oldViewAngle = g::oldViewAngle = pCmd->angViewPoint;
 
 	// for now that is the fix for the menu xddxdx
 	if (GetAsyncKeyState(VK_LBUTTON) && menu::open)
@@ -60,17 +60,20 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 
-	prediction.Start(pCmd, pLocal);
+	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
 		g_LocalAnimations->CopyPlayerAnimationData(false);
+		g_LocalAnimations->SetupShootPosition( );
 
 		antiaim::AntiAim(pCmd, bSendPacket, oldViewAngle);
 
 		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
+
+		exploits::HandleDoubleTap( bSendPacket, pCmd );
 	}
 	prediction.End(pCmd, pLocal);
 
-	doubletap::Doubletap();
+	
 
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
@@ -122,7 +125,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
 	}
 
-	if (g::onetapV2ShotHiding + 1 == pCmd->iCommandNumber) {
+	if (g::onetapV2ShotHiding + 1 == pCmd->iCommandNumber && !exploits::bIsShiftingTicks) {
 		bSendPacket = true;
 	}
 
@@ -133,18 +136,16 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
 	}
 
-	g_LocalAnimations->OnCreateMove();
-
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();
+
+	g_LocalAnimations->OnCreateMove( );
 
 	pVerifiedCmd->userCmd = *pCmd;
 	pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
 
 	if (bSendPacket)
 		localanim.localdata.vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
-
-	localanim.update = true;
 }
 
 __declspec(naked) void __fastcall h::hkCreateMoveProxy(IBaseClientDLL* thisptr, int edx, int nSequenceNumber, float flInputSampleFrametime, bool bIsActive)

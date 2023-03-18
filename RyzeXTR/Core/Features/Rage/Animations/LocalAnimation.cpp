@@ -18,50 +18,6 @@ void localanimation::FixVelocityModifer(){
 	}
 }
 
-void localanimation::UpdateLocal() {
-
-	if (!g::pLocal || !g::pLocal->IsAlive() || !g::pLocal->AnimState() || i::ClientState->iDeltaTick < 0)
-		return;
-
-	/* Update only each tick */
-	if (update) 
-	{
-		//AnimlayerFix(g::pCmd, g::pLocal->AnimState());
-
-		/* Store current animationlayers */
-		g::pLocal->GetAnimationLayers(localdata.AnimationLayer);
-
-		/* Allow client to animate local player */
-		g::bAllowAnimations[g::pLocal->EntIndex()] = g::pLocal->IsClientSideAnimation() = true;
-
-		/* Update animstate with current viewangles */
-		g::pLocal->AnimState()->Update(g::pCmd->angViewPoint);
-		g::pLocal->UpdateClientSideAnimations();
-
-		/* Disallow client to animate local player */
-		g::bAllowAnimations[g::pLocal->EntIndex()] = g::pLocal->IsClientSideAnimation() = false;
-
-		/* Store networked data */
-		if (!i::ClientState->nChokedCommands) {
-
-			g::pLocal->GetPoseParameters(localdata.flPoseParameters);
-			localdata.flGoalFeetYaw = g::pLocal->AnimState()->flGoalFeetYaw;
-		}
-		update = false;
-	}
-	/* Restore every frame with the updated ticks animation */
-	g::pLocal->SetAnimationLayers(localdata.AnimationLayer);
-	g::pLocal->SetPoseParameters(localdata.flPoseParameters);
-	g::pLocal->SetAbsAngles(Vector(0.f, localdata.flGoalFeetYaw, 0.f));
-
-	/* Only allow bone setup when we send packet */
-	if (!i::ClientState->nChokedCommands)
-		g::pLocal->SetupBonesFix( g::pLocal, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, localdata.Matrix );
-
-	/* Use latest setupbones */
-	g::pLocal->SetBoneCache(localdata.Matrix);
-}
-
 void localanimation::SetSequence(CAnimationLayer* pLayer, int iSequence) {
 
 	if (!pLayer->pOwner)
@@ -608,7 +564,7 @@ void C_LocalAnimations::SetupShootPosition()
 			const float m_flOldBodyPitch = g::pLocal->GetPoseParameter()[12];
 
 			/* determine m_flThirdpersonRecoil */
-			const float m_flThirdpersonRecoil = g::pLocal->GetAimPunch().y * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			const float m_flThirdpersonRecoil = g::pLocal->GetAimPunch().x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
 
 			/* set body pitch */
 			g::pLocal->GetPoseParameter()[12] = std::clamp(M::AngleDiff(M::NormalizeAngle(m_flThirdpersonRecoil), 0.0f), 0.0f, 1.0f);
@@ -729,6 +685,7 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask)
 	i::GlobalVars->iFrameCount = std::get < 5 >(m_Globals);
 	i::GlobalVars->iTickCount = std::get < 6 >(m_Globals);
 }
+
 void C_LocalAnimations::ModifyEyePosition(Vector& vecInputEyePos, matrix3x4_t* aMatrix)
 {
 	Vector vecHeadPos = Vector
@@ -782,8 +739,6 @@ void C_LocalAnimations::TransformateMatricies()
 }
 bool C_LocalAnimations::CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount)
 {
-	InterpolateMatricies();
-	//TransformateMatricies();
 	std::memcpy(aInMatrix, m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * nBoneCount);
 	return true;
 }

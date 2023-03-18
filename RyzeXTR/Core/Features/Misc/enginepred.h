@@ -40,10 +40,8 @@ public:
 		pPredictionPlayer = *reinterpret_cast<int**>(util::FindSignature("client.dll", "89 35 ? ? ? ? F3 0F 10 46") + 2);
 	}
 
-	void Start(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber );
 	void End(CUserCmd* pCmd, CBaseEntity* pLocal) const;
-
-	static int GetTickBase(CUserCmd* pCmd, CBaseEntity* pLocal);
 
 	CNetvarData GetNetvars( int iCommand ) { return this->pNetvarData[ iCommand % 150 ]; };
 

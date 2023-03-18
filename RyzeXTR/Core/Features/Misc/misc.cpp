@@ -2,7 +2,7 @@
 #include <fstream>
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/math.h"
-#include "../Rage/doubletap.h"
+#include "../Rage/exploits.h"
 
 #define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 
@@ -18,9 +18,8 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FakeDuck(pCmd);
 	BulletImpact();
 	SlideFix();
-	DefensiveDoubletap();
 	OnlyCheatLogs();
-	Security();
+	//Security();
 	//ViewModel();
 }
 
@@ -197,63 +196,6 @@ void misc::NightMode() {
 
 		bResetNightMode = false;
 		backupR = cfg::misc::nightmodeColor[0], backupG = cfg::misc::nightmodeColor[1], backupB = cfg::misc::nightmodeColor[3];
-	}
-}
-
-void misc::DefensiveDoubletap() {
-
-	if (!cfg::antiaim::defensive || !bDefensive)
-		return;
-
-	static int timer = 0;
-	static bool CycleReset = false;
-	static float flSimulationTime = 0.f;
-
-	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && doubletap::bCharged) {
-
-		if (++timer >= 14) {
-			bDefensive = false;
-			timer = 0;
-		}
-
-		if (timer > 0) {
-
-			flSimulationTime = g::pLocal->GetOldSimulationTime();
-
-			g::defensiveTickbase = 16;
-
-			// tickbase shifting causes irrelevant simtime change
-			// simtime + (interval * shifted ticks) = new simtime
-			if (g::pLocal->GetSimulationTime() > flSimulationTime + (i::GlobalVars->flIntervalPerTick * 6)) {
-
-				flSimulationTime = g::pLocal->GetSimulationTime();
-				doubletap::defensiveCommandNumber = g::pCmd->iCommandNumber;
-				doubletap::defensiveTickbase = prediction.GetTickBase(g::pCmd, g::pLocal);
-				doubletap::defensiveCurtime = i::GlobalVars->flCurrentTime;
-				//util::LogConsole("Simtime was too high!\n");
-			}
-			CycleReset = true;
-		}
-		else {
-
-			g::defensiveTickbase = 0;
-
-			// cycle reset aka when my tickbase goes back to normal
-			// so my old tickbase will be higher than the actual tickbase
-			if (CycleReset) {
-
-				doubletap::defensiveCommandNumberReset = g::pCmd->iCommandNumber;
-				doubletap::defensiveTickbaseReset = prediction.GetTickBase(g::pCmd, g::pLocal);
-				doubletap::defensiveCurtimeReset = i::GlobalVars->flCurrentTime;
-				CycleReset = false;
-			}
-		}
-
-		//std::string lmao = std::to_string(TIME_TO_TICKS(g::pLocal->GetOldSimulationTime()));
-		//lmao += " : ";
-		//lmao += std::to_string(TIME_TO_TICKS(g::pLocal->GetSimulationTime()));
-		//lmao += "\n";
-		//util::LogConsole(lmao.c_str());
 	}
 }
 
@@ -739,7 +681,7 @@ void misc::FakeLag(bool& bSendPacket) {
 		return;
 	}
 
-	if (!doubletap::bCharged && doubletap::rechargeAmount > 0 && !doubletap::shiftAmount && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
+	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
 		bSendPacket = true;
 		return;
 	}

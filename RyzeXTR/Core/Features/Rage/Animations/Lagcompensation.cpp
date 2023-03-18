@@ -34,7 +34,7 @@ Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* pEntity )
 	iEFlags = pEntity->GetEFlags( );
 	iEffects = pEntity->GetEffects( );
 	iChoked = TIME_TO_TICKS( flSimulationTime - flOldSimulationTime );
-	std::clamp( iChoked, 0, 16 );
+	iChoked = std::clamp( iChoked, 0, 16 );
 }
 
 void Lagcompensation::LagRecord_t::Apply( CBaseEntity* pEntity, bool Backup )

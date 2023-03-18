@@ -33,7 +33,6 @@ namespace misc {
 	void FakeDuck(CUserCmd*);
 	void BulletImpact();
 	void SlideFix();
-	void DefensiveDoubletap();
 	void NightMode();
 	void OnlyCheatLogs();
 	void IdealTick(CUserCmd*);

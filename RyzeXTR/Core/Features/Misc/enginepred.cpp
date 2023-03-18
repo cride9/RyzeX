@@ -13,7 +13,7 @@ void PostPrediction(CBaseEntity* pLocal) {
 	g::localprediction::after::nMoveType = pLocal->GetMoveType();
 }
 
-void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
+void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 {
 	// @xref: "CPrediction::ProcessMovement"
 
@@ -37,6 +37,19 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
 	flOldFrameTime = i::GlobalVars->flFrameTime;
 	iOldTickCount = i::GlobalVars->iTickCount;
 
+	static CUserCmd* pLastCmd = nullptr;
+	int SeqDiff = 0;
+	int TickBase = 0;
+
+	// the big ol tb fixer upper
+	if ( !pLastCmd || pLastCmd->bHasBeenPredicted )
+		SeqDiff = SequenceNumber - g::pLocal->GetTickBase( );
+
+	TickBase = max( g::pLocal->GetTickBase( ),
+		SequenceNumber - SeqDiff );
+
+	pLastCmd = g::pCmd;
+
 	// backup tickbase
 	const int iOldTickBase = pLocal->GetTickBase();
 
@@ -45,9 +58,9 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
 	const bool bOldInPrediction = i::Prediction->bInPrediction;
 
 	// set corrected values
-	i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase(pCmd, pLocal));
+	i::GlobalVars->flCurrentTime = TICKS_TO_TIME( TickBase );
 	i::GlobalVars->flFrameTime = i::Prediction->bEnginePaused ? 0.f : TICK_INTERVAL;
-	i::GlobalVars->iTickCount = GetTickBase(pCmd, pLocal);
+	i::GlobalVars->iTickCount = TickBase;
 
 	i::Prediction->bIsFirstTimePredicted = false;
 	i::Prediction->bInPrediction = true;
@@ -88,7 +101,7 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal)
 		pLocal->PreThink();
 
 	// run think
-	if (int* iNextThinkTick = pLocal->GetNextThink(); *iNextThinkTick > 0 && *iNextThinkTick <= GetTickBase(pCmd, pLocal))
+	if (int* iNextThinkTick = pLocal->GetNextThink(); *iNextThinkTick > 0 && *iNextThinkTick <= TickBase )
 	{
 		*iNextThinkTick = TICK_NEVER_THINK;
 
@@ -145,26 +158,6 @@ void Prediction::End(CUserCmd* pCmd, CBaseEntity* pLocal) const
 	i::GameMovement->Reset();
 
 	PostPrediction(pLocal);
-}
-
-int Prediction::GetTickBase(CUserCmd* pCmd, CBaseEntity* pLocal)
-{
-	static int iTick = 0;
-
-	if (pCmd != nullptr)
-	{
-		static CUserCmd* pLastCmd = nullptr;
-
-		// if command was not predicted - increment tickbase
-		if (pLastCmd == nullptr || pLastCmd->bHasBeenPredicted)
-			iTick = pLocal->GetTickBase();
-		else
-			iTick++;
-
-		pLastCmd = pCmd;
-	}
-
-	return iTick;
 }
 
 void Prediction::SaveNetvars( int iCommand, CBaseEntity* pLocal)
