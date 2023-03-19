@@ -25,6 +25,10 @@ void CConfig::Setup() {
 		SetupValue(autostop, false, "rage", "Rageautostop");
 		SetupValue(betweenshots, false, "rage", "Ragebetweenshots");
 
+		SetupValue( autoscope[ 0 ], false, "rage", "autoscope1" );
+		SetupValue( autoscope[ 1 ], false, "rage", "autoscope2" );
+		SetupValue( autoscope[ 2 ], false, "rage", "autoscope3" );
+
 		SetupValue(doubletap, false, "rage", "Ragedoubletap");
 		SetupValue(doubletapkey, 0, "rage", "Ragedoubletapkey");
 

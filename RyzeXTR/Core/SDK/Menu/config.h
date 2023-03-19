@@ -13,6 +13,7 @@ namespace cfg {
 
 		inline bool enable;
 		inline bool autostop;
+		inline bool autoscope[] = { false, false, false };
 		inline bool m_bAutoStopInAir;
 		inline bool betweenshots;
 		inline bool doubletap;

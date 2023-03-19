@@ -15,6 +15,22 @@ bool HighestDamage(std::pair<Vector, float> damage1, std::pair<Vector, float> da
 	return damage1.second > damage2.second;
 }
 
+bool IsAutoScopeable( short iItemDefinitionIndex )
+{
+	switch ( iItemDefinitionIndex )
+	{
+	case WEAPON_SSG08:
+	case WEAPON_AWP:
+	case WEAPON_SG556:
+	case WEAPON_AUG:
+	case WEAPON_SCAR20:
+	case WEAPON_G3SG1:
+		return true;
+	default:
+		return false;
+	}
+}
+
 void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket) {
 
 	if (!pLocal || !cfg::rage::enable)
@@ -53,6 +69,11 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 					lagcomp.FixTickCount( flTargetSimulation );
 					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
 					g::onetapV2ShotHiding = pCmd->iCommandNumber;
+				}
+				else {
+
+					if ( ConfigAutoScope( pWeapon ) && IsAutoScopeable( pWeapon->GetItemDefinitionIndex( ) ) && !pLocal->IsScoped( ) ) //only scope if we have a scoped weapon and we arent scoped
+						pCmd->iButtons |= IN_ZOOM;
 				}
 			}
 		}
@@ -366,6 +387,24 @@ int CRageBot::ConfigHitChance(CBaseCombatWeapon* pWeapon) {
 	}
 	else {
 		return cfg::rage::etcHitchance;
+	}
+}
+
+int CRageBot::ConfigAutoScope( CBaseCombatWeapon* pWeapon ) {
+
+	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
+
+	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
+		return cfg::rage::autoscope[ 0 ];
+	}
+	else if ( iDefinitionIndex == WEAPON_SSG08 ) {
+		return cfg::rage::autoscope[ 1 ];
+	}
+	else if ( iDefinitionIndex == WEAPON_AWP ) {
+		return cfg::rage::autoscope[ 2 ];
+	}
+	else {
+		return false;
 	}
 }
 

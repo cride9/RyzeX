@@ -840,6 +840,8 @@ void menu::Render() noexcept {
 
 						ImGui::SliderInt("head scale", &cfg::rage::autoHeadPoints, 0, 100);
 						ImGui::SliderInt("body scale", &cfg::rage::autoBodyPoints, 0, 100);
+
+						ImGui::Checkbox( "auto-scope", &cfg::rage::autoscope[ AUTO ] );
 					}
 					else if (selectedWeapon == SCOUT) {
 
@@ -866,6 +868,8 @@ void menu::Render() noexcept {
 
 						ImGui::SliderInt("head scale", &cfg::rage::scoutHeadPoints, 0, 100);
 						ImGui::SliderInt("body scale", &cfg::rage::scoutBodyPoints, 0, 100);
+
+						ImGui::Checkbox( "auto-scope", &cfg::rage::autoscope[ SCOUT ] );
 					}
 					else if (selectedWeapon == AWP) {
 
@@ -892,6 +896,8 @@ void menu::Render() noexcept {
 
 						ImGui::SliderInt("head scale", &cfg::rage::awpHeadPoints, 0, 100);
 						ImGui::SliderInt("body scale", &cfg::rage::awpBodyPoints, 0, 100);
+
+						ImGui::Checkbox( "auto-scope", &cfg::rage::autoscope[ AWP ] );
 					}
 					else if (selectedWeapon == PISTOL) {
 

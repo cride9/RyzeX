@@ -31,25 +31,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CBaseEntity* pLocal = g::pLocal = (CBaseEntity*)i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer());
 	g::pCmd = pCmd;
 
-	static bool goBackFast = false;
-	if ( exploits::bIsShiftingTicks ) {
-
-		pCmd->iButtons &= ~IN_FORWARD;
-		pCmd->iButtons &= ~IN_MOVELEFT;
-		pCmd->iButtons &= ~IN_MOVERIGHT;
-		
-		misc::IdealTick(pCmd);
-
-		bSendPacket = exploits::iShiftAmount == 1; // Only send on the last shifted
-		pCmd->iButtons &= ~(IN_ATTACK | IN_SECOND_ATTACK);
-
-		pVerifiedCmd->userCmd = *pCmd;
-		pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
-		return;
-	}
-	else
-		goBackFast = true;
-
 	Vector oldViewAngle = g::oldViewAngle = pCmd->angViewPoint;
 
 	// for now that is the fix for the menu xddxdx
@@ -59,6 +40,14 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	prediction.SaveNetvars( pCmd->iCommandNumber, pLocal);
 
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
+
+	if ( exploits::bIsShiftingTicks ) {
+
+		bSendPacket = exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
+
+		pVerifiedCmd->userCmd = *pCmd;
+		pVerifiedCmd->uHashCRC = pCmd->GetChecksum( );
+	}
 
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
@@ -72,8 +61,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
 	}
 	prediction.End(pCmd, pLocal);
-
-	
 
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 

@@ -29,6 +29,7 @@ private:
 
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);
 	int					ConfigHitChance(CBaseCombatWeapon*);
+	int					ConfigAutoScope( CBaseCombatWeapon* pWeapon );
 	std::vector<int>	ConfigHitboxes(CBaseCombatWeapon*);
 	std::pair<int, int> ConfigMultipoint(CBaseCombatWeapon*);
 };
