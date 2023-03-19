@@ -4,6 +4,7 @@
 #include "../../SDK/math.h"
 #include "../Misc/misc.h"
 #include "../Rage/Animations/Lagcompensation.h"
+#include "../Rage/ragebot.h"
 
 enum EMATERIAL : int {
 
@@ -346,6 +347,12 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				//	MakeChams(materials[1], new float[] {1.f, 1.f, 1.f, 0.5f}, true, false);
 				//	original(i::StudioRender, 0, pResults, info, lagcomp.deqRecords[pEnt->EntIndex()].front().pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				//}
+
+				if (ragebot.backtrackRecord && ragebot.backtrackRecord->pMatrix) {
+					//GenerateLerpedMatrix(pEnt, ragebot.backtrackRecord->pMatrix);
+					MakeChams(materials[1], new float[] {cfg::visual::enemyGlowColor[0], cfg::visual::enemyGlowColor[1], cfg::visual::enemyGlowColor[2], min(254.f / 255.f, cfg::visual::enemyGlowColor[3])}, true, true);
+					original(i::StudioRender, 0, pResults, info, ragebot.backtrackRecord->pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				}
 
 				if (!cfg::visual::enemyEsp)
 					return false;

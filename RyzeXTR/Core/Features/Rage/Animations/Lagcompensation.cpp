@@ -1,5 +1,108 @@
 #include "Lagcompensation.h"
 #include "EnemyAnimations.h"
+#include "../../Networking/networking.h"
+
+void SetupPlayerBones(CBaseEntity* pEnt, matrix3x4_t* aMatrix, int nMask)
+{
+	// save globals
+	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
+	(
+		// backup globals
+		i::GlobalVars->flCurrentTime,
+		i::GlobalVars->flRealTime,
+		i::GlobalVars->flFrameTime,
+		i::GlobalVars->flAbsFrameTime,
+		i::GlobalVars->flInterpolationAmount,
+
+		// backup frame count and tick count
+		i::GlobalVars->iFrameCount,
+		i::GlobalVars->iTickCount
+	);
+
+	// save player data
+	std::tuple < int, int, int, int, int, bool > m_PlayerData = std::make_tuple
+	(
+		pEnt->GetLastSkipFrameCount(),
+		pEnt->GetEffects(),
+		pEnt->GetClientEffects(),
+		pEnt->GetOcclusionFrameCount(),
+		pEnt->GetOcclusionFlags(),
+		false
+	);
+
+	// backup animation layers
+	std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_Layers;
+	std::memcpy(m_Layers.data(), pEnt->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+
+	/* set owners */
+	for (int nLayer = 0; nLayer < ANIMATION_LAYER_COUNT; nLayer++)
+	{
+		CAnimationLayer* m_Layer = &pEnt->GetAnimationOverlays()[nLayer];
+		if (!m_Layer)
+			continue;
+
+		m_Layer->pOwner = pEnt;
+	}
+
+	// get simulation time
+	float flSimulationTime = TICKS_TO_TIME(networking.GetServerTick());
+
+	// setup globals
+	i::GlobalVars->flCurrentTime = flSimulationTime;
+	i::GlobalVars->flRealTime = flSimulationTime;
+	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
+	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
+	i::GlobalVars->flInterpolationAmount = 0.0f;
+	i::GlobalVars->iTickCount = networking.GetServerTick();
+
+	// fix skipanimframe ( part 1 )
+	i::GlobalVars->iFrameCount = INT_MAX;
+
+	// invalidate bone cache
+	pEnt->InvalidateBoneCache();
+
+	// disable ugly lean animation
+	pEnt->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.0f;
+
+	// force client effects
+	pEnt->GetClientEffects() |= 2; // disable ik
+
+	// force effects to disable interp
+	pEnt->GetEffects() |= EF_NOINTERP;
+
+	// fix PVS occlusion
+	pEnt->GetOcclusionFrameCount() = -1;
+	pEnt->m_nOcclusionMask() &= ~2;
+
+	// fix skipanimframe ( part 2 )
+	pEnt->GetLastSkipFrameCount() = 0;
+
+	// setup bones
+	g::bSettingUpBones[pEnt->EntIndex()] = true;
+	pEnt->SetupBones(aMatrix, MAXSTUDIOBONES, nMask, 0.0f);
+	g::bSettingUpBones[pEnt->EntIndex()] = false;
+
+	// restore animation layers
+	std::memcpy(pEnt->GetAnimationOverlays(), m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+
+	// restore player data
+	pEnt->GetLastSkipFrameCount() = std::get < 0 >(m_PlayerData);
+	pEnt->GetEffects() = std::get < 1 >(m_PlayerData);
+	pEnt->GetClientEffects() = std::get < 2 >(m_PlayerData);
+	pEnt->GetOcclusionFrameCount() = std::get < 3 >(m_PlayerData);
+	pEnt->m_nOcclusionMask() = std::get < 4 >(m_PlayerData);
+
+	// restore globals
+	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
+	i::GlobalVars->flRealTime = std::get < 1 >(m_Globals);
+	i::GlobalVars->flFrameTime = std::get < 2 >(m_Globals);
+	i::GlobalVars->flAbsFrameTime = std::get < 3 >(m_Globals);
+	i::GlobalVars->flInterpolationAmount = std::get < 4 >(m_Globals);
+
+	// restore frame count and tick count
+	i::GlobalVars->iFrameCount = std::get < 5 >(m_Globals);
+	i::GlobalVars->iTickCount = std::get < 6 >(m_Globals);
+}
 
 Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* pEntity )
 {
@@ -50,6 +153,7 @@ void Lagcompensation::LagRecord_t::Apply( CBaseEntity* pEntity, bool Backup )
 	pEntity->GetVecAbsVelocity( ) = Backup ? vecAbsVelocity : vecVelocity;
 	pEntity->GetVecOrigin( ) = vecOrigin;
 	pEntity->SetAbsOrigin( Backup ? vecAbsOrigin : vecOrigin );
+	pEntity->SetBoneCache( pMatrix );
 }
 
 void Lagcompensation::LagRecord_t::Apply( CBaseEntity* pEntity )
@@ -63,6 +167,7 @@ void Lagcompensation::LagRecord_t::Apply( CBaseEntity* pEntity )
 	pEntity->GetFlags( ) = fFlags;
 	pEntity->GetVecOrigin( ) = vecOrigin;
 	pEntity->SetAbsOrigin( vecOrigin );
+	pEntity->SetBoneCache( pMatrix );
 }
 
 void Lagcompensation::LagRecord_t::Restore( CBaseEntity* pEntity )
@@ -183,9 +288,10 @@ void Lagcompensation::FrameStageNotify() {
 			pPlayerLogs[ i ].pEntity->SetAnimationLayers( pBackupRecord.pLayers );
 
 			// create bone matrix for this pRecord.
-			pPlayerLogs[ i ].pEntity->SetupBonesFix( pPlayerLogs[ i ].pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
-			//pPlayerLogs[ i ].pEntity->SetupBones( pCurrentRecord->pMatrix, 128, BONE_USED_BY_ANYTHING, pCurrentRecord->flSimulationTime );
-		
+			// pPlayerLogs[ i ].pEntity->SetupBonesFix( pPlayerLogs[ i ].pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
+			pPlayerLogs[ i ].pEntity->SetupBones( pCurrentRecord->pMatrix, 128, BONE_USED_BY_ANYTHING, pCurrentRecord->flSimulationTime );
+			//SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING);
+
 			// restore correctly synced values.
 			pBackupRecord.Restore( pPlayerLogs[ i ].pEntity );
 
@@ -437,7 +543,7 @@ bool Lagcompensation::IsValidRecord( float mflSimulationTime, float flRange )
 	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag" );
 
 	float m_flCorrect = i::EngineClient->GetNetChannelInfo( )->GetLatency( FLOW_INCOMING ) + i::EngineClient->GetNetChannelInfo( )->GetLatency( FLOW_OUTGOING ) + GetClientInterpAmount( );
-	std::clamp( m_flCorrect, 0.f, sv_maxunlag->GetFloat( ) );
+	m_flCorrect = std::clamp( m_flCorrect, 0.f, sv_maxunlag->GetFloat( ) );
 
 	// extra tick from tickbase shifting.
 	/*auto iExtraTick = !pTickbase.pShiftData.bInRechargeCycle && pTickbase.pShiftData.bRecharged && pTickbase.pShiftData.iShiftGettingUsed && !pTickbase.pShiftData.bDidShot ? pTickbase.pShiftData.iShiftGettingUsed : 0.f;*/
