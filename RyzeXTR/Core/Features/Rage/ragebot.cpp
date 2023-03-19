@@ -88,6 +88,7 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 	for (int hitboxID : ConfigHitboxes(pWeapon)) {
 
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pTarget->EntIndex());
+
 		if (!pLog->pEntity)
 			continue;
 
@@ -176,7 +177,7 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 				return curEnt;
 			}
 			else if (!pLog->pRecord.empty() && pLog->pRecord.size() >= 2) {
-				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size(), 12)); recordScan != nullptr) {
+				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 12)); recordScan != nullptr) {
 					if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, ConfigMinimumDamage(pWeapon))) {
 						flTargetSimulation = recordScan->flSimulationTime;
 						backtrackRecord = recordScan;
