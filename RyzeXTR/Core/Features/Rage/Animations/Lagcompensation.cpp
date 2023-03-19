@@ -1,5 +1,6 @@
 #include "Lagcompensation.h"
 #include "EnemyAnimations.h"
+#include "../exploits.h"
 #include "../../Networking/networking.h"
 
 void SetupPlayerBones(CBaseEntity* pEnt, matrix3x4_t* aMatrix, int nMask)
@@ -546,9 +547,10 @@ bool Lagcompensation::IsValidRecord( float mflSimulationTime, float flRange )
 	m_flCorrect = std::clamp( m_flCorrect, 0.f, sv_maxunlag->GetFloat( ) );
 
 	// extra tick from tickbase shifting.
-	/*auto iExtraTick = !pTickbase.pShiftData.bInRechargeCycle && pTickbase.pShiftData.bRecharged && pTickbase.pShiftData.iShiftGettingUsed && !pTickbase.pShiftData.bDidShot ? pTickbase.pShiftData.iShiftGettingUsed : 0.f;*/
+	//auto iExtraTick = !pTickbase.pShiftData.bInRechargeCycle && pTickbase.pShiftData.bRecharged && pTickbase.pShiftData.iShiftGettingUsed && !pTickbase.pShiftData.bDidShot ? pTickbase.pShiftData.iShiftGettingUsed : 0.f;
+	auto iExtraTick = !exploits::bIsRecharging /*&& pTickbase.pShiftData.bRecharged */ && exploits::iShiftAmount && !exploits::bIsShiftingTicks ? exploits::iShiftAmount : 0.f;
 
-	return std::fabsf( m_flCorrect - ( i::GlobalVars->flCurrentTime - mflSimulationTime ) ) <= flRange /*+ TICKS_TO_TIME( iExtraTick / 2 )*/;
+	return std::fabsf( m_flCorrect - ( i::GlobalVars->flCurrentTime - mflSimulationTime ) ) <= flRange + TICKS_TO_TIME( iExtraTick / 2 );
 }
 
 int Lagcompensation::FixTickCount( const float& flSimulationTime )
