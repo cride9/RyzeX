@@ -5,11 +5,14 @@
 #include "Animations/LocalAnimation.h"
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
+bool LBYUpdate();
 
 static bool evenInvert = false;
 static bool unevenInvert = false;
 
-void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle) {
+void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
+
+	static float oldValue = 0;
 
 	// sanity checks
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::enabled) {
@@ -87,11 +90,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 	switch (cfg::antiaim::desynctype) {
 
 	case STATIC:
-			desyncValue = GetKeyState(cfg::antiaim::desyncinverter) ? (g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue) : -(g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue);
+			desyncValue = GetKeyState(cfg::antiaim::desyncinverter) ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
 		break;
 
 	case JITTER:
-			desyncValue = cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? (g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue) : -(g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue) : unevenInvert ? (g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue) : -(g::pLocal->AnimState()->GetMaxDesync() + cfg::antiaim::desyncvalue);
+			desyncValue = cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue) : unevenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
 		break;
 
 	default:
@@ -101,7 +104,9 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket, Vector vecOldViewAngle)
 
 	if (g::onetapV2ShotHiding + 1 != pCmd->iCommandNumber) {
 		if (!bSendPacket) {
-			pCmd->angViewPoint.y = localanim.localdata.vecViewAngle.y + desyncValue;
+
+			pCmd->angViewPoint.y += oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue;
+			oldValue = desyncValue;
 		}
 	}
 }
@@ -150,5 +155,29 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 		}
 	}
 
+	return false;
+}
+
+bool LBYUpdate()
+{
+	static float NextUpdate = 0;
+	auto* AnimState = g::pLocal->AnimState();
+
+	/*
+		That LBY breaker is not even close to perfect so extended desync is not possible with it
+	*/
+
+	if (!AnimState || !(g::pLocal->GetFlags() & FL_ONGROUND)) {
+		return false;
+	}
+
+	if (AnimState->flVelocityLenght2D > 0.1f)
+		NextUpdate = TICKS_TO_TIME(g::pLocal->GetTickBase()) + 0.22f;
+
+	if (NextUpdate < TICKS_TO_TIME(g::pLocal->GetTickBase()))
+	{
+		NextUpdate = TICKS_TO_TIME(g::pLocal->GetTickBase()) + 1.1f;
+		return true;
+	}
 	return false;
 }

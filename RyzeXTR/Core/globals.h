@@ -7,7 +7,6 @@ namespace g {
 
 	inline CUserCmd* pCmd;
 	inline CBaseEntity* pLocal;
-	inline Vector oldViewAngle;
 	inline CEntityListener entityListener;
 
 	inline int defensiveTickbase;

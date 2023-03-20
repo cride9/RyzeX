@@ -19,7 +19,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 
-		//misc::ServerHitboxes();
+		misc::ServerHitboxes();
 
 		if (cfg::misc::removals[1]) {
 			if (g::pLocal)
@@ -42,7 +42,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
 
-		localanim.FixVelocityModifer();
+		//localanim.FixVelocityModifer();
 		break;
 	}
 }

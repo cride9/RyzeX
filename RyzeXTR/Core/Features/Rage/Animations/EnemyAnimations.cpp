@@ -27,7 +27,7 @@ void Animations::ResolverLogic( ) {
 		ragebot.aimbotTarget = nullptr;
 		bulletImpact = Vector( 0, 0, 0 );
 		ragebot.targetMatrix = nullptr;
-		util::Print( "Missed shot due to animation desyncronaztion" );
+		//util::Print( "Missed shot due to animation desyncronaztion" );
 	}
 	else {
 

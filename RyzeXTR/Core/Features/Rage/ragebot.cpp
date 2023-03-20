@@ -47,7 +47,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 		if (Vector vecHitscan = Hitscan(pLocal, pTarget, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
 
-			Vector shootAngle = M::CalcAngle(vecEyePosition, vecHitscan).Normalize().Clamp();
+			Vector shootAngle = M::CalcAngle(vecEyePosition, vecHitscan);
 
 			if (cfg::rage::autostop && cfg::rage::betweenshots)
 				AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);

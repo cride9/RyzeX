@@ -27,7 +27,7 @@ void h::SetupHooks() {
 	HookTable(detour::lockCursor, i::Surface, table::lockCursor, &hkLockCursor);
 	HookTable(detour::runCommand, i::Prediction, table::runCommand, &hkRunCommand);
 	HookTable(detour::getViewmodelFov, i::ClientMode, table::getViewmodelFov, &hkGetViewModelFov);
-	HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
+	//HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
 	HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 

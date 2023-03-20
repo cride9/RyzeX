@@ -47,7 +47,16 @@ void misc::ServerHitboxes() {
 	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
-		if ( !pEntity || pEntity == g::pLocal || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || !pEntity->IsPlayer( ) /*|| !pEntity->IsEnemy( g::pLocal )*/ || pEntity->HasImmunity( ) || !pEntity->EntIndex( ) )
+		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || !pEntity->IsPlayer( ) || !pEntity->EntIndex( ) )
+			continue;
+
+		if (!cfg::misc::m_bDrawServerHitboxOnAllEntities && !cfg::misc::m_bDrawServerHitbox)
+			continue;
+
+		if (!cfg::misc::m_bDrawServerHitboxOnAllEntities && pEntity != g::pLocal)
+			continue;
+
+		if (!cfg::misc::m_bDrawServerHitbox && pEntity == g::pLocal)
 			continue;
 
 		pTEntity = UTIL_PlayerByIndex(cfg::misc::m_bDrawServerHitboxOnAllEntities ? pEntity->EntIndex() : g::pLocal->EntIndex() );

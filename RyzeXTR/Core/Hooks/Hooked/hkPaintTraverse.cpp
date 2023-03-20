@@ -1,6 +1,7 @@
 #include "../hooks.h"
 #include "../../Features/Visuals/ESP.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
+#include "../../Features/Rage/ragebot.h"
 
 void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vguiPanel, bool forceRepaint, bool allowForce) {
 
@@ -12,8 +13,12 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
-		if (g::pLocal != nullptr && !i::EngineClient->IsInGame())
+		if (g::pLocal != nullptr && !i::EngineClient->IsInGame()) {
+
+			ragebot.backtrackRecord = nullptr;
+			ragebot.aimbotTarget = nullptr;
 			g::pLocal = nullptr;
+		}
 
 		visual::VisualRender();
 

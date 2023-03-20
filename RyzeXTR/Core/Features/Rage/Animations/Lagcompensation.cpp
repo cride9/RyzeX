@@ -3,8 +3,11 @@
 #include "../exploits.h"
 #include "../../Networking/networking.h"
 
-void SetupPlayerBones(CBaseEntity* pEnt, matrix3x4_t* aMatrix, int nMask)
+void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, int nMask, int nFlags)
 {
+	/* Reset layers */
+	std::memcpy(pEnt->GetAnimationOverlays(), m_Record->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+
 	// save globals
 	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
 	(
@@ -20,78 +23,82 @@ void SetupPlayerBones(CBaseEntity* pEnt, matrix3x4_t* aMatrix, int nMask)
 		i::GlobalVars->iTickCount
 	);
 
-	// save player data
-	std::tuple < int, int, int, int, int, bool > m_PlayerData = std::make_tuple
+	/* Store player's data */
+	std::tuple < int, int, int, int, int, Vector > m_PlayerData = std::make_tuple
 	(
 		pEnt->GetLastSkipFrameCount(),
 		pEnt->GetEffects(),
 		pEnt->GetClientEffects(),
 		pEnt->GetOcclusionFrameCount(),
-		pEnt->GetOcclusionFlags(),
-		false
+		pEnt->m_nOcclusionMask(),
+		pEnt->GetAbsOrigin()
 	);
 
-	// backup animation layers
-	std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_Layers;
-	std::memcpy(m_Layers.data(), pEnt->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+	/* Force game's globals */
+	int nSimulationTick = TIME_TO_TICKS(m_Record->flSimulationTime);
+	i::GlobalVars->flCurrentTime = m_Record->flSimulationTime;
+	i::GlobalVars->flRealTime = m_Record->flSimulationTime;
+	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
+	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
+	i::GlobalVars->iTickCount = nSimulationTick;
+	i::GlobalVars->iFrameCount = INT_MAX; /* ShouldSkipAnimationFrame fix */
+	i::GlobalVars->flInterpolationAmount = 0.0f;
 
-	/* set owners */
-	for (int nLayer = 0; nLayer < ANIMATION_LAYER_COUNT; nLayer++)
+	/* Force it https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/game/client/c_baseanimating.cpp#L3102 */
+	pEnt->InvalidateBoneCache();
+
+	/* Force the owner of animation layers */
+	for (int iLayer = 0; iLayer < ANIMATION_LAYER_COUNT; iLayer++)
 	{
-		CAnimationLayer* m_Layer = &pEnt->GetAnimationOverlays()[nLayer];
+		CAnimationLayer* m_Layer = &pEnt->GetAnimationOverlays()[iLayer];
 		if (!m_Layer)
 			continue;
 
 		m_Layer->pOwner = pEnt;
 	}
 
-	// get simulation time
-	float flSimulationTime = TICKS_TO_TIME(networking.GetServerTick());
+	/* Disable ACT_CSGO_IDLE_TURN_BALANCEADJUST animation */
+	if (nFlags & 8)
+	{
+		pEnt->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.0f;
+		if (pEnt->GetSequenceActivity(pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].nSequence) == ACT_CSGO_IDLE_TURN_BALANCEADJUST)
+		{
+			pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].flCycle = 0.0f;
+			pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].flWeight = 0.0f;
+		}
+	}
 
-	// setup globals
-	i::GlobalVars->flCurrentTime = flSimulationTime;
-	i::GlobalVars->flRealTime = flSimulationTime;
-	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
-	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
-	i::GlobalVars->flInterpolationAmount = 0.0f;
-	i::GlobalVars->iTickCount = networking.GetServerTick();
+	/* Remove interpolation if required */
+	if (!(nFlags & 2))
+		pEnt->SetAbsOrigin(m_Record->vecOrigin);
 
-	// fix skipanimframe ( part 1 )
-	i::GlobalVars->iFrameCount = INT_MAX;
+	/* Compute bone mask */
+	int nBoneMask = BONE_USED_BY_ANYTHING;
+	if (nFlags & 4)
+		nBoneMask = BONE_USED_BY_HITBOX;
 
-	// invalidate bone cache
-	pEnt->InvalidateBoneCache();
-
-	// disable ugly lean animation
-	pEnt->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.0f;
-
-	// force client effects
-	pEnt->GetClientEffects() |= 2; // disable ik
-
-	// force effects to disable interp
+	/* Fix player's data */
+	pEnt->GetClientEffects() |= 2;
 	pEnt->GetEffects() |= EF_NOINTERP;
-
-	// fix PVS occlusion
 	pEnt->GetOcclusionFrameCount() = -1;
 	pEnt->m_nOcclusionMask() &= ~2;
-
-	// fix skipanimframe ( part 2 )
 	pEnt->GetLastSkipFrameCount() = 0;
 
-	// setup bones
+	/* Setup bones */
 	g::bSettingUpBones[pEnt->EntIndex()] = true;
-	pEnt->SetupBones(aMatrix, MAXSTUDIOBONES, nMask, 0.0f);
+	pEnt->SetupBones(aMatrix, 128, nBoneMask, 0.f);
 	g::bSettingUpBones[pEnt->EntIndex()] = false;
 
-	// restore animation layers
-	std::memcpy(pEnt->GetAnimationOverlays(), m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
-
-	// restore player data
+	/* Restore player's data */
 	pEnt->GetLastSkipFrameCount() = std::get < 0 >(m_PlayerData);
 	pEnt->GetEffects() = std::get < 1 >(m_PlayerData);
 	pEnt->GetClientEffects() = std::get < 2 >(m_PlayerData);
 	pEnt->GetOcclusionFrameCount() = std::get < 3 >(m_PlayerData);
 	pEnt->m_nOcclusionMask() = std::get < 4 >(m_PlayerData);
+	pEnt->SetAbsOrigin(std::get < 5 >(m_PlayerData));
+
+	/* Reset layers */
+	std::memcpy(pEnt->GetAnimationOverlays(), m_Record->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
 
 	// restore globals
 	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
@@ -290,8 +297,8 @@ void Lagcompensation::FrameStageNotify() {
 
 			// create bone matrix for this pRecord.
 			// pPlayerLogs[ i ].pEntity->SetupBonesFix( pPlayerLogs[ i ].pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
-			pPlayerLogs[ i ].pEntity->SetupBones( pCurrentRecord->pMatrix, 128, BONE_USED_BY_ANYTHING, pCurrentRecord->flSimulationTime );
-			//SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING);
+			//pPlayerLogs[ i ].pEntity->SetupBones( pCurrentRecord->pMatrix, 128, BONE_USED_BY_ANYTHING, pCurrentRecord->flSimulationTime );
+			SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING, 4);
 
 			// restore correctly synced values.
 			pBackupRecord.Restore( pPlayerLogs[ i ].pEntity );

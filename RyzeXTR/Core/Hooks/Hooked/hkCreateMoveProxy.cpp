@@ -31,7 +31,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CBaseEntity* pLocal = g::pLocal = (CBaseEntity*)i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer());
 	g::pCmd = pCmd;
 
-	Vector oldViewAngle = g::oldViewAngle = pCmd->angViewPoint;
+	Vector oldViewAngle = pCmd->angViewPoint;
 
 	// for now that is the fix for the menu xddxdx
 	if (GetAsyncKeyState(VK_LBUTTON) && menu::open)
@@ -54,7 +54,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		g_LocalAnimations->CopyPlayerAnimationData(false);
 		g_LocalAnimations->SetupShootPosition( );
 
-		antiaim::AntiAim(pCmd, bSendPacket, oldViewAngle);
+		antiaim::AntiAim(pCmd, bSendPacket);
 
 		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
 
@@ -69,7 +69,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	// emergency bsendpacket to prevent server disconnecting
 	if (i::ClientState->nChokedCommands > cfg::antiaim::fakelagmax) {
 		bSendPacket = true;
-		util::Print("Emergency!");
+		//util::Print("Emergency!");
 	}
 
 	// netchannel pointer
