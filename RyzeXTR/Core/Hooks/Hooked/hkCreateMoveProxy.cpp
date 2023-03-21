@@ -119,9 +119,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	g::bSendPacket = &bSendPacket;
 
 	if (bSendPacket)
-	{
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
-	}
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();

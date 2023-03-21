@@ -82,6 +82,9 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		break;
 	}
 
+	if (cfg::antiaim::atTarget)
+		FreeStanding(pCmd, pCmd->angViewPoint);
+
 	// no lby break sry its 2022 nobody stands still and breaks lby
 	if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)
 		pCmd->flForwardMove += evenInvert ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
@@ -180,4 +183,132 @@ bool LBYUpdate()
 		return true;
 	}
 	return false;
+}
+
+void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
+
+	static float last_real;
+	bool no_active = true;
+	float bestrotation = 0.f;
+	float highestthickness = 0.f;
+	Vector besthead;
+
+	static float m_bestthreat = 0.f;
+
+	auto leyepos = g::pLocal->GetVecOrigin() + g::pLocal->GetViewOffset();
+	auto headpos = g::pLocal->GetHitboxPosition(0);
+	if (!headpos.has_value())
+		return;
+	auto origin = g::pLocal->GetAbsOrigin();
+
+
+	auto checkWallThickness = [&](CBaseEntity* pPlayer, Vector newhead) -> float
+	{
+		Vector endpos1, endpos2;
+		Vector eyepos = pPlayer->GetVecOrigin() + pPlayer->GetViewOffset();
+
+
+		CTraceFilter filter(pPlayer);
+
+		Trace_t trace1, trace2;
+		i::EngineTrace->TraceRay(Ray_t(newhead, eyepos), MASK_SHOT_BRUSHONLY, &filter, &trace1);
+
+		if (trace1.DidHit())
+			endpos1 = trace1.vecEnd;
+		else
+			return 0.f;
+
+
+		i::EngineTrace->TraceRay(Ray_t(eyepos, newhead), MASK_SHOT_BRUSHONLY, &filter, &trace2);
+
+		if (trace2.DidHit())
+			endpos2 = trace2.vecEnd;
+
+		float add = newhead.DistTo(eyepos) - leyepos.DistTo(eyepos) + 3.f;
+		return endpos1.DistTo(endpos2) + add / 3;
+	};
+
+	int index = ClosestToLocal();
+
+	static CBaseEntity* entity;
+
+	if (index != -1)
+		entity = (CBaseEntity*)i::EntityList->GetClientEntity(index);
+
+	float step = (2 * M_PI) / 18.f; // One PI = half a circle ( for stacker cause low iq :sunglasses: ), 28
+
+	float radius = fabs(Vector(headpos.value() - origin).Length2D());
+
+	if (index == -1)
+	{
+		no_active = true;
+	}
+	else
+	{
+		for (float rotation = 0; rotation < (M_PI * 2.0); rotation += step)
+		{
+			Vector newhead(radius * cos(rotation) + leyepos.x, radius * sin(rotation) + leyepos.y, leyepos.z);
+
+			float totalthickness = 0.f;
+
+			no_active = false;
+
+			totalthickness += checkWallThickness(entity, newhead);
+
+			if (totalthickness > highestthickness)
+			{
+				highestthickness = totalthickness;
+				bestrotation = rotation;
+				besthead = newhead;
+			}
+		}
+	}
+	if (no_active) {
+
+	}
+	else {
+		cmd->angViewPoint.y = M_RAD2DEG(bestrotation);
+	}
+
+	last_real = cmd->angViewPoint.y;
+}
+
+int antiaim::ClosestToLocal() {
+
+	int index = -1;
+	float lowest_distance = INT_MAX;
+
+	auto local_player = g::pLocal;
+
+	if (!local_player)
+		return -1;
+
+	Vector local_position = local_player->GetVecOrigin() + local_player->GetViewOffset();
+
+	Vector angles;
+	i::EngineClient->GetViewAngles(angles);
+
+	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
+	{
+		auto entity = (CBaseEntity*)i::EntityList->GetClientEntity(i);
+
+		if (!entity || !entity->IsAlive() || entity->GetTeam() == local_player->GetTeam() || entity->IsDormant() || entity == local_player)
+			continue;
+
+		Vector2D point1 = Vector2D(local_player->GetVecOrigin().x, local_player->GetVecOrigin().y);
+		Vector2D point2 = Vector2D(entity->GetVecOrigin().x, entity->GetVecOrigin().y);
+
+		int diffY = point1.y - point2.y;
+		int diffX = point1.x - point2.x;
+
+		float distance = sqrt((diffY * diffY) + (diffX * diffX));
+
+		if (distance < lowest_distance)
+		{
+			lowest_distance = distance;
+			index = i;
+		}
+	}
+
+	return index;
 }

@@ -27,4 +27,6 @@ namespace antiaim {
 
 	inline float desyncValue = 0.f;
 	void AntiAim(CUserCmd*, bool&);
+	void FreeStanding(CUserCmd*, Vector&);
+	int ClosestToLocal();
 }

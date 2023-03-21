@@ -103,7 +103,8 @@ void misc::IdealTick(CUserCmd* pCmd) {
 			bPositionSet = true;
 			vecOrigin = g::pLocal->GetAbsOrigin();
 			vecRecord = vecOrigin;
-			g::pLocal->SetupBonesFix(g::pLocal, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, matrixRecord);
+			//g::pLocal->SetupBones(g::pLocal, , i::GlobalVars->flCurrentTime, matrixRecord);
+			g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
 		}
 
 	}
