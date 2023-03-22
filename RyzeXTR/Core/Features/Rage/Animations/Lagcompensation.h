@@ -71,6 +71,8 @@ public:
 
 		CBaseEntity* pEntity{};
 		matrix3x4_t pMatrix[ 128 ];
+		matrix3x4_t leftMatrix[128];
+		matrix3x4_t rightMatrix[128];
 
 		bool bBreakingLagcompensation{};
 		bool bFakewalking{};
@@ -156,6 +158,8 @@ public:
 	void AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency );
 
 	void RemoveInterpolation();
+
+	void CreateMatrix(CBaseEntity*, matrix3x4_t*, int, float);
 
 private:
 	// filter records after updating them

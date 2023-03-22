@@ -348,12 +348,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				//	original(i::StudioRender, 0, pResults, info, lagcomp.deqRecords[pEnt->EntIndex()].front().pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				//}
 
-				if (ragebot.backtrackRecord && ragebot.backtrackRecord->pMatrix) {
-					//GenerateLerpedMatrix(pEnt, ragebot.backtrackRecord->pMatrix);
-					MakeChams(materials[1], new float[] {cfg::visual::enemyGlowColor[0], cfg::visual::enemyGlowColor[1], cfg::visual::enemyGlowColor[2], min(254.f / 255.f, cfg::visual::enemyGlowColor[3])}, true, true);
-					original(i::StudioRender, 0, pResults, info, ragebot.backtrackRecord->pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-				}
-
 				if (!cfg::visual::enemyEsp)
 					return false;
 

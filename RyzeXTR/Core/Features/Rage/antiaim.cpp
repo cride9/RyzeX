@@ -187,7 +187,6 @@ bool LBYUpdate()
 
 void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
 
-	static float last_real;
 	bool no_active = true;
 	float bestrotation = 0.f;
 	float highestthickness = 0.f;
@@ -218,7 +217,6 @@ void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
 		else
 			return 0.f;
 
-
 		i::EngineTrace->TraceRay(Ray_t(eyepos, newhead), MASK_SHOT_BRUSHONLY, &filter, &trace2);
 
 		if (trace2.DidHit())
@@ -230,23 +228,23 @@ void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
 
 	int index = ClosestToLocal();
 
-	static CBaseEntity* entity;
+	CBaseEntity* entity = nullptr;
 
 	if (index != -1)
 		entity = (CBaseEntity*)i::EntityList->GetClientEntity(index);
+
+	if (!entity)
+		return;
 
 	float step = (2 * M_PI) / 18.f; // One PI = half a circle ( for stacker cause low iq :sunglasses: ), 28
 
 	float radius = fabs(Vector(headpos.value() - origin).Length2D());
 
 	if (index == -1)
-	{
 		no_active = true;
-	}
-	else
-	{
-		for (float rotation = 0; rotation < (M_PI * 2.0); rotation += step)
-		{
+	else {
+
+		for (float rotation = 0; rotation < (M_PI * 2.0); rotation += step) {
 			Vector newhead(radius * cos(rotation) + leyepos.x, radius * sin(rotation) + leyepos.y, leyepos.z);
 
 			float totalthickness = 0.f;
@@ -263,14 +261,9 @@ void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
 			}
 		}
 	}
-	if (no_active) {
-
-	}
-	else {
+	if (!no_active) {
 		cmd->angViewPoint.y = M_RAD2DEG(bestrotation);
 	}
-
-	last_real = cmd->angViewPoint.y;
 }
 
 int antiaim::ClosestToLocal() {

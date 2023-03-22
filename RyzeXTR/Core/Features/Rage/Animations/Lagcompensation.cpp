@@ -3,7 +3,7 @@
 #include "../exploits.h"
 #include "../../Networking/networking.h"
 
-void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, int nMask, int nFlags)
+void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, matrix3x4_t* leftMatrix, matrix3x4_t* rightMatrix, int nMask, int nFlags)
 {
 	/* Reset layers */
 	std::memcpy(pEnt->GetAnimationOverlays(), m_Record->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
@@ -87,6 +87,18 @@ void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record,
 	/* Setup bones */
 	g::bSettingUpBones[pEnt->EntIndex()] = true;
 	pEnt->SetupBones(aMatrix, 128, nBoneMask, 0.f);
+	//if (cfg::rage::resolver) {
+
+	//	CAnimState pState;
+	//	memcpy(&pState, pEnt->AnimState(), sizeof(CAnimState));
+
+	//	g::bAllowAnimations[pEnt->EntIndex()] = pEnt->IsClientSideAnimation() = true;
+	//	lagcomp.CreateMatrix(pEnt, leftMatrix, nBoneMask, -300);
+	//	lagcomp.CreateMatrix(pEnt, rightMatrix, nBoneMask, 300);
+	//	g::bAllowAnimations[pEnt->EntIndex()] = pEnt->IsClientSideAnimation() = false;
+
+	//	memcpy(pEnt->AnimState(), &pState, sizeof(CAnimState));
+	//}
 	g::bSettingUpBones[pEnt->EntIndex()] = false;
 
 	/* Restore player's data */
@@ -296,9 +308,7 @@ void Lagcompensation::FrameStageNotify() {
 			pPlayerLogs[ i ].pEntity->SetAnimationLayers( pBackupRecord.pLayers );
 
 			// create bone matrix for this pRecord.
-			// pPlayerLogs[ i ].pEntity->SetupBonesFix( pPlayerLogs[ i ].pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
-			//pPlayerLogs[ i ].pEntity->SetupBones( pCurrentRecord->pMatrix, 128, BONE_USED_BY_ANYTHING, pCurrentRecord->flSimulationTime );
-			SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING, 4);
+			SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, pCurrentRecord->leftMatrix, pCurrentRecord->rightMatrix, BONE_USED_BY_ANYTHING, 4);
 
 			// restore correctly synced values.
 			pBackupRecord.Restore( pPlayerLogs[ i ].pEntity );
@@ -619,4 +629,20 @@ void Lagcompensation::RemoveInterpolation() {
 
 		SetInterpolationFlags(pEntity);
 	}
+}
+
+void Lagcompensation::CreateMatrix(CBaseEntity* pEnt, matrix3x4_t* Matrix, int boneMask, float SimulatedYaw) {
+
+	/*
+		VoidZero best guy (lambda owner p100)
+	*/
+
+	pEnt->AnimState()->iLastUpdateFrame--;
+	pEnt->AnimState()->flLastUpdateTime -= i::GlobalVars->flIntervalPerTick;
+
+	pEnt->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEnt->GetEyeAngles().y) + SimulatedYaw;
+
+	pEnt->UpdateClientSideAnimations();
+
+	pEnt->SetupBones(Matrix, 128, boneMask, 0.f);
 }

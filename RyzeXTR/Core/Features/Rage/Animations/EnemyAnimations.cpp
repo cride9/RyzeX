@@ -31,7 +31,7 @@ void Animations::ResolverLogic( ) {
 	}
 	else {
 
-		missedShots[ ragebot.aimbotTarget->EntIndex( ) ]--;
+		//missedShots[ ragebot.aimbotTarget->EntIndex( ) ]--;
 		ragebot.aimbotTarget = nullptr;
 		ragebot.targetMatrix = nullptr;
 		bulletImpact = Vector( 0, 0, 0 );
