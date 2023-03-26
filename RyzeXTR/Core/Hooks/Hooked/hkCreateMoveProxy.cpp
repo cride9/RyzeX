@@ -43,7 +43,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	if ( exploits::bIsShiftingTicks ) {
 
-		bSendPacket = exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
+		bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
 
 		pVerifiedCmd->userCmd = *pCmd;
 		pVerifiedCmd->uHashCRC = pCmd->GetChecksum( );
@@ -66,20 +66,14 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	misc::MovementFix(pCmd, oldViewAngle);
 
-	// emergency bsendpacket to prevent server disconnecting
-	if (i::ClientState->nChokedCommands > cfg::antiaim::fakelagmax) {
-		bSendPacket = true;
-		//util::Print("Emergency!");
-	}
-
 	// netchannel pointer
 	INetChannel* pNetChannel = i::ClientState->pNetChannel;
 
 	// @note: doesnt need rehook cuz detours here
 	if ( pNetChannel != nullptr )
 	{
-		//if ( !detour::processPacket.IsHooked( ) )
-		//	detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
+		if ( !detour::processPacket.IsHooked( ) )
+			detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
 
 		if ( !detour::sendNetMsg.IsHooked( ) )
 			detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
@@ -110,10 +104,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 		if ( !detour::temptEntities.IsHooked( ) )
 			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
-	}
-
-	if (g::onetapV2ShotHiding + 1 == pCmd->iCommandNumber && !exploits::bIsShiftingTicks) {
-		bSendPacket = true;
 	}
 
 	g::bSendPacket = &bSendPacket;

@@ -30,7 +30,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
 		bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
-		g::onetapV2ShotHiding = pCmd->iCommandNumber;
 
 		return;
 	}
@@ -105,12 +104,10 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		break;
 	}
 
-	if (g::onetapV2ShotHiding + 1 != pCmd->iCommandNumber) {
-		if (!bSendPacket) {
+	if (!bSendPacket) {
 
-			pCmd->angViewPoint.y += oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue;
-			oldValue = desyncValue;
-		}
+		pCmd->angViewPoint.y += oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue;
+		oldValue = desyncValue;
 	}
 }
 

@@ -36,6 +36,8 @@ namespace table {
 
 	inline constexpr auto runCommand = 19;			// for tickbase fix and getting movehelper interface
 	inline constexpr auto allocKeyValues = 2;		// fixing keyvalues error while fakelaging
+
+	inline constexpr auto doPostScreenEffects = 44;		// fixing keyvalues error while fakelaging
 }
 
 namespace detour {
@@ -60,6 +62,7 @@ namespace detour {
 	inline CDetourHook physicsSimulate;		// CBasePlayer::PhysicsSimulate(void);
 	inline CDetourHook writeUserCmd;		// client -> 24
 	inline CDetourHook fireEvent;			// gamevent -> 9
+	inline CDetourHook doPostScreenEffects; // clientmode -> 44
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -124,6 +127,7 @@ namespace h {
 	float __fastcall	hkGetViewModelFov(void*, void*);
 	bool __fastcall		hkWriteUserCmdDeltaToBuffer(void*, void*, int, bf_write*, int, int, bool);
 	bool __fastcall		hkFireEvent( void*, void*, IGameEvent* );
+	int __fastcall		hkDoPostScreenEffect(CClientModeShared*, int, CViewSetup*);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

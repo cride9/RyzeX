@@ -169,6 +169,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkClMove.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkCreateMoveProxy.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoExtraBoneProcessing.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModel.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFireGameEvent.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFrameStageNotify.cpp" />
@@ -241,6 +242,7 @@
     <ClInclude Include="Core\Interface\Interfaces\IEngineTrace.h" />
     <ClInclude Include="Core\Interface\Interfaces\IEngineVGui.h" />
     <ClInclude Include="Core\Interface\Interfaces\IGameEventManager.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IGlowObjectManager.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMaterial.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMaterialSystem.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMatRenderContext.h" />

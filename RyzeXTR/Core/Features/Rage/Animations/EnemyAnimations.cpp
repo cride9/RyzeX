@@ -623,3 +623,30 @@ void Animations::FakePitchResolver( CBaseEntity* pPlayer, Lagcompensation::LagRe
 			pPlayer->AnimState( )->Update( Vector( 89.f, pPlayer->AnimState( )->flEyeYaw, 0.f ) );
 	}
 }
+
+std::pair<CAnimationLayer*, float*> Animations::BuildSideLayerAndPose(CBaseEntity* pEnt, float sideAngle) {
+
+	// original is backed up before calling this function
+	
+	// make sure the new data that we set is applied by forcing client to render this player again
+	if (pEnt->AnimState()->iLastUpdateFrame == i::GlobalVars->iFrameCount)
+		pEnt->AnimState()->iLastUpdateFrame--;
+
+	// make sure the new data that we set is applied by forcing client to render this player again
+	if (pEnt->AnimState()->flLastUpdateTime == i::GlobalVars->flCurrentTime)
+		pEnt->AnimState()->flLastUpdateTime -= i::GlobalVars->flIntervalPerTick;
+
+	pEnt->AnimState()->flGoalFeetYaw = pEnt->GetEyePosition().y + sideAngle;
+
+	pEnt->IsClientSideAnimation() = g::bAllowAnimations[pEnt->EntIndex()] = true;
+	pEnt->UpdateClientSideAnimations();
+	pEnt->IsClientSideAnimation() = g::bAllowAnimations[pEnt->EntIndex()] = false;
+
+	CAnimationLayer tempLayers[13];
+	float tempPoses[24];
+
+	pEnt->GetPoseParameters(tempPoses);
+	pEnt->GetAnimationLayers(tempLayers);
+
+	return std::make_pair(tempLayers, tempPoses);
+}

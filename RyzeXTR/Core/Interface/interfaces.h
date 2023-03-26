@@ -21,6 +21,7 @@
 #include "Interfaces/IWeaponSystem.h"
 #include "Interfaces/ISurfaceData.h"
 #include "Interfaces/IGameEventManager.h"
+#include "Interfaces/IGlowObjectManager.h"
 
 // Classes aka that I can't find as interface in the source kbxdbdxjk
 #include "Classes/CClientState.h"
@@ -54,6 +55,7 @@ namespace i {
 	inline IWeaponSystem* WeaponSystem;		// 
 	inline IPhysicsSurfaceProps* PhysicsProps;
 	inline IGameEventManager* GameEvent;	// engine.dll -> GAMEEVENTSMANAGER002
+	inline IGlowObjectManager* GlowObjectManager;
 
 	inline IMoveHelper* MoveHelper;			// Runcommand parameter 
 

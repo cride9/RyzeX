@@ -262,6 +262,11 @@ namespace cfg {
 		inline bool localIdealTick = false;
 		inline float localIdealTickColor[4] = { 255.f, 255.f, 255.f, 255.f };
 		inline float localIdealTickColor2[4] = { 255.f, 255.f, 255.f, 255.f };
+
+		inline bool localDesync = false;
+		inline bool localDesyncXhair = false;
+		inline int localDesyncType = 0;
+		inline float localDesyncColor[4] = { 255.f, 255.f, 255.f, 255.f };
 	}
 	namespace misc {
 

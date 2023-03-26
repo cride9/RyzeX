@@ -431,6 +431,22 @@ void CConfig::Setup() {
 		SetupValue(teamOverlayXhair, false, "model", "teamOverlayXhair");
 		SetupValue(teamOverlayXQZXhair, false, "model", "teamOverlayXQZXhair");
 
+		SetupValue(localOverlay, false, "model", "localOverlay");
+		SetupValue(localOverlayXQZ, false, "model", "localOverlayXQZ");
+
+		SetupValue(localOverlayColor[0], 1.f, "model", "localOverlayColorR");
+		SetupValue(localOverlayColor[1], 1.f, "model", "localOverlayColorG");
+		SetupValue(localOverlayColor[2], 1.f, "model", "localOverlayColorB");
+		SetupValue(localOverlayColor[3], 1.f, "model", "localOverlayColorA");
+
+		SetupValue(localOverlayXQZColor[0], 1.f, "model", "localOverlayXQZColorR");
+		SetupValue(localOverlayXQZColor[1], 1.f, "model", "localOverlayXQZColorG");
+		SetupValue(localOverlayXQZColor[2], 1.f, "model", "localOverlayXQZColorB");
+		SetupValue(localOverlayXQZColor[3], 1.f, "model", "localOverlayXQZColorA");
+
+		SetupValue(localOverlayXhair, false, "model", "localOverlayXhair");
+		SetupValue(localOverlayXQZXhair, false, "model", "localOverlayXQZXhair");
+
 		// glow
 		SetupValue(localThinOverlay, false, "model", "localThinOverlay");
 		SetupValue(localThinOverlayXQZ, false, "model", "localThinOverlayXQZ");
@@ -477,6 +493,15 @@ void CConfig::Setup() {
 		SetupValue(localIdealTickColor2[1], 1.f, "model", "localIdealTickColor2G");
 		SetupValue(localIdealTickColor2[2], 1.f, "model", "localIdealTickColor2B");
 		SetupValue(localIdealTickColor2[3], 1.f, "model", "localIdealTickColor2A");
+
+		SetupValue(localDesync, false, "model", "localDesync");
+		SetupValue(localDesyncType, 0, "model", "localDesyncType");
+		SetupValue(localDesyncXhair, false, "model", "localDesyncXhair");
+
+		SetupValue(localDesyncColor[0], 1.f, "model", "localDesyncColorR");
+		SetupValue(localDesyncColor[1], 1.f, "model", "localDesyncColorG");
+		SetupValue(localDesyncColor[2], 1.f, "model", "localDesyncColorB");
+		SetupValue(localDesyncColor[3], 1.f, "model", "localDesyncColorA");
 	}
 
 	// misc 
@@ -512,6 +537,9 @@ void CConfig::Setup() {
 		SetupValue(snipers, 0, "misc", "autobuyrifles");
 		SetupValue(equipments, false, 3, "misc", "autobuyequipments");
 		SetupValue(grenades, false, 5, "misc", "autobuygrenades");
+
+		SetupValue(fakePing, false, "misc", "fakeping");
+		SetupValue(fakePingFactor, 0.f, "misc", "fakepingFactor");
 	}
 }
 

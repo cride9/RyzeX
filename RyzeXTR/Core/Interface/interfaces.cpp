@@ -41,6 +41,10 @@ void i::SetupInterfaces() {
 	if (GlobalVars == nullptr)
 		throw std::runtime_error("Failed to get CGlobalVarsBase");
 
+	GlowObjectManager = *reinterpret_cast<IGlowObjectManager**>(util::FindSignature("client.dll", "0F 11 05 ? ? ? ? 83 C8 01") + 0x3);
+	if (GlowObjectManager == nullptr)
+		throw std::runtime_error("Failed to get IGlowObjectManager");
+
 	ClientMode = **reinterpret_cast<IClientMode***>((*reinterpret_cast<uintptr_t**>(ClientDll))[10] + 0x5);
 
 	WeaponSystem = *(IWeaponSystem**)(util::FindSignature("client.dll", "8B 35 ? ? ? ? FF 10 0F B7 C0") + 2);

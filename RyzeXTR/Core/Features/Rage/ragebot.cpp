@@ -4,6 +4,7 @@
 #include "../../SDK/math.h"
 #include "../Visuals/ESP.h"
 #include "exploits.h"
+#include "../Misc/misc.h"
 
 bool CheckShootingCondition(CUserCmd* pCmd);
 
@@ -52,12 +53,16 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 			// calculate aim angle.
 			M::VectorAngles( vecHitscan - vecEyePosition, shootAngle ); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
 
+			exploits::bShooting = true;
+
 			if (cfg::rage::autostop && cfg::rage::betweenshots)
 				AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
 
 			if (CheckShootingCondition(pCmd)) {
 
-				if (cfg::rage::autostop && !cfg::rage::betweenshots)
+				if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
+					misc::bRetreat = true;
+				else if (cfg::rage::autostop && !cfg::rage::betweenshots)
 					AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
 
 				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
@@ -70,8 +75,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 					pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 					pCmd->iButtons |= IN_ATTACK;
 
-					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
-					g::onetapV2ShotHiding = pCmd->iCommandNumber;
+					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
 				}
 				else {
 
@@ -81,6 +85,8 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 			}
 		}
 	}
+	else
+		exploits::bShooting = false;
 }
 
 Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
@@ -180,7 +186,7 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 				return curEnt;
 			}
 			else if (!pLog->pRecord.empty() && pLog->pRecord.size() >= 2) {
-				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 12)); recordScan != nullptr) {
+				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 14)); recordScan != nullptr) {
 					if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, ConfigMinimumDamage(pWeapon))) {
 						flTargetSimulation = recordScan->flSimulationTime;
 						backtrackRecord = recordScan;

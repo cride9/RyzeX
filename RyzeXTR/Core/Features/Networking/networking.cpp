@@ -112,8 +112,16 @@ void CNetworking::OnPacketEnd( CClientState* ClientState )
 
 bool CPacketManager::ShouldProcessPacketStart( int iCommand )
 {
+	static float spawnTime = 0.f;
+
 	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
 		return true;
+
+	if (spawnTime != g::pLocal->GetSpawnTime()) {
+
+		spawnTime = g::pLocal->GetSpawnTime();
+		pCommandList.clear();
+	}
 
 	for (auto pCmd = pCommandList.begin(); pCmd != pCommandList.end(); pCmd++)
 	{

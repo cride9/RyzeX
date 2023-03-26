@@ -222,6 +222,68 @@ void visual::MoneyEsp(int& spacing, int left, int top, int right, int bot, CBase
 	spacing += 10;
 }
 
+void visual::Glow(CBaseEntity* pLocal)
+{
+	for (int i = 0; i < i::GlowObjectManager->vecGlowObjectDefinitions.Count(); i++)
+	{
+		IGlowObjectManager::GlowObject_t& hGlowObject = i::GlowObjectManager->vecGlowObjectDefinitions[i];
+
+		// is current object not used
+		if (hGlowObject.IsEmpty())
+			continue;
+
+		// get current entity from object handle
+		CBaseEntity* pEntity = hGlowObject.pEntity;
+
+		if (pEntity == nullptr)
+			continue;
+
+		// set bloom state
+		hGlowObject.bFullBloomRender = false;
+
+		CBaseClient* pClientClass = pEntity->GetClientClass();
+
+		if (pClientClass == nullptr)
+			continue;
+
+		// get class id
+		const EClassIndex nIndex = pClientClass->nClassID;
+
+		switch (nIndex)
+		{
+		case EClassIndex::CC4:
+		case EClassIndex::CPlantedC4:
+		case EClassIndex::CCSPlayer:
+		{
+			if (pEntity->IsDormant() || !pEntity->IsAlive())
+				break;
+
+			if (pEntity->GetTeam() != pLocal->GetTeam() && cfg::visual::enemyGlow) {
+
+				hGlowObject.Set(Color(cfg::visual::enemyGlowColor));
+			}
+			else if (pEntity->GetTeam() == pLocal->GetTeam() && pEntity != g::pLocal && cfg::visual::teamGlow) {
+
+				hGlowObject.Set(Color(cfg::visual::teamGlowColor));
+			}
+			else if (pEntity == pLocal && cfg::visual::localGlow) {
+
+				hGlowObject.Set(Color(cfg::visual::localGlowColor));
+			}
+
+			break;
+		}
+		case EClassIndex::CBaseCSGrenadeProjectile:
+		case EClassIndex::CDecoyProjectile:
+		case EClassIndex::CMolotovProjectile:
+		case EClassIndex::CSensorGrenadeProjectile:
+		case EClassIndex::CSmokeGrenadeProjectile:
+		default:
+			break;
+		}
+	}
+}
+
 void visual::AutoPeekCircle() {
 
 	//if (misc::vecRecord == Vector(0.f, 0.f, 0.f))

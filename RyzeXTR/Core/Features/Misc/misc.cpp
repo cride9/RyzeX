@@ -82,6 +82,27 @@ void misc::Security() {
 	i::ConVar->FindVar("cl_showerror")->SetValue(0);
 }
 
+void gotoStart(CUserCmd* cmd, std::vector<CUserCmd>& recordedCmds) {
+
+	static int commandCount = 0;
+
+	if (recordedCmds.empty()) 
+		return;
+
+	if (misc::bRetreat) {
+		if (commandCount > 0) {
+			cmd->flUpMove = -std::clamp(recordedCmds.at(commandCount).flUpMove * 500.f, -450.f, 450.f);
+			cmd->flSideMove = -std::clamp(recordedCmds.at(commandCount).flSideMove * 500.f, -450.f, 450.f);
+			cmd->flForwardMove = -std::clamp(recordedCmds.at(commandCount).flForwardMove * 500.f, -450.f, 450.f);
+			cmd->angViewPoint = recordedCmds.at(commandCount).angViewPoint;
+			i::EngineClient->SetViewAngles(cmd->angViewPoint);
+			commandCount--;
+		}
+	}
+	else
+		commandCount = recordedCmds.size();
+}
+
 void misc::IdealTick(CUserCmd* pCmd) {
 
 	if (!pCmd || !g::pLocal)
@@ -91,47 +112,79 @@ void misc::IdealTick(CUserCmd* pCmd) {
 		return;
 
 	static bool bPositionSet;
-
-	static Vector vecOrigin;
-
-	static Vector vecOriginDelta;
+	static Vector vecOrigin = Vector(0, 0, 0);
+	static std::vector<CUserCmd> recordedCmds;
 
 	if (GetAsyncKeyState(cfg::antiaim::idealTickBind)) {
+		if (vecOrigin == Vector{ 0, 0, 0 }) {
 
-		if (!bPositionSet) {
-
-			bPositionSet = true;
 			vecOrigin = g::pLocal->GetAbsOrigin();
-			vecRecord = vecOrigin;
-			//g::pLocal->SetupBones(g::pLocal, , i::GlobalVars->flCurrentTime, matrixRecord);
 			g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
 		}
+		else {
+			CUserCmd tempCmd = {};
+			tempCmd.flForwardMove = pCmd->flForwardMove;
+			tempCmd.flSideMove = pCmd->flSideMove;
+			tempCmd.flUpMove = pCmd->flUpMove;
+			tempCmd.angViewPoint = pCmd->angViewPoint;
+			gotoStart(pCmd, recordedCmds);
 
+			if (!bRetreat)
+				recordedCmds.push_back(tempCmd);
+		}
+
+		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f)
+			bRetreat = false;
 	}
 	else {
-
-		bPositionSet = false;
-		vecOrigin = Vector(0, 0, 0);
-		vecRecord = vecOrigin;
+		bRetreat = false;
+		vecOrigin = Vector{ 0, 0, 0 };
+		recordedCmds.clear();
 	}
 
-	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && GetAsyncKeyState(cfg::antiaim::idealTickBind) && bRetreat) {
 
-		vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
+	//static bool bPositionSet;
 
-		vecOriginDelta.Normalize();
+	//static Vector vecOrigin;
 
-		auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
-		auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
+	//static Vector vecOriginDelta;
 
-		pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
-		pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
+	//if (GetAsyncKeyState(cfg::antiaim::idealTickBind)) {
 
-		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
+	//	if (!bPositionSet) {
 
-			bRetreat = false;
-		}
-	}
+	//		bPositionSet = true;
+	//		vecOrigin = g::pLocal->GetAbsOrigin();
+	//		vecRecord = vecOrigin;
+	//		//g::pLocal->SetupBones(g::pLocal, , i::GlobalVars->flCurrentTime, matrixRecord);
+	//		g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
+	//	}
+
+	//}
+	//else {
+
+	//	bPositionSet = false;
+	//	vecOrigin = Vector(0, 0, 0);
+	//	vecRecord = vecOrigin;
+	//}
+
+	//if (bPositionSet && vecOrigin != Vector(0, 0, 0) && GetAsyncKeyState(cfg::antiaim::idealTickBind) && bRetreat) {
+
+	//	vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
+
+	//	vecOriginDelta.Normalize();
+
+	//	auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
+	//	auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
+
+	//	pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
+	//	pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
+
+	//	if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
+
+	//		bRetreat = false;
+	//	}
+	//}
 }
 
 void misc::OnlyCheatLogs() {

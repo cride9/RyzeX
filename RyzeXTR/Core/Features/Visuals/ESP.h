@@ -17,6 +17,7 @@ namespace visual {
 	void BreakLCESP( int&, int, int, int, int, CBaseEntity* );
 	void WeaponEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void MoneyEsp(int&, int, int, int, int, CBaseEntity*, Color);
+	void Glow(CBaseEntity* pLocal);
 
 	void AutoPeekCircle();
 

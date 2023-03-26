@@ -173,8 +173,6 @@ void menu::Render() noexcept {
 
 							ImGui::Checkbox("through wall", &cfg::model::enemyXQZ); ImGui::SameLine(); ImGui::SetCursorPosX(rightbotX);
 							ImGui::ColorEdit4("##enemyXQZColor", cfg::model::enemyXQZColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
-
-							ImGui::Checkbox( "through wall", &cfg::model::m_bDrawMatrix );
 						}
 
 						ImGui::SetCursorPosY(rightboxY);
@@ -454,6 +452,15 @@ void menu::Render() noexcept {
 					ImVec2 localrightbotRegion = ImGui::GetContentRegionAvail();
 					ImGui::BeginChild("##localrightbot", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
 					{
+						ImGui::Checkbox("localDesync", &cfg::model::localDesync);
+						if (cfg::model::localDesync) {
+
+							static const char* chamsType[] = { "default", "flat", "glow", "thin glow", "animated" };
+							ImGui::Combo("##localDesyncType", &cfg::model::localDesyncType, chamsType, IM_ARRAYSIZE(chamsType)); ImGui::SameLine(); ImGui::SetCursorPosX(localrightbotRegion.x - 30);
+							ImGui::ColorEdit4("##localDesyncColor", cfg::model::localDesyncColor, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_AlphaBar);
+							ImGui::Checkbox("wireframe", &cfg::model::localDesyncXhair);
+						}
+
 						static int selectedOverlay = 0;
 						static const char* glowType[] = { "glow", "thin glow", "animated", "ideal tick"};
 						ImGui::Combo("##glowtype", &selectedOverlay, glowType, IM_ARRAYSIZE(glowType));
@@ -585,7 +592,7 @@ void menu::Render() noexcept {
 
 					ImGui::Checkbox( "fakeping", &cfg::misc::fakePing );
 					if ( cfg::misc::fakePing )
-						ImGui::SliderFloat( "##ratio", &cfg::misc::fakePingFactor, 0.f, 200.f, "%.1f ms" );
+						ImGui::SliderFloat( "##fakepingFactor", &cfg::misc::fakePingFactor, 0.f, 200.f, "%.1f ms" );
 
 					static const char* items[] = { "smoke", "flash", "recoil", "zoom" };
 					static std::string selectedPreview = "";

@@ -54,5 +54,6 @@ public:
 
 private:
 	void FakePitchResolver( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pRecord );
+	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity* pEnt, float sideAngle);
 };
 inline Animations anims;
