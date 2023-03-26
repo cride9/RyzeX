@@ -126,6 +126,26 @@ bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out)
 	return true;
 }
 
+static void BeginChams( IMaterial* pMaterial, float const* flColor, bool bIgnoreZ, bool bWireFrame ) {
+
+	i::StudioRender->SetColorModulation( flColor, pMaterial );
+	i::StudioRender->SetAlphaModulation( flColor[ 3 ] );
+
+	pMaterial->SetMaterialVarFlag( MATERIAL_VAR_IGNOREZ, bIgnoreZ );
+	pMaterial->SetMaterialVarFlag( MATERIAL_VAR_WIREFRAME, bWireFrame );
+
+	i::StudioRender->ForcedMaterialOverride( pMaterial );
+}
+
+static void EndChams( ) {
+
+	float reset[ 3 ] = { 1, 1, 1 };
+
+	i::StudioRender->SetColorModulation( reset );
+	i::StudioRender->SetAlphaModulation( 1.f );
+	i::StudioRender->ForcedMaterialOverride( nullptr );
+}
+
 bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags) {
 
 	static auto original = detour::drawModel.GetOriginal<decltype(&h::hkDrawModel)>();
@@ -143,26 +163,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		return false;
 
 	const std::string_view szModelName = info.pStudioHdr->szName;
-
-	static auto BeginChams = [](IMaterial* pMaterial, float const* flColor, bool bIgnoreZ, bool bWireFrame) {
-
-		i::StudioRender->SetColorModulation(flColor, pMaterial);
-		i::StudioRender->SetAlphaModulation(flColor[3]);
-
-		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_IGNOREZ, bIgnoreZ);
-		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, bWireFrame);
-
-		i::StudioRender->ForcedMaterialOverride(pMaterial);
-	};
-
-	static auto EndChams = []() {
-
-		float reset[3] = { 1, 1, 1 };
-
-		i::StudioRender->SetColorModulation(reset);
-		i::StudioRender->SetAlphaModulation(1.f);
-		i::StudioRender->ForcedMaterialOverride(nullptr);
-	};
 
 	if (pEnt->IsPlayer() && pEnt->IsAlive()) {
 

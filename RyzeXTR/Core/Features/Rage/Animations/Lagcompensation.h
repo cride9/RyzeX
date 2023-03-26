@@ -123,6 +123,20 @@ public:
 		int iChoked{};
 	};
 
+	enum EResolverMode
+	{
+		LEGIT = 0,
+		DESYNC,
+		OPPOSITE,
+		SWAY,
+		FAKE,
+		OVERRIDE,
+		ONSHOT,
+		JITTER,
+		ANIMATION
+	};
+
+
 	struct AnimationInfo_t
 	{
 		CBaseEntity* pEntity;
@@ -142,6 +156,7 @@ public:
 		int iWalkToRunTransitionState;
 		float flWalkToRunTransition;
 		int iDesyncSide;
+		Lagcompensation::EResolverMode iAntiAimType;
 	};
 
 	/* Everything will be ran inside this */

@@ -379,38 +379,46 @@ void CBaseEntity::InvalidateBoneCache() {
 
 float CBaseEntity::GetSequenceCycleRate(CStudioHdr* pStudioHdr, int iSequence) {
 
-	//55 8B EC 53 57 8B 7D 08 8B D9 85 FF 75 double __userpurge SequenceDuration@<st0>(int a1@<ecx>, float a2@<xmm0>, int *a3, int a4)
-	using GetSequenceCycleRateFn = float(__thiscall*)(void*, CStudioHdr*, int);
-	return util::CallVFunc<GetSequenceCycleRateFn>(this, 221)(this, pStudioHdr, iSequence);
+	return util::CallVFunc<float>( this, 222, pStudioHdr, iSequence );
 }
 
 float CBaseEntity::GetLayerSequenceCycleRate(CAnimationLayer* pLayer, int iSequence) {
 
-	using GetLayerSequenceCycleRateFn = float(__thiscall*)(void*, CAnimationLayer*, int);
-	static auto original = reinterpret_cast<GetLayerSequenceCycleRateFn>(util::FindSignature("client.dll", "55 8B EC 56 57 FF 75 0C 8B 7D 08 8B F1 57 E8"));
-	return original(this, pLayer, iSequence);
-
-	//using GetLayerSequenceCycleRateFn = float(__thiscall*)(void*, CAnimationLayer*, int);
-	//return util::CallVFunc< GetLayerSequenceCycleRateFn >(this, 223)(this, pLayer, iSequence);
+	return util::CallVFunc < float >( this, 223, pLayer, iSequence );
 }
 
-float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
+//float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
+//
+//	Vector vecReturn;
+//
+//	// int __usercall GetSequenceLinearMotion@<eax>(int a1@<edx>, _DWORD *a2@<ecx>, int a3, _DWORD *a4)
+//	// it fastcall, but edx and ecx swaped
+//	// xref: Bad pstudiohdr in GetSequenceLinearMotion()!\n | Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n
+//
+//	// Memory::Scan(sxor("client.dll"), sxor("55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14 68"));
+//
+//	using GetSequenceLinearMotionFn = int(__fastcall*)(CStudioHdr*, int, float*, Vector*);
+//	static auto oGetSequenceMoveDist = reinterpret_cast< GetSequenceLinearMotionFn >( util::FindSignature( "client.dll", "55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14 68" ) );
+//	assert( oGetSequenceMoveDist != nullptr );
+//
+//	reinterpret_cast< GetSequenceLinearMotionFn >( oGetSequenceMoveDist )(pStudioHdr, iSequence, GetPoseParameter().data(), &vecReturn);
+//	__asm {
+//		add esp, 8
+//	}
+//	return vecReturn.Length();
+//}
+
+float CBaseEntity::GetSequenceMoveDist( CStudioHdr* pStudioHdr, int iSequence ) {
 
 	Vector vecReturn;
 
-	// int __usercall GetSequenceLinearMotion@<eax>(int a1@<edx>, _DWORD *a2@<ecx>, int a3, _DWORD *a4)
-	// it fastcall, but edx and ecx swaped
-	// xref: Bad pstudiohdr in GetSequenceLinearMotion()!\n | Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n
+	using GetSequenceLinearMotionFn = int( __fastcall* )( CStudioHdr*, int, float*, Vector* );
+	static auto oGetSequenceLinearMotion = reinterpret_cast< GetSequenceLinearMotionFn >( util::FindSignature( "client.dll", "55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14 68" ) );
+	//assert( oGetSequenceLinearMotion != nullptr );
 
-	// Memory::Scan(sxor("client.dll"), sxor("55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14 68"));
+	oGetSequenceLinearMotion( pStudioHdr, iSequence, GetPoseParameter( ).data(), &vecReturn );
 
-	using GetSequenceLinearMotionFn = int(__fastcall*)(CStudioHdr*, int, float*, Vector*);
-
-	((GetSequenceLinearMotionFn)util::FindSignature("client.dll", "55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14 68"))(pStudioHdr, iSequence, GetPoseParameter().data(), &vecReturn);
-	__asm {
-		add esp, 8
-	}
-	return vecReturn.Length();
+	return vecReturn.Length( );
 }
 
 bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int boneMask, float currentTime )

@@ -37,6 +37,7 @@ public:
 	void SkipToCalcAbsolutePosition( CBaseEntity* pEntity );
 	void OnSave( CBaseEntity* pEntity );
 	void FixLowerbody( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, int i );
+	float GetVelocityLengthXY( CBaseEntity* );
 	void UpdateEnemyAnimations( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* pRecord );
 
 	/* enemy anims */
@@ -44,8 +45,10 @@ public:
 	/* resolver */
 
 	void ResolverHandler( IGameEvent* );
+	float GetLocalCycleIncrement( CBaseEntity*, float );
+	void UpdateOnFeetYaw( CBaseEntity*, Lagcompensation::LagRecord_t* );
+	void SetGoalFeetYaw( CBaseEntity*, Lagcompensation::LagRecord_t*, Lagcompensation::LagRecord_t*, float, float );
 	void ResolverLogic( );
-	void SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, float flServerVelocityXY, float flPlaybackrate = 0.f, int brutePhase = 0 );
 	int missedShots[ 65 ];
 	bool didHurt = false;
 	Vector bulletImpact = Vector( 0, 0, 0 );
@@ -53,7 +56,7 @@ public:
 	/* resolver */
 
 private:
-	void FakePitchResolver( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pRecord );
-	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity* pEnt, float sideAngle);
+	void FakePitchResolver( CBaseEntity*, Lagcompensation::LagRecord_t* );
+	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);
 };
 inline Animations anims;
