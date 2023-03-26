@@ -707,6 +707,9 @@ void C_LocalAnimations::ModifyEyePosition(Vector& vecInputEyePos, matrix3x4_t* a
 }
 void C_LocalAnimations::InterpolateMatricies()
 {
+	if (!g::pLocal || !g::pLocal->IsAlive() || !i::EngineClient->IsInGame())
+		return;
+
 	// correct matrix
 	g_LocalAnimations->TransformateMatricies();
 

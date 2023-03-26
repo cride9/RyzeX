@@ -75,6 +75,9 @@ void hkPostFrameStageNotify(EStage curStage) {
 
 void __fastcall h::hkFrameStageNotify(void* ecx, void* edx, EStage curStage) {
 
+	if (!g::pLocal)
+		return;
+
 	static auto original = detour::frameStageNotify.GetOriginal<decltype(&h::hkFrameStageNotify)>();
 
 	hkPreFrameStageNotify(curStage);
