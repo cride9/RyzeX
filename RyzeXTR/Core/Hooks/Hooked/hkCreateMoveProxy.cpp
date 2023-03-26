@@ -106,6 +106,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
 	}
 
+	if (i::ClientState->nChokedCommands >= 16)
+		bSendPacket = true;
+
 	g::bSendPacket = &bSendPacket;
 
 	if (bSendPacket)

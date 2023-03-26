@@ -54,9 +54,8 @@ public:
 	Vector bulletImpact = Vector( 0, 0, 0 );
 
 	/* resolver */
-
+	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);
 private:
 	void FakePitchResolver( CBaseEntity*, Lagcompensation::LagRecord_t* );
-	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);
 };
 inline Animations anims;

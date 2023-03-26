@@ -48,6 +48,8 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 
 	original(ecx, edx);
 
+	//g::pLocal->GetTickBase() = iTickBaseBackup;
+
 	prediction.SaveViewmodelData( g::pLocal );
 	return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 }

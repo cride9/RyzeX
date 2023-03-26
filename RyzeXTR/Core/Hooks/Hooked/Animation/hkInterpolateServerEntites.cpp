@@ -5,8 +5,8 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 
 	static auto original = detour::interpolateEntites.GetOriginal<decltype(&h::hkInterpolateServerEntites)>();
 
-	if (!g::pLocal)
-		return original(ecx, edx);;
+	if (!g::pLocal || !i::EngineClient->IsInGame() || !g::pLocal->IsAlive())
+		return original(ecx, edx);
 
 	original(ecx, edx);
 

@@ -111,7 +111,7 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
 
 			for (Vector currentPoint : vecHitboxPosition)
-				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon))
+				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon) || flDamage > pTarget->GetHealth() + 5)
 					/* Get highest damage */
 					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
 		}
@@ -123,7 +123,7 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 			Lagcompensation::LagRecord_t backup(pTarget);
 			backtrackRecord->Apply(pTarget, false);
 			for (Vector currentPoint : vecHitboxPosition)
-				if ( float flDamage = autowall.GetDamage( pLocal, currentPoint, hitboxID, vecEyePosition ); flDamage > ConfigMinimumDamage( pWeapon ) ) {
+				if ( float flDamage = autowall.GetDamage( pLocal, currentPoint, hitboxID, vecEyePosition ); flDamage > ConfigMinimumDamage( pWeapon ) || flDamage > pTarget->GetHealth() + 5) {
 					/* Get highest damage */
 					vectorDamagePairs.push_back( std::make_pair( currentPoint, flDamage ) );
 				}
@@ -180,14 +180,14 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 		/* Loop through the selected hitboxes while we can hit something */
 		for (int hitboxID : ConfigHitboxes(pWeapon)) {
 			/* Trace player with its current bonedata */
-			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, pLog->pRecord.front().pMatrix), vecEyePosition, ConfigMinimumDamage(pWeapon))) {
+			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, pLog->pRecord.front().pMatrix), vecEyePosition, 1.f)) {
 				flTargetSimulation = curEnt->GetSimulationTime();
 				backtrackRecord = nullptr;
 				return curEnt;
 			}
 			else if (!pLog->pRecord.empty() && pLog->pRecord.size() >= 2) {
 				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 14)); recordScan != nullptr) {
-					if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, ConfigMinimumDamage(pWeapon))) {
+					if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, 1.f)) {
 						flTargetSimulation = recordScan->flSimulationTime;
 						backtrackRecord = recordScan;
 						return curEnt;
@@ -581,15 +581,6 @@ std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pL
 		}
 
 		return points;
-		//visual::headPoints[pTarget->EntIndex()][nHitbox] = points;
-
-		//for (Vector vecPoint : points) {
-
-		//	if (autowall.CanHitFloatingPoint(pLocal, pWeapon, vecPoint, vecEyePosition, iMinimumDamage)) {
-		//		visual::selectedPoint[pTarget->EntIndex()][nHitbox] = vecPoint;
-		//		return vecPoint;
-		//	}
-		//}
 	}
 	else {
 
@@ -610,13 +601,6 @@ std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pL
 		}
 
 		return points;
-		/*visual::bodyPoints[pTarget->EntIndex()][nHitbox] = points;
-
-		for (Vector vecPoint : points)
-			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, vecPoint, vecEyePosition, iMinimumDamage)) {
-				visual::selectedPoint[pTarget->EntIndex()][nHitbox] = vecPoint;
-				return vecPoint;
-			}*/
 	}
 
 	return std::vector<Vector>{vecAngle};

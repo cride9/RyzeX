@@ -100,6 +100,9 @@ public:
 		LayerData_t LayerData[ 3 ];
 
 		CAnimationLayer pLayers[ 13 ];
+		std::pair<CAnimationLayer*, float*> leftLayers;
+		std::pair<CAnimationLayer*, float*> rightLayers;
+
 		float flPoses[ 24 ];
 
 		float flServerTick{};

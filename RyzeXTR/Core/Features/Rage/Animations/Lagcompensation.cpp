@@ -87,18 +87,6 @@ void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record,
 	/* Setup bones */
 	g::bSettingUpBones[pEnt->EntIndex()] = true;
 	pEnt->SetupBones(aMatrix, 128, nBoneMask, 0.f);
-	//if (cfg::rage::resolver) {
-
-	//	CAnimState pState;
-	//	memcpy(&pState, pEnt->AnimState(), sizeof(CAnimState));
-
-	//	g::bAllowAnimations[pEnt->EntIndex()] = pEnt->IsClientSideAnimation() = true;
-	//	lagcomp.CreateMatrix(pEnt, leftMatrix, nBoneMask, -300);
-	//	lagcomp.CreateMatrix(pEnt, rightMatrix, nBoneMask, 300);
-	//	g::bAllowAnimations[pEnt->EntIndex()] = pEnt->IsClientSideAnimation() = false;
-
-	//	memcpy(pEnt->AnimState(), &pState, sizeof(CAnimState));
-	//}
 	g::bSettingUpBones[pEnt->EntIndex()] = false;
 
 	/* Restore player's data */
@@ -137,7 +125,9 @@ Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* pEntity )
 	vecAbsOrigin = pEntity->GetAbsOrigin( );
 	vecMins = pEntity->GetCollideable( )->OBBMins( );
 	vecMaxs = pEntity->GetCollideable( )->OBBMaxs( );
+
 	pEntity->GetAnimationLayers( pLayers );
+
 	pEntity->GetPoseParameters( flPoses );
 	flInterpTime = 0.f;
 	bValid = true;
@@ -246,6 +236,13 @@ void Lagcompensation::FrameStageNotify() {
 		{
 			pPlayerLogs[ i ].pEntity->IsClientSideAnimation( ) = g::bAllowAnimations[ pPlayerLogs[ i ].pEntity->EntIndex( ) ] = true;
 			pPlayerLogs[ i ].pRecord.clear( );
+			continue;
+		}
+
+		if (pPlayerLogs[i].pEntity->GetTeam() == g::pLocal->GetTeam()) {
+
+			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
+			pPlayerLogs[i].pRecord.clear();
 			continue;
 		}
 

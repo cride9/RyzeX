@@ -85,7 +85,7 @@ void menu::Render() noexcept {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
 		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(222.f / 255.f, 153.f / 255.f, 42.f / 255.f, 1.f));
 
-		ImGui::Begin("RyzeXTR", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
+		ImGui::Begin("RyzeX", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
 		{
 			ImGui::PopStyleColor();
 			ImGui::BeginChild("##tabs", ImVec2(ImGui::GetContentRegionAvail().x, 37.f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);

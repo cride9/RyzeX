@@ -132,12 +132,14 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, float flServerVelocityXY, float flPlaybackrate )
 {
 	CBaseEntity* pLocal = g::pLocal;
-	if ( !pLocal || !pEntity || !pEntity->IsAlive( ) )
+	if ( !pLocal || !pEntity || !pEntity->IsAlive( ) || pEntity->GetTeam() == pLocal->GetTeam() )
 		return;
 
 	Lagcompensation::AnimationInfo_t& pData = lagcomp.GetLog( pEntity->EntIndex( ) );
 	if ( !&pData )
 		return;
+
+	pData.iMissedShots = missedShots[pEntity->EntIndex()];
 
 	// use it if not gonna use the resolver.
 	float flOldGoalFeetYaw = pEntity->AnimState( )->flGoalFeetYaw;
