@@ -1,18 +1,6 @@
 #include "enginepred.h"
 #include "../../globals.h"
 
-void PrePrediction(CBaseEntity* pLocal) {
-
-	g::localprediction::before::nFlags = pLocal->GetFlags();
-	g::localprediction::before::nMoveType = pLocal->GetMoveType();
-}
-
-void PostPrediction(CBaseEntity* pLocal) {
-
-	g::localprediction::after::nFlags = pLocal->GetFlags();
-	g::localprediction::after::nMoveType = pLocal->GetMoveType();
-}
-
 void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 {
 	// @xref: "CPrediction::ProcessMovement"
@@ -20,7 +8,6 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	if (!pLocal->IsAlive() || i::MoveHelper == nullptr)
 		return;
 
-	PrePrediction(pLocal);
 	g_LocalAnimations->BeforePrediction();
 
 	// start command
@@ -156,8 +143,6 @@ void Prediction::End(CUserCmd* pCmd, CBaseEntity* pLocal) const
 
 	// reset move
 	i::GameMovement->Reset();
-
-	PostPrediction(pLocal);
 }
 
 void Prediction::SaveNetvars( int iCommand, CBaseEntity* pLocal)

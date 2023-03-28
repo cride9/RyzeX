@@ -587,8 +587,8 @@ void menu::Render() noexcept {
 					ImGui::Checkbox("aspect ratio", &cfg::misc::aspectRatio);
 					if (cfg::misc::aspectRatio)
 						ImGui::SliderInt("##ratio", &cfg::misc::aspectRatioValue, 0, 100);
-					ImGui::SliderInt("viewmodel fov", &cfg::misc::viewmodelFov, 65, 140);
-					ImGui::SliderInt("fov", &cfg::misc::fov, 80, 140);
+					ImGui::SliderInt("viewmodel fov", &cfg::misc::viewmodelFov, 45, 140);
+					ImGui::SliderInt("fov", &cfg::misc::fov, 40, 140);
 
 					ImGui::Checkbox( "fakeping", &cfg::misc::fakePing );
 					if ( cfg::misc::fakePing )

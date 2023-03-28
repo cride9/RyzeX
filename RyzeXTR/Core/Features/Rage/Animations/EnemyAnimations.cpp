@@ -43,6 +43,12 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 	if ( !ragebot.aimbotTarget || !g::pLocal )
 		return;
 
+	if (!strcmp(pEvent->GetName(), "round_start")) {
+
+		ragebot.aimbotTarget = nullptr;
+		ragebot.targetMatrix = nullptr;
+		bulletImpact = Vector(0, 0, 0);
+	}
 	if ( !strcmp( pEvent->GetName( ), "weapon_fire" ) ) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) );

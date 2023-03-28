@@ -77,11 +77,9 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
 				}
-				else {
-
+				else
 					if ( ConfigAutoScope( pWeapon ) && IsAutoScopeable( pWeapon->GetItemDefinitionIndex( ) ) && !pLocal->IsScoped( ) ) //only scope if we have a scoped weapon and we arent scoped
 						pCmd->iButtons |= IN_ZOOM;
-				}
 			}
 		}
 	}
@@ -107,27 +105,20 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 		float flRadius = 0.f;
 		if (!backtrackRecord) {
 
-			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, pLog->pRecord.front().pMatrix, flRadius);
+			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, pTarget->GetCachedBoneData().Base(), flRadius);
 			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
 
 			for (Vector currentPoint : vecHitboxPosition)
 				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon) || flDamage > pTarget->GetHealth() + 5)
-					/* Get highest damage */
 					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
 		}
 		else {
 
 			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, backtrackRecord->pMatrix, flRadius);
 			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
-
-			Lagcompensation::LagRecord_t backup(pTarget);
-			backtrackRecord->Apply(pTarget, false);
 			for (Vector currentPoint : vecHitboxPosition)
-				if ( float flDamage = autowall.GetDamage( pLocal, currentPoint, hitboxID, vecEyePosition ); flDamage > ConfigMinimumDamage( pWeapon ) || flDamage > pTarget->GetHealth() + 5) {
-					/* Get highest damage */
+				if ( float flDamage = autowall.GetDamage( pLocal, currentPoint, hitboxID, vecEyePosition ); flDamage > ConfigMinimumDamage( pWeapon ) || flDamage > pTarget->GetHealth() + 5)
 					vectorDamagePairs.push_back( std::make_pair( currentPoint, flDamage ) );
-				}
-			backup.Apply(pTarget, true);
 		}
 	}
 
@@ -180,18 +171,16 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 		/* Loop through the selected hitboxes while we can hit something */
 		for (int hitboxID : ConfigHitboxes(pWeapon)) {
 			/* Trace player with its current bonedata */
-			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, pLog->pRecord.front().pMatrix), vecEyePosition, 1.f)) {
+			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, 1.f)) {
 				flTargetSimulation = curEnt->GetSimulationTime();
 				backtrackRecord = nullptr;
 				return curEnt;
 			}
-			else if (!pLog->pRecord.empty() && pLog->pRecord.size() >= 2) {
-				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 14)); recordScan != nullptr) {
-					if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, 1.f)) {
-						flTargetSimulation = recordScan->flSimulationTime;
-						backtrackRecord = recordScan;
-						return curEnt;
-					}
+			else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 14)); recordScan != nullptr) {
+				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
+					flTargetSimulation = recordScan->flSimulationTime;
+					backtrackRecord = recordScan;
+					return curEnt;
 				}
 			}
 		}
@@ -552,6 +541,7 @@ std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pL
 	if (flRadius <= 0)
 		return std::vector<Vector>{vecAngle};
 
+	static int multipointOptimization[65];
 	std::pair<int, int> multiPoints = ConfigMultipoint(g::pLocal->GetWeapon());
 	std::vector<Vector> points;
 	int iMinimumDamage = ConfigMinimumDamage(pWeapon);
@@ -572,15 +562,28 @@ std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pL
 
 		/* Single axises */
 		{
-			points.push_back(vecOriginalAngle + Vector(flHeadDistance, 0.f, 0.f));
-			points.push_back(vecOriginalAngle + Vector(0.f, flHeadDistance, 0.f));
-			points.push_back(vecOriginalAngle + Vector(0.f, 0.f, flHeadDistance));
-			points.push_back(vecOriginalAngle - Vector(0.f, flHeadDistance, 0.f));
-			points.push_back(vecOriginalAngle - Vector(flHeadDistance, 0.f, 0.f));
+			switch (multipointOptimization[pTarget->EntIndex()] % 5) {
+			case 0:
+				points.push_back(vecOriginalAngle + Vector(flHeadDistance, 0.f, 0.f));
+				break;
 
+			case 1:
+				points.push_back(vecOriginalAngle + Vector(0.f, flHeadDistance, 0.f));
+				break;
+
+			case 2:
+				points.push_back(vecOriginalAngle + Vector(0.f, 0.f, flHeadDistance));
+				break;
+
+			case 3:
+				points.push_back(vecOriginalAngle - Vector(0.f, flHeadDistance, 0.f));
+				break;
+
+			case 4:
+				points.push_back(vecOriginalAngle - Vector(flHeadDistance, 0.f, 0.f));
+				break;
+			}
 		}
-
-		return points;
 	}
 	else {
 
@@ -594,14 +597,31 @@ std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pL
 
 		/* Single axises */
 		{
-			points.push_back(vecOriginalAngle + Vector(flBodyDistance, 0.f, 0.f));
-			points.push_back(vecOriginalAngle + Vector(0.f, flBodyDistance, 0.f));
-			points.push_back(vecOriginalAngle - Vector(0.f, flBodyDistance, 0.f));
-			points.push_back(vecOriginalAngle - Vector(flBodyDistance, 0.f, 0.f));
-		}
+			switch (multipointOptimization[pTarget->EntIndex()] % 5) {
 
-		return points;
+			case 0:
+				points.push_back(vecOriginalAngle + Vector(flBodyDistance, 0.f, 0.f));
+				break;
+
+			case 1:
+				points.push_back(vecOriginalAngle + Vector(0.f, flBodyDistance, 0.f));
+				break;
+
+			case 2:
+				points.push_back(vecOriginalAngle + Vector(0.f, 0.f, flBodyDistance));
+				break;
+
+			case 3:
+				points.push_back(vecOriginalAngle - Vector(0.f, flBodyDistance, 0.f));
+				break;
+
+			case 4:
+				points.push_back(vecOriginalAngle - Vector(flBodyDistance, 0.f, 0.f));
+				break;
+			}
+		}
 	}
 
-	return std::vector<Vector>{vecAngle};
+	multipointOptimization[pTarget->EntIndex()]++;
+	return points;
 }
