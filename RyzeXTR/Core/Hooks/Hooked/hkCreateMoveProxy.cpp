@@ -103,7 +103,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
 	}
 
-	if (i::ClientState->nChokedCommands >= 16)
+	// let's re-aquire the convar every tick incase it has changed
+	if ( i::ClientState->nChokedCommands >= i::ConVar->FindVar( "sv_maxusrcmdprocessticks" )->GetInt( ) - 1 )
 		bSendPacket = true;
 
 	g::bSendPacket = &bSendPacket;
