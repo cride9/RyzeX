@@ -25,7 +25,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	}
 
 	// shooting checks
-	if (ShouldDisableAntiaim(pCmd, bSendPacket) && pCmd->iButtons & IN_ATTACK) {
+	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
 
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
@@ -66,9 +66,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		break;
 	}
 
-	if (cfg::antiaim::jittervalue)
-		pCmd->angViewPoint.y += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue) : unevenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
-
 	// yaw
 	switch (cfg::antiaim::yaw) {
 
@@ -84,9 +81,12 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (cfg::antiaim::atTarget)
 		FreeStanding(pCmd, pCmd->angViewPoint);
 
+	if (cfg::antiaim::jittervalue)
+		pCmd->angViewPoint.y += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue) : unevenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
+
 	// no lby break sry its 2022 nobody stands still and breaks lby
 	if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)
-		pCmd->flForwardMove += evenInvert ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
+		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
 
 	// pure cancer 4line antiaim no shit why do ppl hit my head 100%
 	switch (cfg::antiaim::desynctype) {

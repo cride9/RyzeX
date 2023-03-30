@@ -184,16 +184,20 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 			if (localDesync) {
 
-				EndChams();
-				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				if (!local) {
+					EndChams();
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				}
 
 				BeginChams(materials[localDesyncType], localDesyncColor, false, localDesyncXhair);
 				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind)) {
 
-				EndChams();
-				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				if (!local) {
+					EndChams();
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				}
 
 				BeginChams(materials[ANIMATED], misc::bRetreat ? localIdealTickColor2 : localIdealTickColor, false, true);
 				original(i::StudioRender, 0, pResults, info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);

@@ -43,12 +43,10 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
 
 	const int iTickBaseBackup = g::pLocal->GetTickBase( );
-	/*if ( exploits::bIsShiftingTicks )*/
-		g::pLocal->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
+	g::pLocal->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
+	g::pLocal->GetTickBase() = exploits::GetNetWorkDefensive(pCommandContext->pCmd.iCommandNumber);
 
 	original(ecx, edx);
-
-	//g::pLocal->GetTickBase() = iTickBaseBackup;
 
 	prediction.SaveViewmodelData( g::pLocal );
 	return networking.SaveNetvarData( pCommandContext->nCommandNumber );

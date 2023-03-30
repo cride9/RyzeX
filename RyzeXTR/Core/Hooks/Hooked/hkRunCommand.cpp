@@ -20,11 +20,6 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 		return;
 	}
 
-	//g::nRestoreTickbase = prediction.GetTickBase(pCmd, pEnt);
-	// iTickCount = TickBase
-	g::nRestoreTickbase = i::GlobalVars->iTickCount;
-	g::flRestoreCurtime = i::GlobalVars->flCurrentTime;
-
 	float flVelocityModifier = pEnt->GetOffset<float>(0xA38C);
 	if (localanim.update && pCmd->iCommandNumber == i::ClientState->iLastCommandAck + 1)
 		pEnt->GetOffset<float>(0xA38C) = localanim.localdata.flVelocityModifier;

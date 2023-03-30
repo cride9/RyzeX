@@ -34,8 +34,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (GetAsyncKeyState(VK_LBUTTON) && menu::open)
 		pCmd->iButtons &= ~IN_ATTACK;
 
-	prediction.SaveNetvars( pCmd->iCommandNumber, pLocal);
-
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 
 	if ( exploits::bIsShiftingTicks ) {
@@ -45,6 +43,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		pVerifiedCmd->userCmd = *pCmd;
 		pVerifiedCmd->uHashCRC = pCmd->GetChecksum( );
 	}
+
+	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
@@ -56,6 +56,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
 
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
+		exploits::HandleBreakLagcomp(pCmd);
 	}
 	prediction.End(pCmd, pLocal);
 

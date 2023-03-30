@@ -19,6 +19,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	BulletImpact();
 	SlideFix();
 	OnlyCheatLogs();
+
 	//Security();
 	//ViewModel();
 }
@@ -141,50 +142,6 @@ void misc::IdealTick(CUserCmd* pCmd) {
 		vecOrigin = Vector{ 0, 0, 0 };
 		recordedCmds.clear();
 	}
-
-
-	//static bool bPositionSet;
-
-	//static Vector vecOrigin;
-
-	//static Vector vecOriginDelta;
-
-	//if (GetAsyncKeyState(cfg::antiaim::idealTickBind)) {
-
-	//	if (!bPositionSet) {
-
-	//		bPositionSet = true;
-	//		vecOrigin = g::pLocal->GetAbsOrigin();
-	//		vecRecord = vecOrigin;
-	//		//g::pLocal->SetupBones(g::pLocal, , i::GlobalVars->flCurrentTime, matrixRecord);
-	//		g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
-	//	}
-
-	//}
-	//else {
-
-	//	bPositionSet = false;
-	//	vecOrigin = Vector(0, 0, 0);
-	//	vecRecord = vecOrigin;
-	//}
-
-	//if (bPositionSet && vecOrigin != Vector(0, 0, 0) && GetAsyncKeyState(cfg::antiaim::idealTickBind) && bRetreat) {
-
-	//	vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
-
-	//	vecOriginDelta.Normalize();
-
-	//	auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
-	//	auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
-
-	//	pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
-	//	pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
-
-	//	if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
-
-	//		bRetreat = false;
-	//	}
-	//}
 }
 
 void misc::OnlyCheatLogs() {

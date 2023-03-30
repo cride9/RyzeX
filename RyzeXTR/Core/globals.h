@@ -9,19 +9,12 @@ namespace g {
 	inline CBaseEntity* pLocal;
 	inline CEntityListener entityListener;
 
-	inline int defensiveTickbase;
-
 	inline bool bAllowAnimations[65];
 	inline bool* bSendPacket;
-	inline bool bShifting;
 	inline bool bWaiting;
 	inline bool bAntiaimEnabled;
 
 	inline bool bSettingUpBones[65];
-
-	inline int nRestoreTickbase;
-	inline float flRestoreCurtime;
-	inline bool bRestoreGlobals;
 
 	namespace localprediction {
 

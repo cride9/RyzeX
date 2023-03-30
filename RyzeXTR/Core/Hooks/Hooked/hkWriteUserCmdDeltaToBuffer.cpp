@@ -1,4 +1,5 @@
 #include "../hooks.h"
+#include "../../Features/Rage/exploits.h"
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 
@@ -24,7 +25,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
 
-	if (!g::defensiveTickbase)
+	if (!exploits::iDefensive)
 		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
 
 	if (nFrom != -1)
@@ -36,8 +37,8 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 
 	auto next_cmd_nr = i::ClientState->nChokedCommands + i::ClientState->iLastOutgoingCommand + 1;
 
-	auto total_new_commands = std::clamp(g::defensiveTickbase, 0, 16);
-	g::defensiveTickbase -= total_new_commands;
+	auto total_new_commands = std::clamp(exploits::iDefensive, 0, 16);
+	exploits::iDefensive -= total_new_commands;
 
 	nFrom = -1;
 
@@ -74,83 +75,3 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 
 	return true;
 }
-
-//bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, bf_write* buf, int nFrom, int nTo, bool bNewCommand) {
-//
-//	static auto original = detour::writeUserCmd.GetOriginal<decltype(&h::hkWriteUserCmdDeltaToBuffer)>();
-//
-//	if (!g::pLocal || !g::pLocal->IsAlive())
-//		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
-//
-//	if (!g::defensiveTickbase)
-//		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
-//
-//	if (nFrom != -1)
-//		return true;
-//
-//	auto nFinalFrom = -1;
-//
-//	uintptr_t framePtr;
-//	__asm mov framePtr, ebp;
-//
-//	int* pBackupCommands = reinterpret_cast <int*> (framePtr + 0xFD8);
-//	int* pNewCommands = reinterpret_cast <int*> (framePtr + 0xFDC);
-//
-//	int nNewCommands = *pNewCommands;
-//	int nShift = g::defensiveTickbase;
-//
-//	g::defensiveTickbase = 0;
-//	*pBackupCommands = 0;
-//
-//	auto nChokeModifier = nNewCommands + nShift;
-//
-//	if (nChokeModifier > 62)
-//		nChokeModifier = 62;
-//
-//	*pNewCommands = nChokeModifier;
-//
-//	auto pNextCommandNumber = i::ClientState->nChokedCommands + i::ClientState->iLastOutgoingCommand + 1;
-//	auto nFinalTo = pNextCommandNumber - nNewCommands + 1;
-//
-//	if (nFinalTo <= pNextCommandNumber)
-//	{
-//		while (original(ecx, edx, nSlot, buf, nFinalFrom, nFinalTo, true))
-//		{
-//			nFinalFrom = nFinalTo++;
-//
-//			if (nFinalTo > pNextCommandNumber)
-//				goto next_cmd;
-//		}
-//
-//		return false;
-//	}
-//next_cmd:
-//
-//	auto pCmd = i::Input->GetUserCmd(nFinalFrom);
-//
-//	if (!pCmd)
-//		return true;
-//
-//	CUserCmd toCmd;
-//	CUserCmd fromCmd;
-//
-//	fromCmd = *pCmd;
-//	toCmd = fromCmd;
-//
-//	toCmd.iCommandNumber++;
-//	toCmd.iTickCount += 200;
-//
-//	if (nNewCommands > nChokeModifier)
-//		return true;
-//
-//	for (auto i = nChokeModifier - nNewCommands + 1; i > 0; --i) {
-//
-//		CWriteUsercmd(buf, &toCmd, &fromCmd);
-//
-//		fromCmd = toCmd;
-//		toCmd.iCommandNumber++;
-//		toCmd.iTickCount++;
-//	}
-//
-//	return true;
-//}
