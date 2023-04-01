@@ -80,7 +80,7 @@ void CConfig::Setup() {
 
 		SetupValue(pitch, 0, "antiaim", "pitch");
 		SetupValue(yaw, 0, "antiaim", "yaw");
-		SetupValue(atTarget, false, "antiaim", "atTarget");
+		SetupValue(yawBase, 0, "antiaim", "yawbase");
 
 		SetupValue(jittervalue, 0, "antiaim", "jittervalue");
 		SetupValue(invertangle, 0, "antiaim", "invertangle");
@@ -89,6 +89,7 @@ void CConfig::Setup() {
 		SetupValue(desyncvalue, 0, "antiaim", "desyncvalue");
 		SetupValue(desyncinverter, 0, "antiaim", "desyncinverter");
 
+		SetupValue(enableFakelag, false, "antiaim", "fakelagswitch");
 		SetupValue(fakelag, 0, "antiaim", "fakelag");
 		SetupValue(fakelagmin, 0, "antiaim", "fakelagmin");
 		SetupValue(fakelagmax, 0, "antiaim", "fakelagmax");
@@ -101,6 +102,10 @@ void CConfig::Setup() {
 		SetupValue(fakeduckbind, 0, "antiaim", "fakeduckbind");
 		SetupValue(idealTick, false, "antiaim", "idealTick");
 		SetupValue(idealTickBind, 0, "antiaim", "idealTickBind");
+
+		SetupValue(fakewalkenable, false, "antiaim", "fakewalk");
+		SetupValue(fakewalk, 0, "antiaim", "fakewalkspeed");
+		SetupValue(fakewalkKey, 0, "antiaim", "fakewalkbind");
 	}
 
 	// visual
@@ -488,11 +493,6 @@ void CConfig::Setup() {
 		SetupValue(localIdealTickColor[1], 1.f, "model", "localIdealTickColorG");
 		SetupValue(localIdealTickColor[2], 1.f, "model", "localIdealTickColorB");
 		SetupValue(localIdealTickColor[3], 1.f, "model", "localIdealTickColorA");
-
-		SetupValue(localIdealTickColor2[0], 1.f, "model", "localIdealTickColor2R");
-		SetupValue(localIdealTickColor2[1], 1.f, "model", "localIdealTickColor2G");
-		SetupValue(localIdealTickColor2[2], 1.f, "model", "localIdealTickColor2B");
-		SetupValue(localIdealTickColor2[3], 1.f, "model", "localIdealTickColor2A");
 
 		SetupValue(localDesync, false, "model", "localDesync");
 		SetupValue(localDesyncType, 0, "model", "localDesyncType");

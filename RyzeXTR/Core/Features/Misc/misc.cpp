@@ -409,6 +409,9 @@ void misc::Slowwalk(CUserCmd* pCmd, float flSpeed) {
 	if (flSpeed <= 0.f)
 		return;
 
+	if (!GetAsyncKeyState(cfg::antiaim::fakewalkKey))
+		return;
+
 	float flMinSpeed = (float)(sqrt((pCmd->flForwardMove * pCmd->flForwardMove) + (pCmd->flSideMove * pCmd->flSideMove) + (pCmd->flUpMove * pCmd->flUpMove)));
 	if (flMinSpeed <= 0.f)
 		return;

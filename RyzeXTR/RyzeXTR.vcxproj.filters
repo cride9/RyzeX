@@ -57,7 +57,6 @@
     <ClCompile Include="Core\SDK\Entity.cpp" />
     <ClCompile Include="Core\SDK\math.cpp" />
     <ClCompile Include="Core\SDK\Menu\config.cpp" />
-    <ClCompile Include="Core\SDK\Menu\customGui.cpp" />
     <ClCompile Include="Core\SDK\Menu\gui.cpp" />
     <ClCompile Include="Core\SDK\NetVar\Netvar.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui.cpp" />
@@ -73,6 +72,7 @@
     <ClCompile Include="Dependecies\Minhook\hook.c" />
     <ClCompile Include="Dependecies\Minhook\trampoline.c" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
+    <ClCompile Include="Core\SDK\Menu\menuRender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -133,7 +133,6 @@
     <ClInclude Include="Core\SDK\Enums.h" />
     <ClInclude Include="Core\SDK\math.h" />
     <ClInclude Include="Core\SDK\Menu\config.h" />
-    <ClInclude Include="Core\SDK\Menu\customGui.h" />
     <ClInclude Include="Core\SDK\Menu\gui.h" />
     <ClInclude Include="Core\SDK\NetVar\datatable.h" />
     <ClInclude Include="Core\SDK\NetVar\fnv.h" />
@@ -157,5 +156,6 @@
     <ClInclude Include="Dependecies\Minhook\minhook.h" />
     <ClInclude Include="Dependecies\Minhook\trampoline.h" />
     <ClInclude Include="Core\Interface\Interfaces\IGlowObjectManager.h" />
+    <ClInclude Include="Core\SDK\Menu\fontBytes.h" />
   </ItemGroup>
 </Project>

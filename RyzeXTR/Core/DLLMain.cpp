@@ -59,7 +59,9 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	if (!GetModuleHandleA("serverbrowser.dll"))
 		Sleep(200);
 
+#if _DEBUG
 	OpenConsole();
+#endif
 
 	i::SetupInterfaces();
 	SetupFonts();
@@ -69,16 +71,29 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	h::SetupHooks();
 	g::entityListener.Setup();
 
+#if _DEBUG
+
 	while (!GetAsyncKeyState(VK_DELETE))
 		Sleep(200);
-	
+
 	g::entityListener.Destroy();
 	menu::open = false;
 	h::DestroyHooks();
 	menu::Destroy();
 	i::EngineClient->ClientCmdUnrestricted("cl_fullupdate");
-	
+
+#endif
+
+#if NDEBUG
+
+	while (true)
+		Sleep(5000);
+#endif
+
+#if _DEBUG
 	CloseConsole();
+#endif
+
 	FreeLibraryAndExitThread(static_cast<HMODULE>(hinstDLL), 0);
 
 	return TRUE;

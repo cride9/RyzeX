@@ -199,7 +199,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 
-				BeginChams(materials[ANIMATED], misc::bRetreat ? localIdealTickColor2 : localIdealTickColor, false, true);
+				BeginChams(materials[ANIMATED], localIdealTickColor, false, true);
 				original(i::StudioRender, 0, pResults, info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (local) {
@@ -335,6 +335,26 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			}
 			return true;
 		}
+	}
+	else if (szModelName.find("sleeve") != std::string_view::npos) {
+
+		// get original sleeves material
+		IMaterial* pSleeveMaterial = i::MaterialSystem->FindMaterial(szModelName.data(), TEXTURE_GROUP_MODEL);
+
+		// check is valid material
+		if (pSleeveMaterial == nullptr)
+			return false;
+
+
+	}
+	else if ((szModelName.find("weapons\\v_") != std::string_view::npos || szModelName.find("arms") != std::string_view::npos)) {
+
+		IMaterial* pViewModelMaterial = i::MaterialSystem->FindMaterial(szModelName.data(), TEXTURE_GROUP_MODEL);
+
+			if (pViewModelMaterial == nullptr)
+				return false;
+
+
 	}
 	return false;
 }

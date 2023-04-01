@@ -19,7 +19,8 @@ enum EEntity : int {
 
 	ENEMY,
 	TEAM,
-	LOCAL
+	LOCAL,
+	WORLD
 };
 
 enum EVISUAL : int {
@@ -41,8 +42,9 @@ enum EWEAPON : int {
 namespace menu {
 
 	inline ImFont* logoFont = nullptr;
-	inline ImFont* logoFontsmall = nullptr;
-	inline ImFont* buildDateFont = nullptr;
+	inline ImFont* xtrFont = nullptr;
+	inline ImFont* childFont = nullptr;
+	inline ImFont* tabFont = nullptr;
 
 	inline int tabindex = 0;
 
@@ -71,6 +73,18 @@ namespace menu {
 	void Destroy() noexcept;
 
 	void Render() noexcept;
+
+	void HandleMenuElements() noexcept;
+	void Tabselection() noexcept;
+	void Ragetab() noexcept;
+	void Antiaimtab() noexcept;
+	void Visualtab() noexcept;
+	void Misctab() noexcept;
+	void Skintab() noexcept;
+
+	void HandleLogoDrawing() noexcept;
+
+	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*) noexcept;
 }
 
 

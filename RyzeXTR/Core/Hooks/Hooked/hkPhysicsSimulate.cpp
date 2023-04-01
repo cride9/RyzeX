@@ -44,7 +44,6 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 
 	const int iTickBaseBackup = g::pLocal->GetTickBase( );
 	g::pLocal->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
-	g::pLocal->GetTickBase() = exploits::GetNetWorkDefensive(pCommandContext->pCmd.iCommandNumber);
 
 	original(ecx, edx);
 

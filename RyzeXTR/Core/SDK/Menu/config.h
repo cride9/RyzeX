@@ -60,18 +60,18 @@ namespace cfg {
 	namespace antiaim {
 
 		inline bool enabled = false;
-
 		inline int pitch = 2;
+		inline int yawBase = 1;
 		inline int yaw = 1;
-		inline bool atTarget = false;
-
-		inline int jittervalue = 0;
-		inline float invertangle = 0.f;
 
 		inline int desynctype = 0;
 		inline float desyncvalue = 58.f;
 		inline int desyncinverter = 0;
 
+		inline int jittervalue = 0;
+		inline float invertangle = 0.f;
+
+		inline bool enableFakelag = false;
 		inline int fakelag = 0;
 		inline int fakelagmin = 0;
 		inline int fakelagmax = 0;
@@ -79,6 +79,8 @@ namespace cfg {
 
 		inline bool defensive = false;
 
+		inline bool fakewalkenable = false; // need config value
+		inline int fakewalkKey = 0; // need config value
 		inline float fakewalk = 0;
 		inline bool fakeduck = false;
 		inline int fakeduckbind = 0;
@@ -141,6 +143,10 @@ namespace cfg {
 		inline bool teamMoney = false;
 		inline float teamMoneyColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
+		inline bool teamWeapon = false;
+		inline float teamWeaponColor[4] = { 1.f, 1.f, 1.f, 1.f };
+
+
 		// Local
 		inline bool localEsp = false;
 
@@ -164,6 +170,10 @@ namespace cfg {
 
 		inline bool localMoney = false;
 		inline float localMoneyColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		
+		inline bool localWeapon = false;
+		inline float localWeaponColor[4] = { 1.f, 1.f, 1.f, 1.f };
+
 	}
 	namespace model {
 
@@ -261,7 +271,6 @@ namespace cfg {
 
 		inline bool localIdealTick = false;
 		inline float localIdealTickColor[4] = { 255.f, 255.f, 255.f, 255.f };
-		inline float localIdealTickColor2[4] = { 255.f, 255.f, 255.f, 255.f };
 
 		inline bool localDesync = false;
 		inline bool localDesyncXhair = false;

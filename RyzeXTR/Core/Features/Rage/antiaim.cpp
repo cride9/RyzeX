@@ -78,7 +78,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		break;
 	}
 
-	if (cfg::antiaim::atTarget)
+	if (cfg::antiaim::yawBase == 1)
 		FreeStanding(pCmd, pCmd->angViewPoint);
 
 	if (cfg::antiaim::jittervalue)

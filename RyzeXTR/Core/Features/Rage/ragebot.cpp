@@ -34,13 +34,17 @@ bool IsAutoScopeable( short iItemDefinitionIndex )
 
 void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket) {
 
-	if (!pLocal || !cfg::rage::enable)
+	if (!pLocal || !cfg::rage::enable) {
+		exploits::bShooting = false;
 		return;
+	}
 
 	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
 
-	if (!pWeapon || !pWeapon->GetCSWpnData())
+	if (!pWeapon || !pWeapon->GetCSWpnData()) {
+		exploits::bShooting = false;
 		return;
+	}
 
 	Vector vecEyePosition = pLocal->GetEyePosition();
 
@@ -82,6 +86,8 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 						pCmd->iButtons |= IN_ZOOM;
 			}
 		}
+		else
+			exploits::bShooting = false;
 	}
 	else
 		exploits::bShooting = false;
@@ -112,14 +118,14 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon) || flDamage > pTarget->GetHealth() + 5)
 					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
 		}
-		else {
+		//else {
 
-			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, backtrackRecord->pMatrix, flRadius);
-			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
-			for (Vector currentPoint : vecHitboxPosition)
-				if ( float flDamage = autowall.GetDamage( pLocal, currentPoint, hitboxID, vecEyePosition ); flDamage > ConfigMinimumDamage( pWeapon ) || flDamage > pTarget->GetHealth() + 5)
-					vectorDamagePairs.push_back( std::make_pair( currentPoint, flDamage ) );
-		}
+		//	Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, backtrackRecord->pMatrix, flRadius);
+		//	std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
+		//	for (Vector currentPoint : vecHitboxPosition)
+		//		if ( float flDamage = autowall.GetDamage( pLocal, currentPoint, hitboxID, vecEyePosition ); flDamage > ConfigMinimumDamage( pWeapon ) || flDamage > pTarget->GetHealth() + 5)
+		//			vectorDamagePairs.push_back( std::make_pair( currentPoint, flDamage ) );
+		//}
 	}
 
 	if (vectorDamagePairs.empty())
@@ -139,11 +145,11 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		/* Sanity checks */
-		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant())
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity())
 			continue;
 
 		/* Ignore teammates */
-		if (pEntity->GetTeam() == pLocal->GetTeam())
+		if (pEntity->GetTeam() == pLocal->GetTeam() || pEntity == g::pLocal)
 			continue;
 
 		/* Add targetable entity */
@@ -176,13 +182,13 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 				backtrackRecord = nullptr;
 				return curEnt;
 			}
-			else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 14)); recordScan != nullptr) {
-				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
-					flTargetSimulation = recordScan->flSimulationTime;
-					backtrackRecord = recordScan;
-					return curEnt;
-				}
-			}
+			//else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 14)); recordScan != nullptr) {
+			//	if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
+			//		flTargetSimulation = recordScan->flSimulationTime;
+			//		backtrackRecord = recordScan;
+			//		return curEnt;
+			//	}
+			//}
 		}
 	}
 

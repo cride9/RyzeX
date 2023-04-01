@@ -66,6 +66,7 @@ void visual::VisualRender() {
 				if (cfg::visual::localArmor) KevlarEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localArmorColor));
 				if (cfg::visual::localMoney) MoneyEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localMoneyColor));
 				if (cfg::visual::localAmmo) AmmoEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localAmmoColor));
+				if (cfg::visual::localWeapon) WeaponEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localWeaponColor));
 				//AutoPeekCircle();
 
 				continue;
@@ -82,6 +83,8 @@ void visual::VisualRender() {
 			if (cfg::visual::teamArmor) KevlarEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamArmorColor));
 			if (cfg::visual::teamMoney) MoneyEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamMoneyColor));
 			if (cfg::visual::teamAmmo) AmmoEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamAmmoColor));
+			if (cfg::visual::teamWeapon) WeaponEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamWeaponColor));
+
 		}
 	}
 }
