@@ -59,15 +59,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 			exploits::bShooting = true;
 
-			if (cfg::rage::autostop && cfg::rage::betweenshots)
-				AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
-
 			if (CheckShootingCondition(pCmd)) {
-
-				if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
-					misc::bRetreat = true;
-				else if (cfg::rage::autostop && !cfg::rage::betweenshots)
-					AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
 
 				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
 
@@ -95,7 +87,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
 
-	std::vector<std::pair<Vector, float>> vectorDamagePairs = {};
+	std::vector<std::pair<Vector, float>> vectorDamagePairs;
 
 	/* Loop through enemy hitboxes and scale damage, then return a valid position to shoot to */
 	for (int hitboxID : ConfigHitboxes(pWeapon)) {
@@ -108,6 +100,8 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 		if (pLog->pRecord.size() <= 2)
 			continue;
 
+		int iMinimumDamage = GetAsyncKeyState(cfg::rage::overrideBind) ? ConfigOverrideDamage(pWeapon) : ConfigMinimumDamage(pWeapon);
+
 		float flRadius = 0.f;
 		if (!backtrackRecord) {
 
@@ -115,8 +109,15 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
 
 			for (Vector currentPoint : vecHitboxPosition)
-				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon) || flDamage > pTarget->GetHealth() + 5)
+				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5) {
+
+					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind) && CheckShootingCondition(g::pCmd))
+						misc::bRetreat = true;
+					else if (cfg::rage::autostop && (cfg::rage::betweenshots ? true : CheckShootingCondition(g::pCmd)))
+						AutoStop(g::pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
+
 					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
+				}
 		}
 		//else {
 
@@ -139,7 +140,7 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 
 CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
 
-	std::vector<CBaseEntity*> entityHealths = {};
+	std::vector<CBaseEntity*> entityHealths;
 	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
@@ -174,13 +175,16 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 		if (pLog->pRecord.size() <= 2)
 			continue;
 
+		CBaseEntity* recordEntity = pLog->pRecord.front().pEntity;
+		matrix3x4_t* recordMatrix = pLog->pRecord.front().pMatrix;
+
 		/* Loop through the selected hitboxes while we can hit something */
 		for (int hitboxID : ConfigHitboxes(pWeapon)) {
 			/* Trace player with its current bonedata */
-			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, 1.f)) {
-				flTargetSimulation = curEnt->GetSimulationTime();
+			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, recordEntity->GetHitboxPosition(hitboxID, recordMatrix), vecEyePosition, 1.f)) {
+				flTargetSimulation = recordEntity->GetSimulationTime();
 				backtrackRecord = nullptr;
-				return curEnt;
+				return recordEntity;
 			}
 			//else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 14)); recordScan != nullptr) {
 			//	if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
@@ -205,6 +209,9 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 
 	if (!pWeaponInfo)
 		return false;
+
+	if (exploits::bIsShiftingTicks)
+		return true;
 
 	Vector vecForward = Vector(0, 0, 0);
 	Vector vecRight = Vector(0, 0, 0);
@@ -289,11 +296,7 @@ void CRageBot::AutoStop(CUserCmd* pCmd, float IdealSpeed) {
 	// Credit to @Monthyx
 	// Fast stop source from obelus
 
-	//if (g::pLocal->GetWeapon()->GetItemDefinitionIndex() == (WEAPON_SSG08 || WEAPON_AWP))
-	//	if (!CheckShootingCondition(pCmd))
-	//		return;
-
-	if (!(g::pLocal->GetFlags() & FL_ONGROUND))
+	if (!(g::pLocal->GetFlags() & FL_ONGROUND) && !cfg::rage::m_bAutoStopInAir)
 		return;
 
 	pCmd->iButtons &= ~IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT;
@@ -375,6 +378,34 @@ int CRageBot::ConfigMinimumDamage(CBaseCombatWeapon* pWeapon) {
 	}
 	else {
 		return cfg::rage::etcMindmg;
+	}
+
+}
+
+int CRageBot::ConfigOverrideDamage(CBaseCombatWeapon* pWeapon) {
+
+	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
+
+	if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
+		return cfg::rage::autoOverride;
+	}
+	else if (iDefinitionIndex == WEAPON_SSG08) {
+		return cfg::rage::scoutOverride;
+	}
+	else if (iDefinitionIndex == WEAPON_AWP) {
+		return cfg::rage::awpOverride;
+	}
+	else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
+		return cfg::rage::heavypistolOverride;
+	}
+	else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
+		return cfg::rage::pistolOverride;
+	}
+	else if (iDefinitionIndex == WEAPON_TASER) {
+		return 100;
+	}
+	else {
+		return cfg::rage::etcOverride;
 	}
 
 }
@@ -550,7 +581,7 @@ std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pL
 	static int multipointOptimization[65];
 	std::pair<int, int> multiPoints = ConfigMultipoint(g::pLocal->GetWeapon());
 	std::vector<Vector> points;
-	int iMinimumDamage = ConfigMinimumDamage(pWeapon);
+	int iMinimumDamage = GetAsyncKeyState(cfg::rage::overrideBind) ? ConfigOverrideDamage(pWeapon) : ConfigMinimumDamage(pWeapon);
 
 	int* pHeadPoints = &multiPoints.first;
 	int* pBodyPoints = &multiPoints.second;

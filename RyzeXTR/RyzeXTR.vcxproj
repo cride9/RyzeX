@@ -111,6 +111,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -171,6 +172,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkDoExtraBoneProcessing.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModel.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFireGameEvent.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFrameStageNotify.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetViewModelFov.cpp" />
@@ -239,6 +241,7 @@
     <ClInclude Include="Core\Interface\Interfaces\IBaseClientDLL.h" />
     <ClInclude Include="Core\Interface\Interfaces\IClientEntityList.h" />
     <ClInclude Include="Core\Interface\Interfaces\IClientMode.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IEngineSoundClient.h" />
     <ClInclude Include="Core\Interface\Interfaces\IEngineTrace.h" />
     <ClInclude Include="Core\Interface\Interfaces\IEngineVGui.h" />
     <ClInclude Include="Core\Interface\Interfaces\IGameEventManager.h" />

@@ -31,7 +31,8 @@ void h::SetupHooks() {
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
 	HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
-
+	//HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
+	
 	// Signature hooks
 	HookSignature(detour::clMove, "engine.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8A F9", &hkClMove);
 	HookSignature(detour::buildTransform, "client.dll", "55 8B EC 83 E4 F0 81 ? ? ? ? ? 56 57 8B F9 8B ? ? ? ? ? 89 7C 24 28", &hkBuildTransformation);
@@ -48,6 +49,7 @@ void h::SetupHooks() {
 	HookSignature(detour::extraBoneProcessing, "client.dll", "55 8B EC 83 E4 F8 81 ? ? ? ? ? 53 56 8B F1 57 89 74 24 1C", &hkDoExtraBoneProcessing);
 	HookSignature(detour::physicsSimulate, "client.dll", "56 8B F1 8B 8E ? ? ? ? 83 F9 FF 74 23", &hkPhysicsSimulate);
 	HookSignature(detour::interpolateEntites, "client.dll", "55 8B EC 83 EC 1C 8B 0D ? ? ? ? 53 56 57", &hkInterpolateServerEntites);
+	//HookSignature(detour::emitSound, "client.dll", "8D 8F ? ? ? ? F3 0F 10 84 24 ? ? ? ? 50", &hkEmitSound, 0x2);
 	//HookSignature(detour::isFollowingEntity, "client.dll", "F6 ? ? ? ? ? ? 74 31 80", &hkIsFollowingEntity);
 
 	menu::DestroyDirectX();

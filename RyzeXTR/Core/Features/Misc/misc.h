@@ -31,12 +31,13 @@ namespace misc {
 	void Slowwalk(CUserCmd*, float);
 	void FastStop(CUserCmd*);
 	void FakeDuck(CUserCmd*);
-	void BulletImpact();
+	void BulletImpact(IGameEvent* = nullptr, EStage = FRAME_UNDEFINED);
 	void SlideFix();
 	void NightMode();
 	void OnlyCheatLogs();
 	void IdealTick(CUserCmd*);
 	void ServerHitboxes();
+	void RemovePostProcessing();
 
 	void Security();
 

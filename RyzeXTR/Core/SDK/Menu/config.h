@@ -19,6 +19,7 @@ namespace cfg {
 		inline bool doubletap;
 		inline int  doubletapkey;
 		inline bool resolver;
+		inline int	overrideBind;
 
 		// all weapon
 		inline bool etcHitboxes[] = { false, false, false, false, false ,false };
@@ -26,36 +27,42 @@ namespace cfg {
 		inline int etcMindmg;
 		inline int etcHeadPoints = 0;
 		inline int etcBodyPoints = 0;
+		inline int etcOverride = 0;
 
 		inline bool autoHitboxes[] = { false, false, false, false, false ,false };
 		inline int autoHitchance;
 		inline int autoMindmg;
 		inline int autoHeadPoints = 0;
 		inline int autoBodyPoints = 0;
+		inline int autoOverride = 0;
 
 		inline bool scoutHitboxes[] = { false, false, false, false, false ,false };
 		inline int scoutHitchance;
 		inline int scoutMindmg;
 		inline int scoutHeadPoints = 0;
 		inline int scoutBodyPoints = 0;
+		inline int scoutOverride = 0;
 
 		inline bool awpHitboxes[] = { false, false, false, false, false ,false };
 		inline int awpHitchance;
 		inline int awpMindmg;
 		inline int awpHeadPoints = 0;
 		inline int awpBodyPoints = 0;
+		inline int awpOverride = 0;
 
 		inline bool pistolHitboxes[] = { false, false, false, false, false ,false };
 		inline int pistolHitchance;
 		inline int pistolMindmg;
 		inline int pistolHeadPoints = 0;
 		inline int pistolBodyPoints = 0;
+		inline int pistolOverride = 0;
 
 		inline bool heavypistolHitboxes[] = { false, false, false, false, false ,false };
 		inline int heavypistolHitchance;
 		inline int heavypistolMindmg;
 		inline int heavypistolHeadPoints = 0;
 		inline int heavypistolBodyPoints = 0;
+		inline int heavypistolOverride = 0;
 	}
 	namespace antiaim {
 
@@ -68,6 +75,9 @@ namespace cfg {
 		inline float desyncvalue = 58.f;
 		inline int desyncinverter = 0;
 
+		inline int modifier = 0;
+		inline int desyncModifier = 0;
+		inline int desyncModifierValue = 0;
 		inline int jittervalue = 0;
 		inline float invertangle = 0.f;
 
@@ -300,7 +310,7 @@ namespace cfg {
 		inline int viewmodelFov = 75;
 		inline int fov = 90;
 
-		inline bool removals[] = { false, false ,false ,false };
+		inline bool removals[] = { false, false ,false ,false, false };
 
 		inline int pistols;
 		inline int snipers;

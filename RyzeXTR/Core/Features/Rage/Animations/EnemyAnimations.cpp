@@ -55,7 +55,7 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 
 		if ( iUser == i::EngineClient->GetLocalPlayer( ) ) {
 
-			missedShots[ ragebot.aimbotTarget->EntIndex( ) ]++;
+			missedShots[iUser]++;
 		}
 	}
 	if ( !strcmp( pEvent->GetName( ), "player_hurt" ) ) {
@@ -65,7 +65,7 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 
 		if ( iAttacker == i::EngineClient->GetLocalPlayer( ) && iUser == i::EngineClient->GetPlayerForUserID( ragebot.aimbotTarget->EntIndex( ) ) ) {
 
-			missedShots[ ragebot.aimbotTarget->EntIndex( ) ]--;
+			missedShots[iUser]--;
 			didHurt = true;
 		}
 	}

@@ -39,19 +39,23 @@ void menu::Tabselection() noexcept {
     ImGui::PushFont(tabFont);
     ImGui::BeginChild("leftchild", ImVec2(100.f, ImGui::GetContentRegionAvail().y), true);
     {
-        if (ImGui::Button("Ragebot", ImVec2(ImGui::GetContentRegionMax().x, 40)))
+        if (ImGui::Button("Ragebot", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == RAGE_TAB))
             selectedTab = RAGE_TAB;
+
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-        if (ImGui::Button("Antiaim", ImVec2(ImGui::GetContentRegionMax().x, 40)))
+        if (ImGui::Button("Antiaim", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == ANTIAIM_TAB))
             selectedTab = ANTIAIM_TAB;
+
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-        if (ImGui::Button("Visual", ImVec2(ImGui::GetContentRegionMax().x, 40)))
+        if (ImGui::Button("Visual", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == VISUAL_TAB))
             selectedTab = VISUAL_TAB;
+
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-        if (ImGui::Button("Misc", ImVec2(ImGui::GetContentRegionMax().x, 40)))
+        if (ImGui::Button("Misc", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == MISC_TAB))
             selectedTab = MISC_TAB;
+
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-        if (ImGui::Button("Skins", ImVec2(ImGui::GetContentRegionMax().x, 40)))
+        if (ImGui::Button("Skins", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == SKIN_TAB))
             selectedTab = SKIN_TAB;
     }
     ImGui::EndChild();
@@ -69,8 +73,10 @@ void menu::Ragetab() noexcept {
     {
         ImGui::Checkbox("Enable", &enable);
         ImGui::Checkbox("Auto Stop", &autostop);
-        if (autostop)
+        if (autostop) {
             ImGui::Checkbox("Auto Stop In Air", &m_bAutoStopInAir);
+            ImGui::Checkbox("Between shots", &betweenshots);
+        }
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
         ImGui::Checkbox("Doubletap", &doubletap);
         ImGui::PopStyleColor();
@@ -87,7 +93,7 @@ void menu::Ragetab() noexcept {
 
         static const char* items[] = { "head", "upper chest", "lower chest", "stomach", "arms", "legs" };
 
-        static auto buildTabForWeapon = [](bool* hitboxes, int& hitChance, int& minDmg, int& headPoints, int& bodyPoints, EWEAPON weapon) {
+        static auto buildTabForWeapon = [](bool* hitboxes, int& hitChance, int& minDmg, int& headPoints, int& bodyPoints, int& overridedmg, EWEAPON weapon) {
 
             ImGui::MultiComboBox("Hitboxes", items, hitboxes, IM_ARRAYSIZE(items));
 
@@ -98,21 +104,23 @@ void menu::Ragetab() noexcept {
             ImGui::SliderInt("Body Pointscale", &bodyPoints, 0, 100);
 
             ImGui::Checkbox("Auto-Scope", &autoscope[weapon]);
+            ImGui::SliderInt("Damage override", &overridedmg, 0, 110);
+            ImGui::Keybind("damageoverridebind", &overrideBind);
         };
 
         switch (selectedWeapon)
         {
-        case AUTO: buildTabForWeapon(autoHitboxes, autoHitchance, autoMindmg, autoHeadPoints, autoBodyPoints, AUTO);
+        case AUTO: buildTabForWeapon(autoHitboxes, autoHitchance, autoMindmg, autoHeadPoints, autoBodyPoints, autoOverride, AUTO);
             break;
-        case SCOUT:buildTabForWeapon(scoutHitboxes, scoutHitchance, scoutMindmg, scoutHeadPoints, scoutBodyPoints, SCOUT);
+        case SCOUT:buildTabForWeapon(scoutHitboxes, scoutHitchance, scoutMindmg, scoutHeadPoints, scoutBodyPoints, scoutOverride, SCOUT);
             break;
-        case AWP: buildTabForWeapon(awpHitboxes, awpHitchance, awpMindmg, awpHeadPoints, awpBodyPoints, AWP);
+        case AWP: buildTabForWeapon(awpHitboxes, awpHitchance, awpMindmg, awpHeadPoints, awpBodyPoints, awpOverride, AWP);
             break;
-        case PISTOL: buildTabForWeapon(pistolHitboxes, pistolHitchance, pistolMindmg, pistolHeadPoints, pistolBodyPoints, PISTOL);
+        case PISTOL: buildTabForWeapon(pistolHitboxes, pistolHitchance, pistolMindmg, pistolHeadPoints, pistolBodyPoints, pistolOverride, PISTOL);
             break;
-        case HEAVY_PISTOL: buildTabForWeapon(heavypistolHitboxes, heavypistolHitchance, heavypistolMindmg, heavypistolHeadPoints, heavypistolBodyPoints, HEAVY_PISTOL);
+        case HEAVY_PISTOL: buildTabForWeapon(heavypistolHitboxes, heavypistolHitchance, heavypistolMindmg, heavypistolHeadPoints, heavypistolBodyPoints, heavypistolOverride, HEAVY_PISTOL);
             break;
-        case OTHER: buildTabForWeapon(etcHitboxes, etcHitchance, etcMindmg, etcHeadPoints, etcBodyPoints, OTHER);
+        case OTHER: buildTabForWeapon(etcHitboxes, etcHitchance, etcMindmg, etcHeadPoints, etcBodyPoints, etcOverride, OTHER);
             break;
         }
     }
@@ -128,6 +136,7 @@ void menu::Antiaimtab() noexcept {
     static const char* desyncList[] = { "Off", "Static", "Jitter" };
     static const char* yawBaseList[] = { "Local view", "Freestand" };
     static const char* fakelagTypeList[] = { "Normal", "Adaptive", "Jitter" };
+    static const char* yawModifierList[] = { "Off", "Jitter", "Random" };
 
     ImGui::BeginChild("LeftChild", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
     {
@@ -135,10 +144,16 @@ void menu::Antiaimtab() noexcept {
         ImGui::Combo("Pitch", &pitch, pitchList, IM_ARRAYSIZE(pitchList));
         ImGui::Combo("Yaw base", &yawBase, yawBaseList, IM_ARRAYSIZE(yawBaseList));
         ImGui::Combo("Yaw", &yaw, yawList, IM_ARRAYSIZE(yawList));
+        ImGui::Combo("Modifier", &modifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
+        if (modifier != 0)
+            ImGui::SliderInt("Modifier value", &jittervalue, 0, 90);
         ImGui::Combo("Lower body yaw target", &desynctype, desyncList, IM_ARRAYSIZE(desyncList));
         if (desynctype != 0) {
             ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 58.f, "%.f");
             ImGui::Keybind("invertButton", &desyncinverter);
+            ImGui::Combo("Yaw target modifier", &desyncModifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
+            if (desyncModifier != 0)
+                ImGui::SliderInt("Modifier value ##2", &desyncModifierValue, 0, 58);
         }
     }
     ImGui::EndChild();
@@ -174,6 +189,11 @@ void menu::Antiaimtab() noexcept {
 
         ImGui::Checkbox("Auto peek", &idealTick);
         ImGui::Keybind("autopeekBind", &idealTickBind);
+
+        if (idealTick) {
+            ImGui::Checkbox("Visualize position", &cfg::model::localIdealTick);
+            ImGui::ColorEdit4("##localIdealTickColor", cfg::model::localIdealTickColor);
+        }
     }
     ImGui::EndChild();
 }
@@ -185,21 +205,21 @@ void menu::Visualtab() noexcept {
    
     ImGui::BeginChild("selectPlayer", ImVec2(ImGui::GetContentRegionAvail().x, 30.f), true);
     {
-        if (ImGui::Button("Enemy", ImVec2(buttonSize, 20)))
+        if (ImGui::Button("Enemy", ImVec2(buttonSize, 20), selectedEsp == ENEMY))
             selectedEsp = ENEMY;
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX());
-        if (ImGui::Button("Teammate", ImVec2(buttonSize, 20)))
+        if (ImGui::Button("Teammate", ImVec2(buttonSize, 20), selectedEsp == TEAM))
             selectedEsp = TEAM;
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX());
-        if (ImGui::Button("Local", ImVec2(buttonSize, 20)))
+        if (ImGui::Button("Local", ImVec2(buttonSize, 20), selectedEsp == LOCAL))
             selectedEsp = LOCAL;
 
         ImGui::SameLine();
         ImGui::SetCursorPosX(ImGui::GetCursorPosX());
-        if (ImGui::Button("World", ImVec2(buttonSize, 20)))
+        if (ImGui::Button("World", ImVec2(buttonSize, 20), selectedEsp == WORLD))
             selectedEsp = WORLD;
     }
     ImGui::EndChild();
@@ -296,6 +316,7 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Remove flash", &removals[1]);
             ImGui::Checkbox("Remove recoil", &removals[2]);
             ImGui::Checkbox("Remove zoom", &removals[3]);
+            ImGui::Checkbox("Remove post processing", &removals[4]);
         }
         ImGui::EndChild();
 
@@ -303,7 +324,7 @@ void menu::Visualtab() noexcept {
 
         ImGui::BeginChild("right", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
         {
-            ImGui::Text("Still in development");
+            ImGui::Checkbox("Show impact", &bulletImpact);
         }
         ImGui::EndChild();
 
@@ -313,7 +334,7 @@ void menu::Visualtab() noexcept {
 
     static const char* chamsType[] = { "Default", "Flat" };
     static const char* glowType[] = { "Glow", "Thin glow", "Animated" };
-    static const char* localTypes[] = { "Glow", "Thin glow", "Animated", "Auto peek", "Desync"};
+    static const char* localTypes[] = { "Glow", "Thin glow", "Animated", "Desync"};
 
     ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
     {
@@ -467,11 +488,6 @@ void menu::Visualtab() noexcept {
                 break;
 
             case 3:
-                ImGui::Checkbox("Enabled", &localIdealTick);
-                ImGui::ColorEdit4("##localIdealTickColor", localIdealTickColor);
-                break;
-
-            case 4:
 
                 static const char* desyncType[] = { "Default", "Flat", "Glow", "Thin glow", "Animated" };
 
@@ -621,7 +637,7 @@ noexcept {
         ImGui::ColorEdit4("##namecolor", nameColor);
 
         ImGui::Checkbox("Health", &health);
-        ImGui::ColorEdit4("##healthcolor", nameColor);
+        ImGui::ColorEdit4("##healthcolor", healthColor);
 
         ImGui::Checkbox("Armor", &armor);
         ImGui::ColorEdit4("##armorcolor", armorColor);

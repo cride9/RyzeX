@@ -10,7 +10,7 @@ namespace visual {
 	void VisualRender();
 
 	void BoxEsp(int, int, int, int, Color);
-	void HealthEsp(int&, int, int, int, int, int, int, int);
+	void HealthEsp(int&, int, int, int, int, int, int, int, Color);
 	void NameEsp(int&, int, int, int, int, int, int, CBaseEntity*, Color);
 	void KevlarEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void AmmoEsp(int&, int, int, int, int, CBaseEntity*, Color);
@@ -23,7 +23,5 @@ namespace visual {
 
 	void DrawMultipoints(CBaseEntity*);
 
-	inline std::vector<Vector> headPoints[65][18];
-	inline std::vector<Vector> bodyPoints[65][18];
 	inline Vector selectedPoint[65][18];
 }

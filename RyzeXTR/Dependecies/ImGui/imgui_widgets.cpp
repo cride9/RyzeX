@@ -678,7 +678,7 @@ bool ImGui::ButtonBehavior(const ImRect& bb, ImGuiID id, bool* out_hovered, bool
     return pressed;
 }
 
-bool ImGui::ButtonEx(const char* label, const ImVec2& size_arg, ImGuiButtonFlags flags)
+bool ImGui::ButtonEx(const char* label, const ImVec2& size_arg, ImGuiButtonFlags flags, bool toggle)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
@@ -706,7 +706,20 @@ bool ImGui::ButtonEx(const char* label, const ImVec2& size_arg, ImGuiButtonFlags
     bool pressed = ButtonBehavior(bb, id, &hovered, &held, flags);
 
     // Render
+    if (toggle) {
+        PushStyleColor(ImGuiCol_ButtonActive, ImVec4(38 / 255.f, 38 / 255.f, 38 / 255.f, 1.f));
+        PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(38 / 255.f, 38 / 255.f, 38 / 255.f, 1.f));
+        PushStyleColor(ImGuiCol_Button, ImVec4(38 / 255.f, 38 / 255.f, 38 / 255.f, 1.f));
+    }
+
     const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+
+    if (toggle) {
+        PopStyleColor();
+        PopStyleColor();
+        PopStyleColor();
+    }
+
     RenderNavHighlight(bb, id);
     RenderFrame(bb.Min, bb.Max, col, true, style.FrameRounding);
 
@@ -722,9 +735,9 @@ bool ImGui::ButtonEx(const char* label, const ImVec2& size_arg, ImGuiButtonFlags
     return pressed;
 }
 
-bool ImGui::Button(const char* label, const ImVec2& size_arg)
+bool ImGui::Button(const char* label, const ImVec2& size_arg, bool toggled)
 {
-    return ButtonEx(label, size_arg, ImGuiButtonFlags_None);
+    return ButtonEx(label, size_arg, ImGuiButtonFlags_None, toggled);
 }
 
 // Small buttons fits within text without additional vertical spacing.
@@ -1978,7 +1991,7 @@ bool ImGui::MultiComboBox(const char* label, const char* items[], bool* selectab
         preview.pop_back();
         preview.pop_back();
     }
-    if (ImGui::BeginCombo("hitboxes", preview.c_str(), ImGuiComboFlags_NoArrowButton)) {
+    if (ImGui::BeginCombo(label, preview.c_str(), ImGuiComboFlags_NoArrowButton)) {
 
         for (size_t i = 0; i < size; i++) {
 
@@ -3010,6 +3023,8 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
         return false;
+
+    flags |= ImGuiSliderFlags_NoInput;
 
     ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing(); ImGui::Spacing();
 

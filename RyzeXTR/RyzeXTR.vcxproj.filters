@@ -73,6 +73,7 @@
     <ClCompile Include="Dependecies\Minhook\trampoline.c" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
     <ClCompile Include="Core\SDK\Menu\menuRender.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -157,5 +158,6 @@
     <ClInclude Include="Dependecies\Minhook\trampoline.h" />
     <ClInclude Include="Core\Interface\Interfaces\IGlowObjectManager.h" />
     <ClInclude Include="Core\SDK\Menu\fontBytes.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IEngineSoundClient.h" />
   </ItemGroup>
 </Project>

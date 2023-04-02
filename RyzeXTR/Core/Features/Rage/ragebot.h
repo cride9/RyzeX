@@ -28,6 +28,7 @@ private:
 	void				AutoStop(CUserCmd*, float);
 
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);
+	int					ConfigOverrideDamage(CBaseCombatWeapon*);
 	int					ConfigHitChance(CBaseCombatWeapon*);
 	int					ConfigAutoScope( CBaseCombatWeapon* pWeapon );
 	std::vector<int>	ConfigHitboxes(CBaseCombatWeapon*);

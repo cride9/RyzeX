@@ -24,6 +24,8 @@ void Style() {
 	ImGuiStyle& st = ImGui::GetStyle();
 	ImGuiIO& io = ImGui::GetIO();
 
+	io.ConfigWindowsResizeFromEdges = true;
+
 	ImFontConfig cfg;
 	cfg.FontDataOwnedByAtlas = false;
 

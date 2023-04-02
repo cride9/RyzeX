@@ -38,6 +38,8 @@ namespace table {
 	inline constexpr auto allocKeyValues = 2;		// fixing keyvalues error while fakelaging
 
 	inline constexpr auto doPostScreenEffects = 44;		// fixing keyvalues error while fakelaging
+
+	inline constexpr auto emitSound = 5;
 }
 
 namespace detour {
@@ -63,6 +65,7 @@ namespace detour {
 	inline CDetourHook writeUserCmd;		// client -> 24
 	inline CDetourHook fireEvent;			// gamevent -> 9
 	inline CDetourHook doPostScreenEffects; // clientmode -> 44
+	inline CDetourHook emitSound;			// client -> 55 8B EC 83 EC 4C 53 8B D9 8B
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -105,9 +108,9 @@ namespace h {
 		if (!hook.Create(util::GetVFunc(thisptr, index), function))
 			util::Print("Failed to initialize ", std::to_string(index).c_str());
 	}
-	inline void	HookSignature(CDetourHook& hook, const char* dll, const char* pattern, void* function) {
+	inline void	HookSignature(CDetourHook& hook, const char* dll, const char* pattern, void* function, int add = 0x0) {
 
-		if (!hook.Create((void*)util::FindSignature(dll, pattern), function))
+		if (!hook.Create((void*)(util::FindSignature(dll, pattern) + add), function))
 			util::Print("Failed to initialize ", pattern);
 	}
 
@@ -128,6 +131,7 @@ namespace h {
 	bool __fastcall		hkWriteUserCmdDeltaToBuffer(void*, void*, int, bf_write*, int, int, bool);
 	bool __fastcall		hkFireEvent( void*, void*, IGameEvent* );
 	int __fastcall		hkDoPostScreenEffect(CClientModeShared*, int, CViewSetup*);
+	void __fastcall		hkEmitSound(void*, int, void*, int, int, const char*, unsigned int, const char*, float, int, float, int, int, const Vector*, const Vector*, void*, bool, float, int, int);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

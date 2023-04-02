@@ -22,6 +22,7 @@
 #include "Interfaces/ISurfaceData.h"
 #include "Interfaces/IGameEventManager.h"
 #include "Interfaces/IGlowObjectManager.h"
+#include "Interfaces/IEngineSoundClient.h"
 
 // Classes aka that I can't find as interface in the source kbxdbdxjk
 #include "Classes/CClientState.h"
@@ -56,6 +57,7 @@ namespace i {
 	inline IPhysicsSurfaceProps* PhysicsProps;
 	inline IGameEventManager* GameEvent;	// engine.dll -> GAMEEVENTSMANAGER002
 	inline IGlowObjectManager* GlowObjectManager;
+	inline IEngineSoundClient* EngineSoundClient;
 
 	inline IMoveHelper* MoveHelper;			// Runcommand parameter 
 

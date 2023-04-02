@@ -16,10 +16,9 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FastStop(pCmd);
 	IdealTick(pCmd);
 	FakeDuck(pCmd);
-	BulletImpact();
 	SlideFix();
 	OnlyCheatLogs();
-
+	RemovePostProcessing();
 	//Security();
 	//ViewModel();
 }
@@ -77,6 +76,13 @@ void misc::ServerHitboxes() {
 	}
 }
 
+void misc::RemovePostProcessing() {
+
+	static CConVar* mat_postprocess_enable = i::ConVar->FindVar("mat_postprocess_enable");
+
+	mat_postprocess_enable->SetValue(cfg::misc::removals[4] ? 0 : 1);
+}
+
 void misc::Security() {
 
 	// dont even ask that
@@ -113,34 +119,43 @@ void misc::IdealTick(CUserCmd* pCmd) {
 		return;
 
 	static bool bPositionSet;
-	static Vector vecOrigin = Vector(0, 0, 0);
-	static std::vector<CUserCmd> recordedCmds;
+
+	static Vector vecOrigin;
+
+	static Vector vecOriginDelta;
 
 	if (GetAsyncKeyState(cfg::antiaim::idealTickBind)) {
-		if (vecOrigin == Vector{ 0, 0, 0 }) {
 
+		if (!bPositionSet) {
+
+			bPositionSet = true;
 			vecOrigin = g::pLocal->GetAbsOrigin();
+			vecRecord = vecOrigin;
 			g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
 		}
-		else {
-			CUserCmd tempCmd = {};
-			tempCmd.flForwardMove = pCmd->flForwardMove;
-			tempCmd.flSideMove = pCmd->flSideMove;
-			tempCmd.flUpMove = pCmd->flUpMove;
-			tempCmd.angViewPoint = pCmd->angViewPoint;
-			gotoStart(pCmd, recordedCmds);
-
-			if (!bRetreat)
-				recordedCmds.push_back(tempCmd);
-		}
-
-		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f)
-			bRetreat = false;
 	}
 	else {
-		bRetreat = false;
-		vecOrigin = Vector{ 0, 0, 0 };
-		recordedCmds.clear();
+
+		bPositionSet = false;
+		vecOrigin = Vector(0, 0, 0);
+		vecRecord = vecOrigin;
+	}
+
+	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && GetAsyncKeyState(cfg::antiaim::idealTickBind) && bRetreat) {
+
+		vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
+
+		vecOriginDelta.Normalize();
+
+		auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
+		auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
+
+		pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
+		pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
+
+		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
+			bRetreat = false;
+		}
 	}
 }
 
@@ -227,14 +242,63 @@ void misc::SlideFix() {
 	g::pCmd->iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVERIGHT | IN_MOVELEFT);
 }
 
-void misc::BulletImpact() {
+struct ClientHitVerify_t {
+	Vector pos;
+	float time;
+	float expires;
+};
 
-	if (!g::pLocal || !g::pLocal->IsAlive())
+void misc::BulletImpact(IGameEvent* pEvent, EStage curStage) {
+
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bulletImpact)
 		return;
 
-	CConVar* sv_bulletimpact = i::ConVar->FindVar("sv_showimpacts");
+	if (pEvent != nullptr) {
+		if (!strcmp(pEvent->GetName(), "bullet_impact")) {
 
-	sv_bulletimpact->SetValue(cfg::misc::bulletImpact ? 1 : 0);
+			auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+
+			if (iUser != g::pLocal->EntIndex())
+				return;
+
+			Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+
+			i::DebugOverlay->AddBoxOverlay(
+				vecImpact,
+				Vector(-2.0f, -2.0f, -2.0f),
+				Vector(2.0f, 2.0f, 2.0f),
+				Vector(0.0f, 0.0f, 0.0f),
+				0.f,
+				0.f,
+				255.f,
+				155.f,
+				4.f
+			);
+		}
+	}
+	else {
+
+		static int iLastCount = 0;
+		auto& ClientImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
+
+		for (int i = ClientImpactList.Count(); i > iLastCount; --i) {
+
+			i::DebugOverlay->AddBoxOverlay(
+				Vector(ClientImpactList[i - 1].pos),
+				Vector(-2.0f, -2.0f, -2.0f),
+				Vector(2.0f, 2.0f, 2.0f),
+				Vector(0.0f, 0.0f, 0.0f),
+				255.f,
+				0.f,
+				0.f,
+				155.f,
+				4.f
+			);
+		}
+
+		if (ClientImpactList.Count() != iLastCount)
+			iLastCount = ClientImpactList.Count();
+	}
 }
 
 void misc::BuyBot(IGameEvent* event) { // need menu element
@@ -358,7 +422,7 @@ void misc::FakeDuck(CUserCmd* pCmd) {
 
 void misc::FastStop(CUserCmd* pCmd) {
 
-	if (!cfg::misc::faststop || bRetreat)
+	if (!cfg::misc::faststop)
 		return;
 
 	if (!g::pLocal || !g::pLocal->IsAlive() || !pCmd || !pCmd->iCommandNumber)

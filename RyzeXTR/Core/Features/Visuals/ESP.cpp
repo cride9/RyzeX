@@ -43,7 +43,7 @@ void visual::VisualRender() {
 
 			if (cfg::visual::enemyName) NameEsp(enemySpacing, left, top.y, right, bot.y, w, h, pEnt, Color(cfg::visual::enemyNameColor));
 			if (cfg::visual::enemyBox) BoxEsp(left, top.y, right, bot.y, Color(cfg::visual::enemyBoxColor));
-			if (cfg::visual::enemyHealth) HealthEsp(enemySpacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth());
+			if (cfg::visual::enemyHealth) HealthEsp(enemySpacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(cfg::visual::enemyHealthColor));
 			if (cfg::visual::enemyArmor) KevlarEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyArmorColor));
 			if (cfg::visual::enemyMoney) MoneyEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyMoneyColor));
 			if (cfg::visual::enemyAmmo) AmmoEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyAmmoColor));
@@ -62,7 +62,7 @@ void visual::VisualRender() {
 
 				if (cfg::visual::localName) NameEsp(localspacing, left, top.y, right, bot.y, w, h, pEnt, Color(cfg::visual::localNameColor[0], cfg::visual::localNameColor[1], cfg::visual::localNameColor[2], cfg::visual::localNameColor[3]));
 				if (cfg::visual::localBox) BoxEsp(left, top.y, right, bot.y, Color(cfg::visual::localBoxColor[0], cfg::visual::localBoxColor[1], cfg::visual::localBoxColor[2], cfg::visual::localBoxColor[3]));
-				if (cfg::visual::localHealth) HealthEsp(localspacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth());
+				if (cfg::visual::localHealth) HealthEsp(localspacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(cfg::visual::localHealthColor));
 				if (cfg::visual::localArmor) KevlarEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localArmorColor));
 				if (cfg::visual::localMoney) MoneyEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localMoneyColor));
 				if (cfg::visual::localAmmo) AmmoEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localAmmoColor));
@@ -79,51 +79,12 @@ void visual::VisualRender() {
 			// Teammate
 			if (cfg::visual::teamName) NameEsp(teamspacing, left, top.y, right, bot.y, w, h, pEnt, Color(cfg::visual::teamNameColor[0], cfg::visual::teamNameColor[1], cfg::visual::teamNameColor[2], cfg::visual::teamNameColor[3]));
 			if (cfg::visual::teamBox) BoxEsp(left, top.y, right, bot.y, Color(cfg::visual::teamBoxColor[0], cfg::visual::teamBoxColor[1], cfg::visual::teamBoxColor[2], cfg::visual::teamBoxColor[3]));
-			if (cfg::visual::teamHealth) HealthEsp(teamspacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth());
+			if (cfg::visual::teamHealth) HealthEsp(teamspacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(cfg::visual::teamHealthColor));
 			if (cfg::visual::teamArmor) KevlarEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamArmorColor));
 			if (cfg::visual::teamMoney) MoneyEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamMoneyColor));
 			if (cfg::visual::teamAmmo) AmmoEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamAmmoColor));
 			if (cfg::visual::teamWeapon) WeaponEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamWeaponColor));
 
-		}
-	}
-}
-
-void visual::DrawMultipoints(CBaseEntity* pEnt) {
-
-	for (int i = 0; i < 18; i++) {
-
-		if (!headPoints[pEnt->EntIndex()][i].empty()) {
-			for (Vector vecPosition : headPoints[pEnt->EntIndex()][i]) {
-
-				Vector dotPosition;
-				i::DebugOverlay->ScreenPosition(vecPosition, dotPosition);
-
-				if (selectedPoint[pEnt->EntIndex()][i] == vecPosition) {
-					i::Surface->DrawSetColor(255.f, 0.f, 0.f, 255.f);
-					i::Surface->DrawFilledRect(dotPosition.x - 2, dotPosition.y - 2, dotPosition.x + 2, dotPosition.y + 2);
-				}
-				else {
-					i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
-					i::Surface->DrawFilledRect(dotPosition.x, dotPosition.y, dotPosition.x + 1, dotPosition.y + 1);
-				}
-			}
-		}
-		if (!bodyPoints[pEnt->EntIndex()][i].empty()) {
-			for (Vector vecPosition : bodyPoints[pEnt->EntIndex()][i]) {
-
-				Vector dotPosition;
-				i::DebugOverlay->ScreenPosition(vecPosition, dotPosition);
-
-				if (selectedPoint[pEnt->EntIndex()][i] == vecPosition) {
-					i::Surface->DrawSetColor(255.f, 0.f, 0.f, 255.f);
-					i::Surface->DrawFilledRect(dotPosition.x - 2, dotPosition.y - 2, dotPosition.x + 2, dotPosition.y + 2);
-				}
-				else {
-					i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
-					i::Surface->DrawFilledRect(dotPosition.x, dotPosition.y, dotPosition.x + 1, dotPosition.y + 1);
-				}
-			}
 		}
 	}
 }
@@ -137,13 +98,14 @@ void visual::BoxEsp(int left, int top, int right, int bot, Color color) {
 	i::Surface->DrawOutlinedRect(left - 1, top - 1, right + 1, bot + 1);
 }
 
-void visual::HealthEsp(int& spacing, int left, int top, int right, int bot, int width, int height, int health) {
+void visual::HealthEsp(int& spacing, int left, int top, int right, int bot, int width, int height, int health, Color color) {
 
 	const float percentage = health / 100.f;
 	std::string text = "Health: ";
 	text += std::to_string(health);
 
-	i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::NameESP, false, text.c_str());
+	//i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::NameESP, false, text.c_str());
+	i::Surface->DrawT(right + 2, top + spacing, color, g::fonts::NameESP, false, text.c_str());
 
 	spacing += 10;
 }

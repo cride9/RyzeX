@@ -81,8 +81,10 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (cfg::antiaim::yawBase == 1)
 		FreeStanding(pCmd, pCmd->angViewPoint);
 
-	if (cfg::antiaim::jittervalue)
+	if (cfg::antiaim::modifier == 1)
 		pCmd->angViewPoint.y += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue) : unevenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
+	else if (cfg::antiaim::modifier == 2)
+		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue, cfg::antiaim::jittervalue);
 
 	// no lby break sry its 2022 nobody stands still and breaks lby
 	if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)
@@ -104,9 +106,15 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		break;
 	}
 
+	if (cfg::antiaim::desyncModifier == 1)
+		desyncValue += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue) : unevenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);
+	else if (cfg::antiaim::desyncModifier == 2)
+		desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
+
 	if (!bSendPacket) {
 
-		pCmd->angViewPoint.y += oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue;
+		pCmd->angViewPoint.y += M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue);
+		
 		oldValue = desyncValue;
 	}
 }

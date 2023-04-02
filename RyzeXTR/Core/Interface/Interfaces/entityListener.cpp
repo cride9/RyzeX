@@ -31,7 +31,7 @@ void CEntityListener::OnEntityCreated(CBaseEntity* pEntity)
 	switch (pClientClass->nClassID)
 	{
 	case EClassIndex::CCSPlayer:
-		vecEntities.emplace_back(pEntity, nIndex);
+		//vecEntities.emplace_back(pEntity, nIndex);
 
 		if (!detour::estimateAbsVelocity.IsHooked())
 			h::HookTable(detour::estimateAbsVelocity, pEntity, 145, &h::hkEstimateAbsVelocity);

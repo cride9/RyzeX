@@ -112,9 +112,6 @@ void CNetworking::OnPacketEnd( CClientState* ClientState )
 
 bool CPacketManager::ShouldProcessPacketStart( int iCommand )
 {
-	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
-		return true;
-
 	for (auto pCmd = pCommandList.begin(); pCmd != pCommandList.end(); pCmd++)
 	{
 		if (*pCmd != iCommand)
