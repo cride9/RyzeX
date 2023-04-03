@@ -71,6 +71,9 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 					pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 					pCmd->iButtons |= IN_ATTACK;
 
+					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
+						misc::bRetreat = true;
+
 					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
 				}
 				else
@@ -111,22 +114,25 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 			for (Vector currentPoint : vecHitboxPosition)
 				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5) {
 
-					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind) && CheckShootingCondition(g::pCmd))
-						misc::bRetreat = true;
-					else if (cfg::rage::autostop && (cfg::rage::betweenshots ? true : CheckShootingCondition(g::pCmd)))
+					if (cfg::rage::autostop && (cfg::rage::betweenshots ? true : CheckShootingCondition(g::pCmd)))
 						AutoStop(g::pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
 
 					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
 				}
 		}
-		//else {
+		else {
 
-		//	Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, backtrackRecord->pMatrix, flRadius);
-		//	std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
-		//	for (Vector currentPoint : vecHitboxPosition)
-		//		if ( float flDamage = autowall.GetDamage( pLocal, currentPoint, hitboxID, vecEyePosition ); flDamage > ConfigMinimumDamage( pWeapon ) || flDamage > pTarget->GetHealth() + 5)
-		//			vectorDamagePairs.push_back( std::make_pair( currentPoint, flDamage ) );
-		//}
+			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, backtrackRecord->pMatrix, flRadius);
+			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
+			for (Vector currentPoint : vecHitboxPosition) {
+
+				Lagcompensation::LagRecord_t backup(pTarget);
+				backtrackRecord->Apply(pTarget, false);
+				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon) || flDamage > pTarget->GetHealth() + 5)
+					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
+				backup.Apply(pTarget, true);
+			}
+		}
 	}
 
 	if (vectorDamagePairs.empty())
@@ -186,13 +192,14 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 				backtrackRecord = nullptr;
 				return recordEntity;
 			}
-			//else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 14)); recordScan != nullptr) {
-			//	if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
-			//		flTargetSimulation = recordScan->flSimulationTime;
-			//		backtrackRecord = recordScan;
-			//		return curEnt;
-			//	}
-			//}
+			else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, cfg::rage::backtrackTicks)); recordScan != nullptr) {
+				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
+					flTargetSimulation = recordScan->flSimulationTime;
+					backtrackRecord = recordScan;
+
+					return curEnt;
+				}
+			}
 		}
 	}
 

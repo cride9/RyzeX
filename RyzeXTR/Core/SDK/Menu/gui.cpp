@@ -75,6 +75,7 @@ void menu::Render() noexcept {
 
 	ImGui::NewFrame();
 
+	KeyBindList();
 	if (menu::open) {
 
 		HandleMenuElements();

@@ -760,7 +760,7 @@ void misc::FakeLag(bool& bSendPacket) {
 		JITTER
 	};
 
-	if (!g::pLocal || !g::pLocal->IsAlive())
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::fakelag)
 		return;
 
 	if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {

@@ -25,6 +25,7 @@ void CConfig::Setup() {
 		SetupValue(autostop, false, "rage", "Rageautostop");
 		SetupValue(betweenshots, false, "rage", "Ragebetweenshots");
 		SetupValue(overrideBind, 0, "rage", "overrideBind");
+		SetupValue(backtrackTicks, 0, "rage", "backtrack");
 
 		SetupValue( autoscope[ 0 ], false, "rage", "autoscope1" );
 		SetupValue( autoscope[ 1 ], false, "rage", "autoscope2" );
@@ -513,12 +514,15 @@ void CConfig::Setup() {
 		SetupValue(localDesyncColor[1], 1.f, "model", "localDesyncColorG");
 		SetupValue(localDesyncColor[2], 1.f, "model", "localDesyncColorB");
 		SetupValue(localDesyncColor[3], 1.f, "model", "localDesyncColorA");
+
+		SetupValue(paperMode, false, "model", "paperMode");
 	}
 
 	// misc 
 	{
 		using namespace cfg::misc;
 
+		SetupValue(keyBindList, true, "misc", "keybindList");
 		SetupValue(bunnyhop, false, "misc", "bunnyhop");
 		SetupValue(autoStrafe, false, "misc", "autoStrafe");
 		SetupValue(faststop, false, "misc", "faststop");

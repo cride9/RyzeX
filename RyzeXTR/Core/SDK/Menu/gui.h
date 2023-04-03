@@ -82,6 +82,8 @@ namespace menu {
 	void Misctab() noexcept;
 	void Skintab() noexcept;
 
+	void KeyBindList() noexcept;
+
 	void HandleLogoDrawing() noexcept;
 
 	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*) noexcept;

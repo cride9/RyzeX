@@ -9,6 +9,8 @@ namespace cfg {
 
 	inline int configID = 0;
 
+	inline bool debugSwitch = false;
+
 	namespace rage {
 
 		inline bool enable;
@@ -20,6 +22,7 @@ namespace cfg {
 		inline int  doubletapkey;
 		inline bool resolver;
 		inline int	overrideBind;
+		inline int backtrackTicks = 0;
 
 		// all weapon
 		inline bool etcHitboxes[] = { false, false, false, false, false ,false };
@@ -286,9 +289,12 @@ namespace cfg {
 		inline bool localDesyncXhair = false;
 		inline int localDesyncType = 0;
 		inline float localDesyncColor[4] = { 255.f, 255.f, 255.f, 255.f };
+
+		inline bool paperMode = false;
 	}
 	namespace misc {
 
+		inline bool keyBindList = false;
 		inline bool bunnyhop = false;
 		inline bool autoStrafe = false;
 		inline bool faststop = false;

@@ -432,10 +432,10 @@ bool CAutoWall::CanHitFloatingPoint(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	i::EngineTrace->TraceRay(Ray_t(data.vecPosition, vecEnd), MASK_SHOT | CONTENTS_HITBOX, &filter, &data.enterTrace);
 	const surfacedata_t* pEnterSurfaceData = i::PhysicsProps->GetSurfaceData(data.enterTrace.surface.nSurfaceProps);
 
-	if (data.enterTrace.flFraction == 1.f && data.flCurrentDamage > flDmg + 5)
+	if (data.enterTrace.flFraction == 1.f)
 		return true;
 
-	if (HandleBulletPenetration(pLocal, pWeaponData, pEnterSurfaceData, data) && data.flCurrentDamage > flDmg + 5)
+	if (HandleBulletPenetration(pLocal, pWeaponData, pEnterSurfaceData, data))
 		return true;
 
 	return false;

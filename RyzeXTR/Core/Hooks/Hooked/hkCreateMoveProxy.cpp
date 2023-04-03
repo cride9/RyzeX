@@ -44,7 +44,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		pVerifiedCmd->uHashCRC = pCmd->GetChecksum( );
 	}
 
-	//prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
+	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
@@ -60,7 +60,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	}
 	prediction.End(pCmd, pLocal);
 
-	//prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
+	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
 	misc::MovementFix(pCmd, oldViewAngle);
 

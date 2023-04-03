@@ -114,7 +114,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (!bSendPacket) {
 
 		pCmd->angViewPoint.y += M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue);
-		
 		oldValue = desyncValue;
 	}
 }

@@ -82,6 +82,7 @@ void menu::Ragetab() noexcept {
         ImGui::PopStyleColor();
         ImGui::Keybind("DoubletapKey", &doubletapkey);
         ImGui::Checkbox("Anti-aim correction", &resolver);
+        ImGui::SliderInt("Backtrack ticks", &backtrackTicks, 1, 12);
     }
     ImGui::EndChild();
     ImGui::SameLine();
@@ -325,6 +326,8 @@ void menu::Visualtab() noexcept {
         ImGui::BeginChild("right", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
         {
             ImGui::Checkbox("Show impact", &bulletImpact);
+            ImGui::Checkbox("Paper mode", &cfg::model::paperMode);
+            ImGui::Checkbox("Keybind list", &keyBindList);
         }
         ImGui::EndChild();
 
@@ -514,10 +517,12 @@ void menu::Misctab() noexcept {
         ImGui::Checkbox("Auto strafe", &autoStrafe);
         ImGui::Checkbox("Fast stop", &faststop);
 
+#if _DEBUG
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
         ImGui::Checkbox("!Local hitboxes!", &m_bDrawServerHitbox);
         ImGui::Checkbox("!Entity hitboxes!", &m_bDrawServerHitboxOnAllEntities);
         ImGui::PopStyleColor();
+#endif
 
         ImGui::Checkbox("Fake ping", &fakePing);
         ImGui::SliderFloat("Latency", &fakePingFactor, 0.f, 1000.f, "%.f");
@@ -575,7 +580,11 @@ void menu::Misctab() noexcept {
 
 void menu::Skintab() noexcept {
 
-
+#if _DEBUG
+    ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+        ImGui::Checkbox("Debug button", &cfg::debugSwitch);
+    ImGui::EndChild();
+#endif
 }
 
 void menu::HandleLogoDrawing() noexcept {
@@ -652,4 +661,65 @@ noexcept {
         ImGui::ColorEdit4("##moneycolor", moneyColor);
     }
     ImGui::EndChild();
+}
+
+void menu::KeyBindList() noexcept {
+
+    static int height = 15;
+
+    if (!cfg::misc::keyBindList)
+        return;
+
+    ImGui::SetNextWindowSizeConstraints(ImVec2(130, height), ImVec2(180, height));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(180, height));
+    ImGui::PushFont(childFont);
+    ImGui::Begin("##keystuff", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
+    {
+        height = 15;
+        ImGui::PopStyleVar();
+
+        ImGui::BeginChild("##binds", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        {
+            if (GetKeyState(cfg::misc::thirdpersonbind)) {
+                ImGui::Text("Thirdperson [ON]");
+                height += 20;
+            }
+            else {
+                ImGui::Text("Thirdperson [OFF]");
+                height += 20;
+            }
+            if (GetKeyState(cfg::antiaim::desyncinverter)) {
+
+                ImGui::Text("Invert [ON]");
+                height += 20;
+            }
+            else {
+                ImGui::Text("Invert [OFF]");
+                height += 20;
+            }
+            if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+                ImGui::Text("Fakeduck [ON]");
+                height += 20;
+            }
+            if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
+                ImGui::Text("Doubletap [ON]");
+                height += 20;
+            }
+            if (GetAsyncKeyState(cfg::rage::overrideBind)) {
+                ImGui::Text("Override [ON]");
+                height += 20;
+            }
+            if (GetAsyncKeyState(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick) {
+                ImGui::Text("Autopeek [ON]");
+                height += 20;
+            }
+            if (GetAsyncKeyState(cfg::antiaim::fakewalkKey) && cfg::antiaim::fakewalkenable) {
+                ImGui::Text("Slow motion [ON]");
+                height += 20;
+            }
+        }
+        ImGui::EndChild();
+    }
+    ImGui::End();
+    ImGui::PopFont();
 }
