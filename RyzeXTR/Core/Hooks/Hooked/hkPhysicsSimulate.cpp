@@ -34,19 +34,19 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	if ( pCommandContext->pCmd.iTickCount >= std::numeric_limits< int >::max( ) )
 	{
 		SimulationTick = i::GlobalVars->iTickCount;
-		//return networking.SaveNetvarData( pCommandContext->nCommandNumber );
+		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
 		
 	if ( pCommandContext->pCmd.iCommandNumber == ( i::ClientState->iCommandAck + 1 ) )
 		g::pLocal->GetVelocityModifier( ) = localanim.localdata.flVelocityModifier;
 
-	//networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
+	networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
 
 	const int iTickBaseBackup = g::pLocal->GetTickBase( );
 	g::pLocal->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
 
 	original(ecx, edx);
 
-	//prediction.SaveViewmodelData( g::pLocal );
-	//return networking.SaveNetvarData( pCommandContext->nCommandNumber );
+	prediction.SaveViewmodelData( g::pLocal );
+	return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 }

@@ -272,6 +272,14 @@ void CConfig::Setup() {
 
 		SetupValue(enemyType, 0, "model", "enemyType");
 
+		SetupValue(enemyBTEnable, 0, "model", "enemyBTEnable");
+		SetupValue(enemyBTType, 0, "model", "enemyBTType");
+		SetupValue(enemyBTXhair, 0, "model", "enemyBTXhair");
+		SetupValue(enemyBTColor[0], 1.f, "model", "enemyBTColorR");
+		SetupValue(enemyBTColor[1], 1.f, "model", "enemyBTColorG");
+		SetupValue(enemyBTColor[2], 1.f, "model", "enemyBTColorB");
+		SetupValue(enemyBTColor[3], 1.f, "model", "enemyBTColorA");
+
 		// chams
 		SetupValue(enemy, false, "model", "enemy");
 		SetupValue(enemyXQZ, false, "model", "enemyXQZ");

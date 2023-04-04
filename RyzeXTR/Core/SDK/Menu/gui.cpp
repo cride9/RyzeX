@@ -29,10 +29,18 @@ void Style() {
 	ImFontConfig cfg;
 	cfg.FontDataOwnedByAtlas = false;
 
+#if NDEBUG
 	menu::logoFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::logoFont, 50.f, 50.f);
 	menu::xtrFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::xtrFont, 17.f, 17.f);
 	menu::childFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::childFont, 15.f, 15.f);
 	menu::tabFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::childFont, 18.f, 18.f);
+#endif
+#if _DEBUG
+	menu::logoFont = io.Fonts->AddFontFromFileTTF("C:\\XenoDemonCondensed-mdZP.otf", 50.f);
+	menu::xtrFont = io.Fonts->AddFontFromFileTTF("C:\\Exwayer-X3eqa.ttf", 17.f);
+	menu::childFont = io.Fonts->AddFontFromFileTTF("C:\\Big Pixel demo.otf", 15.f);
+	menu::tabFont = io.Fonts->AddFontFromFileTTF("C:\\Big Pixel demo.otf", 18.f);
+#endif
 
 	st.WindowMinSize = ImVec2(1195 / 2, 760 / 2);
 	st.WindowPadding = ImVec2(5, 5);

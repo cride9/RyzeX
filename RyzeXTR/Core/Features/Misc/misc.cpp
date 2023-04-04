@@ -14,7 +14,6 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	AspectRatio();
 	Slowwalk(pCmd, cfg::antiaim::fakewalk); // need menu element && keybind
 	FastStop(pCmd);
-	IdealTick(pCmd);
 	FakeDuck(pCmd);
 	SlideFix();
 	OnlyCheatLogs();
@@ -760,7 +759,7 @@ void misc::FakeLag(bool& bSendPacket) {
 		JITTER
 	};
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::fakelag)
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::fakelag || !cfg::antiaim::enableFakelag)
 		return;
 
 	if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {

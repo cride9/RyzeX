@@ -323,6 +323,15 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		}
 		else {
 
+			if (enemyBTEnable) {
+
+				if (matrix3x4_t pMatrix[128];  GenerateLerpedMatrix(pEnt, pMatrix)) {
+
+					BeginChams(materials[enemyBTType], enemyBTColor, true, enemyBTXhair);
+					original(i::StudioRender, 0, pResults, info, pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				}
+			}
+
 			if (enemy) {
 
 				if (enemyXQZ) {

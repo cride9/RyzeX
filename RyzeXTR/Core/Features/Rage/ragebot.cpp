@@ -64,10 +64,9 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
 
 					aimbotTarget = pTarget;
-					targetMatrix = backtrackRecord ? backtrackRecord->pMatrix : pTarget->GetCachedBoneData().Base();
+					targetMatrix = backtrackRecord ? backtrackRecord->pMatrix : lagcomp.GetLog(pTarget->EntIndex()).pRecord.front().pMatrix;
 
 					static CConVar* recoilScale = i::ConVar->FindVar("weapon_recoil_scale");
-					pCmd->iTickCount = lagcomp.FixTickCount(flTargetSimulation);
 					pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 					pCmd->iButtons |= IN_ATTACK;
 
@@ -75,6 +74,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 						misc::bRetreat = true;
 
 					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
+					pCmd->iTickCount = lagcomp.FixTickCount(flTargetSimulation);
 				}
 				else
 					if ( ConfigAutoScope( pWeapon ) && IsAutoScopeable( pWeapon->GetItemDefinitionIndex( ) ) && !pLocal->IsScoped( ) ) //only scope if we have a scoped weapon and we arent scoped
@@ -186,17 +186,25 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 
 		/* Loop through the selected hitboxes while we can hit something */
 		for (int hitboxID : ConfigHitboxes(pWeapon)) {
-			/* Trace player with its current bonedata */
-			if (autowall.CanHitFloatingPoint(pLocal, pWeapon, recordEntity->GetHitboxPosition(hitboxID, recordMatrix), vecEyePosition, 1.f)) {
-				flTargetSimulation = recordEntity->GetSimulationTime();
-				backtrackRecord = nullptr;
-				return recordEntity;
+			if (pLog->pRecord.front().bValid) {
+				/* Trace player with its current bonedata */
+				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, recordEntity->GetHitboxPosition(hitboxID, recordMatrix), vecEyePosition, 1.f)) {
+					flTargetSimulation = pLog->pRecord.front().flSimulationTime;
+					backtrackRecord = nullptr;
+					return curEnt;
+				}
 			}
-			else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, cfg::rage::backtrackTicks)); recordScan != nullptr) {
+			else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, cfg::rage::backtrackTicks)); recordScan != nullptr && recordScan->bValid) {
 				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
 					flTargetSimulation = recordScan->flSimulationTime;
 					backtrackRecord = recordScan;
-
+					return curEnt;
+				}
+			}
+			else {
+				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, 1.f)) {
+					flTargetSimulation = curEnt->GetSimulationTime();
+					backtrackRecord = nullptr;
 					return curEnt;
 				}
 			}

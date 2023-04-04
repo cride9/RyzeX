@@ -14,6 +14,8 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 	if (!i::MoveHelper && pMovehelper)
 		i::MoveHelper = pMovehelper;
 
+	return original(ecx, edx, pEnt, pCmd, pMovehelper);
+
 	if (pCmd->iTickCount >= (g::pCmd->iTickCount + int(1 / i::GlobalVars->flIntervalPerTick) + 8)) {
 
 		pCmd->bHasBeenPredicted = true;
@@ -27,7 +29,7 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
 
 	prediction.SaveViewmodelData( g::pLocal );
-	//networking.SaveNetvarData( pEnt->GetTickBase( ) );
+	networking.SaveNetvarData( pEnt->GetTickBase( ) );
 
 	if (!localanim.update)
 		pEnt->GetOffset<float>(0xA38C) = flVelocityModifier;

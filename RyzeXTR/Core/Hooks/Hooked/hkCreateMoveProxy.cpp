@@ -62,6 +62,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
+	misc::IdealTick(pCmd);
 	misc::MovementFix(pCmd, oldViewAngle);
 
 	// netchannel pointer
@@ -92,16 +93,16 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	if ( clientStateHookable != nullptr )
 	{
-		//// PacketStart Detour
-		//if ( !detour::packetStart.IsHooked( ) )
-		//	detour::packetStart.Create( util::GetVFunc( clientStateHookable, table::packetStart ), &h::hkPacketStart );
+		// PacketStart Detour
+		if ( !detour::packetStart.IsHooked( ) )
+			detour::packetStart.Create( util::GetVFunc( clientStateHookable, table::packetStart ), &h::hkPacketStart );
 
-		//// PacketEnd Detour
-		//if ( !detour::packetEnd.IsHooked( ) )
-		//	detour::packetEnd.Create( util::GetVFunc( clientStateHookable, table::packetEnd ), &h::hkPacketEnd );
+		// PacketEnd Detour
+		if ( !detour::packetEnd.IsHooked( ) )
+			detour::packetEnd.Create( util::GetVFunc( clientStateHookable, table::packetEnd ), &h::hkPacketEnd );
 
-		//if ( !detour::temptEntities.IsHooked( ) )
-		//	detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
+		if ( !detour::temptEntities.IsHooked( ) )
+			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
 	}
 
 	// let's re-aquire the convar every tick incase it has changed
@@ -110,8 +111,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	g::bSendPacket = &bSendPacket;
 
-	//if (bSendPacket)
-	//	packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
+	if (bSendPacket)
+		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();

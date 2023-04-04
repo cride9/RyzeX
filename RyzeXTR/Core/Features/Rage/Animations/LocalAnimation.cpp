@@ -4,20 +4,6 @@
 #include "../../../SDK/Menu/config.h"
 #include "../../Networking/networking.h"
 
-void localanimation::FixVelocityModifer(){
-
-	static int iLastCmdAck = 0;
-	static float flNextCmdTime = 0.f;
-
-	if (g::pCmd && (iLastCmdAck != i::ClientState->iLastCommandAck || flNextCmdTime != i::ClientState->flNextCmdTime)) {
-
-		if (localanim.localdata.flVelocityModifier != g::pLocal->GetOffset<float>(0xA38C)) {
-			*reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(i::Prediction + 0x24)) = 1;
-			localanim.localdata.flVelocityModifier = g::pLocal->GetOffset<float>(0xA38C);
-		}
-	}
-}
-
 void localanimation::SetSequence(CAnimationLayer* pLayer, int iSequence) {
 
 	if (!pLayer->pOwner)

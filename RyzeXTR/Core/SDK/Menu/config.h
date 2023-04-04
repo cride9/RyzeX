@@ -190,6 +190,11 @@ namespace cfg {
 	}
 	namespace model {
 
+		inline int enemyBTType = 0;
+		inline float enemyBTColor[4] = { 1.f, 1.f, 1.f, 1.f};
+		inline bool enemyBTXhair = false;
+		inline bool enemyBTEnable = false;
+
 		// enemy
 		inline int enemyType = 0;
 		inline bool enemy = false;

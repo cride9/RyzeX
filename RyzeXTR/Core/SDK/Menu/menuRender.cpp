@@ -337,7 +337,9 @@ void menu::Visualtab() noexcept {
 
     static const char* chamsType[] = { "Default", "Flat" };
     static const char* glowType[] = { "Glow", "Thin glow", "Animated" };
+    static const char* enemyTypes[] = { "Glow", "Thin glow", "Animated", "Backtrack"};
     static const char* localTypes[] = { "Glow", "Thin glow", "Animated", "Desync"};
+    static const char* allType[] = { "Default", "Flat", "Glow", "Thin glow", "Animated" };
 
     ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
     {
@@ -346,7 +348,6 @@ void menu::Visualtab() noexcept {
         static int selectedTeam = 0;
         static int selectedEnemy = 0;
         static int selectedLocal = 0;
-
 
         switch (selectedEsp)
         {
@@ -362,7 +363,7 @@ void menu::Visualtab() noexcept {
             ImGui::ColorEdit4("##enemycolorXQZ", enemyXQZColor);
             ImGui::Checkbox("Wireframe behind wall", &enemyXQZXhair);
 
-            ImGui::Combo("Overlay type", &selectedEnemy, glowType, IM_ARRAYSIZE(glowType));
+            ImGui::Combo("Overlay type", &selectedEnemy, enemyTypes, IM_ARRAYSIZE(enemyTypes));
 
             switch (selectedEnemy)
             {
@@ -394,6 +395,13 @@ void menu::Visualtab() noexcept {
                 ImGui::Checkbox("Behind wall", &enemyAnimOverlayXQZ);
                 ImGui::ColorEdit4("##enemyThinOverlayXQZColor", enemyAnimOverlayXQZColor);
                 ImGui::Checkbox("Wireframe behind wall ##2", &enemyAnimOverlayXQZXhair);
+                break;
+
+            case 3:
+                ImGui::Checkbox("Enabled", &enemyBTEnable);
+                ImGui::ColorEdit4("##enemyBTColor", enemyBTColor);
+                ImGui::Combo("Backtrack type", &enemyBTType, allType, IM_ARRAYSIZE(allType));
+                ImGui::Checkbox("Wireframe ##2", &enemyBTXhair);
                 break;
             }
 
@@ -492,12 +500,10 @@ void menu::Visualtab() noexcept {
 
             case 3:
 
-                static const char* desyncType[] = { "Default", "Flat", "Glow", "Thin glow", "Animated" };
-
                 ImGui::Checkbox("Enabled", &localDesync);
                 ImGui::ColorEdit4("##localDesyncColor", localDesyncColor);
 
-                ImGui::Combo("Desync type", &localDesyncType, desyncType, IM_ARRAYSIZE(desyncType));
+                ImGui::Combo("Desync type", &localDesyncType, allType, IM_ARRAYSIZE(allType));
                 ImGui::Checkbox("Wireframe ##2", &localDesyncXhair);
                 break;
             }
