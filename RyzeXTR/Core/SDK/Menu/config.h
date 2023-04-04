@@ -323,6 +323,7 @@ namespace cfg {
 
 		inline bool removals[] = { false, false ,false ,false, false };
 
+		inline bool autobuyEnabled = false;
 		inline int pistols;
 		inline int snipers;
 		inline bool equipments[] = { false, false, false };

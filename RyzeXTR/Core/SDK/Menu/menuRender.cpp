@@ -542,6 +542,8 @@ void menu::Misctab() noexcept {
                 static const char* equipmentsCT[] = { "Kevlar + Helmet", "Zeus", "Defuse kit" };
                 static const char* grenadesCT[] = { "Incendiary grenade", "Decoy grenade", "Flashbang", "He grenade", "Smoke grenade" };
 
+                ImGui::Checkbox("Autobuy masterswitch", &autobuyEnabled);
+
                 ImGui::Combo("Pistols", &cfg::misc::pistols, pistolsCT, IM_ARRAYSIZE(pistolsCT));
                 ImGui::Combo("Snipers", &cfg::misc::snipers, snipersCT, IM_ARRAYSIZE(snipersCT));
 

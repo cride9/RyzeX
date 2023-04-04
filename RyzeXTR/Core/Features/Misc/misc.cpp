@@ -302,6 +302,9 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage) {
 
 void misc::BuyBot(IGameEvent* event) { // need menu element
 
+	if (!cfg::misc::autobuyEnabled)
+		return;
+
 	if (!strcmp(event->GetName(), "round_start")) {
 
 		std::string buy = "";

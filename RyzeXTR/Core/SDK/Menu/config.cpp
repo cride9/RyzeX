@@ -560,6 +560,7 @@ void CConfig::Setup() {
 		SetupValue(snipers, 0, "misc", "autobuyrifles");
 		SetupValue(equipments, false, 3, "misc", "autobuyequipments");
 		SetupValue(grenades, false, 5, "misc", "autobuygrenades");
+		SetupValue(autobuyEnabled, false, "misc", "autobuyEnabled");
 
 		SetupValue(fakePing, false, "misc", "fakeping");
 		SetupValue(fakePingFactor, 0.f, "misc", "fakepingFactor");
