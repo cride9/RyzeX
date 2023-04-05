@@ -71,8 +71,9 @@ public:
 
 		CBaseEntity* pEntity{};
 		matrix3x4_t pMatrix[ 128 ];
-		matrix3x4_t leftMatrix[128];
-		matrix3x4_t rightMatrix[128];
+		matrix3x4_t pCenter[128];
+		matrix3x4_t pLeft[128];
+		matrix3x4_t pRight[128];
 
 		bool bBreakingLagcompensation{};
 		bool bFakewalking{};
@@ -97,11 +98,10 @@ public:
 		float pResolverPlaybackrate[ 3 ];
 		CAnimationLayer pResolverLayers[ 3 ][ 13 ];
 		CAnimationLayer pResolverLayers2[ 3 ][ 13 ];
+
 		LayerData_t LayerData[ 3 ];
 
 		CAnimationLayer pLayers[ 13 ];
-		std::pair<CAnimationLayer*, float*> leftLayers;
-		std::pair<CAnimationLayer*, float*> rightLayers;
 
 		float flPoses[ 24 ];
 
@@ -177,7 +177,9 @@ public:
 
 	void RemoveInterpolation();
 
-	void CreateMatrix(CBaseEntity*, matrix3x4_t*, int, float);
+	void CreateMatrix(CBaseEntity*, Lagcompensation::LagRecord_t*, int, float);
+	void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, int nMask, int nFlags);
+
 
 private:
 	// filter records after updating them

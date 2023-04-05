@@ -58,6 +58,10 @@ namespace menu {
 	inline LPDIRECT3DDEVICE9 device = nullptr;
 	inline LPDIRECT3D9 d3d9 = nullptr;
 
+	inline bool pressedSave = false;
+	inline bool warningMethod = false;
+	static const char* cfgitem[] = { "semi-rage", "hvh", "baim", "headshot" };
+
 	bool SetupWindowClass(const char* szWindowClassName) noexcept;
 	void DestroyWindowClass() noexcept;
 
@@ -83,6 +87,8 @@ namespace menu {
 	void Skintab() noexcept;
 
 	void KeyBindList() noexcept;
+
+	void SaveWarning(const char*[], bool&, bool) noexcept;
 
 	void HandleLogoDrawing() noexcept;
 

@@ -24,7 +24,11 @@ namespace cfg {
 		inline int	overrideBind;
 		inline int backtrackTicks = 0;
 
+		inline bool forceBaim;
+		inline int forceBaimKey = 0;
+
 		// all weapon
+		inline bool etcMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool etcHitboxes[] = { false, false, false, false, false ,false };
 		inline int etcHitchance;
 		inline int etcMindmg;
@@ -32,6 +36,7 @@ namespace cfg {
 		inline int etcBodyPoints = 0;
 		inline int etcOverride = 0;
 
+		inline bool autoMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool autoHitboxes[] = { false, false, false, false, false ,false };
 		inline int autoHitchance;
 		inline int autoMindmg;
@@ -39,6 +44,7 @@ namespace cfg {
 		inline int autoBodyPoints = 0;
 		inline int autoOverride = 0;
 
+		inline bool scoutMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool scoutHitboxes[] = { false, false, false, false, false ,false };
 		inline int scoutHitchance;
 		inline int scoutMindmg;
@@ -46,6 +52,7 @@ namespace cfg {
 		inline int scoutBodyPoints = 0;
 		inline int scoutOverride = 0;
 
+		inline bool awpMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool awpHitboxes[] = { false, false, false, false, false ,false };
 		inline int awpHitchance;
 		inline int awpMindmg;
@@ -53,6 +60,7 @@ namespace cfg {
 		inline int awpBodyPoints = 0;
 		inline int awpOverride = 0;
 
+		inline bool pistolMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool pistolHitboxes[] = { false, false, false, false, false ,false };
 		inline int pistolHitchance;
 		inline int pistolMindmg;
@@ -60,6 +68,7 @@ namespace cfg {
 		inline int pistolBodyPoints = 0;
 		inline int pistolOverride = 0;
 
+		inline bool heavypistolMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool heavypistolHitboxes[] = { false, false, false, false, false ,false };
 		inline int heavypistolHitchance;
 		inline int heavypistolMindmg;

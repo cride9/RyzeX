@@ -33,5 +33,6 @@ private:
 	int					ConfigAutoScope( CBaseCombatWeapon* pWeapon );
 	std::vector<int>	ConfigHitboxes(CBaseCombatWeapon*);
 	std::pair<int, int> ConfigMultipoint(CBaseCombatWeapon*);
+	std::array<bool, HITBOX_MAX> ConfigMultiHitboxes(CBaseCombatWeapon*);
 };
 inline CRageBot ragebot;

@@ -63,7 +63,7 @@ void Style() {
 	st.Colors[ImGuiCol_SliderGrab] = ImColor(111, 203, 243);
 	st.Colors[ImGuiCol_SliderGrabActive] = ImColor(111, 203, 243);
 
-	st.Colors[ImGuiCol_CheckMark] = ImColor(255, 255, 255);
+	st.Colors[ImGuiCol_CheckMark] = ImColor(212, 212, 212);
 
 	st.Colors[ImGuiCol_HeaderActive] = ImColor(38, 38, 38);
 	st.Colors[ImGuiCol_HeaderHovered] = ImColor(31, 31, 31);

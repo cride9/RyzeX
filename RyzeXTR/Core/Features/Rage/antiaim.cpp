@@ -98,7 +98,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		break;
 
 	case JITTER:
-			desyncValue = cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue) : unevenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
+			desyncValue = cfg::antiaim::fakelag % 2 != 0 ? evenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue) : unevenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
 		break;
 
 	default:

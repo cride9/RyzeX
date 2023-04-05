@@ -9,6 +9,16 @@ void menu::HandleMenuElements() noexcept {
 
     ImGui::Begin("RyzeX", NULL, ImGuiWindowFlags_NoTitleBar);
     {
+        if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+            if (ImGui::IsKeyDown(ImGuiKey_S)) {
+                pressedSave = true;
+                warningMethod = true;
+            }
+        }
+
+        if (pressedSave)
+            SaveWarning(cfgitem, pressedSave, warningMethod);
+
         HandleLogoDrawing();
 
         Tabselection();
@@ -83,6 +93,9 @@ void menu::Ragetab() noexcept {
         ImGui::Keybind("DoubletapKey", &doubletapkey);
         ImGui::Checkbox("Anti-aim correction", &resolver);
         ImGui::SliderInt("Backtrack ticks", &backtrackTicks, 1, 12);
+
+        ImGui::Checkbox("Force baim", &forceBaim);
+        ImGui::Keybind("##forcebaimkey", &forceBaimKey);
     }
     ImGui::EndChild();
     ImGui::SameLine();
@@ -94,12 +107,14 @@ void menu::Ragetab() noexcept {
 
         static const char* items[] = { "head", "upper chest", "lower chest", "stomach", "arms", "legs" };
 
-        static auto buildTabForWeapon = [](bool* hitboxes, int& hitChance, int& minDmg, int& headPoints, int& bodyPoints, int& overridedmg, EWEAPON weapon) {
+        static auto buildTabForWeapon = [](bool* hitboxes, bool* multiHitboxes, int& hitChance, int& minDmg, int& headPoints, int& bodyPoints, int& overridedmg, EWEAPON weapon) {
 
             ImGui::MultiComboBox("Hitboxes", items, hitboxes, IM_ARRAYSIZE(items));
 
             ImGui::SliderInt("Hitchance", &hitChance, 0, 100);
             ImGui::SliderInt("Minimum Damage", &minDmg, 0, 110);
+
+            ImGui::MultiComboBox("Multipoint", items, multiHitboxes, IM_ARRAYSIZE(items));
 
             ImGui::SliderInt("Head Pointscale", &headPoints, 0, 100);
             ImGui::SliderInt("Body Pointscale", &bodyPoints, 0, 100);
@@ -111,17 +126,17 @@ void menu::Ragetab() noexcept {
 
         switch (selectedWeapon)
         {
-        case AUTO: buildTabForWeapon(autoHitboxes, autoHitchance, autoMindmg, autoHeadPoints, autoBodyPoints, autoOverride, AUTO);
+        case AUTO: buildTabForWeapon(autoHitboxes, autoMultiHitboxes, autoHitchance, autoMindmg, autoHeadPoints, autoBodyPoints, autoOverride, AUTO);
             break;
-        case SCOUT:buildTabForWeapon(scoutHitboxes, scoutHitchance, scoutMindmg, scoutHeadPoints, scoutBodyPoints, scoutOverride, SCOUT);
+        case SCOUT:buildTabForWeapon(scoutHitboxes, scoutMultiHitboxes, scoutHitchance, scoutMindmg, scoutHeadPoints, scoutBodyPoints, scoutOverride, SCOUT);
             break;
-        case AWP: buildTabForWeapon(awpHitboxes, awpHitchance, awpMindmg, awpHeadPoints, awpBodyPoints, awpOverride, AWP);
+        case AWP: buildTabForWeapon(awpHitboxes, awpMultiHitboxes, awpHitchance, awpMindmg, awpHeadPoints, awpBodyPoints, awpOverride, AWP);
             break;
-        case PISTOL: buildTabForWeapon(pistolHitboxes, pistolHitchance, pistolMindmg, pistolHeadPoints, pistolBodyPoints, pistolOverride, PISTOL);
+        case PISTOL: buildTabForWeapon(pistolHitboxes, pistolMultiHitboxes, pistolHitchance, pistolMindmg, pistolHeadPoints, pistolBodyPoints, pistolOverride, PISTOL);
             break;
-        case HEAVY_PISTOL: buildTabForWeapon(heavypistolHitboxes, heavypistolHitchance, heavypistolMindmg, heavypistolHeadPoints, heavypistolBodyPoints, heavypistolOverride, HEAVY_PISTOL);
+        case HEAVY_PISTOL: buildTabForWeapon(heavypistolHitboxes, heavypistolMultiHitboxes, heavypistolHitchance, heavypistolMindmg, heavypistolHeadPoints, heavypistolBodyPoints, heavypistolOverride, HEAVY_PISTOL);
             break;
-        case OTHER: buildTabForWeapon(etcHitboxes, etcHitchance, etcMindmg, etcHeadPoints, etcBodyPoints, etcOverride, OTHER);
+        case OTHER: buildTabForWeapon(etcHitboxes, etcMultiHitboxes, etcHitchance, etcMindmg, etcHeadPoints, etcBodyPoints, etcOverride, OTHER);
             break;
         }
     }
@@ -559,6 +574,8 @@ void menu::Misctab() noexcept {
                 static const char* equipmentsT[] = { "kevlar + helmet", "zeus" };
                 static const char* grenadesT[] = { "molotov", "decoy grenade", "flashbang", "he grenade", "smoke grenade" };
 
+                ImGui::Checkbox("Autobuy masterswitch", &autobuyEnabled);
+
                 ImGui::Combo("Pistols", &cfg::misc::pistols, pistolsT, IM_ARRAYSIZE(pistolsT));
                 ImGui::Combo("Snipers", &cfg::misc::snipers, snipersT, IM_ARRAYSIZE(snipersT));
 
@@ -573,15 +590,18 @@ void menu::Misctab() noexcept {
 
     ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
     {
-        static const char* item[] = { "semi-rage", "hvh", "baim", "headshot" };
-        ImGui::Combo("configs", &cfg::configID, item, IM_ARRAYSIZE(item));
+        ImGui::Combo("configs", &cfg::configID, cfgitem, IM_ARRAYSIZE(cfgitem));
 
-        if (ImGui::Button("save", ImVec2(ImGui::GetContentRegionAvail().x, 50.f)))
-            Config2->Save(item[cfg::configID]);
+        if (ImGui::Button("save", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+            pressedSave = true;
+            warningMethod = true;
+        }
 
         ImGui::Spacing();
-        if (ImGui::Button("load", ImVec2(ImGui::GetContentRegionAvail().x, 50.f)))
-            Config2->Load(item[cfg::configID]);
+        if (ImGui::Button("load", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+            pressedSave = true;
+            warningMethod = false;
+        }
     }
     ImGui::EndChild();
 }
@@ -590,7 +610,11 @@ void menu::Skintab() noexcept {
 
 #if _DEBUG
     ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+    {
         ImGui::Checkbox("Debug button", &cfg::debugSwitch);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("test tooltip");
+    }
     ImGui::EndChild();
 #endif
 }
@@ -725,9 +749,42 @@ void menu::KeyBindList() noexcept {
                 ImGui::Text("Slow motion [ON]");
                 height += 20;
             }
+            if (GetAsyncKeyState(cfg::rage::forceBaimKey) && cfg::rage::forceBaim) {
+                ImGui::Text("Force baim [ON]");
+                height += 20;
+            }
         }
         ImGui::EndChild();
     }
     ImGui::End();
     ImGui::PopFont();
+}
+
+void menu::SaveWarning(const char* item[], bool& saved, bool type) noexcept {
+
+    ImGui::SetNextWindowSizeConstraints(ImVec2(180, 101), ImVec2(180, 101));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(180, 101));
+    ImGui::PushFont(childFont);
+    ImGui::Begin("##savestuff", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
+    {
+        ImGui::BeginChild("##yes", ImGui::GetContentRegionAvail(), true);
+        {
+            ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 4 - 3, ImGui::GetContentRegionAvail().y / 5));
+            ImGui::Text("Are you sure?");
+
+            static ImVec2 buttonSize = ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2);
+            if (ImGui::Button("Yes", buttonSize)) {
+                saved = false;
+                type ? Config2->Save(item[cfg::configID]) : Config2->Load(item[cfg::configID]);
+            }
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2);
+            if (ImGui::Button("No", buttonSize))
+                saved = false;
+        }
+        ImGui::EndChild();
+    }
+    ImGui::PopStyleVar();
+    ImGui::PopFont();
+    ImGui::End();
 }

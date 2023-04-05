@@ -3,7 +3,7 @@
 #include "../exploits.h"
 #include "../../Networking/networking.h"
 
-void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, matrix3x4_t* leftMatrix, matrix3x4_t* rightMatrix, int nMask, int nFlags)
+void Lagcompensation::SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, int nMask, int nFlags)
 {
 	/* Reset layers */
 	std::memcpy(pEnt->GetAnimationOverlays(), m_Record->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
@@ -305,7 +305,7 @@ void Lagcompensation::FrameStageNotify() {
 			pPlayerLogs[ i ].pEntity->SetAnimationLayers( pBackupRecord.pLayers );
 
 			// create bone matrix for this pRecord.
-			SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, pCurrentRecord->leftMatrix, pCurrentRecord->rightMatrix, BONE_USED_BY_ANYTHING, 4);
+			SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING, 4);
 
 			// restore correctly synced values.
 			pBackupRecord.Restore( pPlayerLogs[ i ].pEntity );
@@ -628,18 +628,42 @@ void Lagcompensation::RemoveInterpolation() {
 	}
 }
 
-void Lagcompensation::CreateMatrix(CBaseEntity* pEnt, matrix3x4_t* Matrix, int boneMask, float SimulatedYaw) {
+void Lagcompensation::CreateMatrix(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* pCurrentRecord, int boneMask, float SimulatedYaw) {
 
 	/*
 		VoidZero best guy (lambda owner p100)
 	*/
+	CAnimState pBackupState;
+	memcpy(&pBackupState, pEnt->AnimState(), sizeof(CAnimState));
 
-	pEnt->AnimState()->iLastUpdateFrame--;
-	pEnt->AnimState()->flLastUpdateTime -= i::GlobalVars->flIntervalPerTick;
+	{
+		// center.
+		pEnt->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEnt->AnimState()->flEyeYaw);
 
-	pEnt->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEnt->GetEyeAngles().y) + SimulatedYaw;
+		// update player animation.
+		anims.UpdateClientSideAnimations(pEnt, pCurrentRecord);
 
-	pEnt->UpdateClientSideAnimations();
+		SetupPlayerBones(pEnt, pCurrentRecord, pCurrentRecord->pCenter, BONE_USED_BY_HITBOX, 4);
+		memcpy(pEnt->AnimState(), &pBackupState, sizeof(CAnimState));
+	}
+	{
+		// left.
+		pEnt->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEnt->AnimState()->flEyeYaw - 58.f);
 
-	pEnt->SetupBones(Matrix, 128, boneMask, 0.f);
+		// update player animation.
+		anims.UpdateClientSideAnimations(pEnt, pCurrentRecord);
+
+		SetupPlayerBones(pEnt, pCurrentRecord, pCurrentRecord->pLeft, BONE_USED_BY_HITBOX, 4);
+		memcpy(pEnt->AnimState(), &pBackupState, sizeof(CAnimState));
+	}
+	{
+		// center.
+		pEnt->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEnt->AnimState()->flEyeYaw + 58.f);
+
+		// update player animation.
+		anims.UpdateClientSideAnimations(pEnt, pCurrentRecord);
+
+		SetupPlayerBones(pEnt, pCurrentRecord, pCurrentRecord->pRight, BONE_USED_BY_HITBOX, 4);
+		memcpy(pEnt->AnimState(), &pBackupState, sizeof(CAnimState));
+	}
 }

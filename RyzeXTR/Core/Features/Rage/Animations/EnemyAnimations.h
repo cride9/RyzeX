@@ -50,7 +50,7 @@ public:
 	void SetGoalFeetYaw( CBaseEntity*, Lagcompensation::LagRecord_t*, Lagcompensation::LagRecord_t*, float, float );
 	void ResolverLogic( );
 	int missedShots[ 65 ];
-	bool didHurt = false;
+	bool didHurt = false, didFire = false, didImpact = false, didDie = false;
 	Vector bulletImpact = Vector( 0, 0, 0 );
 
 	/* resolver */

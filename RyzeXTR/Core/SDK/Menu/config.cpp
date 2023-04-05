@@ -26,6 +26,8 @@ void CConfig::Setup() {
 		SetupValue(betweenshots, false, "rage", "Ragebetweenshots");
 		SetupValue(overrideBind, 0, "rage", "overrideBind");
 		SetupValue(backtrackTicks, 0, "rage", "backtrack");
+		SetupValue(forceBaim, false, "rage", "forceBaim");
+		SetupValue(forceBaimKey, 0, "rage", "forceBaimKey");
 
 		SetupValue( autoscope[ 0 ], false, "rage", "autoscope1" );
 		SetupValue( autoscope[ 1 ], false, "rage", "autoscope2" );
@@ -36,6 +38,7 @@ void CConfig::Setup() {
 
 		SetupValue(resolver, false, "rage", "Rageresolver");
 
+		SetupValue(etcMultiHitboxes, false, 6, "rage", "etcMultiHitboxes");
 		SetupValue(etcHitboxes, false, 6, "rage", "etcHitboxes");
 		SetupValue(etcHitchance, 0, "rage", "etcHitchance");
 		SetupValue(etcMindmg, 0, "rage", "etcMindmg");
@@ -43,6 +46,7 @@ void CConfig::Setup() {
 		SetupValue(etcBodyPoints, 0, "rage", "etcBodyPoints");
 		SetupValue(etcOverride, 0, "rage", "etcOverride");
 
+		SetupValue(autoMultiHitboxes, false, 6, "rage", "autoMultiHitboxes");
 		SetupValue(autoHitboxes, false, 6, "rage", "autoHitboxes");
 		SetupValue(autoHitchance, 0, "rage", "autoHitchance");
 		SetupValue(autoMindmg, 0, "rage", "autoMindmg");
@@ -50,6 +54,7 @@ void CConfig::Setup() {
 		SetupValue(autoBodyPoints, 0, "rage", "autoBodyPoints");
 		SetupValue(autoOverride, 0, "rage", "autoOverride");
 
+		SetupValue(scoutMultiHitboxes, false, 6, "rage", "scoutMultiHitboxes");
 		SetupValue(scoutHitboxes, false, 6, "rage", "scoutHitboxes");
 		SetupValue(scoutHitchance, 0, "rage", "scoutHitchance");
 		SetupValue(scoutMindmg, 0, "rage", "scoutMindmg");
@@ -57,6 +62,7 @@ void CConfig::Setup() {
 		SetupValue(scoutBodyPoints, 0, "rage", "scoutBodyPoints");
 		SetupValue(scoutOverride, 0, "rage", "scoutOverride");
 
+		SetupValue(awpMultiHitboxes, false, 6, "rage", "awpMultiHitboxes");
 		SetupValue(awpHitboxes, false, 6, "rage", "awpHitboxes");
 		SetupValue(awpHitchance, 0, "rage", "awpHitchance");
 		SetupValue(awpMindmg, 0, "rage", "awpMindmg");
@@ -64,6 +70,7 @@ void CConfig::Setup() {
 		SetupValue(awpBodyPoints, 0, "rage", "awpBodyPoints");
 		SetupValue(awpOverride, 0, "rage", "awpOverride");
 
+		SetupValue(pistolMultiHitboxes, false, 6, "rage", "pistolMultiHitboxes");
 		SetupValue(pistolHitboxes, false, 6, "rage", "pistolHitboxes");
 		SetupValue(pistolHitchance, 0, "rage", "pistolHitchance");
 		SetupValue(pistolMindmg, 0, "rage", "pistolMindmg");
@@ -71,6 +78,7 @@ void CConfig::Setup() {
 		SetupValue(pistolBodyPoints, 0, "rage", "pistolBodyPoints");
 		SetupValue(pistolOverride, 0, "rage", "pistolOverride");
 
+		SetupValue(heavypistolMultiHitboxes, false, 6, "rage", "heavypistolMultiHitboxes");
 		SetupValue(heavypistolHitboxes, false, 6, "rage", "heavypistolHitboxes");
 		SetupValue(heavypistolHitchance, 0, "rage", "heavypistolHitchance");
 		SetupValue(heavypistolMindmg, 0, "rage", "heavypistolMindmg");

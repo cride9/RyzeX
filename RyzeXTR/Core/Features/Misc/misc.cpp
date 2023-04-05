@@ -18,6 +18,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	SlideFix();
 	OnlyCheatLogs();
 	RemovePostProcessing();
+	IdealTick(pCmd);
 	//Security();
 	//ViewModel();
 }

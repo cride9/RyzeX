@@ -62,7 +62,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
-	misc::IdealTick(pCmd);
 	misc::MovementFix(pCmd, oldViewAngle);
 
 	// netchannel pointer
