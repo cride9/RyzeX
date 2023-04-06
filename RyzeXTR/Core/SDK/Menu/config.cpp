@@ -25,7 +25,7 @@ void CConfig::Setup() {
 		SetupValue(autostop, false, "rage", "Rageautostop");
 		SetupValue(betweenshots, false, "rage", "Ragebetweenshots");
 		SetupValue(overrideBind, 0, "rage", "overrideBind");
-		SetupValue(backtrackTicks, 0, "rage", "backtrack");
+		SetupValue( m_bEnableBacktrack, false, "rage", "Ragebacktrack" );
 		SetupValue(forceBaim, false, "rage", "forceBaim");
 		SetupValue(forceBaimKey, 0, "rage", "forceBaimKey");
 

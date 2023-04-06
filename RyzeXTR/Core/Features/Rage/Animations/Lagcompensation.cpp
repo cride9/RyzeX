@@ -228,8 +228,8 @@ void Lagcompensation::FrameStageNotify() {
 		}
 
 		// don't store records if no we dont need backtrack but atleast save 2 records for previous record.
-		//if ( !C::Get<bool>( Vars.bRageBacktrack ) && pPlayerLogs[ i ].pRecord.size( ) > 2 )
-		//	pPlayerLogs[ i ].pRecord.pop_back( );
+		if ( !cfg::rage::m_bEnableBacktrack && pPlayerLogs[ i ].pRecord.size( ) > 2 )
+			pPlayerLogs[ i ].pRecord.pop_back( );
 
 		// if this happens, delete all the animation.
 		if ( !pPlayerLogs[ i ].pEntity->IsAlive( ) )

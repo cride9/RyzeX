@@ -180,14 +180,13 @@ public:
 	void CreateMatrix(CBaseEntity*, Lagcompensation::LagRecord_t*, int, float);
 	void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, int nMask, int nFlags);
 
-
+	// get client interp amount
+	static float GetClientInterpAmount( );
 private:
 	// filter records after updating them
 	void FilterRecords( );
 	// extrapolate players breaking lagcomp
 	void ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious ) const;
-	// get client interp amount
-	static float GetClientInterpAmount( );
 	// check if record is valid
 	static bool IsValidRecord( float m_flSimulationTime, float m_flRange = 0.2f );
 	// fuck interpolation

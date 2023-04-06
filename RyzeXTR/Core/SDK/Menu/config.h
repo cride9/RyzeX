@@ -22,7 +22,7 @@ namespace cfg {
 		inline int  doubletapkey;
 		inline bool resolver;
 		inline int	overrideBind;
-		inline int backtrackTicks = 0;
+		inline bool m_bEnableBacktrack;
 
 		inline bool forceBaim;
 		inline int forceBaimKey = 0;

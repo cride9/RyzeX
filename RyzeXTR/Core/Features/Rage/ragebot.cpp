@@ -6,8 +6,6 @@
 #include "exploits.h"
 #include "../Misc/misc.h"
 
-bool CheckShootingCondition(CUserCmd* pCmd);
-
 bool LowestHealth(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 	return pEnt1->GetHealth() < pEnt2->GetHealth();
 }
@@ -32,6 +30,11 @@ bool IsAutoScopeable( short iItemDefinitionIndex )
 	}
 }
 
+Vector VelocityExtrapolate( CBaseEntity* player, Vector aimPos )
+{
+	return aimPos + ( player->GetVelocity( ) * i::GlobalVars->flIntervalPerTick );
+}
+
 void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket) {
 
 	if (!pLocal || !cfg::rage::enable) {
@@ -40,7 +43,6 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 	}
 
 	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
-
 	if (!pWeapon || !pWeapon->GetCSWpnData()) {
 		exploits::bShooting = false;
 		return;
@@ -53,35 +55,48 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 		if (Vector vecHitscan = Hitscan(pLocal, pTarget, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
 
 			Vector shootAngle = Vector( 0, 0, 0 );
+			Vector vecExtrapolatedAimSpot = VelocityExtrapolate( pTarget, vecHitscan );
 			// get better eye position.
 			// calculate aim angle.
-			M::VectorAngles( vecHitscan - vecEyePosition, shootAngle ); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
+			M::VectorAngles( vecExtrapolatedAimSpot - vecEyePosition, shootAngle ); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
+			
 
 			exploits::bShooting = true;
 
 			if (cfg::rage::autostop && cfg::rage::betweenshots)
-				AutoStop(g::pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
+				AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
 
-			if (CheckShootingCondition(pCmd)) {
+			if (CheckShootingCondition(pCmd, pLocal)) {
 
 				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
 
-					aimbotTarget = pTarget;
-					targetMatrix = backtrackRecord ? backtrackRecord->pMatrix : lagcomp.GetLog(pTarget->EntIndex()).pRecord.front().pMatrix;
+					rageBotData.aimbotTarget = pTarget;
+					rageBotData.targetMatrix = rageBotData.backtrackRecord ? rageBotData.backtrackRecord->pMatrix : lagcomp.GetLog(pTarget->EntIndex()).pRecord.front().pMatrix;
 
 					static CConVar* recoilScale = i::ConVar->FindVar("weapon_recoil_scale");
-					pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
+					pCmd->angViewPoint = ( shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 					pCmd->iButtons |= IN_ATTACK;
 
 					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
 						misc::bRetreat = true;
 
 					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
-					pCmd->iTickCount = lagcomp.FixTickCount(flTargetSimulation);
+					
+					// calculate lerp remainder.
+					float flLerpRemainder = std::fmodf( lagcomp.GetClientInterpAmount( ), i::GlobalVars->flIntervalPerTick );
+					float flSimulationTime = rageBotData.flTargetSimulation;
+
+					// get real simulation time and calculate interp fraction.
+					if ( flLerpRemainder > 0.f ) flSimulationTime += i::GlobalVars->flIntervalPerTick - flLerpRemainder;
+
+					// make sure to aim at un-interpolated data.
+					// do this so backtrack selects the exact record.
+					if ( rageBotData.backtrackRecord && !rageBotData.backtrackRecord->bBreakingLagcompensation )
+						pCmd->iTickCount = lagcomp.FixTickCount( flSimulationTime );
 				}
 				else {
-					if (cfg::rage::autostop && (cfg::rage::betweenshots ? true : CheckShootingCondition(g::pCmd)))
-						AutoStop(g::pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
+					if (cfg::rage::autostop && (cfg::rage::betweenshots ? true : CheckShootingCondition(pCmd, pLocal)))
+						AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
 
 					if (ConfigAutoScope(pWeapon) && IsAutoScopeable(pWeapon->GetItemDefinitionIndex()) && !pLocal->IsScoped()) //only scope if we have a scoped weapon and we arent scoped
 						pCmd->iButtons |= IN_ZOOM;
@@ -114,7 +129,7 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 		int iMinimumDamage = GetAsyncKeyState(cfg::rage::overrideBind) ? ConfigOverrideDamage(pWeapon) : ConfigMinimumDamage(pWeapon);
 
 		float flRadius = 0.f;
-		if (!backtrackRecord) {
+		if (!rageBotData.backtrackRecord) {
 
 			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, pTarget->GetCachedBoneData().Base(), flRadius);
 			
@@ -131,12 +146,12 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 		}
 		else {
 
-			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, backtrackRecord->pMatrix, flRadius);
+			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, rageBotData.backtrackRecord->pMatrix, flRadius);
 			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
 			for (Vector currentPoint : vecHitboxPosition) {
 
 				Lagcompensation::LagRecord_t backup(pTarget);
-				backtrackRecord->Apply(pTarget, false);
+				rageBotData.backtrackRecord->Apply(pTarget, false);
 				if (float flDamage = autowall.GetDamage(pLocal, currentPoint, hitboxID, vecEyePosition); flDamage > ConfigMinimumDamage(pWeapon) || flDamage > pTarget->GetHealth() + 5)
 					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
 				backup.Apply(pTarget, true);
@@ -198,23 +213,23 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 			if (pLog->pRecord.front().bValid) {
 				/* Trace player with its current bonedata */
 				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, recordEntity->GetHitboxPosition(hitboxID, recordMatrix), vecEyePosition, 1.f)) {
-					flTargetSimulation = pLog->pRecord.front().flSimulationTime;
-					backtrackRecord = nullptr;
+					rageBotData.flTargetSimulation = pLog->pRecord.front().flSimulationTime;
+					rageBotData.backtrackRecord = nullptr;
 
 					return curEnt;
 				}
 			}
-			else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, cfg::rage::backtrackTicks)); recordScan != nullptr && recordScan->bValid) {
-				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
-					flTargetSimulation = recordScan->flSimulationTime;
-					backtrackRecord = recordScan;
+			else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at( pLog->pRecord.size( ) - 1 ); recordScan != nullptr && recordScan->bValid ) {
+				if ( autowall.CanHitFloatingPoint( pLocal, pWeapon, curEnt->GetHitboxPosition( hitboxID, recordScan->pMatrix ), vecEyePosition, 1.f ) ) {
+					rageBotData.flTargetSimulation = recordScan->flSimulationTime;
+					rageBotData.backtrackRecord = recordScan;
 					return curEnt;
 				}
 			}
 			else {
 				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, 1.f)) {
-					flTargetSimulation = curEnt->GetSimulationTime();
-					backtrackRecord = nullptr;
+					rageBotData.flTargetSimulation = curEnt->GetSimulationTime();
+					rageBotData.backtrackRecord = nullptr;
 					return curEnt;
 				}
 			}
@@ -671,34 +686,28 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes(CBaseCombatWeapon* pW
 	return arrHitboxes;
 }
 
-bool CheckShootingCondition(CUserCmd* pCmd) {
+bool CRageBot::CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal ) {
 
-	auto local = g::pLocal;
-	auto pWeapon = g::pLocal->GetWeapon();
-
-	if (!local || !pWeapon)
+	if ( !pLocal || !pLocal->GetWeapon( ) )
 		return false;
 
-	auto time = TICKS_TO_TIME(local->GetTickBase());
+	float flServerTime = TICKS_TO_TIME( pLocal->GetTickBase( ) );
+	const CCSWeaponInfo* pWeaponData = pLocal->GetWeapon( )->GetCSWpnData( );
 
-	const auto info = pWeapon->GetCSWpnData();
-
-	if (!info)
+	if ( !pWeaponData )
 		return false;
 
-	const auto is_zeus = pWeapon->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_TASER;
-
-	if (pWeapon->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_C4)
+	if ( pLocal->GetWeapon( )->GetItemDefinitionIndex( ) == EItemDefinitionIndex::WEAPON_C4 )
 		return false;
 
-	if (pWeapon->GetAmmo() < 1)
+	if ( pLocal->GetWeapon( )->GetAmmo( ) < 1 )
 		return false;
 
-	if (pWeapon->GetNextPrimaryAttack() > time || pWeapon->GetNextSecondaryAttack() > time)
+	if ( pLocal->GetWeapon( )->GetNextPrimaryAttack( ) > flServerTime || g::pLocal->GetWeapon( )->GetNextSecondaryAttack( ) > flServerTime )
 		return false;
 
 	// can't shoot yet, wait for next shootable tick
-	if ( cfg::antiaim::fakeduck && GetAsyncKeyState( cfg::antiaim::fakeduckbind ) && local->GetDuckAmount( ) != 0.f )
+	if ( cfg::antiaim::fakeduck && GetAsyncKeyState( cfg::antiaim::fakeduckbind ) && g::pLocal->GetDuckAmount( ) != 0.f )
 		return false;
 
 	return true;

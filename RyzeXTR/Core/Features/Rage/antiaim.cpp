@@ -5,7 +5,6 @@
 #include "Animations/LocalAnimation.h"
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
-bool LBYUpdate();
 
 static bool evenInvert = false;
 static bool unevenInvert = false;
@@ -13,6 +12,8 @@ static bool unevenInvert = false;
 void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	static float oldValue = 0;
+
+	bBreakLowerBody = false;
 
 	// sanity checks
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::enabled) {
@@ -44,6 +45,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	}
 
 	g::bAntiaimEnabled = true;
+
+	LBYBreaker( );
 
 	// uneven, even fakelag jitter stuff
 	evenInvert = !evenInvert;
@@ -87,23 +90,42 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue, cfg::antiaim::jittervalue);
 
 	// no lby break sry its 2022 nobody stands still and breaks lby
-	if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)
-		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
+	//if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)
+	//	pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
 
 	// pure cancer 4line antiaim no shit why do ppl hit my head 100%
 	switch (cfg::antiaim::desynctype) {
 
-	case STATIC:
-			desyncValue = GetKeyState(cfg::antiaim::desyncinverter) ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
-		break;
+		case STATIC:
+		{
+			desyncValue = GetKeyState( cfg::antiaim::desyncinverter ) ? ( cfg::antiaim::desyncvalue ) : -( cfg::antiaim::desyncvalue );	
+			break;
+		case EXTENDED:
+		{
+			// time to break the lowerbody.
+			if ( bBreakLowerBody )
+			{
+				float m_flLowerbodyYaw = -120.f;
 
-	case JITTER:
-			desyncValue = cfg::antiaim::fakelag % 2 != 0 ? evenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue) : unevenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
-		break;
+				if ( !GetKeyState( cfg::antiaim::desyncinverter ) )
+					m_flLowerbodyYaw *= -1.f;
 
-	default:
-		desyncValue = 0.f;
-		break;
+				// set lby angle.
+				pCmd->angViewPoint.y += m_flLowerbodyYaw;
+
+				// set bSendPacket to false.
+				bSendPacket = false;
+			}
+		}
+			break;
+		case JITTER:
+				desyncValue = cfg::antiaim::fakelag % 2 != 0 ? evenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue) : unevenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
+			break;
+
+		default:
+			desyncValue = 0.f;
+			break;
+		}
 	}
 
 	if (cfg::antiaim::desyncModifier == 1)
@@ -111,7 +133,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	else if (cfg::antiaim::desyncModifier == 2)
 		desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
 
-	if (!bSendPacket) {
+	if ( !bSendPacket && !bBreakLowerBody ) {
 
 		pCmd->angViewPoint.y += M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue);
 		oldValue = desyncValue;
@@ -120,7 +142,9 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 void antiaim::LBYBreaker() {
 
-	float flServerTime = TICKS_TO_TIME(g::pLocal->GetTickBase());
+	// use flCurrentTime as flCurrent time is being fixed in enginepred.
+	// flCurrentTime = TICKS_TO_TIME(TickBase)
+	float flServerTime = i::GlobalVars->flCurrentTime;
 
 	if (g::pLocal->GetVelocity().Length2D() > 0.1f || fabsf(g::pLocal->GetVelocity().z) > 100.0f) {
 
@@ -179,30 +203,6 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 		}
 	}
 
-	return false;
-}
-
-bool LBYUpdate()
-{
-	static float NextUpdate = 0;
-	auto* AnimState = g::pLocal->AnimState();
-
-	/*
-		That LBY breaker is not even close to perfect so extended desync is not possible with it
-	*/
-
-	if (!AnimState || !(g::pLocal->GetFlags() & FL_ONGROUND)) {
-		return false;
-	}
-
-	if (AnimState->flVelocityLenght2D > 0.1f)
-		NextUpdate = TICKS_TO_TIME(g::pLocal->GetTickBase()) + 0.22f;
-
-	if (NextUpdate < TICKS_TO_TIME(g::pLocal->GetTickBase()))
-	{
-		NextUpdate = TICKS_TO_TIME(g::pLocal->GetTickBase()) + 1.1f;
-		return true;
-	}
 	return false;
 }
 

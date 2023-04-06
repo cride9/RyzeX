@@ -14,10 +14,13 @@ public:
 
 	void CreateMove(CUserCmd*, CBaseEntity*, bool&);
 
-	CBaseEntity*					 aimbotTarget;
-	matrix3x4_t*					 targetMatrix;
-	float							 flTargetSimulation;
-	Lagcompensation::LagRecord_t*	 backtrackRecord;
+	struct
+	{
+		CBaseEntity*					aimbotTarget;
+		matrix3x4_t*					targetMatrix;
+		float							flTargetSimulation;
+		Lagcompensation::LagRecord_t*	backtrackRecord;
+	} rageBotData ;
 
 private:
 
@@ -26,6 +29,9 @@ private:
 	Vector				Hitscan(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector);
 	void				AutoStop(CUserCmd*, float);
+
+	// helpers
+	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
 
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);
 	int					ConfigOverrideDamage(CBaseCombatWeapon*);

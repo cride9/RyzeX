@@ -20,6 +20,7 @@ enum EDESYNC : int {
 
 	NONE,
 	STATIC,
+	EXTENDED,
 	JITTER,
 };
 

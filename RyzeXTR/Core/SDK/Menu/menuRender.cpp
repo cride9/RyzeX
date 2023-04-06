@@ -92,7 +92,7 @@ void menu::Ragetab() noexcept {
         ImGui::PopStyleColor();
         ImGui::Keybind("DoubletapKey", &doubletapkey);
         ImGui::Checkbox("Anti-aim correction", &resolver);
-        ImGui::SliderInt("Backtrack ticks", &backtrackTicks, 1, 12);
+        ImGui::Checkbox( "Backtrack", &m_bEnableBacktrack );
 
         ImGui::Checkbox("Force baim", &forceBaim);
         ImGui::Keybind("##forcebaimkey", &forceBaimKey);
@@ -149,7 +149,7 @@ void menu::Antiaimtab() noexcept {
 
     static const char* yawList[] = { "Forward", "Backward" };
     static const char* pitchList[] = { "Up", "Zero" ,"Down" };
-    static const char* desyncList[] = { "Off", "Static", "Jitter" };
+    static const char* desyncList[] = { "Off", "Static", "Extended", "Jitter" };
     static const char* yawBaseList[] = { "Local view", "Freestand" };
     static const char* fakelagTypeList[] = { "Normal", "Adaptive", "Jitter" };
     static const char* yawModifierList[] = { "Off", "Jitter", "Random" };
@@ -165,7 +165,7 @@ void menu::Antiaimtab() noexcept {
             ImGui::SliderInt("Modifier value", &jittervalue, 0, 90);
         ImGui::Combo("Lower body yaw target", &desynctype, desyncList, IM_ARRAYSIZE(desyncList));
         if (desynctype != 0) {
-            ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 58.f, "%.f");
+            ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 120.f, "%.f");
             ImGui::Keybind("invertButton", &desyncinverter);
             ImGui::Combo("Yaw target modifier", &desyncModifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
             if (desyncModifier != 0)
