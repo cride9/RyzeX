@@ -19,7 +19,9 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	OnlyCheatLogs();
 	RemovePostProcessing();
 	IdealTick(pCmd);
-	//Security();
+#if NDEBUG
+	Security();
+#endif
 	//ViewModel();
 }
 
@@ -86,7 +88,10 @@ void misc::RemovePostProcessing() {
 void misc::Security() {
 
 	// dont even ask that
-	i::ConVar->FindVar("cl_showerror")->SetValue(0);
+	static auto showerror = i::ConVar->FindVar("cl_showerror");
+
+	if (showerror->GetInt() != 0)
+		showerror->SetValue(0);
 }
 
 void gotoStart(CUserCmd* cmd, std::vector<CUserCmd>& recordedCmds) {
@@ -250,8 +255,14 @@ struct ClientHitVerify_t {
 
 void misc::BulletImpact(IGameEvent* pEvent, EStage curStage) {
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bulletImpact)
+	if (!g::pLocal || !g::pLocal->IsAlive())
 		return;
+
+	if (!cfg::misc::bulletImpact) {
+		auto& ClientImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
+		ClientImpactList.RemoveAll();
+		return;
+	}
 
 	if (pEvent != nullptr) {
 		if (!strcmp(pEvent->GetName(), "bullet_impact")) {
@@ -855,6 +866,54 @@ void misc::FakeLag(bool& bSendPacket) {
 
 
 	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
+}
+
+void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
+
+	BeamInfo_t info;
+	info.m_nType = TE_BEAMPOINTS;
+	info.m_pszModelName = "sprites/purplelaser1.vmt";
+	info.m_nModelIndex = -1;
+	info.m_flHaloScale = 0.0f;
+	info.m_flLife = 4.0f;
+	info.m_flWidth = 5.0f;
+	info.m_flEndWidth = 3.0f;
+	info.m_flFadeLength = 0.0f;
+	info.m_flAmplitude = 2.0f;
+	info.m_flBrightness = color[3];
+	info.m_flSpeed = 0.5f;
+	info.m_nStartFrame = 0.f;
+	info.m_flFrameRate = 0.f;
+	info.m_flRed = color[0];
+	info.m_flGreen = color[1];
+	info.m_flBlue = color[2];
+	info.m_nSegments = 2;
+	info.m_bRenderable = true;
+	info.m_nFlags = FBEAM_ONLYNOISEONCE | FBEAM_NOTILE | FBEAM_HALOBEAM;
+	info.m_vecStart = vecSource;
+	info.m_vecEnd = vecEnd;
+
+	Beam_t* pBeam = i::RenderBeam->CreateBeamPoints(info);
+	if (pBeam)
+		i::RenderBeam->DrawBeam(pBeam);
+}
+
+void misc::BulletTracer(IGameEvent* pEvent) {
+
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bulletTracer)
+		return;
+
+	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+
+		if (iUser != g::pLocal->EntIndex())
+			return;
+
+		Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+
+		DrawBream(g::pLocal->GetEyePosition(), vecImpact, cfg::misc::bulletTracerColor);
+	}
 }
 
 //void misc::CustomBombText(const char* szText) {

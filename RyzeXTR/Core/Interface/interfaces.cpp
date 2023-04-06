@@ -46,9 +46,17 @@ void i::SetupInterfaces() {
 	if (GlowObjectManager == nullptr)
 		throw std::runtime_error("Failed to get IGlowObjectManager");
 
+	RenderBeam = *reinterpret_cast<IViewRenderBeams**>(util::FindSignature("client.dll", "B9 ? ? ? ? A1 ? ? ? ? FF 10 A1 ? ? ? ? B9") + 1);
+	if (RenderBeam == nullptr)
+		throw std::runtime_error("Failed to get IViewRenderBeams");
+
 	ClientMode = **reinterpret_cast<IClientMode***>((*reinterpret_cast<uintptr_t**>(ClientDll))[10] + 0x5);
+	if (ClientMode == nullptr)
+		throw std::runtime_error("Failed to get IClientMode");
 
 	WeaponSystem = *(IWeaponSystem**)(util::FindSignature("client.dll", "8B 35 ? ? ? ? FF 10 0F B7 C0") + 2);
+	if (WeaponSystem == nullptr)
+		throw std::runtime_error("Failed to get IWeaponSystem");
 
 	util::Print("Interfaces initialized!");
 }

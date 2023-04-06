@@ -165,7 +165,7 @@ void menu::Antiaimtab() noexcept {
             ImGui::SliderInt("Modifier value", &jittervalue, 0, 90);
         ImGui::Combo("Lower body yaw target", &desynctype, desyncList, IM_ARRAYSIZE(desyncList));
         if (desynctype != 0) {
-            ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 120.f, "%.f");
+            ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 58.f, "%.f");
             ImGui::Keybind("invertButton", &desyncinverter);
             ImGui::Combo("Yaw target modifier", &desyncModifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
             if (desyncModifier != 0)
@@ -350,6 +350,8 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Show impact", &bulletImpact);
             ImGui::Checkbox("Paper mode", &cfg::model::paperMode);
             ImGui::Checkbox("Keybind list", &keyBindList);
+            ImGui::Checkbox("Bullet tracer", &bulletTracer);
+            ImGui::ColorEdit4("##tracerColor", bulletTracerColor);
         }
         ImGui::EndChild();
 

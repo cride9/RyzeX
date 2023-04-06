@@ -363,6 +363,9 @@ namespace cfg {
 		inline bool bulletImpact = false;
 		inline bool onlyCheatLogs = false;
 
+		inline bool bulletTracer = false;
+		inline float bulletTracerColor[4] = { 1.f ,1.f, 1.f, 1.f };
+
 		inline int viewmodelFov = 75;
 		inline int fov = 90;
 

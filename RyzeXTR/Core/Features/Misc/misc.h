@@ -39,10 +39,13 @@ namespace misc {
 	void ServerHitboxes();
 	void RemovePostProcessing();
 
+	void DrawBream(Vector, Vector, Color);
+
 	void Security();
 
 	void PreserveKillfeed(IGameEvent*);
 	void BuyBot(IGameEvent*);
+	void BulletTracer(IGameEvent*);
 
 	void CustomBombText(const char*);
 

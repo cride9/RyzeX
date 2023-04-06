@@ -530,8 +530,8 @@ void CConfig::Setup() {
 		SetupValue(viewmodelOverlayColor[2], 0.021f, "model", "viewmodelOverlayColorB");
 		SetupValue(viewmodelOverlayColor[3], 1.f, "model", "viewmodelOverlayColorA");
 
-		SetupValue(viewmodelThinOverlay, false, "model", "viewmodelOverlay");
-		SetupValue(viewmodelThinOverlayXhair, false, "model", "viewmodelOverlayXhair");
+		SetupValue(viewmodelThinOverlay, false, "model", "viewmodelThinOverlay");
+		SetupValue(viewmodelThinOverlayXhair, false, "model", "viewmodelThinOverlayXhair");
 		SetupValue(viewmodelThinOverlayColor[0], 0.771f, "model", "viewmodelThinOverlayColorR"); // (0.771f, 0.771f, 0.771f, 1.000f)
 		SetupValue(viewmodelThinOverlayColor[1], 0.771f, "model", "viewmodelThinOverlayColorG");
 		SetupValue(viewmodelThinOverlayColor[2], 0.771f, "model", "viewmodelThinOverlayColorB");
@@ -559,7 +559,7 @@ void CConfig::Setup() {
 		SetupValue(weaponOverlayColor[2], 0.092f, "model", "weaponOverlayColorB");
 		SetupValue(weaponOverlayColor[3], 1.f, "model", "weaponOverlayColorA");
 
-		SetupValue(weaponThinOverlay, false, "model", "weaponOverlay");
+		SetupValue(weaponThinOverlay, false, "model", "weaponThinOverlay");
 		SetupValue(weaponThinOverlayXhair, false, "model", "weaponOverlayXhair");
 		SetupValue(weaponThinOverlayColor[0], 0.008f, "model", "weaponThinOverlayColorR"); // (0.008f, 0.000f, 0.000f, 1.000f)
 		SetupValue(weaponThinOverlayColor[1], 0.000f, "model", "weaponThinOverlayColorG");
@@ -597,6 +597,12 @@ void CConfig::Setup() {
 		SetupValue(preserveKillfeed, false, "misc", "preserveKillfeed");
 		SetupValue(bulletImpact, false, "misc", "bulletImpact");
 		SetupValue(onlyCheatLogs, true, "misc", "onlyCheatLogs");
+
+		SetupValue(bulletTracer, false, "misc", "bulletTracer");
+		SetupValue(bulletTracerColor[0], 0.000f, "visual", "bulletTracerColorR"); // (0.000f, 0.246f, 0.646f, 1.000f)
+		SetupValue(bulletTracerColor[1], 0.246f, "visual", "bulletTracerColorG");
+		SetupValue(bulletTracerColor[2], 0.646f, "visual", "bulletTracerColorB");
+		SetupValue(bulletTracerColor[3], 1.f, "visual", "bulletTracerColorA");
 
 		SetupValue(thirdperson, false, "misc", "thirdperson");
 		SetupValue(thirdpersonbind, 0, "misc", "thirdpersonbind");

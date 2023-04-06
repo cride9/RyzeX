@@ -12,6 +12,7 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 	misc::PreserveKillfeed(pEvent);
 	misc::BuyBot(pEvent);
 	misc::BulletImpact(pEvent, (EStage)-1);
+	misc::BulletTracer(pEvent);
 	anims.ResolverHandler(pEvent);
 
 	if ( !g::pLocal || !g::pLocal->IsAlive( ) )

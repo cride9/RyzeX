@@ -89,19 +89,18 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	else if (cfg::antiaim::modifier == 2)
 		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue, cfg::antiaim::jittervalue);
 
-	// no lby break sry its 2022 nobody stands still and breaks lby
-	//if (pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK)
-	//	pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
-
+	static bool needMicromovement = false;
 	// pure cancer 4line antiaim no shit why do ppl hit my head 100%
 	switch (cfg::antiaim::desynctype) {
 
 		case STATIC:
 		{
+			needMicromovement = true;
 			desyncValue = GetKeyState( cfg::antiaim::desyncinverter ) ? ( cfg::antiaim::desyncvalue ) : -( cfg::antiaim::desyncvalue );	
 			break;
 		case EXTENDED:
 		{
+			needMicromovement = false;
 			// time to break the lowerbody.
 			if ( bBreakLowerBody )
 			{
@@ -119,14 +118,20 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		}
 			break;
 		case JITTER:
+			needMicromovement = true;
 				desyncValue = cfg::antiaim::fakelag % 2 != 0 ? evenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue) : unevenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
 			break;
 
 		default:
+			needMicromovement = false;
 			desyncValue = 0.f;
 			break;
 		}
 	}
+
+	// no lby break sry its 2022 nobody stands still and breaks lby
+	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
+		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
 
 	if (cfg::antiaim::desyncModifier == 1)
 		desyncValue += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue) : unevenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);

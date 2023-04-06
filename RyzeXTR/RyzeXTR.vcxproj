@@ -251,6 +251,7 @@
     <ClInclude Include="Core\Interface\Interfaces\IMatRenderContext.h" />
     <ClInclude Include="Core\Interface\Interfaces\IPanel.h" />
     <ClInclude Include="Core\Interface\Interfaces\IPrediction.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IViewRenderBeams.h" />
     <ClInclude Include="Core\Interface\Interfaces\IStudioRender.h" />
     <ClInclude Include="Core\Interface\Interfaces\ISurface.h" />
     <ClInclude Include="Core\Interface\Interfaces\ISurfaceData.h" />

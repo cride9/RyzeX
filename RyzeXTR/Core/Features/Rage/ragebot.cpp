@@ -219,11 +219,13 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 					return curEnt;
 				}
 			}
-			else if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at( pLog->pRecord.size( ) - 1 ); recordScan != nullptr && recordScan->bValid ) {
-				if ( autowall.CanHitFloatingPoint( pLocal, pWeapon, curEnt->GetHitboxPosition( hitboxID, recordScan->pMatrix ), vecEyePosition, 1.f ) ) {
-					rageBotData.flTargetSimulation = recordScan->flSimulationTime;
-					rageBotData.backtrackRecord = recordScan;
-					return curEnt;
+			else if (cfg::rage::m_bEnableBacktrack) {
+				if (Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 12)); recordScan != nullptr && recordScan->bValid) {
+					if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
+						rageBotData.flTargetSimulation = recordScan->flSimulationTime;
+						rageBotData.backtrackRecord = recordScan;
+						return curEnt;
+					}
 				}
 			}
 			else {

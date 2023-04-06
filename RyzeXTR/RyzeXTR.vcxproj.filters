@@ -159,5 +159,6 @@
     <ClInclude Include="Core\Interface\Interfaces\IGlowObjectManager.h" />
     <ClInclude Include="Core\SDK\Menu\fontBytes.h" />
     <ClInclude Include="Core\Interface\Interfaces\IEngineSoundClient.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IViewRenderBeams.h" />
   </ItemGroup>
 </Project>
