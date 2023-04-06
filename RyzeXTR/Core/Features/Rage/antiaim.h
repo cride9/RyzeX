@@ -25,8 +25,12 @@ enum EDESYNC : int {
 
 namespace antiaim {
 
+	inline float flNextBodyUpdate = 0.f;
+	inline bool bBreakLowerBody = false;
+
 	inline float desyncValue = 0.f;
 	void AntiAim(CUserCmd*, bool&);
 	void FreeStanding(CUserCmd*, Vector&);
 	int ClosestToLocal();
+	void LBYBreaker();
 }

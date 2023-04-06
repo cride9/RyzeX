@@ -20,7 +20,8 @@ enum EEntity : int {
 	ENEMY,
 	TEAM,
 	LOCAL,
-	WORLD
+	WORLD,
+	VIEWMODEL
 };
 
 enum EVISUAL : int {

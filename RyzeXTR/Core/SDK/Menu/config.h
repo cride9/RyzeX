@@ -304,6 +304,42 @@ namespace cfg {
 		inline int localDesyncType = 0;
 		inline float localDesyncColor[4] = { 255.f, 255.f, 255.f, 255.f };
 
+		inline bool viewmodel = false;
+
+		inline int viewmodelType = 0;
+		inline float viewmodelColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool viewmodelXhair = false;
+
+		inline bool viewmodelOverlay = false;
+		inline float viewmodelOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool viewmodelOverlayXhair = false;
+
+		inline bool viewmodelThinOverlay = false;
+		inline float viewmodelThinOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool viewmodelThinOverlayXhair = false;
+
+		inline bool viewmodelAnimOverlay = false;
+		inline float viewmodelAnimOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool viewmodelAnimOverlayXhair = false;
+
+		inline bool weapon = false;
+
+		inline int weaponType = 0;
+		inline float weaponColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool weaponXhair = false;
+
+		inline bool weaponOverlay = false;
+		inline float weaponOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool weaponOverlayXhair = false;
+
+		inline bool weaponThinOverlay = false;
+		inline float weaponThinOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool weaponThinOverlayXhair = false;
+
+		inline bool weaponAnimOverlay = false;
+		inline float weaponAnimOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool weaponAnimOverlayXhair = false;
+
 		inline bool paperMode = false;
 	}
 	namespace misc {

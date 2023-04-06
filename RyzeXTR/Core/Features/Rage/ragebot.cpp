@@ -6,6 +6,8 @@
 #include "exploits.h"
 #include "../Misc/misc.h"
 
+bool CheckShootingCondition(CUserCmd* pCmd);
+
 bool LowestHealth(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 	return pEnt1->GetHealth() < pEnt2->GetHealth();
 }

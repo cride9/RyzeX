@@ -128,6 +128,9 @@ bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out)
 
 static void BeginChams( IMaterial* pMaterial, float const* flColor, bool bIgnoreZ, bool bWireFrame ) {
 
+	if (pMaterial == nullptr)
+		return;
+
 	i::StudioRender->SetColorModulation( flColor, pMaterial );
 	i::StudioRender->SetAlphaModulation( flColor[ 3 ] );
 
@@ -164,21 +167,21 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 	const std::string_view szModelName = info.pStudioHdr->szName;
 
+	if (!materials[DEFAULT])
+		materials[DEFAULT] = CreateMaterial("ryzextr_players", "VertexLitGeneric");
+	if (!materials[FLAT])
+		materials[FLAT] = CreateMaterial("ryzextr_playersflat", "UnlitGeneric");
+	if (!materials[GLOW])
+		materials[GLOW] = RyzeCreateMaterial("ryzextr_glow", "VertexLitGeneric", GlowChams);
+	if (!materials[THINGLOW])
+		materials[THINGLOW] = i::MaterialSystem->FindMaterial("dev/glow_armsrace", nullptr, true, nullptr);
+	if (!materials[ANIMATED])
+		materials[ANIMATED] = RyzeCreateMaterial("ryzextr_animated", "VertexLitGeneric", AnimatedChams);
+
 	if (pEnt->IsPlayer() && pEnt->IsAlive()) {
 
 		if (nFlags & (STUDIO_RENDER | STUDIO_SKIP_FLEXES | STUDIO_DONOTMODIFYSTENCILSTATE | STUDIO_NOLIGHTING_OR_CUBEMAP | STUDIO_SKIP_DECALS))
 			return false;
-
-		if (!materials[DEFAULT])
-			materials[DEFAULT] = CreateMaterial("ryzextr_players", "VertexLitGeneric");
-		if (!materials[FLAT])
-			materials[FLAT] = CreateMaterial("ryzextr_playersflat", "UnlitGeneric");
-		if (!materials[GLOW])
-			materials[GLOW] = RyzeCreateMaterial("ryzextr_glow", "VertexLitGeneric", GlowChams);
-		if (!materials[THINGLOW])
-			materials[THINGLOW] = i::MaterialSystem->FindMaterial("dev/glow_armsrace", nullptr, true, nullptr);
-		if (!materials[ANIMATED])
-			materials[ANIMATED] = RyzeCreateMaterial("ryzextr_animated", "VertexLitGeneric", AnimatedChams);
 
 		if (pEnt == g::pLocal) {
 
@@ -376,25 +379,67 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			return true;
 		}
 	}
-	else if (szModelName.find("sleeve") != std::string_view::npos) {
+	//else if (szModelName.find("sleeve") != std::string_view::npos) {
 
-		// get original sleeves material
-		IMaterial* pSleeveMaterial = i::MaterialSystem->FindMaterial(szModelName.data(), TEXTURE_GROUP_MODEL);
+	//	// get original sleeves material
+	//	IMaterial* pSleeveMaterial = i::MaterialSystem->FindMaterial(szModelName.data(), TEXTURE_GROUP_MODEL);
 
-		// check is valid material
-		if (pSleeveMaterial == nullptr)
-			return false;
+	//	// check is valid material
+	//	if (pSleeveMaterial == nullptr)
+	//		return false;
 
+	//}
+	else if (szModelName.find("arms") != std::string_view::npos) {
 
+		if (viewmodel) {
+			BeginChams(materials[viewmodelType], viewmodelColor, false, viewmodelXhair);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		else {
+			EndChams();
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		if (viewmodelOverlay) {
+			BeginChams(materials[GLOW], viewmodelOverlayColor, false, viewmodelOverlayXhair);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		if (viewmodelThinOverlay) {
+			BeginChams(materials[THINGLOW], viewmodelThinOverlayColor, false, viewmodelThinOverlayXhair);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		if (viewmodelAnimOverlay) {
+			BeginChams(materials[ANIMATED], viewmodelAnimOverlayColor, false, viewmodelAnimOverlayXhair);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		return true;
 	}
-	else if ((szModelName.find("weapons\\v_") != std::string_view::npos || szModelName.find("arms") != std::string_view::npos)) {
+	else if ((szModelName.find("weapons\\v_") != std::string_view::npos)) {
 
 		IMaterial* pViewModelMaterial = i::MaterialSystem->FindMaterial(szModelName.data(), TEXTURE_GROUP_MODEL);
 
-			if (pViewModelMaterial == nullptr)
-				return false;
+		if (pViewModelMaterial == nullptr)
+			return false;
 
-
+		if (weapon) {
+			BeginChams(materials[weaponType], weaponColor, false, weaponXhair);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		else {
+			EndChams();
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		if (weaponOverlay) {
+			BeginChams(materials[GLOW], weaponOverlayColor, false, weaponOverlayXhair);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		if (weaponThinOverlay) {
+			BeginChams(materials[THINGLOW], weaponThinOverlayColor, false, weaponThinOverlayXhair);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
+		if (weaponAnimOverlay) {
+			BeginChams(materials[ANIMATED], weaponAnimOverlayColor, false, weaponAnimOverlayXhair);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		}
 	}
 	return false;
 }

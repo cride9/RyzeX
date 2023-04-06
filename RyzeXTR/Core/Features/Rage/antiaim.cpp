@@ -118,6 +118,23 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	}
 }
 
+void antiaim::LBYBreaker() {
+
+	float flServerTime = TICKS_TO_TIME(g::pLocal->GetTickBase());
+
+	if (g::pLocal->GetVelocity().Length2D() > 0.1f || fabsf(g::pLocal->GetVelocity().z) > 100.0f) {
+
+		flNextBodyUpdate = flServerTime + 0.22f;
+		bBreakLowerBody = false;
+	}
+
+	if (flNextBodyUpdate < flServerTime) {
+
+		flNextBodyUpdate = flServerTime + 1.1f;
+		bBreakLowerBody = true;
+	}
+}
+
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 
 {
 	const auto time = TICKS_TO_TIME(g::pLocal->GetTickBase());

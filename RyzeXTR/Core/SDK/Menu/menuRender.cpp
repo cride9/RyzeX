@@ -216,27 +216,34 @@ void menu::Antiaimtab() noexcept {
 
 void menu::Visualtab() noexcept {
 
-    float buttonSize = (ImGui::GetContentRegionAvail().x / 4) - (2 * 4);
+    float buttonSize = (ImGui::GetContentRegionAvail().x / 5) - (2 * 4);
     ImVec2 savedPosition = ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y + 30.f + ImGui::GetStyle().WindowPadding.y + 2.f);
-   
+    static const char* chamsType[] = { "Default", "Flat" };
+    static const char* glowType[] = { "Glow", "Thin glow", "Animated" };
+    static const char* enemyTypes[] = { "Glow", "Thin glow", "Animated", "Backtrack" };
+    static const char* localTypes[] = { "Glow", "Thin glow", "Animated", "Desync" };
+    static const char* allType[] = { "Default", "Flat", "Glow", "Thin glow", "Animated" };
+
     ImGui::BeginChild("selectPlayer", ImVec2(ImGui::GetContentRegionAvail().x, 30.f), true);
     {
         if (ImGui::Button("Enemy", ImVec2(buttonSize, 20), selectedEsp == ENEMY))
             selectedEsp = ENEMY;
+
         ImGui::SameLine();
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX());
         if (ImGui::Button("Teammate", ImVec2(buttonSize, 20), selectedEsp == TEAM))
             selectedEsp = TEAM;
 
         ImGui::SameLine();
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX());
         if (ImGui::Button("Local", ImVec2(buttonSize, 20), selectedEsp == LOCAL))
             selectedEsp = LOCAL;
 
         ImGui::SameLine();
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX());
         if (ImGui::Button("World", ImVec2(buttonSize, 20), selectedEsp == WORLD))
             selectedEsp = WORLD;
+
+        ImGui::SameLine();
+        if (ImGui::Button("Viewmodel", ImVec2(buttonSize, 20), selectedEsp == VIEWMODEL))
+            selectedEsp = VIEWMODEL;
     }
     ImGui::EndChild();
 
@@ -347,14 +354,43 @@ void menu::Visualtab() noexcept {
         ImGui::EndChild();
 
         return;
+    case VIEWMODEL:
+        using namespace cfg::model;
+        ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+        {
+            ImGui::Combo("Viewmodel model", &viewmodelType, chamsType, IM_ARRAYSIZE(chamsType));
+            ImGui::Checkbox("Enabled", &viewmodel);
+            ImGui::ColorEdit4("##viewmodelColor", viewmodelColor);
+            ImGui::Checkbox("Wireframe", &viewmodelXhair);
+
+            static int selectedviewmodel = 0;
+            ImGui::Combo("Overlay type", &selectedviewmodel, glowType, IM_ARRAYSIZE(glowType));
+
+            switch (selectedviewmodel) {
+
+            case 0:
+                ImGui::Checkbox("Enabled ##6", &viewmodelOverlay);
+                ImGui::ColorEdit4("##localOverlayColor", viewmodelOverlayColor);
+                ImGui::Checkbox("Wireframe ##1", &viewmodelOverlayXhair);
+                break;
+
+            case 1:
+                ImGui::Checkbox("Enabled ##6", &viewmodelThinOverlay);
+                ImGui::ColorEdit4("##viewmodelThinOverlayColor", viewmodelThinOverlayColor);
+                ImGui::Checkbox("Wireframe ##1", &viewmodelThinOverlayXhair);
+                break;
+
+            case 2:
+                ImGui::Checkbox("Enabled ##6", &viewmodelAnimOverlay);
+                ImGui::ColorEdit4("##viewmodelAnimOverlayColor", viewmodelAnimOverlayColor);
+                ImGui::Checkbox("Wireframe ##1", &viewmodelAnimOverlayXhair);
+                break;
+            }
+        }
+        ImGui::EndChild();
+        break;
     }
     ImGui::SameLine();
-
-    static const char* chamsType[] = { "Default", "Flat" };
-    static const char* glowType[] = { "Glow", "Thin glow", "Animated" };
-    static const char* enemyTypes[] = { "Glow", "Thin glow", "Animated", "Backtrack"};
-    static const char* localTypes[] = { "Glow", "Thin glow", "Animated", "Desync"};
-    static const char* allType[] = { "Default", "Flat", "Glow", "Thin glow", "Animated" };
 
     ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
     {
@@ -522,6 +558,38 @@ void menu::Visualtab() noexcept {
                 ImGui::Checkbox("Wireframe ##2", &localDesyncXhair);
                 break;
             }
+            break;
+        case VIEWMODEL:
+
+            ImGui::Combo("Weapon model", &weaponType, chamsType, IM_ARRAYSIZE(chamsType));
+            ImGui::Checkbox("Enabled##2", &weapon);
+            ImGui::ColorEdit4("##weaponColor", weaponColor);
+            ImGui::Checkbox("Wireframe##3", &weaponXhair);
+
+            static int selectedweapon = 0;
+            ImGui::Combo("Overlay type##2", &selectedweapon, glowType, IM_ARRAYSIZE(glowType));
+
+            switch (selectedweapon) {
+
+            case 0:
+                ImGui::Checkbox("Enabled##3", &weaponOverlay);
+                ImGui::ColorEdit4("##localOverlayColor", weaponOverlayColor);
+                ImGui::Checkbox("Wireframe ##4", &weaponOverlayXhair);
+                break;
+
+            case 1:
+                ImGui::Checkbox("Enabled##3", &weaponThinOverlay);
+                ImGui::ColorEdit4("##weaponThinOverlayColor", weaponThinOverlayColor);
+                ImGui::Checkbox("Wireframe ##4", &weaponThinOverlayXhair);
+                break;
+
+            case 2:
+                ImGui::Checkbox("Enabled##3", &weaponAnimOverlay);
+                ImGui::ColorEdit4("##weaponAnimOverlayColor", weaponAnimOverlayColor);
+                ImGui::Checkbox("Wireframe ##4", &weaponAnimOverlayXhair);
+                break;
+            }
+
             break;
         }
     }
