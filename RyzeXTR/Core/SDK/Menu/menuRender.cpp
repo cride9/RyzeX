@@ -119,7 +119,8 @@ void menu::Ragetab() noexcept {
             ImGui::SliderInt("Head Pointscale", &headPoints, 0, 100);
             ImGui::SliderInt("Body Pointscale", &bodyPoints, 0, 100);
 
-            ImGui::Checkbox("Auto-Scope", &autoscope[weapon]);
+            if (weapon < 3)
+                ImGui::Checkbox("Auto-Scope", &autoscope[weapon]);
             ImGui::SliderInt("Damage override", &overridedmg, 0, 110);
             ImGui::Keybind("damageoverridebind", &overrideBind);
         };

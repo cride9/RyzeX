@@ -25,6 +25,14 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	//ViewModel();
 }
 
+void misc::EventHandler(IGameEvent* pEvent) {
+
+	PreserveKillfeed(pEvent);
+	BuyBot(pEvent);
+	BulletImpact(pEvent, (EStage)-1);
+	BulletTracer(pEvent);
+}
+
 CBaseEntity* UTIL_PlayerByIndex(int index)
 {
 	typedef CBaseEntity* (__fastcall* PlayerByIndex)(int);
@@ -150,13 +158,11 @@ void misc::IdealTick(CUserCmd* pCmd) {
 
 		vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
 
-		vecOriginDelta.Normalize();
-
 		auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
 		auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
 
-		pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
-		pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
+		pCmd->flSideMove = std::clamp(flSideMove * 500.f, -440.f, 440.f);
+		pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -440.f, 440.f);
 
 		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
 			bRetreat = false;

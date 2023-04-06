@@ -43,6 +43,7 @@ namespace misc {
 
 	void Security();
 
+	void EventHandler(IGameEvent*);
 	void PreserveKillfeed(IGameEvent*);
 	void BuyBot(IGameEvent*);
 	void BulletTracer(IGameEvent*);
