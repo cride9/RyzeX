@@ -336,6 +336,8 @@ void menu::Visualtab() noexcept {
             ImGui::SliderInt("Viewmodel fov", &viewmodelFov, 45, 140);
             ImGui::SliderInt("Debug fov", &fov, 40, 140);
 
+            ImGui::Checkbox("Always draw viewmodel", &drawViewmodelOnScope);
+
             ImGui::Checkbox("Remove smoke", &removals[0]);
             ImGui::Checkbox("Remove flash", &removals[1]);
             ImGui::Checkbox("Remove recoil", &removals[2]);

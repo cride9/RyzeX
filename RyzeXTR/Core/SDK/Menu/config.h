@@ -370,6 +370,7 @@ namespace cfg {
 		inline int fov = 90;
 
 		inline bool removals[] = { false, false ,false ,false, false };
+		inline bool drawViewmodelOnScope = false;
 
 		inline bool autobuyEnabled = false;
 		inline int pistols;

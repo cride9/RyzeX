@@ -611,6 +611,7 @@ void CConfig::Setup() {
 		SetupValue(fov, 90, "misc", "fov");
 
 		SetupValue(removals, false, 5, "misc", "removals");
+		SetupValue(drawViewmodelOnScope, false, "misc", "drawViewmodelOnScope");
 
 		SetupValue(pistols, 0, "misc", "autobuypistol");
 		SetupValue(snipers, 0, "misc", "autobuyrifles");

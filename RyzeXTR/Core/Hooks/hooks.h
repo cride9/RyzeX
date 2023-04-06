@@ -66,6 +66,7 @@ namespace detour {
 	inline CDetourHook fireEvent;			// gamevent -> 9
 	inline CDetourHook doPostScreenEffects; // clientmode -> 44
 	inline CDetourHook emitSound;			// client -> 55 8B EC 83 EC 4C 53 8B D9 8B
+	inline CDetourHook drawViewmodel;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -132,6 +133,7 @@ namespace h {
 	bool __fastcall		hkFireEvent( void*, void*, IGameEvent* );
 	int __fastcall		hkDoPostScreenEffect(CClientModeShared*, int, CViewSetup*);
 	void __fastcall		hkEmitSound(void*, int, void*, int, int, const char*, unsigned int, const char*, float, int, float, int, int, const Vector*, const Vector*, void*, bool, float, int, int);
+	bool __fastcall		hkShouldDrawViewmodel(void*, void*);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

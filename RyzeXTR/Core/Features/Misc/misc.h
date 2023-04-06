@@ -38,6 +38,7 @@ namespace misc {
 	void IdealTick(CUserCmd*);
 	void ServerHitboxes();
 	void RemovePostProcessing();
+	void FixScopeSens();
 
 	void DrawBream(Vector, Vector, Color);
 

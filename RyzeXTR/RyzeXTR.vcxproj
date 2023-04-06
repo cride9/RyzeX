@@ -184,6 +184,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkPaintTraverse.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkPhysicsSimulate.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRunCommand.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkWriteUserCmdDeltaToBuffer.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\ImGui\ImGuiHooks.cpp" />
     <ClCompile Include="Core\Hooks\hooks.cpp" />

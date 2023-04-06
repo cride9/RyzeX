@@ -19,6 +19,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	OnlyCheatLogs();
 	RemovePostProcessing();
 	IdealTick(pCmd);
+	FixScopeSens();
 #if NDEBUG
 	Security();
 #endif
@@ -161,8 +162,8 @@ void misc::IdealTick(CUserCmd* pCmd) {
 		auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
 		auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
 
-		pCmd->flSideMove = std::clamp(flSideMove * 500.f, -440.f, 440.f);
-		pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -440.f, 440.f);
+		pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
+		pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
 
 		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
 			bRetreat = false;
@@ -920,6 +921,25 @@ void misc::BulletTracer(IGameEvent* pEvent) {
 
 		DrawBream(g::pLocal->GetEyePosition(), vecImpact, cfg::misc::bulletTracerColor);
 	}
+}
+
+void misc::FixScopeSens() {
+
+	if (!g::pLocal || !g::pLocal->GetWeapon())
+		return;
+
+	// zoom_sensitivity_ratio_mouse 
+	static CConVar* zoom_sensitivity_ratio_mouse = i::ConVar->FindVar("zoom_sensitivity_ratio_mouse");
+
+	static float backup = zoom_sensitivity_ratio_mouse->GetFloat();
+
+	if (!g::pLocal->IsScoped() || i::EngineClient->IsInGame())
+		zoom_sensitivity_ratio_mouse->SetValue(backup);
+
+	if (zoom_sensitivity_ratio_mouse->GetFloat() != 0 && backup != zoom_sensitivity_ratio_mouse->GetFloat())
+		backup = zoom_sensitivity_ratio_mouse->GetFloat();
+
+	zoom_sensitivity_ratio_mouse->SetValue(cfg::misc::removals[3] ? 0 : backup);
 }
 
 //void misc::CustomBombText(const char* szText) {

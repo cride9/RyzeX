@@ -74,6 +74,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
     <ClCompile Include="Core\SDK\Menu\menuRender.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
