@@ -6,8 +6,6 @@
 #include "exploits.h"
 #include "../Misc/misc.h"
 
-bool CheckShootingCondition(CUserCmd* pCmd);
-
 bool LowestHealth(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 	return pEnt1->GetHealth() < pEnt2->GetHealth();
 }
@@ -237,6 +235,10 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 
 	if (exploits::bIsShiftingTicks)
 		return true;
+	
+	// server is currently in nospread, no need to calculate anything, just shoot
+	if ( i::ConVar->FindVar( "weapon_accuracy_nospread" )->GetInt( ) >= 1 )
+		return true;
 
 	Vector vecForward = Vector(0, 0, 0);
 	Vector vecRight = Vector(0, 0, 0);
@@ -404,7 +406,6 @@ int CRageBot::ConfigMinimumDamage(CBaseCombatWeapon* pWeapon) {
 	else {
 		return cfg::rage::etcMindmg;
 	}
-
 }
 
 int CRageBot::ConfigOverrideDamage(CBaseCombatWeapon* pWeapon) {
@@ -432,7 +433,6 @@ int CRageBot::ConfigOverrideDamage(CBaseCombatWeapon* pWeapon) {
 	else {
 		return cfg::rage::etcOverride;
 	}
-
 }
 
 int CRageBot::ConfigHitChance(CBaseCombatWeapon* pWeapon) {
@@ -488,6 +488,13 @@ std::vector<int> CRageBot::ConfigHitboxes(CBaseCombatWeapon* pWeapon) {
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
 
 	static auto AddHitbox = [](int index, std::vector<int>& vecHitboxList) {
+
+		// server only allows headshots, so let's only push_back head and return!
+		if ( i::ConVar->FindVar( "mp_damage_headshot_only" )->GetBool( ) )
+		{
+			vecHitboxList.push_back( HITBOX_HEAD );
+			return;
+		}
 
 		if (index == 0) {
 			vecHitboxList.push_back(HITBOX_HEAD);
@@ -686,6 +693,10 @@ bool CheckShootingCondition(CUserCmd* pCmd) {
 		return false;
 
 	if (pWeapon->GetNextPrimaryAttack() > time || pWeapon->GetNextSecondaryAttack() > time)
+		return false;
+
+	// can't shoot yet, wait for next shootable tick
+	if ( cfg::antiaim::fakeduck && GetAsyncKeyState( cfg::antiaim::fakeduckbind ) && local->GetDuckAmount( ) != 0.f )
 		return false;
 
 	return true;
