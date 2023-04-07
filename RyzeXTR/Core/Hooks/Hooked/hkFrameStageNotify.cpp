@@ -11,6 +11,8 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_START:
 
+
+
 		break;
 
 	case FRAME_RENDER_END:

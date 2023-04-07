@@ -427,11 +427,13 @@ protected:
 	std::vector< ConfigValue< int >* > ints;
 	std::vector< ConfigValue< bool >* > bools;
 	std::vector< ConfigValue< float >* > floats;
+	std::vector< ConfigValue< std::string >* > strings;
 private:
 
 	void SetupValue(int&, int, std::string, std::string);
 	void SetupValue(bool&, bool, std::string, std::string);
 	void SetupValue(bool* value, bool def, int size, std::string category, std::string name);
+	void SetupValue( std::string& value, std::string def, std::string category, std::string name );
 	void SetupValue(float&, float, std::string, std::string);
 public:
 	CConfig()
@@ -441,12 +443,13 @@ public:
 
 	void Setup();
 
-	void Save(std::string ConfigName);
-	void Load(std::string ConfigName);
-	void DeleteConfig(std::string ConfigName);
+	void Save( std::string ConfigName );
+	void Load( std::string ConfigName );
+	void DeleteConfig( std::string ConfigName );
 
 	std::vector<std::string> vecConfigs = {};
-	void RefreshConfigs();
+	std::string ConfigPath = { };
+	void RefreshConfigs( );
 
 	std::vector<std::string> vecSoundFileNames = { };
 	std::string SoundPath = { };

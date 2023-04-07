@@ -75,6 +75,7 @@
     <ClCompile Include="Core\SDK\Menu\menuRender.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
+    <ClCompile Include="Core\SDK\WavParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -161,5 +162,6 @@
     <ClInclude Include="Core\SDK\Menu\fontBytes.h" />
     <ClInclude Include="Core\Interface\Interfaces\IEngineSoundClient.h" />
     <ClInclude Include="Core\Interface\Interfaces\IViewRenderBeams.h" />
+    <ClInclude Include="Core\SDK\WavParser.h" />
   </ItemGroup>
 </Project>

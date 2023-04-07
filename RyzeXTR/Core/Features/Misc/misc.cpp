@@ -4,6 +4,7 @@
 #include "../../SDK/math.h"
 #include "../Rage/exploits.h"
 #include "../../SDK/WavParser.h"
+#pragma comment(lib, "winmm.lib")
 
 #define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 
@@ -447,9 +448,7 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 			// play the sound.
 			if ( m_pParsedHitsound ) {
 
-				HMODULE hModule = LoadLibraryA( "winmm.dll" );
-				FARPROC pfnPlaySoundA = GetProcAddress( hModule, "PlaySoundA" );
-				BOOL bResult = ( ( BOOL( WINAPI* )( LPCSTR, HMODULE, DWORD ) )pfnPlaySoundA )( cfg::misc::m_szWavPath.c_str()/*LPCSTR( m_pParsedHitsound )*/, NULL, SND_FILENAME | SND_ASYNC );
+				PlaySoundA( cfg::misc::m_szWavPath.c_str( )/*LPCSTR( m_pParsedHitsound )*/, NULL, SND_FILENAME | SND_ASYNC );
 			}
 		}
 	}

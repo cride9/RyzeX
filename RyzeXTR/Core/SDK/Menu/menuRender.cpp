@@ -2,6 +2,7 @@
 #include "config.h"
 #include "../Entity.h"
 #include "../../globals.h"
+#pragma comment(lib, "winmm.lib")
 
 ETabs selectedTab = RAGE_TAB;
 EEntity selectedEsp = ENEMY;
@@ -395,9 +396,7 @@ void menu::Visualtab() noexcept {
 
                         if ( ImGui::Button( "Play", ImVec2( -1, 25 ) ) && soundItemCurrent1 >= 0 && !cfg::misc::m_szWavPath.empty( ) ) {
 
-                            HMODULE hModule = LoadLibraryA( "winmm.dll" );
-                            FARPROC pfnPlaySoundA = GetProcAddress( hModule, "PlaySoundA" );
-                            BOOL bResult = ( ( BOOL( WINAPI* )( LPCSTR, HMODULE, DWORD ) )pfnPlaySoundA )( cfg::misc::m_szWavPath.c_str( ), NULL, SND_FILENAME | SND_ASYNC );
+                            PlaySoundA( cfg::misc::m_szWavPath.c_str( ), NULL, SND_FILENAME | SND_ASYNC );
                         }
 
                         if ( ImGui::Button( "Refresh", ImVec2( -1, 25 ) ) )
@@ -412,7 +411,7 @@ void menu::Visualtab() noexcept {
 
 
                         if ( ImGui::Button( "Folder", ImVec2( -1, 25 ) ) )
-                            ShellExecute( NULL, "open", Config2->SoundPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );
+                            ShellExecuteA( NULL, "open", Config2->SoundPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );
 
                         ImGui::PopItemWidth( );
                     }
@@ -738,46 +737,56 @@ void menu::Misctab() noexcept {
 
     ImGui::SameLine();
 
-    ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
+    ImGui::BeginChild( "modelchild", ImVec2( ImGui::GetContentRegionAvail( ).x, ImGui::GetContentRegionAvail( ).y ), true );
     {
-        //ImGui::Combo("configs", &cfg::configID, cfgitem, IM_ARRAYSIZE(cfgitem));
-        
         static std::string selectedConfig = "";
-        if (ImGui::ListBoxVector("##configs", &cfg::configID, Config2->vecConfigs, 10)) {
-            selectedConfig = Config2->vecConfigs[cfg::configID];
+        ImGui::PushItemWidth( ImGui::GetContentRegionAvail( ).x );
+        if ( ImGui::ListBoxVector( "##configs", &cfg::configID, Config2->vecConfigs, 7 ) ) {
+            selectedConfig = Config2->vecConfigs[ cfg::configID ];
         }
 
         static std::string configName = "";
-        static char buf[255]{};
-        ImGui::InputText("Config name", buf, sizeof(buf));
+        static char buf[ 255 ]{};
+        ImGui::InputText( "Config name", buf, sizeof( buf ) );
 
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
-        if (ImGui::Button("Save", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+        ImGui::PushStyleVar( ImGuiStyleVar_FrameBorderSize, 2.f );
+        if ( ImGui::Button( "Refresh", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
+            Config2->RefreshConfigs( );
+        }
+
+        ImGui::Spacing( );
+        if ( ImGui::Button( "Save", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
             pressedSave = true;
             warningMethod = true;
         }
 
-        ImGui::Spacing();
-        if (ImGui::Button("Load", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+        ImGui::Spacing( );
+        if ( ImGui::Button( "Load", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
             pressedSave = true;
             warningMethod = false;
         }
 
-        ImGui::Spacing();
-        if (ImGui::Button("Create", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+        ImGui::Spacing( );
+        if ( ImGui::Button( "Create", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
 
-            Config2->Save(buf);
-            Config2->RefreshConfigs();
+            Config2->Save( buf );
+            Config2->RefreshConfigs( );
         }
-        ImGui::Spacing();
-        if (ImGui::Button("Delete", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+        ImGui::Spacing( );
+        if ( ImGui::Button( "Delete", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
 
-            Config2->DeleteConfig(selectedConfig);
-            Config2->RefreshConfigs();
+            Config2->DeleteConfig( selectedConfig );
+            Config2->RefreshConfigs( );
         }
-        ImGui::PopStyleVar();
+        ImGui::Spacing( );
+        if ( ImGui::Button( "Open config location", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
+
+            ShellExecuteA( NULL, "open", Config2->ConfigPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );;
+        }
+        ImGui::PopStyleVar( );
+        ImGui::PopItemWidth( );
     }
-    ImGui::EndChild();
+    ImGui::EndChild( );
 }
 
 void menu::Skintab() noexcept {

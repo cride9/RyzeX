@@ -624,6 +624,7 @@ void CConfig::Setup() {
 
 		SetupValue( m_iHitSound, 0, "misc", "hitsoundtype" );
 		SetupValue( m_flHitSoundVolume, 100.f, "misc", "hitsoundvolume" );
+		SetupValue( m_szWavPath, "", "misc", "hitsoundpath" );
 	}
 }
 
@@ -657,6 +658,12 @@ void CConfig::SetupValue(bool* value, bool def, int size, std::string category, 
 	}
 }
 
+void CConfig::SetupValue( std::string& value, std::string def, std::string category, std::string name )
+{
+	value = def;
+	strings.push_back( new ConfigValue< std::string >( category, name, &value ) );
+}
+
 void CConfig::Save(std::string ConfigName)
 {
 	static TCHAR path[MAX_PATH];
@@ -678,6 +685,9 @@ void CConfig::Save(std::string ConfigName)
 
 	for (auto value : bools)
 		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
+
+	for ( auto value : strings )
+		WritePrivateProfileString( value->category.c_str( ), value->name.c_str( ), reinterpret_cast< std::string* >( value->value )->c_str( ), file.c_str( ) );
 }
 
 void CConfig::Load(std::string ConfigName)
@@ -694,6 +704,7 @@ void CConfig::Load(std::string ConfigName)
 	CreateDirectory(folder.c_str(), NULL);
 
 	char value_l[32] = { '\0' };
+	char value_string[256] = { '\0' };
 
 	for (auto value : ints)
 	{
@@ -711,6 +722,12 @@ void CConfig::Load(std::string ConfigName)
 	{
 		GetPrivateProfileString(value->category.c_str(), value->name.c_str(), "", value_l, 32, file.c_str());
 		*value->value = !strcmp(value_l, "true");
+	}
+
+	for ( auto value : strings )
+	{
+		GetPrivateProfileString( value->category.c_str( ), value->name.c_str( ), "", value_string, 256, file.c_str( ) );
+		*value->value = value_string;
 	}
 }
 
@@ -749,6 +766,7 @@ void CConfig::RefreshConfigs() {
 	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
 	{
 		folder = std::string(path) + "\\ryzextr\\";
+		ConfigPath = folder;
 	}
 
 	CreateDirectory(folder.c_str(), NULL);
