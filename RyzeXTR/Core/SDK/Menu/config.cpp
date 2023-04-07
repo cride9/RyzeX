@@ -612,6 +612,11 @@ void CConfig::Setup() {
 
 		SetupValue(removals, false, 5, "misc", "removals");
 		SetupValue(drawViewmodelOnScope, false, "misc", "drawViewmodelOnScope");
+		SetupValue(scopeColor[0], 1.f, "visual", "scopeColorR");
+		SetupValue(scopeColor[1], 1.f, "visual", "scopeColorG");
+		SetupValue(scopeColor[2], 1.f, "visual", "scopeColorB");
+		SetupValue(scopeColor[3], 1.f, "visual", "scopeColorA");
+		SetupValue(scopeLength, 1.f, "visual", "scopeLength");
 
 		SetupValue(pistols, 0, "misc", "autobuypistol");
 		SetupValue(snipers, 0, "misc", "autobuyrifles");

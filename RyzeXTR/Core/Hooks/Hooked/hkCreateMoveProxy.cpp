@@ -32,7 +32,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	// for now that is the fix for the menu xddxdx
 	if (GetAsyncKeyState(VK_LBUTTON) && menu::open)
-		pCmd->iButtons &= ~IN_ATTACK;
+		pCmd->iButtons &= ~(IN_ATTACK | IN_SECOND_ATTACK | IN_MIDDLE_ATTACK);
+
+	pCmd->iButtons |= IN_BULLRUSH;
 
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 

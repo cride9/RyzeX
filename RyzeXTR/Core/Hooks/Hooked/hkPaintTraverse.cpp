@@ -30,9 +30,20 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 				int iWidth = 0;
 				i::EngineClient->GetScreenSize(iWidth, iHeight);
 
-				i::Surface->DrawSetColor(Color(0, 0, 0, 255));
-				i::Surface->DrawLine(iWidth / 2, 0, iWidth / 2, iHeight);
-				i::Surface->DrawLine(0, iHeight / 2, iWidth, iHeight / 2);
+				i::Surface->DrawSetColor(cfg::misc::scopeColor);
+				
+				float flSize = iHeight * (cfg::misc::scopeLength / 100.f);
+
+				i::Surface->DrawLine( // vertical
+					iWidth / 2, 
+					iHeight / 2 - flSize,
+					iWidth / 2, 
+					iHeight / 2 + flSize);
+				i::Surface->DrawLine( // horizontal
+					iWidth / 2 - flSize,
+					iHeight / 2, 
+					iWidth / 2 + flSize,
+					iHeight / 2);
 			}
 		}
 	}

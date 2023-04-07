@@ -39,6 +39,7 @@ namespace misc {
 	void ServerHitboxes();
 	void RemovePostProcessing();
 	void FixScopeSens();
+	void AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal);
 
 	void DrawBream(Vector, Vector, Color);
 

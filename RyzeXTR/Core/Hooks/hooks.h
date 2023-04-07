@@ -1,4 +1,5 @@
 #pragma once
+#include <basetsd.h>
 #include <string>
 #include <intrin.h>
 #include "../Interface/interfaces.h"
@@ -165,6 +166,9 @@ namespace h {
 	bool __fastcall		hkIsFollowingEntity(void* ecx, void* edx);
 	void __fastcall		hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector& vecVelocity);
 	//int					hkInterpolationList();
+	static LRESULT __stdcall	WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	inline WNDPROC pOriginalWNDProc; // Original CSGO window proc
 }
 
 class Event : public IGameEventListener

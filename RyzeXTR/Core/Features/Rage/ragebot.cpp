@@ -60,7 +60,6 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 			// calculate aim angle.
 			M::VectorAngles( vecExtrapolatedAimSpot - vecEyePosition, shootAngle ); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
 			
-
 			exploits::bShooting = true;
 
 			if (cfg::rage::autostop && cfg::rage::betweenshots)

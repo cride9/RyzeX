@@ -371,6 +371,8 @@ namespace cfg {
 
 		inline bool removals[] = { false, false ,false ,false, false };
 		inline bool drawViewmodelOnScope = false;
+		inline float scopeColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline float scopeLength = 1.f;
 
 		inline bool autobuyEnabled = false;
 		inline int pistols;

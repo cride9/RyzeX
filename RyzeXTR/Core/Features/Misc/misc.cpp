@@ -22,6 +22,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	RemovePostProcessing();
 	IdealTick(pCmd);
 	FixScopeSens();
+	AutoPistol(pCmd, g::pLocal);
 #if NDEBUG
 	Security();
 #endif
@@ -1020,7 +1021,19 @@ void misc::FixScopeSens() {
 	if (zoom_sensitivity_ratio_mouse->GetFloat() != 0 && backup != zoom_sensitivity_ratio_mouse->GetFloat())
 		backup = zoom_sensitivity_ratio_mouse->GetFloat();
 
-	zoom_sensitivity_ratio_mouse->SetValue(cfg::misc::removals[3] ? 0 : backup);
+	zoom_sensitivity_ratio_mouse->SetValue(g::pLocal->IsScoped() ? cfg::misc::removals[3] ? 0 : backup : backup);
+}
+
+void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
+
+	if (!pLocal || !pLocal->IsAlive() || !pLocal->GetWeapon())
+		return;
+
+	if (pLocal->IsGrenade(pLocal->GetWeapon()))
+		return;
+
+	if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() > TICKS_TO_TIME(pLocal->GetTickBase())))
+		pCmd->iButtons &= ~IN_ATTACK;
 }
 
 //void misc::CustomBombText(const char* szText) {
