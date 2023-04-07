@@ -199,6 +199,7 @@
     <ClCompile Include="Core\SDK\Menu\gui.cpp" />
     <ClCompile Include="Core\SDK\Menu\menuRender.cpp" />
     <ClCompile Include="Core\SDK\NetVar\Netvar.cpp" />
+    <ClCompile Include="Core\SDK\WavParser.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui_demo.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui_draw.cpp" />
@@ -279,6 +280,7 @@
     <ClInclude Include="Core\SDK\NetVar\datatable.h" />
     <ClInclude Include="Core\SDK\NetVar\fnv.h" />
     <ClInclude Include="Core\SDK\NetVar\Netvar.h" />
+    <ClInclude Include="Core\SDK\WavParser.h" />
     <ClInclude Include="Core\utilities.h" />
     <ClInclude Include="Dependecies\ImGui\imconfig.h" />
     <ClInclude Include="Dependecies\ImGui\imgui.h" />

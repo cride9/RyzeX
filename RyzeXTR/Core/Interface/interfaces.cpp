@@ -20,7 +20,7 @@ void i::SetupInterfaces() {
 	EngineTrace =	GetInterface<IEngineTrace>("engine.dll", "EngineTraceClient004");
 	PhysicsProps =	GetInterface<IPhysicsSurfaceProps>("vphysics.dll", "VPhysicsSurfaceProps001");
 	GameEvent =		GetInterface<IGameEventManager>("engine.dll", "GAMEEVENTSMANAGER002");
-	EngineSoundClient = GetInterface<IEngineSoundClient>("engine.dll", "IEngineSoundClient");
+	EngineSoundClient = GetInterface<IEngineSoundClient>("engine.dll", "IEngineSoundClient003");
 
 	ClientState = **reinterpret_cast<CClientState***>(util::FindSignature("engine.dll", "A1 ? ? ? ? 8B 88 ? ? ? ? 85 C9 75 07") + 0x1);
 	if (ClientState == nullptr)

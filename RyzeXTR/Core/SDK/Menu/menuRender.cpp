@@ -224,6 +224,7 @@ void menu::Visualtab() noexcept {
     static const char* enemyTypes[] = { "Glow", "Thin glow", "Animated", "Backtrack" };
     static const char* localTypes[] = { "Glow", "Thin glow", "Animated", "Desync" };
     static const char* allType[] = { "Default", "Flat", "Glow", "Thin glow", "Animated" };
+    static const char* m_szHitsound[] = { "None", "Default", "Custom" };
 
     ImGui::BeginChild("selectPlayer", ImVec2(ImGui::GetContentRegionAvail().x, 30.f), true);
     {
@@ -351,10 +352,86 @@ void menu::Visualtab() noexcept {
         ImGui::BeginChild("right", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
         {
             ImGui::Checkbox("Show impact", &bulletImpact);
+            ImGui::Checkbox( "Bullet tracer", &bulletTracer );
+            ImGui::ColorEdit4( "##tracerColor", bulletTracerColor );
+            ImGui::Combo( "Hitsound", &m_iHitSound, m_szHitsound, IM_ARRAYSIZE( m_szHitsound ) );
+            static int soundItemCurrent1 = -1;
+            static std::string soundItem;
+            bool bOpen = true;
+            if ( m_iHitSound == 2 ) {
+                ImGui::Indent( 17.f );
+                if ( ImGui::Button( "Manage custom sounds" , ImVec2( 0, 25 ) ) )
+                    ImGui::OpenPopup( "##sndManager" );
+                ImGui::Unindent( 17.f );
+            }
+
+            ImGui::SetNextWindowSize( ImVec2( 300, 240 ) );
+            if ( ImGui::BeginPopupModal( "##sndManager", &bOpen, ImGuiWindowFlags_NoResize ) )
+            {
+                ImGui::PushStyleColor( ImGuiCol_ChildBg, ImVec4( 0.07f, 0.07f, 0.07f, 1.f ) );
+                ImGui::BeginChild( "visuals.sndManagerPopup", ImVec2( 0, 0 ), true );
+                {
+                    ImGui::Dummy( ImVec2( 0.f, 5.f ) );
+
+                    ImGui::Columns( 2, "##SOUNDS", false );
+                    {
+                        if ( !Config2->vecSoundFileNames.empty( ) ) {
+
+                            ImGui::PushItemWidth( -1 );
+                            if ( ImGui::ListBoxVector( "##soundFiles", &soundItemCurrent1, Config2->vecSoundFileNames, 5 ) ) {
+                                soundItem = Config2->vecSoundFileNames[ soundItemCurrent1 ];
+                                cfg::misc::m_szWavPath = std::filesystem::path( Config2->SoundPath.c_str() + soundItem ).string( );
+                            }
+                            ImGui::PopItemWidth( );
+                        }
+                        else {
+                            ImGui::SetCursorPosX( ImGui::GetCursorPosX( ) + ( ImGui::GetColumnWidth( ) / 2 ) - ( ImGui::CalcTextSize( "No sounds" ).x / 2 ) );
+                            ImGui::Text( "No sounds" );
+                        }
+                    }
+                    ImGui::NextColumn( );
+                    {
+                        ImGui::PushItemWidth( -1 );
+
+                        if ( ImGui::Button( "Play", ImVec2( -1, 25 ) ) && soundItemCurrent1 >= 0 && !cfg::misc::m_szWavPath.empty( ) ) {
+
+                            HMODULE hModule = LoadLibraryA( "winmm.dll" );
+                            FARPROC pfnPlaySoundA = GetProcAddress( hModule, "PlaySoundA" );
+                            BOOL bResult = ( ( BOOL( WINAPI* )( LPCSTR, HMODULE, DWORD ) )pfnPlaySoundA )( cfg::misc::m_szWavPath.c_str( ), NULL, SND_FILENAME | SND_ASYNC );
+                        }
+
+                        if ( ImGui::Button( "Refresh", ImVec2( -1, 25 ) ) )
+                            Config2->RefreshSounds( );
+
+                        if ( ImGui::Button( "Remove", ImVec2( -1, 25 ) ) ) {
+                            std::remove( cfg::misc::m_szWavPath.c_str( ) );
+                            Config2->RefreshSounds( );
+                            soundItemCurrent1 = -1;
+                            cfg::misc::m_szWavPath = "";
+                        }
+
+
+                        if ( ImGui::Button( "Folder", ImVec2( -1, 25 ) ) )
+                            ShellExecute( NULL, "open", Config2->SoundPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );
+
+                        ImGui::PopItemWidth( );
+                    }
+
+                    ImGui::Columns( 1 );
+
+                    if ( ImGui::Button( "Close", ImVec2( -1, 25 ) ) )
+                        ImGui::CloseCurrentPopup( );
+
+                    ImGui::EndChild( );
+                }
+                ImGui::PopStyleColor( );
+                ImGui::EndPopup( );
+            }
+
+            if (m_iHitSound > 0)
+				ImGui::SliderFloat("Hitsound volume", &m_flHitSoundVolume, 0.f, 100.f);
             ImGui::Checkbox("Paper mode", &cfg::model::paperMode);
             ImGui::Checkbox("Keybind list", &keyBindList);
-            ImGui::Checkbox("Bullet tracer", &bulletTracer);
-            ImGui::ColorEdit4("##tracerColor", bulletTracerColor);
         }
         ImGui::EndChild();
 

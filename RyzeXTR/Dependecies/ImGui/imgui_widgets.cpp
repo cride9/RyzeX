@@ -6770,6 +6770,20 @@ bool ImGui::ListBox(const char* label, int* current_item, const char* const item
     return value_changed;
 }
 
+bool ImGui::ListBoxVector( const char* label, std::int32_t* currIndex, std::vector<std::string>& values, std::int32_t heightInItems ) noexcept {
+    
+    static auto vector_getter = []( void* vec, std::int32_t idx, const char** outText ) noexcept {
+        auto& vector = *static_cast< std::vector<std::string>* >( vec );
+        if ( idx < 0 || idx >= static_cast< std::int32_t >( vector.size( ) ) ) { return false; }
+        *outText = vector.at( idx ).c_str( );
+        return true;
+    };
+    
+    if ( values.empty( ) ) { return false; }
+    return ListBox( label, currIndex, vector_getter,
+        static_cast< void* >( &values ), values.size( ), heightInItems );
+}
+
 // This is merely a helper around BeginListBox(), EndListBox().
 // Considering using those directly to submit custom data or store selection differently.
 bool ImGui::ListBox(const char* label, int* current_item, bool (*items_getter)(void*, int, const char**), void* data, int items_count, int height_in_items)

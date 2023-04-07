@@ -10,6 +10,7 @@
 #include "hungarians.h"
 #include "globals.h"
 #include "SDK/math.h"
+#include "SDK/Menu/config.h"
 DWORD WINAPI CheatThread(PVOID);
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
@@ -70,6 +71,8 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	M::Setup();
 	h::SetupHooks();
 	g::entityListener.Setup();
+
+	Config2->RefreshSounds( );
 
 #if _DEBUG
 

@@ -3,6 +3,7 @@
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/math.h"
 #include "../Rage/exploits.h"
+#include "../../SDK/WavParser.h"
 
 #define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 
@@ -32,6 +33,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	BuyBot(pEvent);
 	BulletImpact(pEvent, (EStage)-1);
 	BulletTracer(pEvent);
+	HandlePlayerHitEffects( pEvent );
 }
 
 CBaseEntity* UTIL_PlayerByIndex(int index)
@@ -370,6 +372,86 @@ void misc::BuyBot(IGameEvent* event) { // need menu element
 		i::EngineClient->ExecuteClientCmd(buy.c_str());
 
 		bResetNightMode = true;
+	}
+}
+
+void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
+
+	if ( !strcmp( pEvent->GetName( ), "player_hurt" ) ) {
+
+		IClientEntity* pAttacker = i::EntityList->GetClientEntity( i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "attacker" ) ) );
+
+		if ( !pAttacker || pAttacker != g::pLocal )
+			return;
+
+		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity( i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) ) ) );
+
+		if ( !pEntity || pEntity == g::pLocal )
+			return;
+
+		// TODO: Add effects interface for cool hit effects :D
+		/*if ( C::Get<bool>( Vars.bScreenHitEffects ) )
+		{
+			std::optional<Vector> vecPosition;
+			vecPosition = pEntity->GetHitGroupPosition( pEvent->GetInt( "hitgroup" ) );
+
+			if ( !vecPosition.has_value( ) )
+				return;
+
+			switch ( C::Get<int>( Vars.iScreenHitEffects ) )
+			{
+			case 0:
+				i::Effects->Sparks( vecPosition.value( ), 10, 10 );
+				break;
+			case 1:
+				i::Effects->Smoke( vecPosition.value( ), 1, 10.f, 60.f );
+				break;
+			case 2:
+				i::Effects->EnergySplash( vecPosition.value( ), vecPosition.value( ) + 50, true );
+				break;
+			}
+		}*/
+
+		// play hit sound
+		if ( cfg::misc::m_iHitSound == 1 ) {
+			i::EngineSoundClient->EmitAmbientSound( "buttons\\arena_switch_press_02.wav", cfg::misc::m_flHitSoundVolume / 100.f );
+			// physics\\metal\\paintcan_impact_hard3.wav
+		}
+		else if ( cfg::misc::m_iHitSound == 2 && !cfg::misc::m_szWavPath.empty( ) ) {
+
+			static bool m_bNeedsUpdate = true;
+			static float m_flOldVolume = 0.f;
+			static std::string m_szOldWavPath;
+			// store the parsed hitsound bytes to a dummy byte.
+			static BYTE* m_pParsedHitsound;
+
+			// read the .wav file into memory.
+			BYTE* m_pSoundBytes = util::ReadWavFileIntoMemory( cfg::misc::m_szWavPath );
+
+			if ( cfg::misc::m_flHitSoundVolume != m_flOldVolume || m_szOldWavPath != cfg::misc::m_szWavPath )
+				m_bNeedsUpdate = true;
+
+			if ( m_bNeedsUpdate )
+			{
+				m_szOldWavPath = cfg::misc::m_szWavPath;
+				m_flOldVolume = cfg::misc::m_flHitSoundVolume;
+				m_bNeedsUpdate = false;
+
+				// adjust the hitsound volume.
+				m_pParsedHitsound = m_pSoundBytes;
+
+				CWavParser::WavHeader_t header;
+				header.ParseWavHeader( m_pParsedHitsound );
+				wavparser.AdjustWavVolume( header, ( cfg::misc::m_flHitSoundVolume / 200.f ) );
+			}
+			// play the sound.
+			if ( m_pParsedHitsound ) {
+
+				HMODULE hModule = LoadLibraryA( "winmm.dll" );
+				FARPROC pfnPlaySoundA = GetProcAddress( hModule, "PlaySoundA" );
+				BOOL bResult = ( ( BOOL( WINAPI* )( LPCSTR, HMODULE, DWORD ) )pfnPlaySoundA )( cfg::misc::m_szWavPath.c_str()/*LPCSTR( m_pParsedHitsound )*/, NULL, SND_FILENAME | SND_ASYNC );
+			}
+		}
 	}
 }
 

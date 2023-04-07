@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <iostream>
 #include "SDK/DataTyes/Color.h"
+#include <fstream>
 
 #define RYZEXCOLOR Color(222, 153, 42)
 #define INRANGE(x,a,b)   (x >= a && x <= b)
@@ -91,5 +92,20 @@ namespace util {
 			}
 		}
 		return 0u;
+	}
+
+	__forceinline BYTE* ReadWavFileIntoMemory( std::string fname ) {
+		BYTE* pb = nullptr;
+		std::ifstream f( fname, std::ios::binary );
+	
+		f.seekg( 0, std::ios::end );
+		size_t lim = f.tellg( );
+
+		pb = new BYTE[ lim ];
+		f.seekg( 0, std::ios::beg );
+		f.read( ( char* )pb, lim );
+		f.close( );
+
+		return pb;
 	}
 }

@@ -621,6 +621,9 @@ void CConfig::Setup() {
 
 		SetupValue(fakePing, false, "misc", "fakeping");
 		SetupValue(fakePingFactor, 0.f, "misc", "fakepingFactor");
+
+		SetupValue( m_iHitSound, 0, "misc", "hitsoundtype" );
+		SetupValue( m_flHitSoundVolume, 100.f, "misc", "hitsoundvolume" );
 	}
 }
 
@@ -710,5 +713,31 @@ void CConfig::Load(std::string ConfigName)
 		*value->value = !strcmp(value_l, "true");
 	}
 }
+
+void CConfig::RefreshSounds( )
+{
+	vecSoundFileNames.clear( );
+
+	static TCHAR path[ MAX_PATH ];
+	std::string folder, file;
+
+	if ( SUCCEEDED( SHGetFolderPath( NULL, CSIDL_APPDATA, NULL, 0, path ) ) )
+	{
+		folder = std::string( path ) + "\\ryzextr\\sounds\\";
+		SoundPath = folder;
+	}
+
+	CreateDirectory( folder.c_str( ), NULL );
+
+	for ( const auto& it : std::filesystem::directory_iterator( folder.c_str( ) ) )
+	{
+		if ( it.path( ).filename( ).extension( ) == ".wav" )
+		{
+			//printf( std::format("found sound file: {}" , it.path( ).filename( ).string( ) ) );
+			vecSoundFileNames.push_back( it.path( ).filename( ).string( ) );
+		}
+	}
+}
+
 
 CConfig* Config2 = new CConfig();

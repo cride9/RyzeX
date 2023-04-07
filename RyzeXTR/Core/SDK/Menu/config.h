@@ -381,6 +381,11 @@ namespace cfg {
 		inline bool fakePing = false;
 		inline float fakePingFactor = 0.f;
 
+		// hitsounds
+		inline int m_iHitSound = 0;
+		inline float m_flHitSoundVolume = 100.f;
+		inline std::string m_szWavPath = "";
+	
 	}
 	namespace skin {
 
@@ -438,6 +443,10 @@ public:
 
 	void Save(std::string ConfigName);
 	void Load(std::string ConfigName);
+
+	std::vector<std::string> vecSoundFileNames = { };
+	std::string SoundPath = { };
+	void RefreshSounds( );
 };
 
 extern CConfig* Config2;
