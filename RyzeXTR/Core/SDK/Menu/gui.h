@@ -89,7 +89,7 @@ namespace menu {
 
 	void KeyBindList() noexcept;
 
-	void SaveWarning(const char*[], bool&, bool) noexcept;
+	void SaveWarning(bool&, bool) noexcept;
 
 	void HandleLogoDrawing() noexcept;
 

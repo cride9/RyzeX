@@ -17,7 +17,7 @@ void menu::HandleMenuElements() noexcept {
         }
 
         if (pressedSave)
-            SaveWarning(cfgitem, pressedSave, warningMethod);
+            SaveWarning(pressedSave, warningMethod);
 
         HandleLogoDrawing();
 
@@ -49,23 +49,23 @@ void menu::Tabselection() noexcept {
     ImGui::PushFont(tabFont);
     ImGui::BeginChild("leftchild", ImVec2(100.f, ImGui::GetContentRegionAvail().y), true);
     {
-        if (ImGui::Button("Ragebot", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == RAGE_TAB))
+        if (ImGui::Button("Ragebot", ImVec2(ImGui::GetContentRegionAvail().x, 50), selectedTab == RAGE_TAB))
             selectedTab = RAGE_TAB;
 
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-        if (ImGui::Button("Antiaim", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == ANTIAIM_TAB))
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+        if (ImGui::Button("Antiaim", ImVec2(ImGui::GetContentRegionAvail().x, 50), selectedTab == ANTIAIM_TAB))
             selectedTab = ANTIAIM_TAB;
 
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-        if (ImGui::Button("Visual", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == VISUAL_TAB))
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+        if (ImGui::Button("Visual", ImVec2(ImGui::GetContentRegionAvail().x, 50), selectedTab == VISUAL_TAB))
             selectedTab = VISUAL_TAB;
 
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-        if (ImGui::Button("Misc", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == MISC_TAB))
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+        if (ImGui::Button("Misc", ImVec2(ImGui::GetContentRegionAvail().x, 50), selectedTab == MISC_TAB))
             selectedTab = MISC_TAB;
 
-        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-        if (ImGui::Button("Skins", ImVec2(ImGui::GetContentRegionMax().x, 40), selectedTab == SKIN_TAB))
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+        if (ImGui::Button("Skins", ImVec2(ImGui::GetContentRegionAvail().x, 50), selectedTab == SKIN_TAB))
             selectedTab = SKIN_TAB;
     }
     ImGui::EndChild();
@@ -366,7 +366,7 @@ void menu::Visualtab() noexcept {
             }
 
             ImGui::SetNextWindowSize( ImVec2( 300, 240 ) );
-            if ( ImGui::BeginPopupModal( "##sndManager", &bOpen, ImGuiWindowFlags_NoResize ) )
+            if ( ImGui::BeginPopupModal( "##sndManager", &bOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar ) )
             {
                 ImGui::PushStyleColor( ImGuiCol_ChildBg, ImVec4( 0.07f, 0.07f, 0.07f, 1.f ) );
                 ImGui::BeginChild( "visuals.sndManagerPopup", ImVec2( 0, 0 ), true );
@@ -429,7 +429,7 @@ void menu::Visualtab() noexcept {
             }
 
             if (m_iHitSound > 0)
-				ImGui::SliderFloat("Hitsound volume", &m_flHitSoundVolume, 0.f, 100.f);
+				ImGui::SliderFloat("Hitsound volume", &m_flHitSoundVolume, 0.f, 100.f, "%.f");
             ImGui::Checkbox("Paper mode", &cfg::model::paperMode);
             ImGui::Checkbox("Keybind list", &keyBindList);
         }
@@ -740,18 +740,42 @@ void menu::Misctab() noexcept {
 
     ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
     {
-        ImGui::Combo("configs", &cfg::configID, cfgitem, IM_ARRAYSIZE(cfgitem));
+        //ImGui::Combo("configs", &cfg::configID, cfgitem, IM_ARRAYSIZE(cfgitem));
+        
+        static std::string selectedConfig = "";
+        if (ImGui::ListBoxVector("##configs", &cfg::configID, Config2->vecConfigs, 10)) {
+            selectedConfig = Config2->vecConfigs[cfg::configID];
+        }
 
-        if (ImGui::Button("save", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+        static std::string configName = "";
+        static char buf[255]{};
+        ImGui::InputText("Config name", buf, sizeof(buf));
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
+        if (ImGui::Button("Save", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
             pressedSave = true;
             warningMethod = true;
         }
 
         ImGui::Spacing();
-        if (ImGui::Button("load", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+        if (ImGui::Button("Load", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
             pressedSave = true;
             warningMethod = false;
         }
+
+        ImGui::Spacing();
+        if (ImGui::Button("Create", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+
+            Config2->Save(buf);
+            Config2->RefreshConfigs();
+        }
+        ImGui::Spacing();
+        if (ImGui::Button("Delete", ImVec2(ImGui::GetContentRegionAvail().x, 50.f))) {
+
+            Config2->DeleteConfig(selectedConfig);
+            Config2->RefreshConfigs();
+        }
+        ImGui::PopStyleVar();
     }
     ImGui::EndChild();
 }
@@ -910,7 +934,7 @@ void menu::KeyBindList() noexcept {
     ImGui::PopFont();
 }
 
-void menu::SaveWarning(const char* item[], bool& saved, bool type) noexcept {
+void menu::SaveWarning(bool& saved, bool type) noexcept {
 
     ImGui::SetNextWindowSizeConstraints(ImVec2(180, 101), ImVec2(180, 101));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(180, 101));
@@ -925,7 +949,7 @@ void menu::SaveWarning(const char* item[], bool& saved, bool type) noexcept {
             static ImVec2 buttonSize = ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2);
             if (ImGui::Button("Yes", buttonSize)) {
                 saved = false;
-                type ? Config2->Save(item[cfg::configID]) : Config2->Load(item[cfg::configID]);
+                type ? Config2->Save(Config2->vecConfigs[cfg::configID]) : Config2->Load(Config2->vecConfigs[cfg::configID]);
             }
             ImGui::SameLine();
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2);

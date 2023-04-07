@@ -739,5 +739,52 @@ void CConfig::RefreshSounds( )
 	}
 }
 
+void CConfig::RefreshConfigs() {
+
+	vecConfigs.clear();
+
+	static TCHAR path[MAX_PATH];
+	std::string folder, file;
+
+	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
+	{
+		folder = std::string(path) + "\\ryzextr\\";
+	}
+
+	CreateDirectory(folder.c_str(), NULL);
+
+	for (const auto& it : std::filesystem::directory_iterator(folder.c_str()))
+	{
+		if (it.path().filename().extension() == ".xtr")
+		{
+			//printf( std::format("found sound file: {}" , it.path( ).filename( ).string( ) ) );
+			vecConfigs.push_back(it.path().filename().string());
+			for (int i = 0; i < 4; i++)
+				vecConfigs.back().pop_back();;
+		}
+	}
+}
+
+void CConfig::DeleteConfig(std::string ConfigName) {
+
+	static TCHAR path[MAX_PATH];
+	std::string folder, file;
+
+	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
+	{
+		folder = std::string(path) + "\\ryzextr\\";
+	}
+
+	CreateDirectory(folder.c_str(), NULL);
+
+	for (const auto& it : std::filesystem::directory_iterator(folder.c_str()))
+	{
+		if (it.path().filename() == ConfigName + ".xtr")
+		{
+			remove((folder + ConfigName + ".xtr").c_str());
+		}
+	}
+}
+
 
 CConfig* Config2 = new CConfig();

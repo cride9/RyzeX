@@ -443,6 +443,10 @@ public:
 
 	void Save(std::string ConfigName);
 	void Load(std::string ConfigName);
+	void DeleteConfig(std::string ConfigName);
+
+	std::vector<std::string> vecConfigs = {};
+	void RefreshConfigs();
 
 	std::vector<std::string> vecSoundFileNames = { };
 	std::string SoundPath = { };

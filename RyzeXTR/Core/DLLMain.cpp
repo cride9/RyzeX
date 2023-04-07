@@ -73,6 +73,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	g::entityListener.Setup();
 
 	Config2->RefreshSounds( );
+	Config2->RefreshConfigs();
 
 #if _DEBUG
 
