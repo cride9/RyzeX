@@ -16,13 +16,15 @@ public:
 
 	struct
 	{
-		CBaseEntity*					aimbotTarget;
-		matrix3x4_t*					targetMatrix;
+		CBaseEntity*					pAimbotTarget;
+		matrix3x4_t*					pTargetMatrix;
 		float							flTargetSimulation;
-		Lagcompensation::LagRecord_t*	backtrackRecord;
+		Lagcompensation::LagRecord_t*	pBacktrackRecord;
+		Vector							vecOldViewAngles;
+
 	} rageBotData ;
 
-	Vector vecOldViewAngles = Vector(0, 0, 0);
+	
 
 private:
 

@@ -14,8 +14,8 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 		if (g::pLocal != nullptr && !i::EngineClient->IsInGame()) {
 
-			ragebot.rageBotData.backtrackRecord = nullptr;
-			ragebot.rageBotData.aimbotTarget = nullptr;
+			ragebot.rageBotData.pBacktrackRecord = nullptr;
+			ragebot.rageBotData.pAimbotTarget = nullptr;
 			g::pLocal = nullptr;
 		}
 
