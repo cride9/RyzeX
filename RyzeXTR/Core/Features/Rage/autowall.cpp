@@ -18,46 +18,6 @@ float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecPoint, FireBul
 	return data.flCurrentDamage;
 }
 
-bool CAutoWall::CanHitFloatingPoint( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const Vector& vecPoint, const Vector& vecSource, float flDmg ) {
-
-	if ( !pLocal )
-		return false;
-
-	FireBulletData_t data = FireBulletData_t( vecSource, vecPoint );
-
-	Vector vecAngles = M::CalcAngle( data.vecPosition, vecPoint );
-	M::AngleVectors( vecAngles, &data.vecDirection );
-	data.vecDirection.Normalize( );
-
-	if ( !pWeapon || ( int )pWeapon == 0xFFFF )
-		return false;
-
-	data.iPenetrateCount = 1;
-	float flTraceLength = 0.0f;
-
-	CCSWeaponInfo* pWeaponData = pWeapon->GetCSWpnData( );
-
-	if ( !pWeaponData )
-		return false;
-
-	data.flCurrentDamage = ( float )pWeaponData->iDamage;
-	float flTraceLengthRemaining = pWeaponData->flRange - flTraceLength;
-
-	Vector vecEnd = data.vecPosition + data.vecDirection * flTraceLengthRemaining;
-
-	CTraceFilter filter( pLocal );
-	i::EngineTrace->TraceRay( Ray_t( data.vecPosition, vecEnd ), MASK_SHOT | CONTENTS_HITBOX, &filter, &data.enterTrace );
-	const surfacedata_t* pEnterSurfaceData = i::PhysicsProps->GetSurfaceData( data.enterTrace.surface.nSurfaceProps );
-
-	if ( data.enterTrace.flFraction == 1.f )
-		return true;
-
-	if ( HandleBulletPenetration( pLocal, pWeaponData, pEnterSurfaceData, data ) )
-		return true;
-
-	return false;
-}
-
 void CAutoWall::ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const float flWeaponArmorRatio, const float flWeaponHeadShotMultiplier, float& flDamage )
 {
 	// @ida traceattack: server.dll @ 55 8B EC 83 E4 F8 81 EC C0 00 00 00 56 8B 75 08 57 8B F9 C6 44 24 13 01

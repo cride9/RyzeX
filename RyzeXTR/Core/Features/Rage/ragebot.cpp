@@ -195,34 +195,33 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	std::sort(entityHealths.begin(), entityHealths.end(), LowestHealth);
 
 	/* Loop through saved entites */
-	for (CBaseEntity* curEnt : entityHealths) {
+	for ( CBaseEntity* curEnt : entityHealths ) {
 
 		// get animation info
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog( curEnt->EntIndex( ) );
 		if ( !pLog->pEntity )
 			continue;
 
-		if (pLog->pRecord.size() <= 2)
+		if ( pLog->pRecord.size( ) <= 2 )
 			continue;
 
-		CBaseEntity* recordEntity = pLog->pRecord.front().pEntity;
-		matrix3x4_t* recordMatrix = pLog->pRecord.front().pMatrix;
+		CBaseEntity* recordEntity = pLog->pRecord.front( ).pEntity;
+		matrix3x4_t* recordMatrix = pLog->pRecord.front( ).pMatrix;
 
 		/* Loop through the selected hitboxes while we can hit something */
-		for (int hitboxID : ConfigHitboxes(pWeapon)) {
+		for ( int hitboxID : ConfigHitboxes( pWeapon ) ) {
 
-			if (cfg::debugSwitch) {
+			if ( cfg::debugSwitch ) {
 
 				Vector vecCalcAngle;
-				M::VectorAngles(recordEntity->GetHitboxPosition(hitboxID, recordMatrix) - vecEyePosition, vecCalcAngle);
-				Vector vecDistanceBetween = ( rageBotData.vecOldViewAngles.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+				M::VectorAngles( recordEntity->GetHitboxPosition( hitboxID, recordMatrix ) - vecEyePosition, vecCalcAngle );
+				Vector vecDistanceBetween = ( rageBotData.vecOldViewAngles.NormalizeAngle( ) - vecCalcAngle.NormalizeAngle( ) );
 
-				float flFinalFov = vecDistanceBetween.Length2D();
+				float flFinalFov = vecDistanceBetween.Length2D( );
 
-				if (abs(flFinalFov) > 35)
+				if ( abs( flFinalFov ) > 35 )
 					continue;
 			}
-
 			if ( pLog->pRecord.front( ).bValid ) {
 				/* Trace player with its current bonedata */
 				if ( autowall.GetDamage( pLocal, recordEntity->GetHitboxPosition( hitboxID, recordMatrix ) ) ) {
@@ -232,32 +231,22 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 					return curEnt;
 				}
 			}
-
-			//if (pLog->pRecord.front().bValid) {
-			//	/* Trace player with its current bonedata */
-			//	if (autowall.CanHitFloatingPoint(pLocal, pWeapon, recordEntity->GetHitboxPosition(hitboxID, recordMatrix), vecEyePosition, 1.f)) {
-			//		rageBotData.flTargetSimulation = pLog->pRecord.front().flSimulationTime;
-			//		rageBotData.pBacktrackRecord = nullptr;
-
-			//		return curEnt;
-			//	}
-			//}
-			//else if (cfg::rage::m_bEnableBacktrack) {
-			//	if (Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 12)); recordScan != nullptr && recordScan->bValid) {
-			//		if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix), vecEyePosition, 1.f)) {
-			//			rageBotData.flTargetSimulation = recordScan->flSimulationTime;
-			//			rageBotData.pBacktrackRecord = recordScan;
-			//			return curEnt;
-			//		}
-			//	}
-			//}
-			//else {
-			//	if (autowall.CanHitFloatingPoint(pLocal, pWeapon, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base()), vecEyePosition, 1.f)) {
-			//		rageBotData.flTargetSimulation = curEnt->GetSimulationTime();
-			//		rageBotData.pBacktrackRecord = nullptr;
-			//		return curEnt;
-			//	}
-			//}
+			else if ( cfg::rage::m_bEnableBacktrack ) {
+				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at( min( pLog->pRecord.size( ) - 1, 12 ) ); recordScan != nullptr && recordScan->bValid ) {
+					if ( autowall.GetDamage( pLocal, curEnt->GetHitboxPosition( hitboxID, recordScan->pMatrix ) ) ) {
+						rageBotData.flTargetSimulation = recordScan->flSimulationTime;
+						rageBotData.pBacktrackRecord = recordScan;
+						return curEnt;
+					}
+				}
+			}
+			else {
+				if ( autowall.GetDamage( pLocal, curEnt->GetHitboxPosition( hitboxID, curEnt->GetCachedBoneData( ).Base( ) ) ) ) {
+					rageBotData.flTargetSimulation = curEnt->GetSimulationTime( );
+					rageBotData.pBacktrackRecord = nullptr;
+					return curEnt;
+				}
+			}
 		}
 	}
 

@@ -22,7 +22,6 @@ public:
 	// Get
 	/* returns damage at point and simulated bullet data (if given) */
 	static float GetDamage( CBaseEntity* pLocal, const Vector& vecPoint, FireBulletData_t* pDataOut = nullptr );
-	static bool CanHitFloatingPoint( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, const Vector& vecPoint, const Vector& vecSource, float flDmg );
 	/* calculates damage factor */
 	static void ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const float flWeaponArmorRatio, const float flWeaponHeadShotMultiplier, float& flDamage );
 	/* simulates fire bullet to penetrate up to 4 walls, return true when hitting player */
