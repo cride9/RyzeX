@@ -209,6 +209,19 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 
 		/* Loop through the selected hitboxes while we can hit something */
 		for (int hitboxID : ConfigHitboxes(pWeapon)) {
+
+			if (cfg::debugSwitch) {
+
+				Vector vecCalcAngle;
+				M::VectorAngles(recordEntity->GetHitboxPosition(hitboxID, recordMatrix) - vecEyePosition, vecCalcAngle);
+				Vector vecDistanceBetween = (vecOldViewAngles.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+
+				float flFinalFov = vecDistanceBetween.Length2D();
+
+				if (abs(flFinalFov) > 35)
+					continue;
+			}
+
 			if (pLog->pRecord.front().bValid) {
 				/* Trace player with its current bonedata */
 				if (autowall.CanHitFloatingPoint(pLocal, pWeapon, recordEntity->GetHitboxPosition(hitboxID, recordMatrix), vecEyePosition, 1.f)) {

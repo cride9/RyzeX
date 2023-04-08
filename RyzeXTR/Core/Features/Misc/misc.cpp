@@ -1007,16 +1007,19 @@ void misc::BulletTracer(IGameEvent* pEvent) {
 
 void misc::FixScopeSens() {
 
-	if (!g::pLocal || !g::pLocal->GetWeapon())
-		return;
-
 	// zoom_sensitivity_ratio_mouse 
 	static CConVar* zoom_sensitivity_ratio_mouse = i::ConVar->FindVar("zoom_sensitivity_ratio_mouse");
 
 	static float backup = zoom_sensitivity_ratio_mouse->GetFloat();
 
-	if (!g::pLocal->IsScoped() || i::EngineClient->IsInGame())
+	if (!g::pLocal || !g::pLocal->GetWeapon()) {
 		zoom_sensitivity_ratio_mouse->SetValue(backup);
+	}
+
+	if (!g::pLocal->IsScoped() || i::EngineClient->IsInGame()) {
+		zoom_sensitivity_ratio_mouse->SetValue(backup);
+		return;
+	}
 
 	if (zoom_sensitivity_ratio_mouse->GetFloat() != 0 && backup != zoom_sensitivity_ratio_mouse->GetFloat())
 		backup = zoom_sensitivity_ratio_mouse->GetFloat();
@@ -1030,6 +1033,10 @@ void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		return;
 
 	if (pLocal->IsGrenade(pLocal->GetWeapon()))
+		return;
+
+	if (pLocal->GetWeapon()->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_C4 ||
+		pLocal->GetWeapon()->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_REVOLVER)
 		return;
 
 	if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() > TICKS_TO_TIME(pLocal->GetTickBase())))

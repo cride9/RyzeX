@@ -900,6 +900,7 @@ public:
 	float					GetSequenceCycleRate(CStudioHdr*, int);
 	float					GetSequenceMoveDist(CStudioHdr*, int);
 	float					GetLayerSequenceCycleRate(CAnimationLayer*, int);
+	bool					InitializeAsClientEntity(const char* pszModelName, bool bRenderWithViewModels);
 
 	/*    
 	N_ADD_VARIABLE(int, GetSequence, "CBaseAnimating->m_nSequence");

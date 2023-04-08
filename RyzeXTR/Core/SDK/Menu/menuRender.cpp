@@ -690,6 +690,7 @@ void menu::Misctab() noexcept {
         ImGui::Checkbox("Bunny hop", &bunnyhop);
         ImGui::Checkbox("Auto strafe", &autoStrafe);
         ImGui::Checkbox("Fast stop", &faststop);
+        ImGui::Checkbox("Infinite duck", &infiniteDuck);
 
 #if _DEBUG
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));

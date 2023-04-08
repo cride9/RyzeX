@@ -22,6 +22,8 @@ public:
 		Lagcompensation::LagRecord_t*	backtrackRecord;
 	} rageBotData ;
 
+	Vector vecOldViewAngles = Vector(0, 0, 0);
+
 private:
 
 	std::vector<Vector>	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, int, Vector);

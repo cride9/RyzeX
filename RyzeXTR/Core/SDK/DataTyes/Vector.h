@@ -247,6 +247,20 @@ public:
 		return *this;
 	}
 
+	Vector NormalizeAngle() {
+
+		while (this->x < -180.0f) this->x += 360.0f;
+		while (this->x > 180.0f) this->x -= 360.0f;
+
+		while (this->y < -180.0f) this->y += 360.0f;
+		while (this->y > 180.0f) this->y -= 360.0f;
+
+		while (this->z < -180.0f) this->z += 360.0f;
+		while (this->z > 180.0f) this->z -= 360.0f;
+
+		return *this;
+	}
+
 	Vector VectorNormalize() {
 
 		Vector l = *this;

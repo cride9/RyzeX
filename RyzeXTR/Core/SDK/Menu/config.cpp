@@ -584,6 +584,7 @@ void CConfig::Setup() {
 		SetupValue(bunnyhop, false, "misc", "bunnyhop");
 		SetupValue(autoStrafe, false, "misc", "autoStrafe");
 		SetupValue(faststop, false, "misc", "faststop");
+		SetupValue(infiniteDuck, false, "misc", "infiniteDuck");
 
 		SetupValue(nightmode, false, "misc", "nightmode");
 		SetupValue(nightmodeColor[0], 1.f, "visual", "nightmodeColorR");

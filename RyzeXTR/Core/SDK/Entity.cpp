@@ -268,6 +268,15 @@ void CBaseEntity::PostThink()
 	//i::MDLCache->EndLock();
 }
 
+bool CBaseEntity::InitializeAsClientEntity(const char* pszModelName, bool bRenderWithViewModels) {
+
+	using InitializeAsClientEntityFn = bool(__thiscall*)(const char*, bool);
+	static auto oInitializeAsClientEntity = reinterpret_cast<InitializeAsClientEntityFn>(util::FindSignature("client.dll", "55 8B EC 8B 55 08 56 57 8B F9 85 D2 74 1B"));
+	assert(oInitializeAsClientEntity != nullptr);
+
+	return oInitializeAsClientEntity(pszModelName, bRenderWithViewModels);
+}
+
 bool CBaseEntity::IsEnemy(CBaseEntity* pEntity)
 {
 	// check is dangerzone
