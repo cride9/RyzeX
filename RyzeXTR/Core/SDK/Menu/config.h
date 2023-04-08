@@ -350,6 +350,7 @@ namespace cfg {
 		inline bool bunnyhop = false;
 		inline bool autoStrafe = false;
 		inline bool faststop = false;
+		inline bool infiniteDuck = false;
 
 		inline bool m_bDrawServerHitbox = false;
 		inline bool m_bDrawServerHitboxOnAllEntities = false;
