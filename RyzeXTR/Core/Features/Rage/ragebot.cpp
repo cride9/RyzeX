@@ -195,6 +195,8 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	/* Sort lowest health entities */
 	std::sort(entityHealths.begin(), entityHealths.end(), LowestHealth);
 
+	const auto flMinDamage = ConfigMinimumDamage(pWeapon) - 10;
+
 	/* Loop through saved entites */
 	for ( CBaseEntity* curEnt : entityHealths ) {
 
@@ -224,26 +226,26 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 					continue;
 			}
 
-			if ( pLog->pRecord.front( ).bValid ) {
+			if ( pLog->pRecord.front( ).bValid ) { // valid record
 				/* Trace player with its current bonedata */
-				if ( autowall.GetDamage( pLocal, recordEntity->GetHitboxPosition( hitboxID, recordMatrix ) ) ) {
+				if (float flCurrentDamage = autowall.GetDamage(pLocal, recordEntity->GetHitboxPosition(hitboxID, recordMatrix)); flCurrentDamage >= flMinDamage - 10 || flCurrentDamage > pLog->pRecord.front().pEntity->GetHealth() + 10) {
 					rageBotData.flTargetSimulation = pLog->pRecord.front( ).flSimulationTime;
 					rageBotData.pBacktrackRecord = nullptr;
 
 					return curEnt;
 				}
 			}
-			else if ( cfg::rage::m_bEnableBacktrack ) {
+			else if ( cfg::rage::m_bEnableBacktrack ) { // valid backtrack record
 				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at( min( pLog->pRecord.size( ) - 1, 12 ) ); recordScan != nullptr && recordScan->bValid ) {
-					if ( autowall.GetDamage( pLocal, curEnt->GetHitboxPosition( hitboxID, recordScan->pMatrix ) ) ) {
+					if (float flCurrentDamage = autowall.GetDamage(pLocal, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix)); flCurrentDamage >= flMinDamage - 10 || flCurrentDamage > pLog->pRecord.front().pEntity->GetHealth() + 10) {
 						rageBotData.flTargetSimulation = recordScan->flSimulationTime;
 						rageBotData.pBacktrackRecord = recordScan;
 						return curEnt;
 					}
 				}
 			}
-			else {
-				if ( autowall.GetDamage( pLocal, curEnt->GetHitboxPosition( hitboxID, curEnt->GetCachedBoneData( ).Base( ) ) ) ) {
+			else { // breaking lagcomp nigger
+				if (float flCurrentDamage = autowall.GetDamage(pLocal, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base())); flCurrentDamage >= flMinDamage || flCurrentDamage > pLog->pRecord.front().pEntity->GetHealth() + 10) {
 					rageBotData.flTargetSimulation = curEnt->GetSimulationTime( );
 					rageBotData.pBacktrackRecord = nullptr;
 					return curEnt;
