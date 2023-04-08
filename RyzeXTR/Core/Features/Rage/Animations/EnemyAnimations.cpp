@@ -70,7 +70,7 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 		auto iUser = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) );
 		auto iAttacker = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "attacker" ) );
 
-		if ( iAttacker == i::EngineClient->GetLocalPlayer( ) && iUser == i::EngineClient->GetPlayerForUserID( ragebot.rageBotData.aimbotTarget->EntIndex( ) ) ) {
+		if ( ragebot.rageBotData.aimbotTarget && iAttacker == i::EngineClient->GetLocalPlayer( ) && iUser == i::EngineClient->GetPlayerForUserID( ragebot.rageBotData.aimbotTarget->EntIndex( ) ) ) {
 
 			didHurt = true;
 		}
@@ -861,6 +861,10 @@ void Animations::UpdateEnemyAnimations( CBaseEntity* pEntity, Lagcompensation::L
 	// max choked value.
 	for ( int i = 0; i < pRecord->iChoked; ++i )
 	{
+		// fuck fakeflick, just tap the dog
+		if (pRecord->vecEyeAngles.y != pPrevious->vecEyeAngles.y && cfg::debugSwitch )
+			pRecord->vecEyeAngles.z = M::NormalizeAngle(pRecord->vecEyeAngles.y) - M::NormalizeAngle(pPrevious->vecEyeAngles.y);
+
 		// predicted simulation time.
 		const float flSimulationTime = pPrevious->flSimulationTime + TICKS_TO_TIME( i + 1 );
 		const float flLerp = 1.f - ( pRecord->flSimulationTime - flSimulationTime ) / ( pRecord->flSimulationTime - pPrevious->flSimulationTime );

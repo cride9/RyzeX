@@ -63,7 +63,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 			exploits::bShooting = true;
 
 			if (cfg::rage::autostop && cfg::rage::betweenshots)
-				AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
+				AutoStop(pCmd, .33f * ( pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] )/*pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f*/);
 
 			if (CheckShootingCondition(pCmd, pLocal)) {
 
@@ -74,12 +74,6 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 					static CConVar* recoilScale = i::ConVar->FindVar("weapon_recoil_scale");
 					pCmd->angViewPoint = ( shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
-					pCmd->iButtons |= IN_ATTACK;
-
-					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
-						misc::bRetreat = true;
-
-					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
 					
 					// calculate lerp remainder.
 					float flLerpRemainder = std::fmodf( lagcomp.GetClientInterpAmount( ), i::GlobalVars->flIntervalPerTick );
@@ -90,12 +84,20 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 					// make sure to aim at un-interpolated data.
 					// do this so backtrack selects the exact record.
-					if ( rageBotData.backtrackRecord && !rageBotData.backtrackRecord->bBreakingLagcompensation )
+					//if ( rageBotData.backtrackRecord && !rageBotData.backtrackRecord->bBreakingLagcompensation )
 						pCmd->iTickCount = lagcomp.FixTickCount( flSimulationTime );
+					
+					pCmd->iButtons |= IN_ATTACK;
+
+					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
+						misc::bRetreat = true;
+
+					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
+				
 				}
 				else {
 					if (cfg::rage::autostop && (cfg::rage::betweenshots ? true : CheckShootingCondition(pCmd, pLocal)))
-						AutoStop(pCmd, pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f);
+						AutoStop(pCmd, .33f * ( pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] ) /*pWeapon->GetCSWpnData()->flMaxSpeed[0] * 0.10f*/);
 
 					if (ConfigAutoScope(pWeapon) && IsAutoScopeable(pWeapon->GetItemDefinitionIndex()) && !pLocal->IsScoped()) //only scope if we have a scoped weapon and we arent scoped
 						pCmd->iButtons |= IN_ZOOM;
@@ -342,6 +344,10 @@ void CRageBot::AutoStop(CUserCmd* pCmd, float IdealSpeed) {
 	// Fast stop source from obelus
 
 	if (!(g::pLocal->GetFlags() & FL_ONGROUND) && !cfg::rage::m_bAutoStopInAir)
+		return;
+
+	// server is currently in nospread, no need to autostop
+	if ( i::ConVar->FindVar( "weapon_accuracy_nospread" )->GetInt( ) >= 1 )
 		return;
 
 	pCmd->iButtons &= ~IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT;

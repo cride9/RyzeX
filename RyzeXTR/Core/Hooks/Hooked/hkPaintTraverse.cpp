@@ -7,7 +7,6 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	static auto original = detour::paintTraverse.GetOriginal<decltype(&h::hkPaintTraverse)>();
 
-	// need menu element
 	if (cfg::misc::removals[3] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
 

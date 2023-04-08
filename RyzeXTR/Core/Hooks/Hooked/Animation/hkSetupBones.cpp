@@ -15,7 +15,7 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 	const auto pEnt = reinterpret_cast<CBaseEntity*>((uintptr_t)ecx - 4);
 
 	bool bResult = true;
-	if (pEnt != g::pLocal || !pEnt || !pEnt->IsAlive())
+	if ( pEnt != g::pLocal || !pEnt || !pEnt->IsAlive())
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
 	if (g::bSettingUpBones[pEnt->EntIndex()])
@@ -24,12 +24,12 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 		if (pEnt == g::pLocal) {
 			bResult = g_LocalAnimations->CopyCachedMatrix(matrix, maxbones);
 		}
-		else if (auto lagRecord = lagcomp.GetLog(pEnt->EntIndex()); lagRecord.pEntity != nullptr) {
+		/*else if (auto lagRecord = lagcomp.GetLog(pEnt->EntIndex()); lagRecord.pEntity != nullptr) {
 			if (!lagRecord.pRecord.empty()) {
 				memcpy(matrix, lagRecord.pRecord.front().pMatrix, 128 * sizeof(matrix3x4_t));
 				bResult = true;
 			}
-		}
+		}*/
 	}
 
 	return bResult;

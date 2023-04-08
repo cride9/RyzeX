@@ -68,7 +68,7 @@ namespace i {
 	inline CInput* Input;
 	inline CClientModeShared* ClientModeShared;
 	inline CGlobalVarsBase* GlobalVars;
-	
+
 	template <typename T>
 	T* GetInterface(const char* szLib, const char* szName) {
 

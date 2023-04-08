@@ -3,7 +3,7 @@
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 
-static void CWriteUsercmd(void* buf, CUserCmd* Cin, CUserCmd* Cout)
+static void WriteUsercmd(void* buf, CUserCmd* Cin, CUserCmd* Cout)
 {
 	using WriteUserCmd_t = void(__fastcall*)(void*, CUserCmd*, CUserCmd*);
 	static auto Fn = (WriteUserCmd_t)util::FindSignature("client.dll", "55 8B EC 83 E4 F8 51 53 56 8B D9");
@@ -67,7 +67,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 
 	for (int i = new_commands; i <= total_new_commands; i++)
 	{
-		CWriteUsercmd(buf, &to_cmd, &from_cmd);
+		WriteUsercmd(buf, &to_cmd, &from_cmd);
 		memcpy(&from_cmd, &to_cmd, sizeof(CUserCmd));
 		to_cmd.iCommandNumber++;
 		to_cmd.iTickCount++;

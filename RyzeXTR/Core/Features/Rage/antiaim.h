@@ -26,12 +26,26 @@ enum EDESYNC : int {
 
 namespace antiaim {
 
-	inline float flNextBodyUpdate = 0.f;
-	inline bool bBreakLowerBody = false;
+	inline bool needMicromovement = false;
 
 	inline float desyncValue = 0.f;
 	void AntiAim(CUserCmd*, bool&);
+	
+	enum LBYUpdateType : int
+	{
+		LBYUPDATE_None,
+		LBYUPDATE_Standing,
+		LBYUPDATE_Moving
+	};
+	inline float NextLBYUpdateTime = -1.f;
+	inline float m_flNextLBYUpdate = -1.f, m_flLastLBYChange = -1.f;
+	// update count
+	inline int iCountUpdates{};
+	bool NextLBYUpdate( CUserCmd* cmd );
+	void ForceResync( CUserCmd* m_pCmd, int m_iLbyChange );
+	void Update( CUserCmd* m_pCmd );
+	
 	void FreeStanding(CUserCmd*, Vector&);
 	int ClosestToLocal();
-	void LBYBreaker();
+
 }

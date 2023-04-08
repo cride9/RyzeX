@@ -87,6 +87,8 @@ namespace cfg {
 		inline float desyncvalue = 58.f;
 		inline int desyncinverter = 0;
 
+		inline bool m_bSwayDesync = false;
+
 		inline int modifier = 0;
 		inline int desyncModifier = 0;
 		inline int desyncModifierValue = 0;

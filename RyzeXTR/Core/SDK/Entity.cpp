@@ -466,7 +466,7 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 		target->UpdateIKLocks( currentTime );
 		IK_context->UpdateTargets( pos, q, pBoneToWorldOut, boneComputed );
 		target->CalculateIKLocks( currentTime );
-		//IK_context->SolveDependencies( pos, q, pBoneToWorldOut, boneComputed);
+		IK_context->SolveDependencies( pos, q, pBoneToWorldOut, boneComputed);
 	}
 
 	buildTransformationOriginal(target, 0, hdr, pos, q, &baseMatrix, boneMask, boneComputed);

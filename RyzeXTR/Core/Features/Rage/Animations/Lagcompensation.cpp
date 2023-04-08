@@ -305,7 +305,8 @@ void Lagcompensation::FrameStageNotify() {
 			pPlayerLogs[ i ].pEntity->SetAnimationLayers( pBackupRecord.pLayers );
 
 			// create bone matrix for this pRecord.
-			SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING, 4);
+			//SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING, 4);
+			pPlayerLogs[ i ].pEntity->SetupBonesFix( pPlayerLogs[ i ].pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
 
 			// restore correctly synced values.
 			pBackupRecord.Restore( pPlayerLogs[ i ].pEntity );

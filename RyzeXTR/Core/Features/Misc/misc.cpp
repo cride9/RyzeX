@@ -6,6 +6,8 @@
 #include "../../SDK/WavParser.h"
 #pragma comment(lib, "winmm.lib")
 
+
+
 #define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
@@ -449,7 +451,7 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 			// play the sound.
 			if ( m_pParsedHitsound ) {
 
-				PlaySoundA( cfg::misc::m_szWavPath.c_str( )/*LPCSTR( m_pParsedHitsound )*/, NULL, SND_FILENAME | SND_ASYNC );
+				PlaySoundA( LPCSTR( m_pParsedHitsound ), NULL, SND_MEMORY | SND_ASYNC );
 			}
 		}
 	}

@@ -2,6 +2,7 @@
 #include "../../Interface/Classes/CConvar.h"
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Rage/exploits.h"
+#include "../../Interface/interfaces.h"
 
 //https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/engine/cl_main.cpp#L2736
 void __cdecl h::hkClMove(float flSamples, bool bFinalTick) {

@@ -13,8 +13,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	static float oldValue = 0;
 
-	bBreakLowerBody = false;
-
 	// sanity checks
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::enabled) {
 
@@ -46,7 +44,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	g::bAntiaimEnabled = true;
 
-	LBYBreaker( );
+	// Update lower body yaw
+	Update( pCmd );
 
 	// uneven, even fakelag jitter stuff
 	evenInvert = !evenInvert;
@@ -89,7 +88,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	else if (cfg::antiaim::modifier == 2)
 		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue, cfg::antiaim::jittervalue);
 
-	static bool needMicromovement = false;
+	if ( exploits::bCharged || exploits::bIsRecharging )
+		needMicromovement = true;
+	else
+		needMicromovement = false;
+
 	// pure cancer 4line antiaim no shit why do ppl hit my head 100%
 	switch (cfg::antiaim::desynctype) {
 
@@ -102,12 +105,23 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		{
 			needMicromovement = false;
 			// time to break the lowerbody.
-			if ( bBreakLowerBody )
+			if ( NextLBYUpdate( pCmd ) )
 			{
 				float m_flLowerbodyYaw = -120.f;
 
-				if ( !GetKeyState( cfg::antiaim::desyncinverter ) )
+				if ( GetKeyState( cfg::antiaim::desyncinverter ) )
 					m_flLowerbodyYaw *= -1.f;
+
+				if ( cfg::antiaim::m_bSwayDesync )
+				{
+					// lby amount.
+					switch ( iCountUpdates % 2 )
+					{
+					case 0: m_flLowerbodyYaw = 120.f; break;
+					case 1: m_flLowerbodyYaw = -120.f; break;
+					default: m_flLowerbodyYaw = 120.f; break;
+					}
+				}
 
 				// set lby angle.
 				pCmd->angViewPoint.y += m_flLowerbodyYaw;
@@ -138,30 +152,110 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	else if (cfg::antiaim::desyncModifier == 2)
 		desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
 
-	if ( !bSendPacket && !bBreakLowerBody ) {
+	if ( !bSendPacket && cfg::antiaim::desynctype != EXTENDED ) {
 
 		pCmd->angViewPoint.y += M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue);
 		oldValue = desyncValue;
 	}
 }
 
-void antiaim::LBYBreaker() {
+float GetCorrectedCurrentTime( CUserCmd* cmd )
+{
+	const INetChannelInfo* v1 = static_cast< INetChannelInfo* > ( i::EngineClient->GetNetChannelInfo( ) );
 
-	// use flCurrentTime as flCurrent time is being fixed in enginepred.
-	// flCurrentTime = TICKS_TO_TIME(TickBase)
-	float flServerTime = i::GlobalVars->flCurrentTime;
+	const float v3 = v1->GetAvgLatency( INetChannelInfo::LOCALPLAYER );
+	const float v4 = v1->GetAvgLatency( INetChannelInfo::GENERIC );
+	int corrected_tickcount = cmd->iTickCount;
+	return v3 + v4 + TICKS_TO_TIME( 1 ) + TICKS_TO_TIME( corrected_tickcount );
+}
 
-	if (g::pLocal->GetVelocity().Length2D() > 0.1f || fabsf(g::pLocal->GetVelocity().z) > 100.0f) {
+bool antiaim::NextLBYUpdate( CUserCmd* cmd )
+{
+	if ( !( g::pLocal->GetFlags( ) & FL_ONGROUND ) )
+		return false;
 
-		flNextBodyUpdate = flServerTime + 0.22f;
-		bBreakLowerBody = false;
+	const float CurrentTime = GetCorrectedCurrentTime( cmd );
+
+	return m_flNextLBYUpdate - CurrentTime <= i::GlobalVars->flIntervalPerTick;
+}
+
+void antiaim::ForceResync( CUserCmd* m_pCmd, int m_iLbyChange )
+{
+	if ( !g::pLocal )
+		return;
+
+	CAnimState* m_pAnimationState = g::pLocal->AnimState( );
+	if ( !m_pAnimationState )
+		return;
+
+	bool m_bCurrentlyInducedMovement = m_pCmd->flForwardMove >= 1.5f || m_pCmd->flForwardMove <= -1.5f || m_pCmd->flSideMove >= 1.5f || m_pCmd->flSideMove <= -1.5f;
+
+	if ( m_pAnimationState->flVelocityLenght2D > 0.1f || std::fabsf( m_pAnimationState->flJumpFallVelocity ) > 100.f )
+	{
+		NextLBYUpdateTime = m_iLbyChange + 0.22f;
 	}
-
-	if (flNextBodyUpdate < flServerTime) {
-
-		flNextBodyUpdate = flServerTime + 1.1f;
-		bBreakLowerBody = true;
+	else
+	{
+		NextLBYUpdateTime = m_iLbyChange + 1.1f;
 	}
+}
+
+static bool m_bOutOfSync;
+static int m_nLastTickState;
+static int m_nJustUpdated;
+static float m_flLastTickLBY;
+
+void antiaim::Update( CUserCmd* m_pCmd )
+{
+	float m_flCurrentTime = GetCorrectedCurrentTime( m_pCmd );
+	m_nLastTickState = m_nJustUpdated;
+	m_nJustUpdated = LBYUpdateType::LBYUPDATE_None;
+
+	if ( !g::pLocal )
+		return;
+
+	CAnimState* m_pAnimationState = g::pLocal->AnimState( );
+	if ( !m_pAnimationState )
+		return;
+
+	bool m_bCurrentlyInducedMovement = m_pCmd->flForwardMove >= 1.5f || m_pCmd->flForwardMove <= -1.5f || m_pCmd->flSideMove >= 1.5f || m_pCmd->flSideMove <= -1.5f;
+
+	m_bOutOfSync = false;
+
+	if ( m_pAnimationState->flVelocityLenght2D > 0.1f || std::fabsf( m_pAnimationState->flJumpFallVelocity ) || m_bCurrentlyInducedMovement )
+	{
+		m_nJustUpdated = LBYUpdateType::LBYUPDATE_Moving;
+		m_flNextLBYUpdate = m_flCurrentTime + 0.22f; // updated becouse movement
+
+		// reset counter
+		iCountUpdates = NULL;
+	}
+	else
+	{
+		if ( g::pLocal->GetLowerBodyYaw( ) != m_flLastTickLBY )
+		{
+			m_flLastLBYChange = m_flCurrentTime - i::GlobalVars->flIntervalPerTick; // @SetupVelocity hititn p
+			m_bOutOfSync = m_nLastTickState != LBYUpdateType::LBYUPDATE_Standing;
+		}
+		if ( m_flCurrentTime > m_flNextLBYUpdate )
+		{
+			float m_flGoalFeetYaw = M::NormalizeYaw( m_pAnimationState->flGoalFeetYaw );
+			float m_flEyeYaw = M::NormalizeYaw( m_pCmd->angViewPoint.y );
+			float m_flGoalFeetYawToEyeYawDelta = std::fabsf( m_flGoalFeetYaw - m_flEyeYaw );
+
+			if ( m_flGoalFeetYawToEyeYawDelta > 35.f )
+			{
+				m_nJustUpdated = LBYUpdateType::LBYUPDATE_Standing; // server will update it so np
+				m_flNextLBYUpdate = m_flCurrentTime + 1.1f;
+
+				// we updated so let's increment our countr
+				iCountUpdates++;
+			}
+		}
+	}
+	m_flLastTickLBY = g::pLocal->GetLowerBodyYaw( );
+
+	ForceResync( m_pCmd, m_flLastLBYChange );
 }
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 

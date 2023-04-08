@@ -201,20 +201,20 @@ class IClientUnknown;
 class ICollideable
 {
 public:
-	virtual IHandleEntity* GetEntityHandle() = 0;
-	virtual Vector& OBBMins() const = 0;
-	virtual Vector& OBBMaxs() const = 0;
+	virtual IHandleEntity*			GetEntityHandle() = 0;
+	virtual Vector&					OBBMins() const = 0;
+	virtual Vector&					OBBMaxs() const = 0;
 	virtual void					WorldSpaceTriggerBounds(Vector* pVecWorldMins, Vector* pVecWorldMaxs) const = 0;
 	virtual bool					TestCollision(const Ray_t& ray, unsigned int fContentsMask, Trace_t& tr) = 0;
 	virtual bool					TestHitboxes(const Ray_t& ray, unsigned int fContentsMask, Trace_t& tr) = 0;
 	virtual int						GetCollisionModelIndex() = 0;
-	virtual const Model_t* GetCollisionModel() = 0;
-	virtual Vector& GetCollisionOrigin() const = 0;
-	virtual Vector& GetCollisionAngles() const = 0;
-	virtual const matrix3x4_t& CollisionToWorldTransform() const = 0;
-	virtual int				GetSolid() const = 0;
+	virtual const Model_t*			GetCollisionModel() = 0;
+	virtual Vector&					GetCollisionOrigin() const = 0;
+	virtual Vector&					GetCollisionAngles() const = 0;
+	virtual const matrix3x4_t&		CollisionToWorldTransform() const = 0;
+	virtual int						GetSolid() const = 0;
 	virtual int						GetSolidFlags() const = 0;
-	virtual IClientUnknown* GetIClientUnknown() = 0;
+	virtual IClientUnknown*			GetIClientUnknown() = 0;
 	virtual int						GetCollisionGroup() const = 0;
 
 	/*
@@ -224,8 +224,8 @@ public:
 	 */
 	virtual void					WorldSpaceSurroundingBounds(Vector* pVecMins, Vector* pVecMaxs) = 0;
 	virtual unsigned int			GetRequiredTriggerFlags() const = 0;
-	virtual const matrix3x4_t* GetRootParentToWorldTransform() const = 0;
-	virtual void* GetVPhysicsObject() const = 0;
+	virtual const matrix3x4_t*		GetRootParentToWorldTransform() const = 0;
+	virtual void*					GetVPhysicsObject() const = 0;
 };
 
 class IClientAlphaProperty
@@ -270,15 +270,15 @@ struct RenderableInstance_t
 class IClientRenderable
 {
 public:
-	virtual IClientUnknown* GetIClientUnknown() = 0;
-	virtual Vector& GetRenderOrigin() = 0;
-	virtual Vector& GetRenderAngles() = 0;
+	virtual IClientUnknown*			GetIClientUnknown() = 0;
+	virtual Vector&					GetRenderOrigin() = 0;
+	virtual Vector&					GetRenderAngles() = 0;
 	virtual bool					ShouldDraw() = 0;
 	virtual int						GetRenderFlags() = 0;
 	virtual bool					IsTransparent() = 0;
 	virtual ClientShadowHandle_t	GetShadowHandle() const = 0;
-	virtual ClientRenderHandle_t& RenderHandle() = 0;
-	virtual const Model_t* GetModel() const = 0;
+	virtual ClientRenderHandle_t&	RenderHandle() = 0;
+	virtual const Model_t*			GetModel() const = 0;
 	virtual int						DrawModel(int nFlags, const RenderableInstance_t& uInstance) = 0;
 	virtual int						GetBody() = 0;
 	virtual void					GetColorModulation(float* pColor) = 0;
@@ -286,7 +286,7 @@ public:
 	virtual bool					SetupBones(matrix3x4_t* matBoneToWorldOut, int nMaxBones, int fBoneMask, float flCurrentTime) = 0;
 	virtual void					SetupWeights(const matrix3x4_t* matBoneToWorld, int nFlexWeightCount, float* flFlexWeights, float* flFlexDelayedWeights) = 0;
 	virtual void					DoAnimationEvents() = 0;
-	virtual void* GetPVSNotifyInterface() = 0;
+	virtual void*					GetPVSNotifyInterface() = 0;
 	virtual void					GetRenderBounds(Vector& vecMins, Vector& vecMaxs) = 0;
 	virtual void					GetRenderBoundsWorldspace(Vector& vecMins, Vector& vecMaxs) = 0;
 	virtual void					GetShadowRenderBounds(Vector& vecMins, Vector& vecMaxs, int iShadowType) = 0;
@@ -295,19 +295,19 @@ public:
 	virtual bool					GetShadowCastDirection(Vector* vecDirection, int iShadowType) const = 0;
 	virtual bool					IsShadowDirty() = 0;
 	virtual void					MarkShadowDirty(bool bDirty) = 0;
-	virtual IClientRenderable* GetShadowParent() = 0;
-	virtual IClientRenderable* FirstShadowChild() = 0;
-	virtual IClientRenderable* NextShadowPeer() = 0;
+	virtual IClientRenderable*		GetShadowParent() = 0;
+	virtual IClientRenderable*		FirstShadowChild() = 0;
+	virtual IClientRenderable*		NextShadowPeer() = 0;
 	virtual int						ShadowCastType() = 0;
 	virtual void					unused2() {}
 	virtual void					CreateModelInstance() = 0;
 	virtual ModelInstanceHandle_t	GetModelInstance() = 0;
-	virtual const matrix3x4_t& RenderableToWorldTransform() = 0;
+	virtual const matrix3x4_t&		RenderableToWorldTransform() = 0;
 	virtual int						LookupAttachment(const char* pAttachmentName) = 0;
 	virtual bool					GetAttachment(int nIndex, Vector& vecOrigin, Vector& angView) = 0;
 	virtual bool					GetAttachment(int nIndex, matrix3x4_t& matAttachment) = 0;
 	virtual bool					ComputeLightingOrigin(int nAttachmentIndex, Vector vecModelLightingCenter, const matrix3x4_t& matrix, Vector& vecTransformedLightingCenter) = 0;
-	virtual float* GetRenderClipPlane() = 0;
+	virtual float*					GetRenderClipPlane() = 0;
 	virtual int						GetSkin() = 0;
 	virtual void					OnThreadedDrawSetup() = 0;
 	virtual bool					UsesFlexDelayedWeights() = 0;
@@ -315,7 +315,7 @@ public:
 	virtual bool					ShouldDrawForSplitScreenUser(int nSlot) = 0;
 	virtual std::uint8_t			OverrideAlphaModulation(std::uint8_t uAlpha) = 0;
 	virtual std::uint8_t			OverrideShadowAlphaModulation(std::uint8_t uAlpha) = 0;
-	virtual void* GetClientModelRenderable() = 0;
+	virtual void*					GetClientModelRenderable() = 0;
 };
 
 enum EDataUpdateType : int
@@ -395,7 +395,6 @@ public:
 		return util::CallVFunc<DataMap_t*>(this, 17);
 	}
 };
-
 
 // let's make macros hehe
 #define ADD_OFFSET(name, type, offset) type& name() { \

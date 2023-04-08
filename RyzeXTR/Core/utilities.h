@@ -94,10 +94,10 @@ namespace util {
 		return 0u;
 	}
 
-	__forceinline BYTE* ReadWavFileIntoMemory( std::string fname ) {
+	inline BYTE* ReadWavFileIntoMemory( std::string fname ) {
 		BYTE* pb = nullptr;
 		std::ifstream f( fname, std::ios::binary );
-	
+
 		f.seekg( 0, std::ios::end );
 		size_t lim = f.tellg( );
 

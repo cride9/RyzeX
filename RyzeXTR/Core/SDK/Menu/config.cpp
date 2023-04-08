@@ -109,6 +109,8 @@ void CConfig::Setup() {
 		SetupValue(desyncvalue, 0, "antiaim", "desyncvalue");
 		SetupValue(desyncinverter, 0, "antiaim", "desyncinverter");
 
+		SetupValue( m_bSwayDesync, false, "antiaim", "swaylby" );
+		
 		SetupValue(enableFakelag, false, "antiaim", "fakelagswitch");
 		SetupValue(fakelag, 0, "antiaim", "fakelag");
 		SetupValue(fakelagmin, 0, "antiaim", "fakelagmin");
