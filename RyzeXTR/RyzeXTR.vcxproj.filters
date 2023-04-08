@@ -76,6 +76,9 @@
     <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
     <ClCompile Include="Core\SDK\WavParser.cpp" />
+    <ClCompile Include="Core\Features\Changers\skinchanger.cpp" />
+    <ClCompile Include="Core\Features\Changers\agentchanger.cpp" />
+    <ClCompile Include="Core\Features\Changers\glovechanger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -163,5 +166,8 @@
     <ClInclude Include="Core\Interface\Interfaces\IEngineSoundClient.h" />
     <ClInclude Include="Core\Interface\Interfaces\IViewRenderBeams.h" />
     <ClInclude Include="Core\SDK\WavParser.h" />
+    <ClInclude Include="Core\Features\Changers\skinchanger.h" />
+    <ClInclude Include="Core\Features\Changers\agentchanger.h" />
+    <ClInclude Include="Core\Features\Changers\glovechanger.h" />
   </ItemGroup>
 </Project>

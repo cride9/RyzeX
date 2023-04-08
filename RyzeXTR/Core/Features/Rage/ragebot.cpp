@@ -84,8 +84,9 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 					// make sure to aim at un-interpolated data.
 					// do this so backtrack selects the exact record.
-					//if ( rageBotData.backtrackRecord && !rageBotData.backtrackRecord->bBreakingLagcompensation )
+					//if ( rageBotData.pBacktrackRecord && !rageBotData.pBacktrackRecord->bBreakingLagcompensation )
 					pCmd->iTickCount = lagcomp.FixTickCount( flSimulationTime );
+					
 					pCmd->iButtons |= IN_ATTACK;
 
 					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
@@ -222,6 +223,7 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 				if ( abs( flFinalFov ) > 35 )
 					continue;
 			}
+
 			if ( pLog->pRecord.front( ).bValid ) {
 				/* Trace player with its current bonedata */
 				if ( autowall.GetDamage( pLocal, recordEntity->GetHitboxPosition( hitboxID, recordMatrix ) ) ) {

@@ -31,7 +31,7 @@ namespace misc {
 	void Slowwalk(CUserCmd*, float);
 	void FastStop(CUserCmd*);
 	void FakeDuck(CUserCmd*);
-	void BulletImpact(IGameEvent* = nullptr, EStage = FRAME_UNDEFINED);
+	void BulletImpact(IGameEvent* = nullptr, EStage = FRAME_UNDEFINED, bool bFrameStage = false );
 	void SlideFix();
 	void NightMode();
 	void OnlyCheatLogs();

@@ -781,17 +781,20 @@ void menu::Misctab() noexcept {
             Config2->Save( buf );
             Config2->RefreshConfigs( );
         }
+
         ImGui::Spacing( );
         if ( ImGui::Button( "Delete", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
 
             Config2->DeleteConfig( selectedConfig );
             Config2->RefreshConfigs( );
         }
+
         ImGui::Spacing( );
         if ( ImGui::Button( "Open config location", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
 
             ShellExecuteA( NULL, "open", Config2->ConfigPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );;
         }
+
         ImGui::PopStyleVar( );
         ImGui::PopItemWidth( );
     }

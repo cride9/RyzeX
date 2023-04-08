@@ -35,7 +35,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 
 	PreserveKillfeed(pEvent);
 	BuyBot(pEvent);
-	BulletImpact(pEvent, (EStage)-1);
+	BulletImpact(pEvent, FRAME_UNDEFINED, false );
 	BulletTracer(pEvent);
 	HandlePlayerHitEffects( pEvent );
 }
@@ -266,18 +266,20 @@ struct ClientHitVerify_t {
 	float expires;
 };
 
-void misc::BulletImpact(IGameEvent* pEvent, EStage curStage) {
+void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) {
 
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return;
 
+	auto& ClientImpactList = *( CUtlVector<ClientHitVerify_t>* )( ( uintptr_t )g::pLocal + 0x11C50 );
+
 	if (!cfg::misc::bulletImpact) {
-		auto& ClientImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
 		ClientImpactList.RemoveAll();
 		return;
 	}
 
-	if (pEvent != nullptr) {
+	if (pEvent != nullptr && bFrameStage == false ) {
+
 		if (!strcmp(pEvent->GetName(), "bullet_impact")) {
 
 			auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
@@ -295,16 +297,15 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage) {
 				0.f,
 				0.f,
 				255.f,
-				155.f,
+				127.f,
 				4.f
 			);
 		}
 	}
-	else {
+
+	if ( curStage == FRAME_RENDER_START && bFrameStage == true ) {
 
 		static int iLastCount = 0;
-		auto& ClientImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
-
 		for (int i = ClientImpactList.Count(); i > iLastCount; --i) {
 
 			i::DebugOverlay->AddBoxOverlay(
@@ -315,7 +316,7 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage) {
 				255.f,
 				0.f,
 				0.f,
-				155.f,
+				127.f,
 				4.f
 			);
 		}

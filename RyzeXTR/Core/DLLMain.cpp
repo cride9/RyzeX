@@ -72,6 +72,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	h::SetupHooks();
 	g::entityListener.Setup();
 
+	Config2->CreateMainDirectory( );
 	Config2->RefreshSounds( );
 	Config2->RefreshConfigs();
 

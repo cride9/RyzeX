@@ -29,9 +29,8 @@ void hkPreFrameStageNotify(EStage curStage) {
 		}
 
 		misc::NightMode();
-		misc::BulletImpact(nullptr, curStage);
+		misc::BulletImpact(nullptr, curStage, true);
 
-		//localanim.UpdateLocal();
 		break;
 
 	case FRAME_NET_UPDATE_END:

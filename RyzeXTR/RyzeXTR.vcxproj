@@ -96,6 +96,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <Optimization>Disabled</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -138,6 +139,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\DLLMain.cpp" />
+    <ClCompile Include="Core\Features\Changers\agentchanger.cpp" />
+    <ClCompile Include="Core\Features\Changers\glovechanger.cpp" />
+    <ClCompile Include="Core\Features\Changers\skinchanger.cpp" />
     <ClCompile Include="Core\Features\Misc\enginepred.cpp" />
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
@@ -214,6 +218,9 @@
     <ClCompile Include="Dependecies\Minhook\trampoline.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Core\Features\Changers\agentchanger.h" />
+    <ClInclude Include="Core\Features\Changers\glovechanger.h" />
+    <ClInclude Include="Core\Features\Changers\skinchanger.h" />
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
     <ClInclude Include="Core\Features\Misc\misc.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />

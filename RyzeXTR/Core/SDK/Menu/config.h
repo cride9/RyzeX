@@ -448,6 +448,7 @@ public:
 
 	void Setup();
 
+	void CreateMainDirectory( );
 	void Save( std::string ConfigName );
 	void Load( std::string ConfigName );
 	void DeleteConfig( std::string ConfigName );

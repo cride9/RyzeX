@@ -672,6 +672,21 @@ void CConfig::SetupValue( std::string& value, std::string def, std::string categ
 	strings.push_back( new ConfigValue< std::string >( category, name, &value ) );
 }
 
+void CConfig::CreateMainDirectory( )
+{
+	static TCHAR path[MAX_PATH];
+	std::string folder, file;
+	if ( SUCCEEDED( SHGetFolderPath( NULL, CSIDL_APPDATA, NULL, 0, path ) ) )
+	{
+		folder = std::string(path) + "\\ryzextr\\";
+	}
+	
+	if ( SUCCEEDED( CreateDirectory(folder.c_str(), NULL ) ) )
+		printf( "Succesfully created directory" );
+	else
+		throw std::runtime_error( "Failed to create config directory" );
+}
+
 void CConfig::Save(std::string ConfigName)
 {
 	static TCHAR path[MAX_PATH];

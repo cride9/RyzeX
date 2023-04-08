@@ -63,7 +63,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	memcpy(&to_cmd, &from_cmd, sizeof(CUserCmd));
 
 	to_cmd.iCommandNumber++;
-	to_cmd.iTickCount += 200;
+	to_cmd.iTickCount++;
 
 	for (int i = new_commands; i <= total_new_commands; i++)
 	{
