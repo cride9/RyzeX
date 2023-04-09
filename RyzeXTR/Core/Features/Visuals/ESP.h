@@ -18,6 +18,7 @@ namespace visual {
 	void WeaponEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void MoneyEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
+	void BruteForceState(int&, int, int, int, int, CBaseEntity*);
 
 	void AutoPeekCircle();
 

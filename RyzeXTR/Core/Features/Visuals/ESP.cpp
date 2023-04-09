@@ -1,6 +1,7 @@
 #include "ESP.h"
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../Misc/misc.h"
+#include "../Rage/Animations/EnemyAnimations.h"
 
 void visual::VisualRender() {
 
@@ -49,6 +50,9 @@ void visual::VisualRender() {
 			if (cfg::visual::enemyAmmo) AmmoEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyAmmoColor));
 			if (cfg::visual::enemyWeapon) WeaponEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyWeaponColor));
 			if (cfg::visual::enemyBreakLC ) BreakLCESP(enemySpacing, left, top.y, right, bot.y, pEnt);
+#if _DEBUG
+			BruteForceState(enemySpacing, left, top.y, right, bot.y, pEnt);
+#endif
 			//DrawMultipoints(pEnt);
 		}
 		else {
@@ -156,6 +160,15 @@ void visual::BreakLCESP( int& spacing, int left, int top, int right, int bot, CB
 	//	return;
 
 	i::Surface->DrawT( left, bot, Color{ 255, 255, 255, 255 }, g::fonts::NameESP, false, "Breaking Lagcomp" );
+}
+
+void visual::BruteForceState(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt)
+{
+	//if ( !lagcomp.IsBreakingLagcompensation( pEnt ) )
+	//	return;
+
+	i::Surface->DrawT(right + 2, top + spacing, Color{ 255, 255, 255, 255 }, g::fonts::NameESP, false, std::to_string(anims.missedShots[pEnt->EntIndex()]).c_str());
+	spacing += 10;
 }
 
 void visual::WeaponEsp(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {

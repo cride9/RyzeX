@@ -12,10 +12,10 @@ bool Animations::NewDataRecievedFromServer( CBaseEntity* pPlayer )
 
 void Animations::ResolverLogic( ) {
 
-	if ( !ragebot.rageBotData.pAimbotTarget || !g::pLocal || bulletImpact == Vector( 0, 0, 0 ) || !ragebot.rageBotData.pTargetMatrix )
+	if (bulletImpact == Vector(0, 0, 0) || !ragebot.rageBotData.pAimbotTarget || didHurt) {
+		didHurt = false;
 		return;
-
-	didHurt = false, didFire = false, didImpact = false, didDie = false;
+	}
 
 	Ray_t ray( g::pLocal->GetEyePosition( ), bulletImpact );
 	CTraceFilter filter( g::pLocal );
@@ -24,22 +24,17 @@ void Animations::ResolverLogic( ) {
 
 	i::EngineTrace->TraceRay( ray, MASK_SHOT, &filter, &trace );
 
-	if ( trace.pHitEntity == ragebot.rageBotData.pAimbotTarget ) {
+	if ( trace.DidHit() && trace.pHitEntity != nullptr) {
 
-		missedShots[ragebot.rageBotData.pAimbotTarget->EntIndex()]++;
-
-		ragebot.rageBotData.pAimbotTarget = nullptr;
 		bulletImpact = Vector( 0, 0, 0 );
-		ragebot.rageBotData.pTargetMatrix = nullptr;
 		util::LogConsole("Missed shot due to animation desyncronaztion\n", Color(255, 255, 255));
 		return;
 	}
 	else {
 
-		ragebot.rageBotData.pAimbotTarget = nullptr;
-		ragebot.rageBotData.pTargetMatrix = nullptr;
 		bulletImpact = Vector( 0, 0, 0 );
 		util::LogConsole("Missed shot due to spread\n", Color(255, 255, 255));
+		missedShots[ragebot.rageBotData.pAimbotTarget->EntIndex()]--;
 		return;
 	}
 	bulletImpact = Vector( 0, 0, 0 );
@@ -63,16 +58,17 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 		auto iUser = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) );
 
 		if (iUser == i::EngineClient->GetLocalPlayer())
-			didFire = true;
+			missedShots[ragebot.rageBotData.pAimbotTarget->EntIndex()]++;
 	}
 	if ( !strcmp( pEvent->GetName( ), "player_hurt" ) ) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) );
 		auto iAttacker = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "attacker" ) );
 
-		if ( ragebot.rageBotData.pAimbotTarget && iAttacker == i::EngineClient->GetLocalPlayer( ) && iUser == i::EngineClient->GetPlayerForUserID( ragebot.rageBotData.pAimbotTarget->EntIndex( ) ) ) {
-
-			didHurt = true;
+		if (iAttacker == i::EngineClient->GetLocalPlayer()) {
+			missedShots[iUser]--;
+			bulletImpact = Vector(0, 0, 0);
+			didHurt == true;
 		}
 	}
 	if ( !strcmp( pEvent->GetName( ), "bullet_impact" ) ) {
@@ -82,7 +78,6 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 		if ( iUser != i::EngineClient->GetLocalPlayer( ) )
 			return;
 
-		didImpact = true;
 		bulletImpact = Vector( pEvent->GetFloat( "x" ), pEvent->GetFloat( "y" ), pEvent->GetFloat( "z" ) );
 	}
 	if (!strcmp(pEvent->GetName(), "player_death")) {
@@ -93,7 +88,8 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 		if (iAttacker != i::EngineClient->GetLocalPlayer())
 			return;
 
-		didDie = true;
+		missedShots[iUser]--;
+		bulletImpact = Vector(0, 0, 0);
 	}
 
 }
@@ -168,8 +164,7 @@ void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecor
 	if ( !&pData )
 		return;
 
-	if (!didHurt && !didDie && didFire && didImpact)
-		ResolverLogic();
+	ResolverLogic();
 
 	pData.iMissedShots = missedShots[pEntity->EntIndex()];
 
