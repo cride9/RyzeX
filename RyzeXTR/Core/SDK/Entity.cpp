@@ -494,8 +494,9 @@ bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float curren
 {
 	alignas( 16 ) matrix3x4_t bone_out[ 128 ];
 	const auto ret = HandleBoneSetup( target, bone_out, boneMask, currentTime );
-	memcpy( pBoneToWorldOut, bone_out, sizeof( matrix3x4_t[ 128 ] ) );
+	memcpy( pBoneToWorldOut, bone_out, sizeof(matrix3x4_t) * 128 );
 	return ret;
+	//return this->SetupBones(pBoneToWorldOut, 128, boneMask, currentTime);
 }
 
 bool CBaseEntity::IsBreakable()

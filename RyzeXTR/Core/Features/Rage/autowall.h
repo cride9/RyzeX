@@ -26,6 +26,8 @@ public:
 	static void ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const float flWeaponArmorRatio, const float flWeaponHeadShotMultiplier, float& flDamage );
 	/* simulates fire bullet to penetrate up to 4 walls, return true when hitting player */
 	static bool SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data );
+	/* I need this exlo trust me this will be fun*/
+	static bool CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSource);
 
 private:
 	// Main

@@ -10,11 +10,14 @@ namespace cfg {
 	inline int configID = 0;
 
 	inline bool debugSwitch = false;
+	inline int debugSlider = 1;
 
 	namespace rage {
 
 		inline bool enable;
 		inline bool autostop;
+		inline int	autostopAggressiveness;
+		inline int	aimbotTargetSelection;
 		inline bool autoscope[] = { false, false, false };
 		inline bool m_bAutoStopInAir;
 		inline bool betweenshots;
@@ -111,6 +114,8 @@ namespace cfg {
 
 		inline bool idealTick = false;
 		inline int idealTickBind = 0;
+
+		inline int freestand = 0;
 	}
 	namespace visual {
 

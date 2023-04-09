@@ -947,6 +947,63 @@ void Animations::FakePitchResolver( CBaseEntity* pPlayer, Lagcompensation::LagRe
 	}
 }
 
+void Animations::InterpolateMatricies() {
+
+	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++)
+	{
+		CBaseEntity* pPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));
+		if (!pPlayer || !pPlayer->IsPlayer() || pPlayer == g::pLocal || pPlayer->IsDormant() || !pPlayer->IsAlive() || pPlayer->GetTeam() == g::pLocal->GetTeam())
+			continue;
+
+		auto pPlayerData = &lagcomp.GetLog(nPlayerID).pRecord;
+		if (!pPlayerData->size() < 2)
+			continue;
+
+		// get bone count
+		int nBoneCount = pPlayer->GetCachedBoneData().Count();
+		if (nBoneCount > MAXSTUDIOBONES)
+			nBoneCount = MAXSTUDIOBONES;
+
+		// re-pos matrix
+		TransformateMatrix(pPlayer);
+
+		// copy the entire matrix
+		std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
+
+		// build attachments
+		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
+		pPlayer->SetupBones_AttachmentHelper();
+		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
+	}
+}
+
+void Animations::TransformateMatrix(CBaseEntity* pEnt) {
+
+	auto pRecord = lagcomp.GetLog(pEnt->EntIndex()).pRecord;
+	if (pRecord.empty())
+		return;
+
+	Vector vecOriginDelta = pEnt->GetAbsOrigin() - pRecord.at(1).vecAbsOrigin;
+
+	for (auto& Matrix : pRecord.front().pMatrix)
+	{
+		Matrix[0][3] += vecOriginDelta.x;
+		Matrix[1][3] += vecOriginDelta.y;
+		Matrix[2][3] += vecOriginDelta.z;
+	}
+}
+
+bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount) {
+
+	const auto pRecord = lagcomp.GetLog(pEnt->EntIndex()).pRecord;
+	if (pRecord.empty())
+		return false;
+
+	pEnt->GetBoneAccessor()->matBones = const_cast<matrix3x4_t*>(pRecord.front().pMatrix);
+	std::memcpy(pMatrix, pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
+	return true;
+}
+
 std::pair<CAnimationLayer*, float*> Animations::BuildSideLayerAndPose(CBaseEntity* pEnt, float sideAngle) {
 
 	// original is backed up before calling this function

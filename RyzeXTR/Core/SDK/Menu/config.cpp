@@ -28,6 +28,8 @@ void CConfig::Setup() {
 		SetupValue( m_bEnableBacktrack, false, "rage", "Ragebacktrack" );
 		SetupValue(forceBaim, false, "rage", "forceBaim");
 		SetupValue(forceBaimKey, 0, "rage", "forceBaimKey");
+		SetupValue(aimbotTargetSelection, 0, "rage", "aimbotTargetSelection");
+		SetupValue(autostopAggressiveness, 1, "rage", "autostopAggressiveness");
 
 		SetupValue( autoscope[ 0 ], false, "rage", "autoscope1" );
 		SetupValue( autoscope[ 1 ], false, "rage", "autoscope2" );
@@ -128,6 +130,8 @@ void CConfig::Setup() {
 		SetupValue(fakewalkenable, false, "antiaim", "fakewalk");
 		SetupValue(fakewalk, 0, "antiaim", "fakewalkspeed");
 		SetupValue(fakewalkKey, 0, "antiaim", "fakewalkbind");
+
+		SetupValue(freestand, 0, "antiaim", "freestand");
 	}
 
 	// visual

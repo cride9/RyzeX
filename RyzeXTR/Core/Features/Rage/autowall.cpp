@@ -1,4 +1,5 @@
 #include "autowall.h"
+#include "../../globals.h"
 
 float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecPoint, FireBulletData_t* pDataOut )
 {
@@ -382,6 +383,46 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 		if ( !HandleBulletPenetration( pLocal, pWeaponData, pEnterSurfaceData, data ) )
 			break;
 	}
+
+	return false;
+}
+
+bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSource) {
+
+	if (!g::pLocal)
+		return false;
+
+	FireBulletData_t data = FireBulletData_t(vecSource, vecPoint);
+
+	Vector vecAngles = M::CalcAngle(data.vecPosition, vecPoint);
+	M::AngleVectors(vecAngles, &data.vecDirection);
+	data.vecDirection.Normalize();
+
+	if (!g::pLocal->GetWeapon() || (int)g::pLocal->GetWeapon() == 0xFFFF)
+		return false;
+
+	data.iPenetrateCount = 1;
+	float flTraceLength = 0.0f;
+
+	CCSWeaponInfo* pWeaponData = g::pLocal->GetWeapon()->GetCSWpnData();
+
+	if (!pWeaponData)
+		return false;
+
+	data.flCurrentDamage = (float)pWeaponData->iDamage;
+	float flTraceLengthRemaining = pWeaponData->flRange - flTraceLength;
+
+	Vector vecEnd = data.vecPosition + data.vecDirection * flTraceLengthRemaining;
+
+	CTraceFilter filter(g::pLocal);
+	i::EngineTrace->TraceRay(Ray_t(data.vecPosition, vecEnd), MASK_SHOT | CONTENTS_HITBOX, &filter, &data.enterTrace);
+	const surfacedata_t* pEnterSurfaceData = i::PhysicsProps->GetSurfaceData(data.enterTrace.surface.nSurfaceProps);
+
+	if (data.enterTrace.flFraction == 1.f)
+		return true;
+
+	if (HandleBulletPenetration(g::pLocal, pWeaponData, pEnterSurfaceData, data))
+		return true;
 
 	return false;
 }

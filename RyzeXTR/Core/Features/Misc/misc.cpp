@@ -1046,6 +1046,41 @@ void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		pCmd->iButtons &= ~IN_ATTACK;
 }
 
+void misc::RemoveSmoke() {
+
+	if (!cfg::misc::removals[0] || !g::pLocal)
+		return;
+
+	static auto sigLineGoesThroughSmoke = util::FindSignature("client.dll", "55 8B EC 83 EC 08 8B 15 ? ? ? ? 0F 57 C0");
+
+	static std::vector<const char*> vecSmokeWireframe =
+	{
+		"particle/vistasmokev1/vistasmokev1_smokegrenade",
+	};
+
+	static std::vector<const char*> vecSmokeNoDraw =
+	{
+		"particle/vistasmokev1/vistasmokev1_fire",
+		"particle/vistasmokev1/vistasmokev1_emods",
+		"particle/vistasmokev1/vistasmokev1_emods_impactdust",
+	};
+
+	for (auto szCurrentMat : vecSmokeWireframe) {
+
+		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(szCurrentMat, "Other textures");
+		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, true); //wireframe
+	}
+
+	for (auto szCurrentMat : vecSmokeNoDraw) {
+
+		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(szCurrentMat, "Other textures");
+		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
+	}
+
+	static auto iSmokeCount = *reinterpret_cast<DWORD*>(sigLineGoesThroughSmoke + 0x8);
+	*reinterpret_cast<int*>(iSmokeCount) = 0;
+}
+
 //void misc::CustomBombText(const char* szText) {
 //
 //	if (!g::pLocal || !g::pLocal->IsAlive())

@@ -2,6 +2,7 @@
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
 #include "../../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../../Features/Rage/Animations/EnemyAnimations.h"
 
 bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int maxbones, int bonemask, float curtime) {
 
@@ -24,12 +25,9 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 		if (pEnt == g::pLocal) {
 			bResult = g_LocalAnimations->CopyCachedMatrix(matrix, maxbones);
 		}
-		/*else if (auto lagRecord = lagcomp.GetLog(pEnt->EntIndex()); lagRecord.pEntity != nullptr) {
-			if (!lagRecord.pRecord.empty()) {
-				memcpy(matrix, lagRecord.pRecord.front().pMatrix, 128 * sizeof(matrix3x4_t));
-				bResult = true;
-			}
-		}*/
+		else {
+			bResult = anims.CopyCachedMatrix(pEnt, matrix, maxbones);
+		}
 	}
 
 	return bResult;

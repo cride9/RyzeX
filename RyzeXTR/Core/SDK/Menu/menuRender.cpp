@@ -79,14 +79,18 @@ void menu::Ragetab() noexcept {
 
     using namespace cfg::rage;
     ImVec2 savedCursorPos = ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y + ImGui::GetContentRegionAvail().y / 2 + ImGui::GetStyle().WindowPadding.y + 2);
+	static const char* autoStopPhases[] = { "Slight", "Normal", "Aggressive" };
+	static const char* aimbotTargetSelectionList[] = { "Health", "Field of view" };
 
     ImGui::BeginChild("leftside", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
     {
         ImGui::Checkbox("Enable", &enable);
+		ImGui::Combo("Target selection", &aimbotTargetSelection, aimbotTargetSelectionList, IM_ARRAYSIZE(aimbotTargetSelectionList));
         ImGui::Checkbox("Auto Stop", &autostop);
         if (autostop) {
             ImGui::Checkbox("Auto Stop In Air", &m_bAutoStopInAir);
             ImGui::Checkbox("Between shots", &betweenshots);
+			ImGui::Combo("Predicted stop", &autostopAggressiveness, autoStopPhases, IM_ARRAYSIZE(autoStopPhases));
         }
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
         ImGui::Checkbox("Doubletap", &doubletap);
@@ -152,9 +156,10 @@ void menu::Antiaimtab() noexcept {
     static const char* yawList[] = { "Forward", "Backward" };
     static const char* pitchList[] = { "Up", "Zero" ,"Down" };
     static const char* desyncList[] = { "Off", "Static", "Extended", "Jitter" };
-    static const char* yawBaseList[] = { "Local view", "Freestand" };
+    static const char* yawBaseList[] = { "Local view", "At target" };
     static const char* fakelagTypeList[] = { "Normal", "Adaptive", "Jitter" };
     static const char* yawModifierList[] = { "Off", "Jitter", "Random" };
+	static const char* freestandList[] = { "Off", "Distance", "Smart" };
 
     ImGui::BeginChild("LeftChild", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
     {
@@ -177,6 +182,7 @@ void menu::Antiaimtab() noexcept {
             if (desyncModifier != 0)
                 ImGui::SliderInt("Modifier value ##2", &desyncModifierValue, 0, 58);
         }
+		ImGui::Combo("Fresstanding", &freestand, freestandList, IM_ARRAYSIZE(freestandList));
     }
     ImGui::EndChild();
 

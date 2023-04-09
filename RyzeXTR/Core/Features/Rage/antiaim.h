@@ -45,7 +45,8 @@ namespace antiaim {
 	void ForceResync( CUserCmd* m_pCmd, int m_iLbyChange );
 	void Update( CUserCmd* m_pCmd );
 	
-	void FreeStanding(CUserCmd*, Vector&);
+	bool FreeStandingDistance(CUserCmd*, Vector&);
+	bool FreeStandingThreat(Vector& angle);
 	int ClosestToLocal();
-
+	void AtTarget(CUserCmd*, Vector&);
 }

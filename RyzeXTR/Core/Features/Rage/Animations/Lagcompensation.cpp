@@ -305,8 +305,8 @@ void Lagcompensation::FrameStageNotify() {
 			pPlayerLogs[ i ].pEntity->SetAnimationLayers( pBackupRecord.pLayers );
 
 			// create bone matrix for this pRecord.
-			//SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING, 4);
-			pPlayerLogs[ i ].pEntity->SetupBonesFix( pPlayerLogs[ i ].pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
+			SetupPlayerBones(pPlayerLogs[i].pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, 4);
+			//pPlayerLogs[ i ].pEntity->SetupBonesFix( pPlayerLogs[ i ].pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
 
 			// restore correctly synced values.
 			pBackupRecord.Restore( pPlayerLogs[ i ].pEntity );
@@ -626,45 +626,5 @@ void Lagcompensation::RemoveInterpolation() {
 			continue;
 
 		SetInterpolationFlags(pEntity);
-	}
-}
-
-void Lagcompensation::CreateMatrix(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* pCurrentRecord, int boneMask, float SimulatedYaw) {
-
-	/*
-		VoidZero best guy (lambda owner p100)
-	*/
-	CAnimState pBackupState;
-	memcpy(&pBackupState, pEnt->AnimState(), sizeof(CAnimState));
-
-	{
-		// center.
-		pEnt->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEnt->AnimState()->flEyeYaw);
-
-		// update player animation.
-		anims.UpdateClientSideAnimations(pEnt, pCurrentRecord);
-
-		SetupPlayerBones(pEnt, pCurrentRecord, pCurrentRecord->pCenter, BONE_USED_BY_HITBOX, 4);
-		memcpy(pEnt->AnimState(), &pBackupState, sizeof(CAnimState));
-	}
-	{
-		// left.
-		pEnt->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEnt->AnimState()->flEyeYaw - 58.f);
-
-		// update player animation.
-		anims.UpdateClientSideAnimations(pEnt, pCurrentRecord);
-
-		SetupPlayerBones(pEnt, pCurrentRecord, pCurrentRecord->pLeft, BONE_USED_BY_HITBOX, 4);
-		memcpy(pEnt->AnimState(), &pBackupState, sizeof(CAnimState));
-	}
-	{
-		// center.
-		pEnt->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEnt->AnimState()->flEyeYaw + 58.f);
-
-		// update player animation.
-		anims.UpdateClientSideAnimations(pEnt, pCurrentRecord);
-
-		SetupPlayerBones(pEnt, pCurrentRecord, pCurrentRecord->pRight, BONE_USED_BY_HITBOX, 4);
-		memcpy(pEnt->AnimState(), &pBackupState, sizeof(CAnimState));
 	}
 }

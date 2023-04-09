@@ -71,9 +71,6 @@ public:
 
 		CBaseEntity* pEntity{};
 		matrix3x4_t pMatrix[ 128 ];
-		matrix3x4_t pCenter[128];
-		matrix3x4_t pLeft[128];
-		matrix3x4_t pRight[128];
 
 		bool bBreakingLagcompensation{};
 		bool bFakewalking{};
@@ -177,7 +174,6 @@ public:
 
 	void RemoveInterpolation();
 
-	void CreateMatrix(CBaseEntity*, Lagcompensation::LagRecord_t*, int, float);
 	void SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, int nMask, int nFlags);
 
 	// get client interp amount

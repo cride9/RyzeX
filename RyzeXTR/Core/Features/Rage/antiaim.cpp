@@ -3,6 +3,8 @@
 #include "../../SDK/math.h"
 #include "../../Features/Misc/enginepred.h"
 #include "Animations/LocalAnimation.h"
+#include "ragebot.h"
+#include "autowall.h"
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
 
@@ -16,8 +18,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	// sanity checks
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::enabled) {
 
-		if (!cfg::antiaim::fakelag)
-			bSendPacket = true;
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
 		return;
@@ -68,20 +68,28 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		break;
 	}
 
-	// yaw
-	switch (cfg::antiaim::yaw) {
+	bool bInitializedFreestand = false;
+	if (cfg::antiaim::freestand == 1)
+		bInitializedFreestand = FreeStandingDistance(pCmd, pCmd->angViewPoint);
+	if (cfg::antiaim::freestand == 2)
+		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
 
-	case FORWARD:
-		pCmd->angViewPoint.y += 0.f;
-		break;
+	if (!bInitializedFreestand) {
+		// yaw
+		switch (cfg::antiaim::yaw) {
 
-	case BACKWARD:
-		pCmd->angViewPoint.y += 180.f;
-		break;
+		case FORWARD:
+			pCmd->angViewPoint.y += 0.f;
+			break;
+
+		case BACKWARD:
+			pCmd->angViewPoint.y += 180.f;
+			break;
+		}
 	}
 
-	if (cfg::antiaim::yawBase == 1)
-		FreeStanding(pCmd, pCmd->angViewPoint);
+	if (cfg::antiaim::yawBase == 1 && !bInitializedFreestand)
+		AtTarget(pCmd, pCmd->angViewPoint);
 
 	if (cfg::antiaim::modifier == 1)
 		pCmd->angViewPoint.y += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue) : unevenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
@@ -147,10 +155,12 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
 		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
 
-	if (cfg::antiaim::desyncModifier == 1)
-		desyncValue += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue) : unevenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);
-	else if (cfg::antiaim::desyncModifier == 2)
-		desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
+	if (cfg::antiaim::desynctype) {
+		if (cfg::antiaim::desyncModifier == 1)
+			desyncValue += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue) : unevenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);
+		else if (cfg::antiaim::desyncModifier == 2)
+			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
+	}
 
 	if ( !bSendPacket && cfg::antiaim::desynctype != EXTENDED ) {
 
@@ -305,7 +315,7 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 	return false;
 }
 
-void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
+bool antiaim::FreeStandingDistance(CUserCmd* cmd, Vector& angle) {
 
 	bool no_active = true;
 	float bestrotation = 0.f;
@@ -317,7 +327,7 @@ void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
 	auto leyepos = g::pLocal->GetVecOrigin() + g::pLocal->GetViewOffset();
 	auto headpos = g::pLocal->GetHitboxPosition(0);
 	if (!headpos.has_value())
-		return;
+		return false;
 	auto origin = g::pLocal->GetAbsOrigin();
 
 
@@ -354,7 +364,7 @@ void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
 		entity = (CBaseEntity*)i::EntityList->GetClientEntity(index);
 
 	if (!entity)
-		return;
+		return false;
 
 	float step = (2 * M_PI) / 18.f; // One PI = half a circle ( for stacker cause low iq :sunglasses: ), 28
 
@@ -383,7 +393,10 @@ void antiaim::FreeStanding(CUserCmd* cmd, Vector& angle) {
 	}
 	if (!no_active) {
 		cmd->angViewPoint.y = M_RAD2DEG(bestrotation);
+		return true;
 	}
+	else
+		return false;
 }
 
 int antiaim::ClosestToLocal() {
@@ -424,4 +437,120 @@ int antiaim::ClosestToLocal() {
 	}
 
 	return index;
+}
+
+void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
+
+	auto lowestFov = [&](std::pair<float, Vector> this1, std::pair<float, Vector> this2) -> float {
+		return this1.first < this2.first;
+	};
+
+	std::vector<std::pair<float, Vector>> arrPlayerDistances;
+	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
+	{
+		CBaseEntity* pEnt = (CBaseEntity*)i::EntityList->GetClientEntity(i);
+
+		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || pEnt->IsDormant() || pEnt == g::pLocal)
+			continue;
+
+		Vector vecCalcAngle;
+		M::VectorAngles(pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST).value() - g::pLocal->GetEyePosition(), vecCalcAngle);
+		Vector vecDistanceBetween = (ragebot.rageBotData.vecOldViewAngles.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+
+		arrPlayerDistances.push_back(std::make_pair( abs(vecDistanceBetween.Length2D()), vecCalcAngle));
+	}
+
+	if (arrPlayerDistances.empty())
+		return;
+
+	std::sort(arrPlayerDistances.begin(), arrPlayerDistances.end(), lowestFov);
+
+	pCmd->angViewPoint.y = (arrPlayerDistances.front().second.y) - 180.f;
+}
+
+bool antiaim::FreeStandingThreat(Vector& angle)
+{
+	auto GRD_TO_BOG = [&](float GRD) -> float {
+		return (M_PI / 180) * GRD;
+	};
+
+	static float FinalAngle;
+	bool bSide1 = false;
+	bool bSide2 = false;
+	bool autowalld = false;
+	for (int i = 0; i <= i::GlobalVars->nMaxClients; ++i) {
+
+		CBaseEntity* pPlayerEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+		if (!pPlayerEntity
+			|| !pPlayerEntity->IsAlive()
+			|| pPlayerEntity->IsDormant()
+			|| pPlayerEntity == g::pLocal
+			|| pPlayerEntity->GetTeam() == g::pLocal->GetTeam())
+			continue;
+
+		float flAngToLocal = M::CalcAngle(g::pLocal->GetVecOrigin(), pPlayerEntity->GetVecOrigin()).y;
+		Vector vecViewPoint = pPlayerEntity->GetVecOrigin() + Vector(0, 0, 90);
+
+		Vector2D vecSide1 = { (45 * sin(GRD_TO_BOG(flAngToLocal))),(45 * cos(GRD_TO_BOG(flAngToLocal))) };
+		Vector2D vecSide2 = { (45 * sin(GRD_TO_BOG(flAngToLocal + 180))) ,(45 * cos(GRD_TO_BOG(flAngToLocal + 180))) };
+
+		Vector2D vecSide3 = { (50 * sin(GRD_TO_BOG(flAngToLocal))),(50 * cos(GRD_TO_BOG(flAngToLocal))) };
+		Vector2D vecSide4 = { (50 * sin(GRD_TO_BOG(flAngToLocal + 180))) ,(50 * cos(GRD_TO_BOG(flAngToLocal + 180))) };
+
+		Vector vecOrigin = g::pLocal->GetVecOrigin();
+
+		Vector2D vecOriginLeftRight[] = { Vector2D(vecSide1.x, vecSide1.y), Vector2D(vecSide2.x, vecSide2.y) };
+
+		Vector2D vecOriginLeftRightLocal[] = { Vector2D(vecSide3.x, vecSide3.y), Vector2D(vecSide4.x, vecSide4.y) };
+
+		for (int iSide = 0; iSide < 2; iSide++) {
+
+			Vector vecOriginAutowall = { vecOrigin.x + vecOriginLeftRight[iSide].x,  vecOrigin.y - vecOriginLeftRight[iSide].y , vecOrigin.z + 80 };
+			Vector vecOriginAutowall2 = { vecViewPoint.x + vecOriginLeftRightLocal[iSide].x,  vecViewPoint.y - vecOriginLeftRightLocal[iSide].y , vecViewPoint.z };
+
+			if (autowall.CanHitFloatingPoint(vecOriginAutowall, vecViewPoint)) {
+
+				if (iSide == 0)	{
+
+					bSide1 = true;
+					FinalAngle = flAngToLocal + 90;
+				}
+				else if (iSide == 1) {
+
+					bSide2 = true;
+					FinalAngle = flAngToLocal - 90;
+				}
+				autowalld = true;
+			}
+			else {
+				for (int iSideID = 0; iSideID < 2; iSideID++) {
+
+					Vector vecOriginAutowall3 = { vecOrigin.x + vecOriginLeftRight[iSideID].x,  vecOrigin.y - vecOriginLeftRight[iSideID].y , vecOrigin.z + 80 };
+
+					if (autowall.CanHitFloatingPoint(vecOriginAutowall3, vecOriginAutowall2)) {
+
+						if (iSideID == 0) {
+
+							bSide1 = true;
+							FinalAngle = flAngToLocal + 90;
+						}
+						else if (iSideID == 1) {
+
+							bSide2 = true;
+							FinalAngle = flAngToLocal - 90;
+						}
+						autowalld = true;
+					}
+				}
+			}
+		}
+	}
+
+	if (!autowalld || (bSide1 && bSide2))
+		return false;
+	else
+		angle.y = FinalAngle;
+
+	return true;
 }

@@ -55,6 +55,10 @@ public:
 
 	/* resolver */
 	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);
+	bool CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount);
+	void TransformateMatrix(CBaseEntity* pPlayer);
+	void InterpolateMatricies();
+
 private:
 	void FakePitchResolver( CBaseEntity*, Lagcompensation::LagRecord_t* );
 };

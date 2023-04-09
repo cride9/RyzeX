@@ -1,5 +1,6 @@
 #include "../../hooks.h"
 #include "../../../SDK/Entity.h"
+#include "../../../Features/Rage/Animations/EnemyAnimations.h"
 
 void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 
@@ -10,5 +11,6 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 
 	original(ecx, edx);
 
+	anims.InterpolateMatricies();
 	return g_LocalAnimations->InterpolateMatricies();
 }

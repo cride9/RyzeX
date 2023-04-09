@@ -40,6 +40,7 @@ namespace misc {
 	void RemovePostProcessing();
 	void FixScopeSens();
 	void AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void RemoveSmoke();
 
 	void DrawBream(Vector, Vector, Color);
 

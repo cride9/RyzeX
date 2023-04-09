@@ -21,6 +21,7 @@ public:
 		float							flTargetSimulation;
 		Lagcompensation::LagRecord_t*	pBacktrackRecord;
 		Vector							vecOldViewAngles;
+		bool							bCanShoot;
 
 	} rageBotData ;
 
@@ -32,7 +33,8 @@ private:
 	CBaseEntity*		SelectTarget(CBaseEntity*, CBaseCombatWeapon*, Vector&);
 	Vector				Hitscan(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector);
-	void				AutoStop(CUserCmd*, float);
+	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*);
+	Vector				InterpolateLocalEyePosition(Vector vecEyePosition, int iInterpolateTick = 1);
 
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
