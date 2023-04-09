@@ -52,6 +52,10 @@ void Style() {
 	st.Colors[ImGuiCol_ChildBg] = ImColor(22, 22, 22);
 	st.Colors[ImGuiCol_Text] = ImColor(212, 212, 212);
 
+	st.Colors[ ImGuiCol_TitleBg ] = ImColor( 22, 22, 22 );
+	st.Colors[ ImGuiCol_TitleBgActive ] = ImColor( 22, 22, 22 );
+	st.Colors[ ImGuiCol_TitleBgCollapsed ] = ImColor( 22, 22, 22 );
+	
 	st.Colors[ImGuiCol_ButtonHovered] = ImColor(31, 31, 31);
 	st.Colors[ImGuiCol_ButtonActive] = ImColor(38, 38, 38);
 	st.Colors[ImGuiCol_Button] = ImColor(22, 22, 22);

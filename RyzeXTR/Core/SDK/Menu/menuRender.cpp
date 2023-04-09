@@ -374,13 +374,14 @@ void menu::Visualtab() noexcept {
             static std::string soundItem;
             bool bOpen = true;
             if ( m_iHitSound == 2 ) {
-                ImGui::Indent( 17.f );
-                if ( ImGui::Button( "Manage custom sounds" , ImVec2( 0, 25 ) ) )
+                
+                ImGui::PushStyleVar( ImGuiStyleVar_FrameBorderSize, 2.f );
+                if ( ImGui::Button( "Manage custom sounds" , ImVec2( 150, 17 ) ) )
                     ImGui::OpenPopup( "##sndManager" );
-                ImGui::Unindent( 17.f );
+                ImGui::PopStyleVar( );
             }
 
-            ImGui::SetNextWindowSize( ImVec2( 300, 240 ) );
+            ImGui::SetNextWindowSizeConstraints( ImVec2( 0, 0 ), ImVec2( 200, 140) );
             if ( ImGui::BeginPopupModal( "##sndManager", &bOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar ) )
             {
                 ImGui::PushStyleColor( ImGuiCol_ChildBg, ImVec4( 0.07f, 0.07f, 0.07f, 1.f ) );
@@ -393,7 +394,7 @@ void menu::Visualtab() noexcept {
                         if ( !Config2->vecSoundFileNames.empty( ) ) {
 
                             ImGui::PushItemWidth( -1 );
-                            if ( ImGui::ListBoxVector( "##soundFiles", &soundItemCurrent1, Config2->vecSoundFileNames, 5 ) ) {
+                            if ( ImGui::ListBoxVector( "##soundFiles", &soundItemCurrent1, Config2->vecSoundFileNames, 7 ) ) {
                                 soundItem = Config2->vecSoundFileNames[ soundItemCurrent1 ];
                                 cfg::misc::m_szWavPath = std::filesystem::path( Config2->SoundPath.c_str() + soundItem ).string( );
                             }
@@ -407,37 +408,41 @@ void menu::Visualtab() noexcept {
                     ImGui::NextColumn( );
                     {
                         ImGui::PushItemWidth( -1 );
+                        ImGui::PushStyleVar( ImGuiStyleVar_FrameBorderSize, 2.f );
 
-                        if ( ImGui::Button( "Play", ImVec2( -1, 25 ) ) && soundItemCurrent1 >= 0 && !cfg::misc::m_szWavPath.empty( ) ) {
+                        if ( ImGui::Button( "Play", ImVec2( -1, 18 ) ) && soundItemCurrent1 >= 0 && !cfg::misc::m_szWavPath.empty( ) ) {
 
                             PlaySoundA( cfg::misc::m_szWavPath.c_str( ), NULL, SND_FILENAME | SND_ASYNC );
                         }
 
-                        if ( ImGui::Button( "Refresh", ImVec2( -1, 25 ) ) )
+                        ImGui::Spacing( );
+                        if ( ImGui::Button( "Refresh", ImVec2( -1, 18 ) ) )
                             Config2->RefreshSounds( );
 
-                        if ( ImGui::Button( "Remove", ImVec2( -1, 25 ) ) ) {
+                        ImGui::Spacing( );
+                        if ( ImGui::Button( "Remove", ImVec2( -1, 18 ) ) ) {
                             std::remove( cfg::misc::m_szWavPath.c_str( ) );
                             Config2->RefreshSounds( );
                             soundItemCurrent1 = -1;
                             cfg::misc::m_szWavPath = "";
                         }
 
-
-                        if ( ImGui::Button( "Folder", ImVec2( -1, 25 ) ) )
+                        ImGui::Spacing( );
+                        if ( ImGui::Button( "Folder", ImVec2( -1, 18 ) ) )
                             ShellExecuteA( NULL, "open", Config2->SoundPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );
 
+                        ImGui::Spacing( );
+                        if ( ImGui::Button( "Close", ImVec2( -1, 18 ) ) )
+                            ImGui::CloseCurrentPopup( );
+
+                        ImGui::PopStyleVar( );
                         ImGui::PopItemWidth( );
                     }
 
                     ImGui::Columns( 1 );
-
-                    if ( ImGui::Button( "Close", ImVec2( -1, 25 ) ) )
-                        ImGui::CloseCurrentPopup( );
-
                     ImGui::EndChild( );
                 }
-                ImGui::PopStyleColor( );
+                ImGui::PopStyleColor( 1 );
                 ImGui::EndPopup( );
             }
 
