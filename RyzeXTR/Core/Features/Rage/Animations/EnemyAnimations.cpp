@@ -28,6 +28,7 @@ void Animations::ResolverLogic( ) {
 
 		bulletImpact = Vector( 0, 0, 0 );
 		util::LogConsole("Missed shot due to animation desyncronaztion\n", Color(255, 255, 255));
+		ragebot.rageBotData.pAimbotTarget = nullptr;
 		return;
 	}
 	else {
@@ -35,10 +36,12 @@ void Animations::ResolverLogic( ) {
 		bulletImpact = Vector( 0, 0, 0 );
 		util::LogConsole("Missed shot due to spread\n", Color(255, 255, 255));
 		missedShots[ragebot.rageBotData.pAimbotTarget->EntIndex()]--;
+		ragebot.rageBotData.pAimbotTarget = nullptr;
 		return;
 	}
 	bulletImpact = Vector( 0, 0, 0 );
 	util::LogConsole( "Missed shot due to unknown reason\n", Color( 255, 255, 255 ) );
+	ragebot.rageBotData.pAimbotTarget = nullptr;
 	return;
 }
 
@@ -88,7 +91,6 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 		if (iAttacker != i::EngineClient->GetLocalPlayer())
 			return;
 
-		missedShots[iUser]--;
 		bulletImpact = Vector(0, 0, 0);
 	}
 

@@ -460,8 +460,18 @@ public:
 	}
 
 	void SolveDependencies( Vector* pos, Quaternion* q, matrix3x4_t* bone_array, byte* computed ) {
-		static const auto solve_dependencies_address = util::FindSignature( "client.dll", "55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81" );
-		reinterpret_cast< void( __thiscall* )( IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte* ) >( solve_dependencies_address )( this, pos, q, bone_array, computed );
+		
+		static const auto solve_dependencies_address = util::FindSignature("client.dll", "55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81");
+
+		using Fn = void(__thiscall*)(IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte*);
+		static auto fn = reinterpret_cast<Fn>(solve_dependencies_address);
+
+		if (!fn)
+			return;
+
+		fn(this, pos, q, bone_array, computed);
+
+		// reinterpret_cast< void( __thiscall* )( IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte* ) >( solve_dependencies_address )( this, pos, q, bone_array, computed );
 	}
 
 	void ClearTargets( )
