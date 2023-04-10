@@ -186,35 +186,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		if (pEnt == g::pLocal) {
 
 			matrix3x4_t* desyncMatrix = g_LocalAnimations->GetDesyncMatrix().data();
-			if (paperMode) {
-				float curangle = g::pLocal->GetEyeAngles().y;
-				int angle = 0;
-
-				if (curangle <= 180 && curangle >= 145)
-					angle = 0;
-				else if (curangle >= -180 && curangle <= -145)
-					angle = 0;
-				else if (curangle >= 0 && curangle <= 45)
-					angle = 0;
-				else if (curangle <= 0 && curangle >= -45)
-					angle = 0;
-				else
-					angle = 1;
-
-				for (int i = 0; i < 128; i++) {
-
-					pBoneToWorld[i][angle][0] = 0.1;
-					pBoneToWorld[i][angle][1] = 0.1;
-					pBoneToWorld[i][angle][2] = 0.1;
-					pBoneToWorld[i][angle][3] = (angle == 0 ? pEnt->GetAbsOrigin().x : pEnt->GetAbsOrigin().y);
-
-					desyncMatrix[i][angle][0] = 0.1;
-					desyncMatrix[i][angle][1] = 0.1;
-					desyncMatrix[i][angle][2] = 0.1;
-					desyncMatrix[i][angle][3] = (angle == 0 ? pEnt->GetAbsOrigin().x : pEnt->GetAbsOrigin().y);
-				}
-
-			}
 
 			if (localDesync) {
 

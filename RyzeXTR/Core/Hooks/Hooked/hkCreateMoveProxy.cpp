@@ -16,11 +16,11 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	static auto original = detour::createMove.GetOriginal<decltype(&h::hkCreateMoveProxy)>();
 
-	if (g::bNotInServer)
-		return original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
-
 	// call original first so our movement and other stuff will be sent normally
 	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
+
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+		return;
 
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
@@ -35,7 +35,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	ragebot.rageBotData.vecOldViewAngles = oldViewAngle;
 
 	// for now that is the fix for the menu xddxdx
-	if (GetAsyncKeyState(VK_LBUTTON) && menu::open)
+	if (pCmd->iButtons & IN_ATTACK && menu::open)
 		pCmd->iButtons &= ~(IN_ATTACK | IN_SECOND_ATTACK | IN_MIDDLE_ATTACK);
 
 	if (cfg::misc::infiniteDuck)
@@ -43,13 +43,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 
-	if ( exploits::bIsShiftingTicks ) {
-
+	if ( exploits::bIsShiftingTicks )
 		bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
-
-		pVerifiedCmd->userCmd = *pCmd;
-		pVerifiedCmd->uHashCRC = pCmd->GetChecksum( );
-	}
 
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
@@ -80,8 +75,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		if ( !detour::processPacket.IsHooked( ) )
 			detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
 
-		if ( !detour::sendNetMsg.IsHooked( ) )
-			detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
+		//if ( !detour::sendNetMsg.IsHooked( ) )
+		//	detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
 
 		//if ( !detour::setChoked.IsHooked( ) )
 		//	detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
@@ -123,13 +118,13 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();
 
-	g_LocalAnimations->OnCreateMove( );
-
 	pVerifiedCmd->userCmd = *pCmd;
 	pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
 
 	if (bSendPacket)
 		localanim.localdata.vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
+
+	g_LocalAnimations->OnCreateMove();
 }
 
 __declspec(naked) void __fastcall h::hkCreateMoveProxy(IBaseClientDLL* thisptr, int edx, int nSequenceNumber, float flInputSampleFrametime, bool bIsActive)

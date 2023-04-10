@@ -213,6 +213,7 @@ void menu::Antiaimtab() noexcept {
         ImGui::Checkbox("Slow motion", &fakewalkenable);
         ImGui::Keybind("slowmotionKey", &fakewalkKey);
         ImGui::SliderFloat("Slow motion speed", &fakewalk, 0.f, 100.f, "%.f");
+		ImGui::Checkbox("Leg breaker", &cfg::antiaim::slidewalk);
 
         ImGui::Checkbox("Fake duck", &fakeduck);
         ImGui::Keybind("fakeduckBind", &fakeduckbind);

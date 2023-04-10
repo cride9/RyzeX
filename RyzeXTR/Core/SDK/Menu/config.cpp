@@ -99,6 +99,7 @@ void CConfig::Setup() {
 		SetupValue(pitch, 0, "antiaim", "pitch");
 		SetupValue(yaw, 0, "antiaim", "yaw");
 		SetupValue(yawBase, 0, "antiaim", "yawbase");
+		SetupValue(slidewalk, 0, "antiaim", "slidewalk");
 
 		SetupValue(modifier, 0, "antiaim", "modifier");
 		SetupValue(desyncModifier, 0, "antiaim", "desyncModifier");

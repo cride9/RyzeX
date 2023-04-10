@@ -8,9 +8,6 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	static auto original = detour::runCommand.GetOriginal<decltype(&h::hkRunCommand)>();
 
-	if (g::bNotInServer)
-		return original(ecx, edx, pEnt, pCmd, pMovehelper);
-
 	if (!g::pCmd)
 		return original(ecx, edx, pEnt, pCmd, pMovehelper);
 

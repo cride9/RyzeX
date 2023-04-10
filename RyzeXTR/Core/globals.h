@@ -8,7 +8,6 @@ namespace g {
 	inline CUserCmd* pCmd;
 	inline CBaseEntity* pLocal;
 	inline CEntityListener entityListener;
-	inline bool bNotInServer;
 
 	inline bool bAllowAnimations[65];
 	inline bool* bSendPacket;

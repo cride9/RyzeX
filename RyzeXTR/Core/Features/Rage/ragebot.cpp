@@ -94,6 +94,9 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition, iTargetedHitbox)) {
 
+					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
+						misc::bRetreat = true;
+
 					rageBotData.bCanShoot = true;
 					rageBotData.pAimbotTarget = pTarget;
 					rageBotData.pTargetMatrix = rageBotData.pBacktrackRecord ? rageBotData.pBacktrackRecord->pMatrix : lagcomp.GetLog(pTarget->EntIndex()).pRecord.front().pMatrix;
@@ -114,9 +117,6 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 					pCmd->iTickCount = lagcomp.FixTickCount( flSimulationTime );
 					
 					pCmd->iButtons |= IN_ATTACK;
-
-					if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind))
-						misc::bRetreat = true;
 
 					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
 				
@@ -266,15 +266,15 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 					return curEnt;
 				}
 			}
-			else if ( cfg::rage::m_bEnableBacktrack ) { // valid backtrack record
-				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at( min( pLog->pRecord.size( ) - 1, 12 ) ); recordScan != nullptr && recordScan->bValid ) {
-					if (float flCurrentDamage = autowall.GetDamage(pLocal, recordScan->pEntity->GetHitboxPosition(hitboxID, recordScan->pMatrix)); flCurrentDamage >= flMinDamage || flCurrentDamage > recordScan->pEntity->GetHealth() + 10) {
-						rageBotData.flTargetSimulation = recordScan->flSimulationTime;
-						rageBotData.pBacktrackRecord = recordScan;
-						return curEnt;
-					}
-				}
-			}
+			//else if ( cfg::rage::m_bEnableBacktrack ) { // valid backtrack record
+			//	if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at( min( pLog->pRecord.size( ) - 1, 12 ) ); recordScan != nullptr && recordScan->bValid ) {
+			//		if (float flCurrentDamage = autowall.GetDamage(pLocal, recordScan->pEntity->GetHitboxPosition(hitboxID, recordScan->pMatrix)); flCurrentDamage >= flMinDamage || flCurrentDamage > recordScan->pEntity->GetHealth() + 10) {
+			//			rageBotData.flTargetSimulation = recordScan->flSimulationTime;
+			//			rageBotData.pBacktrackRecord = recordScan;
+			//			return curEnt;
+			//		}
+			//	}
+			//}
 			else { // breaking lagcomp nigger
 				if (float flCurrentDamage = autowall.GetDamage(pLocal, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base())); flCurrentDamage >= flMinDamage || flCurrentDamage > curEnt->GetHealth() + 10) {
 					rageBotData.flTargetSimulation = curEnt->GetSimulationTime( );
@@ -299,7 +299,7 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 	if (!pWeaponInfo)
 		return false;
 
-	if (exploits::bIsShiftingTicks)
+	if (exploits::bIsShiftingTicks || (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && i::GlobalVars->flCurrentTime - pWeapon->GetLastShotTime() <= TICKS_TO_TIME(15)))
 		return true;
 	
 	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar("weapon_accuracy_nospread");

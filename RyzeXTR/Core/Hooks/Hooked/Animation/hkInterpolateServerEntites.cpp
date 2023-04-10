@@ -9,6 +9,9 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 	if (!g::pLocal || !i::EngineClient->IsInGame() || !g::pLocal->IsAlive())
 		return original(ecx, edx);
 
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+		return original(ecx, edx);
+
 	original(ecx, edx);
 
 	anims.InterpolateMatricies();

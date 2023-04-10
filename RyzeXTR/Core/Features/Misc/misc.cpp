@@ -254,7 +254,7 @@ void misc::NightMode() {
 
 void misc::SlideFix() {
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->GetMoveType() == MOVETYPE_LADDER)
+	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->GetMoveType() == MOVETYPE_LADDER || cfg::antiaim::slidewalk)
 		return;
 
 	g::pCmd->iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVERIGHT | IN_MOVELEFT);
@@ -601,14 +601,18 @@ void misc::Slowwalk(CUserCmd* pCmd, float flSpeed) {
 
 void misc::AspectRatio() {
 
-	if (!cfg::misc::aspectRatio)
+	static CConVar* r_aspectratio = i::ConVar->FindVar("r_aspectratio");
+
+	if (!cfg::misc::aspectRatio) {
+		r_aspectratio->SetValue(0);
 		return;
+	}
 
 	float ratio = (cfg::misc::aspectRatioValue * 0.1) / 2;
 	if (ratio > 0.001)
-		i::ConVar->FindVar("r_aspectratio")->SetValue(ratio); //ayyware hhhh
+		r_aspectratio->SetValue(ratio); //ayyware hhhh
 	else
-		i::ConVar->FindVar("r_aspectratio")->SetValue((35 * 0.1f) / 2);
+		r_aspectratio->SetValue((35 * 0.1f) / 2);
 }
 
 void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {

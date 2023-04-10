@@ -10,15 +10,6 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 	if (cfg::misc::removals[3] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
 
-	if (!i::EngineClient->IsInGame() || !i::EngineClient->GetLocalPlayer()) {
-
-		ragebot.rageBotData.pBacktrackRecord = nullptr;
-		ragebot.rageBotData.pAimbotTarget = nullptr;
-		g::bNotInServer = true;
-	}
-	else
-		g::bNotInServer = false;
-
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
 		visual::VisualRender();

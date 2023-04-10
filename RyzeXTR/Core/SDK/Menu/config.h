@@ -85,6 +85,7 @@ namespace cfg {
 		inline int pitch = 2;
 		inline int yawBase = 1;
 		inline int yaw = 1;
+		inline bool slidewalk = false;
 
 		inline int desynctype = 0;
 		inline float desyncvalue = 58.f;

@@ -79,7 +79,10 @@ void __fastcall h::hkFrameStageNotify(void* ecx, void* edx, EStage curStage) {
 
 	static auto original = detour::frameStageNotify.GetOriginal<decltype(&h::hkFrameStageNotify)>();
 
-	if (!g::pLocal || g::bNotInServer)
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+		return original(ecx, edx, curStage);
+
+	if (!g::pLocal)
 		return original(ecx, edx, curStage);
 
 	hkPreFrameStageNotify(curStage);

@@ -725,6 +725,48 @@ void C_LocalAnimations::TransformateMatricies()
 		Matrix[2][3] += vecOriginDelta.z;
 	}
 
+	if (cfg::model::paperMode) {
+
+		Vector curangle;
+		i::EngineClient->GetViewAngles(curangle);
+		int angle = 0;
+
+		if (curangle.y <= 180 && curangle.y >= 145)
+			angle = 0;
+		else if (curangle.y >= -180 && curangle.y <= -145)
+			angle = 0;
+		else if (curangle.y >= 0 && curangle.y <= 45)
+			angle = 0;
+		else if (curangle.y <= 0 && curangle.y >= -45)
+			angle = 0;
+		else
+			angle = 1;
+
+		for (int i = 0; i < 128; i++) {
+
+			m_LocalData.m_Fake.m_Matrix[i][angle][0] = 0.1;
+			m_LocalData.m_Fake.m_Matrix[i][angle][1] = 0.1;
+			m_LocalData.m_Fake.m_Matrix[i][angle][2] = 0.1;
+			m_LocalData.m_Fake.m_Matrix[i][angle][3] = (angle == 0 ? g::pLocal->GetAbsOrigin().x : g::pLocal->GetAbsOrigin().y);
+
+			m_LocalData.m_Fake.m_Matrix[i][angle][0] = 0.1;
+			m_LocalData.m_Fake.m_Matrix[i][angle][1] = 0.1;
+			m_LocalData.m_Fake.m_Matrix[i][angle][2] = 0.1;
+			m_LocalData.m_Fake.m_Matrix[i][angle][3] = (angle == 0 ? g::pLocal->GetAbsOrigin().x : g::pLocal->GetAbsOrigin().y);
+
+			m_LocalData.m_Real.m_Matrix[i][angle][0] = 0.1;
+			m_LocalData.m_Real.m_Matrix[i][angle][1] = 0.1;
+			m_LocalData.m_Real.m_Matrix[i][angle][2] = 0.1;
+			m_LocalData.m_Real.m_Matrix[i][angle][3] = (angle == 0 ? g::pLocal->GetAbsOrigin().x : g::pLocal->GetAbsOrigin().y);
+
+			m_LocalData.m_Real.m_Matrix[i][angle][0] = 0.1;
+			m_LocalData.m_Real.m_Matrix[i][angle][1] = 0.1;
+			m_LocalData.m_Real.m_Matrix[i][angle][2] = 0.1;
+			m_LocalData.m_Real.m_Matrix[i][angle][3] = (angle == 0 ? g::pLocal->GetAbsOrigin().x : g::pLocal->GetAbsOrigin().y);
+		}
+
+	}
+
 	m_LocalData.m_Real.m_vecMatrixOrigin = g::pLocal->GetAbsOrigin();
 }
 bool C_LocalAnimations::CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount)

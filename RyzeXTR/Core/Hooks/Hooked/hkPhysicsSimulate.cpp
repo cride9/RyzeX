@@ -10,9 +10,6 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 
 	static auto original = detour::physicsSimulate.GetOriginal<decltype(&h::hkPhysicsSimulate)>();
 
-	if (g::bNotInServer)
-		return original(ecx, edx);
-
 	/*
 		m_nSimulationTick = gpGlobals->tickcount;
 	
