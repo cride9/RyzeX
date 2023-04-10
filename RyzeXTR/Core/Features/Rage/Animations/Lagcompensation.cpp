@@ -626,7 +626,7 @@ void Lagcompensation::RemoveInterpolation() {
 
 		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity == g::pLocal || pEntity->GetTeam() == g::pLocal->GetTeam())
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity == g::pLocal)
 			continue;
 
 		SetInterpolationFlags(pEntity);

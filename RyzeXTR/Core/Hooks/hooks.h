@@ -7,6 +7,7 @@
 #include "../../Dependecies/Minhook/detour.hpp"
 #include "../../Dependecies/Minhook/trampoline.h"
 #include "../Features/Rage/Animations/LocalAnimation.h"
+#include "../SDK/Menu/config.h"
 
 namespace table {
 

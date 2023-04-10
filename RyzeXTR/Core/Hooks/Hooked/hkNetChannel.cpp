@@ -8,6 +8,9 @@ void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool hea
 {
 	static auto original = detour::processPacket.GetOriginal<decltype( &hkProcessPacket )>( );
 
+	if (g::bNotInServer)
+		return original(ecx, edx, packet, header);
+
 	if ( !i::ClientState->pNetChannel )
 		return original( ecx, edx, packet, header );
 
@@ -31,6 +34,9 @@ void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool hea
 bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMessage, bool bForceReliable, bool bVoice )
 {
 	static auto original = detour::sendNetMsg.GetOriginal<decltype(&hkSendNetMsg)>();
+
+	if (g::bNotInServer)
+		return original(thisptr, edx, pMessage, bForceReliable, bVoice);
 
 	/*
 	 * @note: disable files crc check (sv_pure)

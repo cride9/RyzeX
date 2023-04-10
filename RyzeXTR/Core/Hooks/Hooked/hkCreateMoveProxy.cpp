@@ -16,6 +16,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	static auto original = detour::createMove.GetOriginal<decltype(&h::hkCreateMoveProxy)>();
 
+	if (g::bNotInServer)
+		return original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
+
 	// call original first so our movement and other stuff will be sent normally
 	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
 

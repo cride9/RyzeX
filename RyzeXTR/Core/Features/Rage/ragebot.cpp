@@ -30,7 +30,7 @@ bool LowestHealth(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 }
 
 bool HighestDamage(std::tuple<Vector, float, int> damage1, std::tuple<Vector, float, int> damage2) {
-	return std::get<2>(damage1) > std::get<2>(damage2);
+	return std::get<1>(damage1) > std::get<1>(damage2);
 }
 
 bool IsAutoScopeable( short iItemDefinitionIndex )

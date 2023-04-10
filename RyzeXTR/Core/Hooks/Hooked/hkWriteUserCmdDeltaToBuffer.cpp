@@ -22,6 +22,9 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 
 	static auto original = detour::writeUserCmd.GetOriginal<decltype(&h::hkWriteUserCmdDeltaToBuffer)>();
 
+	if (g::bNotInServer)
+		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
+
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
 

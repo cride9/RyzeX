@@ -53,7 +53,7 @@ void h::SetupHooks() {
 	HookSignature(detour::interpolateEntites, "client.dll", "55 8B EC 83 EC 1C 8B 0D ? ? ? ? 53 56 57", &hkInterpolateServerEntites);
 	HookSignature(detour::drawViewmodel, "client.dll", "55 8B EC 51 57 E8", hkShouldDrawViewmodel);
 	//HookSignature(detour::emitSound, "client.dll", "8D 8F ? ? ? ? F3 0F 10 84 24 ? ? ? ? 50", &hkEmitSound, 0x2);
-	HookSignature(detour::isFollowingEntity, "client.dll", "F6 ? ? ? ? ? ? 74 31 80", &hkIsFollowingEntity);
+	//HookSignature(detour::isFollowingEntity, "client.dll", "F6 ? ? ? ? ? ? 74 31 80", &hkIsFollowingEntity);
 
 	menu::DestroyDirectX();
 
