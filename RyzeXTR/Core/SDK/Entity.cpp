@@ -157,6 +157,35 @@ std::optional<Vector> CBaseEntity::GetHitboxPosition(const int iHitbox)
 	return std::nullopt;
 }
 
+std::optional<Vector> CBaseEntity::GetHitboxPosition(const int iHitbox, Vector& vecMins, Vector& vecMaxs, float& flRadius)
+{
+	assert(iHitbox > HITBOX_INVALID && iHitbox < HITBOX_MAX); // given invalid hitbox index for gethitboxposition
+
+	std::array<matrix3x4_t, MAXSTUDIOBONES> arrBonesToWorld = { };
+
+	if (const auto pModel = this->GetModel(); pModel != nullptr)
+	{
+		if (const auto pStudioHdr = i::ModelInfo->GetStudioModel(pModel); pStudioHdr != nullptr)
+		{
+			if (const auto pHitbox = pStudioHdr->GetHitbox(iHitbox, 0); pHitbox != nullptr)
+			{
+				if (this->SetupBones(arrBonesToWorld.data(), arrBonesToWorld.size(), BONE_USED_BY_HITBOX, 0.f))
+				{
+					// get mins/maxs by bone
+					vecMins = M::VectorTransform(pHitbox->vecBBMin, arrBonesToWorld.at(pHitbox->iBone));
+					vecMaxs = M::VectorTransform(pHitbox->vecBBMax, arrBonesToWorld.at(pHitbox->iBone));
+					flRadius = pHitbox->flRadius;
+
+					// get center
+					return (vecMins + vecMaxs) * 0.5f;
+				}
+			}
+		}
+	}
+
+	return std::nullopt;
+}
+
 std::optional<Vector> CBaseEntity::GetHitGroupPosition(const int iHitGroup)
 {
 	assert(iHitGroup >= HITGROUP_GENERIC && iHitGroup <= HITGROUP_GEAR); // given invalid hitbox index for gethitgroupposition

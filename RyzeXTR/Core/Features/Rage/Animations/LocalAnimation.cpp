@@ -188,7 +188,8 @@ void C_LocalAnimations::OnCreateMove()
 	g::pLocal->SetAbsOrigin(m_LocalData.m_vecAbsOrigin);
 	//if ( !g_Globals->m_Packet.m_bSkipMatrix )
 	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Real.m_Matrix.data(), BONE_USED_BY_ANYTHING);
-	g_LocalAnimations->UpdateDesyncAnimations();
+	if (cfg::model::localDesync)
+		g_LocalAnimations->UpdateDesyncAnimations();
 
 	/* restore globals */
 	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);

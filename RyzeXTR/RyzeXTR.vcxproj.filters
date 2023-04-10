@@ -79,6 +79,7 @@
     <ClCompile Include="Core\Features\Changers\skinchanger.cpp" />
     <ClCompile Include="Core\Features\Changers\agentchanger.cpp" />
     <ClCompile Include="Core\Features\Changers\glovechanger.cpp" />
+    <ClCompile Include="Core\SDK\RayTracer rebuilt\CRayTrace.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -169,5 +170,6 @@
     <ClInclude Include="Core\Features\Changers\skinchanger.h" />
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />
     <ClInclude Include="Core\Features\Changers\glovechanger.h" />
+    <ClInclude Include="Core\SDK\RayTracer rebuilt\CRayTrace.h" />
   </ItemGroup>
 </Project>

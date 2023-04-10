@@ -894,6 +894,7 @@ public:
 	std::optional<Vector>	GetBonePosition(int iBone);
 	int						GetBoneByHash(const uint32_t uBoneHash) const;
 	std::optional<Vector>	GetHitboxPosition(const int iHitbox);									// current matrix
+	std::optional<Vector>	GetHitboxPosition(const int iHitbox, Vector& vecMins, Vector& vecMaxs, float& flRadius);
 	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128]);					// selected matrix
 	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float& flRadius);// selected matrix + radius
 	std::optional<Vector>	GetHitGroupPosition(const int iHitGroup);

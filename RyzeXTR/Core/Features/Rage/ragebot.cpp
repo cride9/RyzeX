@@ -5,6 +5,7 @@
 #include "../Visuals/ESP.h"
 #include "exploits.h"
 #include "../Misc/misc.h"
+#include "../../SDK/RayTracer rebuilt/CRayTrace.h"
 
 bool LowestFov(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 
@@ -28,8 +29,8 @@ bool LowestHealth(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 		return LowestFov(pEnt1, pEnt2);
 }
 
-bool HighestDamage(std::pair<Vector, float> damage1, std::pair<Vector, float> damage2) {
-	return damage1.second > damage2.second;
+bool HighestDamage(std::tuple<Vector, float, int> damage1, std::tuple<Vector, float, int> damage2) {
+	return std::get<2>(damage1) > std::get<2>(damage2);
 }
 
 bool IsAutoScopeable( short iItemDefinitionIndex )
@@ -75,7 +76,8 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 	if (CBaseEntity* pTarget = SelectTarget(pLocal, pWeapon, vecEyePosition); pTarget != nullptr) {
 
-		if (Vector vecHitscan = Hitscan(pLocal, pTarget, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
+		static int iTargetedHitbox = 0;
+		if (Vector vecHitscan = Hitscan(pLocal, pTarget, pWeapon, vecEyePosition, iTargetedHitbox); vecHitscan != Vector(0, 0, 0)) {
 
 			if (cfg::rage::betweenshots)
 				rageBotData.bCanShoot = false;
@@ -90,7 +92,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 
 			if (CheckShootingCondition(pCmd, pLocal)) {
 
-				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
+				if (Hitchance(pTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition, iTargetedHitbox)) {
 
 					rageBotData.bCanShoot = true;
 					rageBotData.pAimbotTarget = pTarget;
@@ -133,8 +135,9 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 		exploits::bShooting = false;
 }
 
-Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
+Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition, int& iTargetedHitbox) {
 
+	std::vector<std::tuple<Vector, float, int>> vectorDamageStuff;
 	std::vector<std::pair<Vector, float>> vectorDamagePairs;
 	std::array<bool, HITBOX_MAX> multiPointHitboxes = ConfigMultiHitboxes(pWeapon);
 
@@ -168,7 +171,7 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 
 			for (Vector currentPoint : vecHitboxPosition)
 				if (float flDamage = autowall.GetDamage(pLocal, currentPoint ); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5)
-					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
+					vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
 		}
 		else {
 
@@ -179,19 +182,20 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 				Lagcompensation::LagRecord_t backup(pTarget);
 				rageBotData.pBacktrackRecord->Apply(pTarget, false);
 				if (float flDamage = autowall.GetDamage(pLocal, currentPoint ); flDamage > ConfigMinimumDamage(pWeapon) || flDamage > pTarget->GetHealth() + 5)
-					vectorDamagePairs.push_back(std::make_pair(currentPoint, flDamage));
+					vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
 				backup.Apply(pTarget, true);
 			}
 		}
 	}
 
-	if (vectorDamagePairs.empty())
+	if (vectorDamageStuff.empty())
 		return Vector(0, 0, 0);
 
 	/* Sort highest damage */
-	std::sort(vectorDamagePairs.begin(), vectorDamagePairs.end(), HighestDamage);
+	std::sort(vectorDamageStuff.begin(), vectorDamageStuff.end(), HighestDamage);
 
-	return vectorDamagePairs.front().first;
+	iTargetedHitbox = std::get<2>(vectorDamageStuff.front());
+	return std::get<0>(vectorDamageStuff.front());
 }
 
 CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
@@ -287,7 +291,7 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	return nullptr;
 }
 
-bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector vecFrom, int iChance, Vector vecEyePosition) {
+bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector vecFrom, int iChance, Vector vecEyePosition, int iHitbox) {
 
 	float flFinalHitchance = 0;
 	CCSWeaponInfo* pWeaponInfo = pWeapon->GetCSWpnData();
@@ -307,22 +311,27 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 	Vector vecRight = Vector(0, 0, 0);
 	Vector vecUp = Vector(0, 0, 0);
 
+	Vector vecMins, vecMaxs;
+	float flRadius;
+	auto data = pEnt->GetHitboxPosition(iHitbox, vecMins, vecMaxs, flRadius);
+
 	M::AngleVectors(vecFrom, &vecForward, &vecRight, &vecUp);
 
 	vecForward.Normalize();
 	vecRight.Normalize();
 	vecUp.Normalize();
 
-	//auto is_special_weapon = pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_AWP || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_G3SG1 || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_SCAR20 || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_SSG08;
+	bool bSpecialWeapon = pWeapon->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_AWP || pWeapon->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_SSG08;
+	int iAccuracry = bSpecialWeapon ? 256 : 128;
 
 	static bool bSetupSpreadValues = true;
-	static float flSpreadValues[128][6];
+	static float flSpreadValues[256][6];
 
 	if (bSetupSpreadValues)
 	{
 		bSetupSpreadValues = false;
 
-		for (auto i = 0; i < 128; ++i)
+		for (auto i = 0; i < iAccuracry; ++i)
 		{
 			M::RandomSeed(i + 1);
 
@@ -352,7 +361,7 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 	float flGetInaccuracy = pWeapon->GetInaccuracy();
 	float flGetSpread = pWeapon->GetSpread();
 
-	for (auto i = 0; i < 128; ++i)
+	for (auto i = 0; i < iAccuracry; ++i)
 	{
 		float flInacc = flSpreadValues[i][0] * flGetInaccuracy;
 		float flSpread = flSpreadValues[i][1] * flGetSpread;
@@ -361,7 +370,6 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 		float flSpreadY = flSpreadValues[i][2] * flInacc + flSpreadValues[i][4] * flSpread;
 
 		Vector vecDirection = Vector(0, 0, 0);
-
 		vecDirection.x = vecForward.x + vecRight.x * flSpreadX + vecUp.x * flSpreadY;
 		vecDirection.y = vecForward.y + vecRight.y * flSpreadX + vecUp.y * flSpreadY;
 		vecDirection.z = vecForward.z + vecRight.z * flSpreadX + vecUp.z * flSpreadY; //-V778
@@ -369,14 +377,13 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 		Vector vecEnd = vecEyePosition + vecDirection * pWeaponInfo->flRange;
 
 		Trace_t Trace;
-
 		i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, vecEnd), MASK_SHOT | CONTENTS_GRATE, pEnt, &Trace);
 
 		if (Trace.pHitEntity == pEnt)
 			iHits++;
 	}
 
-	flFinalHitchance = (int)((float)iHits / 1.28f);
+	flFinalHitchance = (int)((float)iHits / (iAccuracry / 100.f));
 
 	if (flFinalHitchance > iChance)
 		return true;
@@ -413,7 +420,7 @@ void CRageBot::AutoStop(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseEn
 	case 1:
 		predictTick = 4; break;
 	case 2:
-		predictTick = 6; break;
+		predictTick = 8; break;
 	}
 
 	Vector vecInterpolatedEyePosition = InterpolateLocalEyePosition(g::pLocal->GetEyePosition(), predictTick);

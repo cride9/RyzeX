@@ -72,6 +72,61 @@ struct matrix3x4_t
 		}
 	}
 
+	Vector operator*(const Vector& vec) const {
+		Vector result;
+		for (int i = 0; i < 3; i++) {
+			result[i] = arrData[i][0] * vec.x +
+				arrData[i][1] * vec.y +
+				arrData[i][2] * vec.z +
+				arrData[i][3];
+		}
+		return result;
+	}
+
+	matrix3x4_t operator+(const matrix3x4_t& dataIn) const {
+
+		matrix3x4_t result;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 4; j++) {
+				result.arrData[i][j] = arrData[i][j] + dataIn[i][j];
+			}
+		}
+		return result;
+	}
+
+	matrix3x4_t operator+(const matrix3x4_t& dataIn) {
+
+		matrix3x4_t result;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 4; j++) {
+				result.arrData[i][j] = arrData[i][j] + dataIn[i][j];
+			}
+		}
+		return result;
+	}
+
+	matrix3x4_t operator*(const matrix3x4_t& dataIn) {
+
+		matrix3x4_t result;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 4; j++) {
+				result.arrData[i][j] = arrData[i][j] * dataIn[i][j];
+			}
+		}
+		return result;
+	}
+
+	matrix3x4_t operator*(const float& dataIn) {
+
+		matrix3x4_t result;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 4; j++) {
+				result.arrData[i][j] = arrData[i][j] * dataIn;
+			}
+		}
+		return result;
+	}
+
 	float* operator[](const int nIndex)
 	{
 		return arrData[nIndex];
