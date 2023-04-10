@@ -255,7 +255,7 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 
 			if ( pLog->pRecord.front( ).bValid ) { // valid record
 				/* Trace player with its current bonedata */
-				if (float flCurrentDamage = autowall.GetDamage(pLocal, recordEntity->GetHitboxPosition(hitboxID, recordMatrix)); flCurrentDamage >= flMinDamage || flCurrentDamage > pLog->pRecord.front().pEntity->GetHealth() + 10) {
+				if (float flCurrentDamage = autowall.GetDamage(pLocal, recordEntity->GetHitboxPosition(hitboxID, recordMatrix)); flCurrentDamage >= flMinDamage || flCurrentDamage > recordEntity->GetHealth() + 10) {
 					rageBotData.flTargetSimulation = pLog->pRecord.front( ).flSimulationTime;
 					rageBotData.pBacktrackRecord = nullptr;
 
@@ -264,7 +264,7 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 			}
 			else if ( cfg::rage::m_bEnableBacktrack ) { // valid backtrack record
 				if ( Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at( min( pLog->pRecord.size( ) - 1, 12 ) ); recordScan != nullptr && recordScan->bValid ) {
-					if (float flCurrentDamage = autowall.GetDamage(pLocal, curEnt->GetHitboxPosition(hitboxID, recordScan->pMatrix)); flCurrentDamage >= flMinDamage || flCurrentDamage > pLog->pRecord.front().pEntity->GetHealth() + 10) {
+					if (float flCurrentDamage = autowall.GetDamage(pLocal, recordScan->pEntity->GetHitboxPosition(hitboxID, recordScan->pMatrix)); flCurrentDamage >= flMinDamage || flCurrentDamage > recordScan->pEntity->GetHealth() + 10) {
 						rageBotData.flTargetSimulation = recordScan->flSimulationTime;
 						rageBotData.pBacktrackRecord = recordScan;
 						return curEnt;
@@ -272,7 +272,7 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 				}
 			}
 			else { // breaking lagcomp nigger
-				if (float flCurrentDamage = autowall.GetDamage(pLocal, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base())); flCurrentDamage >= flMinDamage || flCurrentDamage > pLog->pRecord.front().pEntity->GetHealth() + 10) {
+				if (float flCurrentDamage = autowall.GetDamage(pLocal, curEnt->GetHitboxPosition(hitboxID, curEnt->GetCachedBoneData().Base())); flCurrentDamage >= flMinDamage || flCurrentDamage > curEnt->GetHealth() + 10) {
 					rageBotData.flTargetSimulation = curEnt->GetSimulationTime( );
 					rageBotData.pBacktrackRecord = nullptr;
 					return curEnt;
@@ -298,8 +298,9 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 	if (exploits::bIsShiftingTicks)
 		return true;
 	
+	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar("weapon_accuracy_nospread");
 	// server is currently in nospread, no need to calculate anything, just shoot
-	if ( i::ConVar->FindVar( "weapon_accuracy_nospread" )->GetInt( ) >= 1 )
+	if (weapon_accuracy_nospread->GetInt() >= 1)
 		return true;
 
 	Vector vecForward = Vector(0, 0, 0);
@@ -315,13 +316,13 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 	//auto is_special_weapon = pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_AWP || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_G3SG1 || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_SCAR20 || pWeapon->GetItemDefinitionIndex() == ItemDefinitionIndex::WEAPON_SSG08;
 
 	static bool bSetupSpreadValues = true;
-	static float flSpreadValues[256][6];
+	static float flSpreadValues[128][6];
 
 	if (bSetupSpreadValues)
 	{
 		bSetupSpreadValues = false;
 
-		for (auto i = 0; i < 256; ++i)
+		for (auto i = 0; i < 128; ++i)
 		{
 			M::RandomSeed(i + 1);
 
@@ -348,10 +349,13 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 
 	int iHits = 0;
 
-	for (auto i = 0; i < 256; ++i)
+	float flGetInaccuracy = pWeapon->GetInaccuracy();
+	float flGetSpread = pWeapon->GetSpread();
+
+	for (auto i = 0; i < 128; ++i)
 	{
-		float flInacc = flSpreadValues[i][0] * pWeapon->GetInaccuracy();
-		float flSpread = flSpreadValues[i][1] * pWeapon->GetSpread();
+		float flInacc = flSpreadValues[i][0] * flGetInaccuracy;
+		float flSpread = flSpreadValues[i][1] * flGetSpread;
 
 		float flSpreadX = flSpreadValues[i][3] * flInacc + flSpreadValues[i][5] * flSpread;
 		float flSpreadY = flSpreadValues[i][2] * flInacc + flSpreadValues[i][4] * flSpread;
@@ -372,7 +376,7 @@ bool CRageBot::Hitchance(CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector v
 			iHits++;
 	}
 
-	flFinalHitchance = (int)((float)iHits / 2.56f);
+	flFinalHitchance = (int)((float)iHits / 1.28f);
 
 	if (flFinalHitchance > iChance)
 		return true;

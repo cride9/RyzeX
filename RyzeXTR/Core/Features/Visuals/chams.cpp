@@ -165,7 +165,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 	if (!pEnt || !g::pLocal)
 		return false;
 
-	const std::string_view szModelName = info.pStudioHdr->szName;
+	const std::string_view& szModelName = info.pStudioHdr->szName;
 
 	if (!materials[DEFAULT])
 		materials[DEFAULT] = CreateMaterial("ryzextr_players", "VertexLitGeneric");
