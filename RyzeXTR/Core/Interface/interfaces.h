@@ -24,6 +24,7 @@
 #include "Interfaces/IGlowObjectManager.h"
 #include "Interfaces/IEngineSoundClient.h"
 #include "Interfaces/IViewRenderBeams.h"
+#include "Interfaces/IInputSystem.h"
 
 // Classes aka that I can't find as interface in the source kbxdbdxjk
 #include "Classes/CClientState.h"
@@ -60,7 +61,9 @@ namespace i {
 	inline IGlowObjectManager* GlowObjectManager;
 	inline IEngineSoundClient* EngineSoundClient;
 	inline IViewRenderBeams* RenderBeam;
+	inline IInputSystem* InputSystem;
 
+	inline IDirect3DDevice9* DirectDevice;
 	inline IMoveHelper* MoveHelper;			// Runcommand parameter 
 
 	inline CClientState* ClientState;

@@ -21,6 +21,7 @@ void i::SetupInterfaces() {
 	PhysicsProps =	GetInterface<IPhysicsSurfaceProps>("vphysics.dll", "VPhysicsSurfaceProps001");
 	GameEvent =		GetInterface<IGameEventManager>("engine.dll", "GAMEEVENTSMANAGER002");
 	EngineSoundClient = GetInterface<IEngineSoundClient>("engine.dll", "IEngineSoundClient003");
+	InputSystem =	GetInterface<IInputSystem>( "inputsystem.dll", "InputSystemVersion001" );
 
 	ClientState = **reinterpret_cast<CClientState***>(util::FindSignature("engine.dll", "A1 ? ? ? ? 8B 88 ? ? ? ? 85 C9 75 07") + 0x1);
 	if (ClientState == nullptr)
@@ -29,6 +30,10 @@ void i::SetupInterfaces() {
 	KeyValuesSystem = reinterpret_cast<CKeyValuesSystem * (__cdecl*)()>(GetProcAddress(GetModuleHandle("vstdlib.dll"), "KeyValuesSystem"))();
 	if (KeyValuesSystem == nullptr)
 		throw std::runtime_error("Failed to get CKeyValuesSystem");
+
+	DirectDevice = **reinterpret_cast< IDirect3DDevice9*** >( util::FindSignature( "shaderapidx9.dll", "A1 ? ? ? ? 50 8B 08 FF 51 0C" ) + 0x1 ); // @xref: "HandleLateCreation"
+	if ( DirectDevice == nullptr )
+		throw std::runtime_error( "Failed to get DirectDevice" );
 
 	Input = *reinterpret_cast<CInput**>(util::FindSignature("client.dll", "B9 ? ? ? ? F3 0F 11 04 24 FF 50 10") + 0x1);
 	if (Input == nullptr)

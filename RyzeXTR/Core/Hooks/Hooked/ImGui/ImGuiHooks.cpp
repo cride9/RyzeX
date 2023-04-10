@@ -33,3 +33,28 @@ long __stdcall h::EndScene(IDirect3DDevice9* device) {
 
 	return result;
 }
+
+//long CALLBACK h::WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+//{
+//	// process keys
+//	IPT::Process( uMsg, wParam, lParam );
+//
+//	// switch window state on key click
+//	if ( C::Get<int>( Vars.iMenuKey ) > 0 && IPT::IsKeyReleased( C::Get<int>( Vars.iMenuKey ) ) )
+//		W::bMainOpened = !W::bMainOpened;
+//
+//	// disable game input when menu is opened
+//	I::InputSystem->EnableInput( !W::bMainOpened );
+//
+//	/*
+//	 * @note: we can use imgui input handler to our binds if remove menu state check
+//	 * with ImGui::IsKeyDown, ImGui::IsKeyPressed, etc functions
+//	 * but imgui api's keys down durations doesnt have forward compatibility
+//	 * and i dont want spend a lot of time on recode it
+//	 */
+//	if ( D::bInitialized && W::bMainOpened && ImGui_ImplWin32_WndProcHandler( hWnd, uMsg, wParam, lParam ) )
+//		return 1L;
+//
+//	// return input controls to the game
+//	return CallWindowProcW( IPT::pOldWndProc, hWnd, uMsg, wParam, lParam );
+//}

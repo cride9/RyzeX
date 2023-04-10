@@ -10,6 +10,8 @@ void menu::HandleMenuElements() noexcept {
 
     ImGui::Begin("RyzeX", NULL, ImGuiWindowFlags_NoTitleBar);
     {
+        ImGui::GetBackgroundDrawList( )->AddRectFilled( ImVec2( 0.f, 0.f ), ImGui::GetIO( ).DisplaySize, IM_COL32( 0, 0, 0, 100 ) );
+
         if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
             if (ImGui::IsKeyDown(ImGuiKey_S)) {
                 pressedSave = true;
@@ -48,7 +50,7 @@ void menu::HandleMenuElements() noexcept {
 void menu::Tabselection() noexcept {
 
     ImGui::PushFont(tabFont);
-    ImGui::BeginChild("leftchild", ImVec2(100.f, ImGui::GetContentRegionAvail().y), true);
+    ImGui::BeginChild("leftchild", ImVec2(100.f, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
         if (ImGui::Button("Ragebot", ImVec2(ImGui::GetContentRegionAvail().x, 50), selectedTab == RAGE_TAB))
             selectedTab = RAGE_TAB;
@@ -79,10 +81,10 @@ void menu::Ragetab() noexcept {
 
     using namespace cfg::rage;
     ImVec2 savedCursorPos = ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y + ImGui::GetContentRegionAvail().y / 2 + ImGui::GetStyle().WindowPadding.y + 2);
-	static const char* autoStopPhases[] = { "Slight", "Normal", "Aggressive" };
+	static const char* autoStopPhases[] = { "Disabled", "Slight", "Normal", "Aggressive" };
 	static const char* aimbotTargetSelectionList[] = { "Health", "Field of view" };
 
-    ImGui::BeginChild("leftside", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+    ImGui::BeginChild("leftside", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
         ImGui::Checkbox("Enable", &enable);
 		ImGui::Combo("Target selection", &aimbotTargetSelection, aimbotTargetSelectionList, IM_ARRAYSIZE(aimbotTargetSelectionList));
@@ -104,7 +106,7 @@ void menu::Ragetab() noexcept {
     }
     ImGui::EndChild();
     ImGui::SameLine();
-    ImGui::BeginChild("rightside", ImGui::GetContentRegionAvail(), true);
+    ImGui::BeginChild("rightside", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_NoMove );
     {
         static const char* item[] = { "auto", "scout", "awp", "pistol", "heavy pistol", "other" };
         static int selectedWeapon = 0;
@@ -161,7 +163,7 @@ void menu::Antiaimtab() noexcept {
     static const char* yawModifierList[] = { "Off", "Jitter", "Random" };
 	static const char* freestandList[] = { "Off", "Distance", "Smart" };
 
-    ImGui::BeginChild("LeftChild", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+    ImGui::BeginChild("LeftChild", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
         ImGui::Checkbox("Enabled", &enabled);
         ImGui::Combo("Pitch", &pitch, pitchList, IM_ARRAYSIZE(pitchList));
@@ -189,7 +191,7 @@ void menu::Antiaimtab() noexcept {
     ImGui::SameLine();
     ImVec2 savedPosition = ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y + ImGui::GetContentRegionAvail().y / 2 + ImGui::GetStyle().WindowPadding.y + 2.f);
 
-    ImGui::BeginChild("righttop", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2), true);
+    ImGui::BeginChild("righttop", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y / 2), true, ImGuiWindowFlags_NoMove );
     {
         fakelagmin = std::clamp(fakelagmin, 0, fakelag);
         fakelagmax = std::clamp(fakelagmax, fakelagmin, fakelag);
@@ -206,7 +208,7 @@ void menu::Antiaimtab() noexcept {
 
     ImGui::SetCursorPos(savedPosition);
 
-    ImGui::BeginChild("rightbot", ImGui::GetContentRegionAvail(), true);
+    ImGui::BeginChild("rightbot", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_NoMove );
     {
         ImGui::Checkbox("Slow motion", &fakewalkenable);
         ImGui::Keybind("slowmotionKey", &fakewalkKey);
@@ -237,7 +239,7 @@ void menu::Visualtab() noexcept {
     static const char* allType[] = { "Default", "Flat", "Glow", "Thin glow", "Animated" };
     static const char* m_szHitsound[] = { "None", "Default", "Custom" };
 
-    ImGui::BeginChild("selectPlayer", ImVec2(ImGui::GetContentRegionAvail().x, 30.f), true);
+    ImGui::BeginChild("selectPlayer", ImVec2(ImGui::GetContentRegionAvail().x, 30.f), true, ImGuiWindowFlags_NoMove );
     {
         if (ImGui::Button("Enemy", ImVec2(buttonSize, 20), selectedEsp == ENEMY))
             selectedEsp = ENEMY;
@@ -332,7 +334,7 @@ void menu::Visualtab() noexcept {
     case WORLD:
         using namespace cfg::misc;
 
-        ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+        ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
         {
             ImGui::Checkbox("Thirdperson", &thirdperson);
             ImGui::Keybind("tpKey", &thirdpersonbind);
@@ -364,7 +366,7 @@ void menu::Visualtab() noexcept {
 
         ImGui::SameLine();
 
-        ImGui::BeginChild("right", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
+        ImGui::BeginChild("right", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
         {
             ImGui::Checkbox("Show impact", &bulletImpact);
             ImGui::Checkbox( "Bullet tracer", &bulletTracer );
@@ -382,6 +384,7 @@ void menu::Visualtab() noexcept {
             }
 
             ImGui::SetNextWindowSizeConstraints( ImVec2( 0, 0 ), ImVec2( 200, 140) );
+            ImGui::PushStyleVar( ImGuiStyleVar_WindowMinSize, ImVec2( 400, 160 ) );
             if ( ImGui::BeginPopupModal( "##sndManager", &bOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar ) )
             {
                 ImGui::PushStyleColor( ImGuiCol_ChildBg, ImVec4( 0.07f, 0.07f, 0.07f, 1.f ) );
@@ -445,6 +448,7 @@ void menu::Visualtab() noexcept {
                 ImGui::PopStyleColor( 1 );
                 ImGui::EndPopup( );
             }
+            ImGui::PopStyleVar( );
 
             if (m_iHitSound > 0)
 				ImGui::SliderFloat("Hitsound volume", &m_flHitSoundVolume, 0.f, 100.f, "%.f");
@@ -456,7 +460,7 @@ void menu::Visualtab() noexcept {
         return;
     case VIEWMODEL:
         using namespace cfg::model;
-        ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+        ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
         {
             ImGui::Combo("Viewmodel model", &viewmodelType, chamsType, IM_ARRAYSIZE(chamsType));
             ImGui::Checkbox("Enabled", &viewmodel);
@@ -492,7 +496,7 @@ void menu::Visualtab() noexcept {
     }
     ImGui::SameLine();
 
-    ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
+    ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
         using namespace cfg::model;
 
@@ -700,7 +704,7 @@ void menu::Visualtab() noexcept {
 void menu::Misctab() noexcept {
 
     using namespace cfg::misc;
-    ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+    ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
         ImGui::Checkbox("Bunny hop", &bunnyhop);
         ImGui::Checkbox("Auto strafe", &autoStrafe);
@@ -757,7 +761,7 @@ void menu::Misctab() noexcept {
 
     ImGui::SameLine();
 
-    ImGui::BeginChild( "modelchild", ImVec2( ImGui::GetContentRegionAvail( ).x, ImGui::GetContentRegionAvail( ).y ), true );
+    ImGui::BeginChild( "modelchild", ImVec2( ImGui::GetContentRegionAvail( ).x, ImGui::GetContentRegionAvail( ).y ), true, ImGuiWindowFlags_NoMove );
     {
         static std::string selectedConfig = "";
         ImGui::PushItemWidth( ImGui::GetContentRegionAvail( ).x );
@@ -815,7 +819,7 @@ void menu::Misctab() noexcept {
 void menu::Skintab() noexcept {
 
 #if _DEBUG
-    ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+    ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
         ImGui::Checkbox("Debug button", &cfg::debugSwitch);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -871,7 +875,7 @@ void menu::HandleVisualTypeGeneration(
 ) 
 noexcept {
 
-    ImGui::BeginChild("espchild", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true);
+    ImGui::BeginChild("espchild", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
         ImGui::Checkbox("Enabled", &enable);
         ImGui::Checkbox("Bounding box", &box);
@@ -971,6 +975,7 @@ void menu::SaveWarning(bool& saved, bool type) noexcept {
     ImGui::SetNextWindowSizeConstraints(ImVec2(180, 101), ImVec2(180, 101));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(180, 101));
     ImGui::PushFont(childFont);
+    ImGui::SetNextWindowPos( ImVec2( ( ImGui::GetIO().DisplaySize.x * 0.5f ) - ( 180 * 0.5f ), ImGui::GetIO( ).DisplaySize.y * 0.5f + ( 101 * 0.5f ) ));
     ImGui::Begin("##savestuff", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
     {
         ImGui::BeginChild("##yes", ImGui::GetContentRegionAvail(), true);
