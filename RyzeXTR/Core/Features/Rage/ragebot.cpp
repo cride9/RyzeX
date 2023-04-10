@@ -415,12 +415,14 @@ void CRageBot::AutoStop(CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseEn
 	int predictTick = 0;
 	switch (cfg::rage::autostopAggressiveness)
 	{
-	case 0:
-		predictTick = 2; break;
 	case 1:
-		predictTick = 4; break;
+		predictTick = 2; break;
 	case 2:
+		predictTick = 4; break;
+	case 3:
 		predictTick = 8; break;
+	default :
+		predictTick = 1; break;
 	}
 
 	Vector vecInterpolatedEyePosition = InterpolateLocalEyePosition(g::pLocal->GetEyePosition(), predictTick);
