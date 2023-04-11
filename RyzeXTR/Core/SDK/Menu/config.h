@@ -11,6 +11,7 @@ namespace cfg {
 
 	inline bool debugSwitch = false;
 	inline int debugSlider = 1;
+	inline bool debugSwitch2 = false;
 
 	namespace rage {
 

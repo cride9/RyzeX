@@ -114,12 +114,14 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 					// make sure to aim at un-interpolated data.
 					// do this so backtrack selects the exact record.
 					//if ( rageBotData.pBacktrackRecord && !rageBotData.pBacktrackRecord->bBreakingLagcompensation )
-					pCmd->iTickCount = lagcomp.FixTickCount( flSimulationTime );
+					pCmd->iTickCount = flSimulationTime;
 					
 					pCmd->iButtons |= IN_ATTACK;
 
-					bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
+					//bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : bSendPacket : true;
 				
+					if (!(cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) && !(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)))
+						bSendPacket = true;
 				}
 				else {
 					rageBotData.bCanShoot = false;

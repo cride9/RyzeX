@@ -3,7 +3,10 @@
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/math.h"
 #include "../Rage/exploits.h"
+#include "../Rage/antiaim.h"
+#include "../Rage/ragebot.h"
 #include "../../SDK/WavParser.h"
+#include "../Rage/autowall.h"
 #pragma comment(lib, "winmm.lib")
 
 
@@ -25,6 +28,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	IdealTick(pCmd);
 	FixScopeSens();
 	AutoPistol(pCmd, g::pLocal);
+	//WalkBot(pCmd);
 #if NDEBUG
 	Security();
 #endif
@@ -1083,6 +1087,107 @@ void misc::RemoveSmoke() {
 
 	static auto iSmokeCount = *reinterpret_cast<DWORD*>(sigLineGoesThroughSmoke + 0x8);
 	*reinterpret_cast<int*>(iSmokeCount) = 0;
+}
+
+//void misc::WalkBotHandler(IGameEvent* pEvent) {
+//
+//	if (!strcmp(pEvent->GetName(), "round_start"))
+//		bNewRound = true;
+//}
+
+//void misc::WalkBot(CUserCmd* pCmd) {
+//
+//	static int positionID = 0;
+//	static int randomLmao = 0;
+//	static std::vector<Vector> moveHere;
+//	static Vector vecLastAngle = g::vecOriginalViewAngle;
+//
+//	if (!g::pLocal)
+//		return;
+//
+//	if (!cfg::debugSwitch2 || !g::pLocal->IsAlive() || bNewRound) {
+//		moveHere.clear();
+//		positionID = 0;
+//		randomLmao = M::RandomInt(1, 6);
+//		bNewRound = false;
+//
+//		int iLocalTeam = g::pLocal->GetTeam();
+//		switch (randomLmao)
+//		{
+//		case 1: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTB : walkbotPositions::MirageTBRush;
+//			break;
+//		case 2: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTNinja : walkbotPositions::MirageTMidRush;
+//			break;
+//		case 3: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTSpawnBox : walkbotPositions::MirageTPallaceRush;
+//			break;
+//		case 4: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTStairs : walkbotPositions::MirageTStairs;
+//			break;
+//		case 5: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTSpawnBox : walkbotPositions::MirageTUnderGroundRush;
+//			break;
+//
+//		default: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTSpawnBox : walkbotPositions::MirageTUnderGroundRush;
+//			break;
+//		}
+//
+//		return;
+//	}
+//
+//	if (moveHere.empty())
+//		return;
+//
+//	int iClosestIndex = antiaim::ClosestToLocal();
+//	CBaseEntity* pClosestTarget = nullptr;
+//
+//	if (iClosestIndex != -1)
+//		pClosestTarget = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iClosestIndex));
+//
+//	if (pClosestTarget != nullptr) {
+//
+//		Vector vecInterpolatedEyePosition = ragebot.InterpolateLocalEyePosition(g::pLocal->GetEyePosition(), 3);
+//
+//		FireBulletData_t data = { };
+//		data.vecPosition = vecInterpolatedEyePosition;
+//		data.vecDirection = (pClosestTarget->GetHitboxPosition(HITBOX_UPPER_CHEST).value() - vecInterpolatedEyePosition).Normalized();
+//
+//		Vector vecCalcAngle;
+//		M::VectorAngles(pClosestTarget->GetHitboxPosition(HITBOX_STOMACH).value() - g::pLocal->GetEyePosition(), vecCalcAngle);
+//		Vector vecDistanceBetween = (vecLastAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+//
+//		float flFinalFov = vecDistanceBetween.y;
+//
+//		vecLastAngle.y += std::clamp(flFinalFov, -30.f, 30.f);
+//
+//		if (flFinalFov < 35)
+//			vecLastAngle.y = vecCalcAngle.y;
+//
+//		M::NormalizeAngle(vecLastAngle.y);
+//		i::EngineClient->SetViewAngles(vecLastAngle);
+//
+//		if (autowall.SimulateFireBullet(g::pLocal, g::pLocal->GetWeapon(), data))
+//			return;
+//	}
+//
+//	if (moveHere.size() > positionID) {
+//
+//		MoveToPosition(moveHere.at(positionID));
+//
+//		if ((moveHere.at(positionID) - g::pLocal->GetAbsOrigin()).Length2D() < (moveHere.back() == moveHere.at(positionID) ? 10.f : 200.f)) {
+//			positionID++;
+//		}
+//	}
+//}
+
+void misc::MoveToPosition(Vector& vecPosition) {
+
+	Vector vecOriginDelta = vecPosition - g::pLocal->GetAbsOrigin();
+
+	auto deg2rad = M_DEG2RAD(M::NormalizeAngle(g::vecOriginalViewAngle.y));
+
+	auto flSideMove = ((cos(deg2rad) * -vecOriginDelta.y) + (sin(deg2rad) * vecOriginDelta.x));
+	auto flForwardMove = ((sin(deg2rad) * vecOriginDelta.y) + (cos(deg2rad) * vecOriginDelta.x));
+
+	g::pCmd->flSideMove = std::clamp(flSideMove, -450.f, 450.f);
+	g::pCmd->flForwardMove = std::clamp(flForwardMove, -450.f, 450.f);
 }
 
 //void misc::CustomBombText(const char* szText) {

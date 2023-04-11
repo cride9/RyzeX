@@ -996,7 +996,7 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (pRecord->empty())
 		return false;
 
-	pEnt->GetBoneAccessor()->matBones = const_cast<matrix3x4_t*>(pRecord->front().pMatrix);
+	pEnt->GetBoneAccessor()->matBones = pRecord->front().pMatrix;
 	std::memcpy(pMatrix, pRecord->front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
 	return true;
 }

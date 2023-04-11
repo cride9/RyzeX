@@ -825,6 +825,9 @@ void menu::Skintab() noexcept {
         ImGui::Checkbox("Debug button", &cfg::debugSwitch);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
             ImGui::SetTooltip("test tooltip");
+
+		ImGui::Checkbox("Gather AI information ##itsnot", &cfg::debugSwitch2);
+		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 2000);
     }
     ImGui::EndChild();
 #endif

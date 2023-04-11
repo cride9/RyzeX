@@ -8,6 +8,7 @@ namespace g {
 	inline CUserCmd* pCmd;
 	inline CBaseEntity* pLocal;
 	inline CEntityListener entityListener;
+	inline Vector vecOriginalViewAngle;
 
 	inline bool bAllowAnimations[65];
 	inline bool* bSendPacket;
