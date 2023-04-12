@@ -3,9 +3,32 @@
 #include "../Misc/misc.h"
 #include "../Rage/Animations/EnemyAnimations.h"
 
+void AIPoints() {
+
+	for (auto& point : misc::AIVizualization) {
+
+		Vector AISpot;
+		if (i::DebugOverlay->ScreenPosition(point, AISpot))
+			continue;
+
+		if (!g::pLocal)
+			return;
+
+		Vector LocalEyePos;
+		if (i::DebugOverlay->ScreenPosition(g::pLocal->GetAbsOrigin(), LocalEyePos))
+			continue;
+
+		i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
+		i::Surface->DrawLine(LocalEyePos.x, LocalEyePos.y, AISpot.x, AISpot.y);
+		//i::Surface->DrawFilledRect(points.x - 10, points.y - 10, points.x + 10, points.y + 10);
+	}
+}
+
 void visual::VisualRender() {
 
 	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
+
+		AIPoints();
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 

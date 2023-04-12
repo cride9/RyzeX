@@ -78,8 +78,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		//if ( !detour::sendNetMsg.IsHooked( ) )
 		//	detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
 
-		//if ( !detour::setChoked.IsHooked( ) )
-		//	detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
+		if ( !detour::setChoked.IsHooked( ) )
+			detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
 
 		if ( !detour::sendDatagram.IsHooked( ) )
 			detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
@@ -107,10 +107,11 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	}
 
 	// let's re-aquire the convar every tick incase it has changed
-	if ( i::ClientState->nChokedCommands >= i::ConVar->FindVar( "sv_maxusrcmdprocessticks" )->GetInt( ) - 1 )
-		bSendPacket = true;
-
 	g::bSendPacket = &bSendPacket;
+
+	static auto maxusercmd = i::ConVar->FindVar("sv_maxusrcmdprocessticks");
+	if (i::ClientState->nChokedCommands >= maxusercmd->GetInt() - 1)
+		bSendPacket = true;
 
 	if (bSendPacket)
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);

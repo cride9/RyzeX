@@ -141,10 +141,8 @@ std::optional<Vector> CBaseEntity::GetHitboxPosition(const int iHitbox)
 		{
 			if (const auto pHitbox = pStudioHdr->GetHitbox(iHitbox, 0); pHitbox != nullptr)
 			{
-				g::bSettingUpBones[this->EntIndex()] = true;
 				if (this->SetupBones(arrBonesToWorld.data(), arrBonesToWorld.size(), BONE_USED_BY_HITBOX, 0.f))
 				{
-					g::bSettingUpBones[this->EntIndex()] = false;
 					// get mins/maxs by bone
 					const Vector vecMin = M::VectorTransform(pHitbox->vecBBMin, arrBonesToWorld.at(pHitbox->iBone));
 					const Vector vecMax = M::VectorTransform(pHitbox->vecBBMax, arrBonesToWorld.at(pHitbox->iBone));
@@ -152,8 +150,6 @@ std::optional<Vector> CBaseEntity::GetHitboxPosition(const int iHitbox)
 					// get center
 					return (vecMin + vecMax) * 0.5f;
 				}
-				else
-					g::bSettingUpBones[this->EntIndex()] = false;
 			}
 		}
 	}

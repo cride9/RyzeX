@@ -338,7 +338,7 @@ void menu::Visualtab() noexcept {
         ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
         {
             ImGui::Checkbox("Thirdperson", &thirdperson);
-            ImGui::Keybind("tpKey", &thirdpersonbind);
+            ImGui::Keybind("##tpKey", &thirdpersonbind);
 
             ImGui::Checkbox("Nightmode", &nightmode);
             ImGui::ColorEdit4("nightmodecolor", nightmodeColor);
@@ -827,7 +827,7 @@ void menu::Skintab() noexcept {
             ImGui::SetTooltip("test tooltip");
 
 		ImGui::Checkbox("Gather AI information ##itsnot", &cfg::debugSwitch2);
-		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 2000);
+		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 24);
     }
     ImGui::EndChild();
 #endif

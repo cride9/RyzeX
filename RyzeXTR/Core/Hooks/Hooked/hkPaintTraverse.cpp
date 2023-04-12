@@ -10,6 +10,12 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 	if (cfg::misc::removals[3] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
 
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL) {
+		g::pLocal = nullptr;
+		if (g::bSendPacket)
+			*g::bSendPacket = true;
+	}
+
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
 		visual::VisualRender();

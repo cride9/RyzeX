@@ -74,6 +74,9 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (cfg::antiaim::freestand == 2)
 		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
 
+	if (cfg::antiaim::yawBase == 1 && !bInitializedFreestand)
+		AtTarget(pCmd, pCmd->angViewPoint);
+
 	if (!bInitializedFreestand) {
 		// yaw
 		switch (cfg::antiaim::yaw) {
@@ -87,9 +90,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			break;
 		}
 	}
-
-	if (cfg::antiaim::yawBase == 1 && !bInitializedFreestand)
-		AtTarget(pCmd, pCmd->angViewPoint);
 
 	if (cfg::antiaim::modifier == 1)
 		pCmd->angViewPoint.y += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue) : unevenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
@@ -368,6 +368,9 @@ bool antiaim::FreeStandingDistance(CUserCmd* cmd, Vector& angle) {
 
 	float step = (2 * M_PI) / 18.f; // One PI = half a circle ( for stacker cause low iq :sunglasses: ), 28
 
+	if (!headpos.has_value())
+		return false;
+
 	float radius = fabs(Vector(headpos.value() - origin).Length2D());
 
 	if (index == -1)
@@ -454,10 +457,13 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 			continue;
 
 		Vector vecCalcAngle;
-		M::VectorAngles(pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST).value() - g::pLocal->GetEyePosition(), vecCalcAngle);
-		Vector vecDistanceBetween = (ragebot.rageBotData.vecOldViewAngles.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+		auto vecHitboxPosition = pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST);
+		if (vecHitboxPosition.has_value()) {
+			M::VectorAngles(vecHitboxPosition.value() - g::pLocal->GetEyePosition(), vecCalcAngle);
+			Vector vecDistanceBetween = (ragebot.rageBotData.vecOldViewAngles.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
 
-		arrPlayerDistances.push_back(std::make_pair( abs(vecDistanceBetween.Length2D()), vecCalcAngle));
+			arrPlayerDistances.push_back(std::make_pair(abs(vecDistanceBetween.Length2D()), vecCalcAngle));
+		}
 	}
 
 	if (arrPlayerDistances.empty())
@@ -465,7 +471,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 
 	std::sort(arrPlayerDistances.begin(), arrPlayerDistances.end(), lowestFov);
 
-	pCmd->angViewPoint.y = (arrPlayerDistances.front().second.y) - 180.f;
+	pCmd->angViewPoint.y = (arrPlayerDistances.front().second.y);
 }
 
 bool antiaim::FreeStandingThreat(Vector& angle)

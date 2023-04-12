@@ -297,6 +297,23 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		}
 		else {
 
+			if (lagcomp.GetLog(pEnt->EntIndex()).pEntity) {
+
+				if (lagcomp.GetLog(pEnt->EntIndex()).pRecord.size() >= 2) {
+
+					auto lastrecord = lagcomp.GetLog(pEnt->EntIndex()).pRecord.front();
+
+					BeginChams(materials[FLAT], teamAnimOverlayXQZColor, true, teamAnimOverlayXQZXhair);
+					original(i::StudioRender, 0, pResults, info, lastrecord.pLeftMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+
+					BeginChams(materials[FLAT], teamAnimOverlayColor, true, teamAnimOverlayXQZXhair);
+					original(i::StudioRender, 0, pResults, info, lastrecord.pCenterMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+
+					BeginChams(materials[FLAT], teamThinOverlayXQZColor, true, teamAnimOverlayXQZXhair);
+					original(i::StudioRender, 0, pResults, info, lastrecord.pRightMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				}
+			}
+
 			if (enemyBTEnable) {
 
 				if (matrix3x4_t pMatrix[128];  GenerateLerpedMatrix(pEnt, pMatrix)) {

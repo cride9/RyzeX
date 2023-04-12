@@ -128,6 +128,9 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+		g::bSettingUpBones[pEntity->EntIndex()] = true;
+		pEntity->SetupBones(pRecord->pCenterMatrix, 128, BONE_USED_BY_HITBOX, pEntity->GetSimulationTime());
+		g::bSettingUpBones[pEntity->EntIndex()] = false;
 		memcpy(pRecord->pResolverLayers[0], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
 
@@ -140,6 +143,9 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+		g::bSettingUpBones[pEntity->EntIndex()] = true;
+		pEntity->SetupBones(pRecord->pLeftMatrix, 128, BONE_USED_BY_HITBOX, pEntity->GetSimulationTime());
+		g::bSettingUpBones[pEntity->EntIndex()] = false;
 		memcpy(pRecord->pResolverLayers[1], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
 
@@ -152,6 +158,9 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+		g::bSettingUpBones[pEntity->EntIndex()] = true;
+		pEntity->SetupBones(pRecord->pRightMatrix, 128, BONE_USED_BY_HITBOX, pEntity->GetSimulationTime());
+		g::bSettingUpBones[pEntity->EntIndex()] = false;
 		memcpy(pRecord->pResolverLayers[2], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
 }
@@ -174,6 +183,7 @@ void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecor
 	float flOldGoalFeetYaw = pEntity->AnimState( )->flGoalFeetYaw;
 
 	// bot or either no resolver.
+#if NDEBUG
 	if (!cfg::rage::resolver || pEntity->GetPlayerInfo().bFakePlayer) {
 		// reset missed shots.
 		pData.iMissedShots = NULL;
@@ -191,6 +201,7 @@ void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecor
 		pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
 		return;
 	}
+#endif
 
 	// the angle.
 	flGuessedYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y - pEntity->AnimState( )->flGoalFeetYaw );
@@ -992,12 +1003,15 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 
 bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount) {
 
-	const auto pRecord = &lagcomp.GetLog(pEnt->EntIndex()).pRecord;
-	if (pRecord->empty())
+	const auto pLog = &lagcomp.GetLog(pEnt->EntIndex());
+	if (!pLog->pEntity)
+		return false;
+	
+	if (pLog->pRecord.empty())
 		return false;
 
-	pEnt->GetBoneAccessor()->matBones = pRecord->front().pMatrix;
-	std::memcpy(pMatrix, pRecord->front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
+	pEnt->GetBoneAccessor()->matBones = const_cast<matrix3x4_t*>(pLog->pRecord.front().pMatrix);
+	std::memcpy(pMatrix, pLog->pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
 	return true;
 }
 

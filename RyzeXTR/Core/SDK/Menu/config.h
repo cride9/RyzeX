@@ -369,9 +369,9 @@ namespace cfg {
 		inline int aspectRatioValue = 0;
 		inline bool preserveKillfeed = false;
 		inline bool thirdperson = false;
-		inline int thirdpersonbind = 0;
 		inline bool bulletImpact = false;
 		inline bool onlyCheatLogs = false;
+		inline int thirdpersonbind = 0;
 
 		inline bool bulletTracer = false;
 		inline float bulletTracerColor[4] = { 1.f ,1.f, 1.f, 1.f };

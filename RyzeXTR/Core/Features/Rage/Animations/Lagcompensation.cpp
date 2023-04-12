@@ -310,7 +310,7 @@ void Lagcompensation::FrameStageNotify() {
 			g::bSettingUpBones[i] = true;
 			//SetupPlayerBones(pCurrentLog->pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, 4);
 			//pCurrentLog->pEntity->SetupBonesFix( pCurrentLog->pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
-			pCurrentLog->pEntity->SetupBones(pCurrentRecord->pMatrix, 128, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
+			pCurrentLog->pEntity->SetupBones(pCurrentRecord->pMatrix, 128, BONE_USED_BY_HITBOX & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
 			g::bSettingUpBones[i] = false;
 			// restore correctly synced values.
 			pBackupRecord.Restore( pCurrentLog->pEntity );
