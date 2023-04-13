@@ -32,7 +32,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	g::pCmd = pCmd;
 
 	Vector oldViewAngle = pCmd->angViewPoint;
-	ragebot.rageBotData.vecOldViewAngles = oldViewAngle;
+	ragebot.rageBotData.vecOldViewAngles = g::vecOriginalViewAngle = oldViewAngle;
 
 	// for now that is the fix for the menu xddxdx
 	if (pCmd->iButtons & IN_ATTACK && menu::open)

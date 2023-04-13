@@ -6,6 +6,7 @@
 #include "exploits.h"
 #include "../Misc/misc.h"
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
+#include "Animations/EnemyAnimations.h"
 
 bool SafePoint(Vector vecEyeAngles, Lagcompensation::LagRecord_t* pRecord, int iHitboxID, Vector vecShootposition, float& flMinDamage);
 bool LowestFov(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
@@ -180,14 +181,18 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 			float flDamage;
 			for (Vector& currentPoint : vecHitboxPosition) {
 
+				if (safePointAvailable)
+					break;
+
 				if (SafePoint(vecEyePosition, &pLog->pRecord.front(), hitboxID, currentPoint, flDamage)) {
 					if (flDamage >= iMinimumDamage) {
 						vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
 						safePointAvailable = true;
 					}
 				}
-				if (flDamage = autowall.GetDamage(pLocal, currentPoint); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5)
-					vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
+				else if(anims.missedShots[pTarget->EntIndex()] < 3)
+					if (flDamage = autowall.GetDamage(pLocal, currentPoint); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5)
+						vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
 			}
 		}
 		else {
@@ -286,7 +291,7 @@ CBaseEntity* CRageBot::SelectTarget(CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 					return curEnt;
 				}
 			}
-			else if (Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(min(pLog->pRecord.size() - 1, 12)); recordScan != nullptr && recordScan->bValid && cfg::rage::m_bEnableBacktrack) { // valid backtrack record
+			else if (Lagcompensation::LagRecord_t* recordScan = &pLog->pRecord.at(pLog->iLastValid); recordScan != nullptr && recordScan->bValid && cfg::rage::m_bEnableBacktrack) { // valid backtrack record
 				
 				matrix3x4_t backupMatrix[128];
 				std::memcpy(backupMatrix, recordScan->pMatrix, sizeof(matrix3x4_t) * 128);

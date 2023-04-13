@@ -297,6 +297,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		}
 		else {
 
+#if _DEBUG
 			if (lagcomp.GetLog(pEnt->EntIndex()).pEntity) {
 
 				if (lagcomp.GetLog(pEnt->EntIndex()).pRecord.size() >= 2) {
@@ -313,6 +314,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					original(i::StudioRender, 0, pResults, info, lastrecord.pRightMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 			}
+#endif
 
 			if (enemyBTEnable) {
 

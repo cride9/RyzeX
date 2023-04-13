@@ -208,8 +208,6 @@ void visual::WeaponEsp(int& spacing, int left, int top, int right, int bot, CBas
 	text.erase(0, 7);
 
 	i::Surface->DrawT(left, bot, Color{ color[0], color[1], color[2], color[3] }, g::fonts::NameESP, false, text.c_str());
-
-	spacing += 10;
 }
 
 void visual::MoneyEsp(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {

@@ -52,6 +52,9 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 
 	if (!strcmp(pEvent->GetName(), "round_start")) {
 
+		for (int i = 0; i < 65; i++)
+			missedShots[i] = 0;
+
 		ragebot.rageBotData.pAimbotTarget = nullptr;
 		ragebot.rageBotData.pTargetMatrix = nullptr;
 		bulletImpact = Vector(0, 0, 0);

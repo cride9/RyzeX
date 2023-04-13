@@ -856,7 +856,7 @@ void misc::ThirdPerson() {
 			tpfix += "cam_idealdist 140;";
 			tpfix += "thirdperson;";
 
-			i::EngineClient->ExecuteClientCmd("thirdperson;");
+			i::EngineClient->ExecuteClientCmd(tpfix.c_str());
 			didSetThirdPerson = true;
 		}
 	}
@@ -1320,6 +1320,7 @@ void misc::MoveToPosition(Vector& vecPosition) {
 	Vector vecSetAngle = Vector(g::vecOriginalViewAngle.x, vecMoveDirection.y, g::vecOriginalViewAngle.z);
 	i::EngineClient->SetViewAngles(vecSetAngle);
 	g::pCmd->flForwardMove = 450.f;
+	g::pCmd->iButtons |= IN_JUMP;
 }
 
 //void misc::CustomBombText(const char* szText) {
