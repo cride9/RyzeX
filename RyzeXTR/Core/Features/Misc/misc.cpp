@@ -29,6 +29,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FixScopeSens();
 	AutoPistol(pCmd, g::pLocal);
 	WalkBot(pCmd);
+	BlockBot(pCmd);
 #if NDEBUG
 	Security();
 #endif
@@ -1322,6 +1323,207 @@ void misc::MoveToPosition(Vector& vecPosition) {
 	g::pCmd->flForwardMove = 450.f;
 	g::pCmd->iButtons |= IN_JUMP;
 }
+
+void Friction(float flFriction, Vector* vecVelocity)
+{
+	static CConVar* sv_friction = i::ConVar->FindVar("sv_friction");
+	static CConVar* sv_stopspeed = i::ConVar->FindVar("sv_stopspeed");
+	float	speed, newspeed, control;
+	float	friction;
+	float	drop;
+
+	// Calculate speed
+	speed = g::pLocal->GetVelocity().Length();
+
+	// If too slow, return
+	if (speed < 0.1f)
+	{
+		return;
+	}
+
+	drop = 0;
+
+	friction = sv_friction->GetFloat() * flFriction;
+
+	control = (speed < sv_stopspeed->GetFloat()) ? sv_stopspeed->GetFloat() : speed;
+
+	drop += control * friction * i::GlobalVars->flFrameTime;
+
+	newspeed = speed - drop;
+	if (newspeed < 0)
+		newspeed = 0;
+
+	if (newspeed != speed)
+		newspeed /= speed;
+
+	*vecVelocity -= (g::pLocal->GetVelocity() * (1.f - newspeed));
+}
+
+//void misc::BlockBot(CUserCmd* pCmd) {
+//
+//	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::debugSwitch)
+//		return;
+//
+//	static Vector vecTargetVelocity;
+//	static Vector vecLocalVelocity;
+//
+//	if (CBaseEntity* pBlockedPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetGroundEntity())); pBlockedPlayer != nullptr && pBlockedPlayer->IsPlayer()) {
+//
+//		auto& pLog = lagcomp.GetLog(pBlockedPlayer->EntIndex());
+//
+//		if (pLog.pRecord.size() <= 2)
+//			return;
+//
+//		vecTargetVelocity.z = 0.f;
+//		vecLocalVelocity.z = 0.f;
+//		vecTargetVelocity = pLog.pRecord.front().vecVelocity;
+//		float flOldDir = M_RAD2DEG(std::atan2(pLog.pRecord.at(1).vecVelocity.y, pLog.pRecord.at(1).vecVelocity.x));
+//		float flDir = M_RAD2DEG(std::atan2(vecTargetVelocity.y, vecTargetVelocity.x));
+//
+//		auto flChange = flDir - flOldDir;
+//
+//		if (flChange < 5.f) {
+//
+//			auto hyp = vecTargetVelocity.Length2D();
+//			vecTargetVelocity.x = std::cos(M_DEG2RAD(flDir + flChange));
+//			vecTargetVelocity.y = std::sin(M_DEG2RAD(flDir + flChange));
+//		}
+//		else {
+//			vecTargetVelocity = Vector(0, 0, 0);
+//		}
+//
+//		Vector vecTargetOrigin = pBlockedPlayer->GetVecOrigin() + vecTargetVelocity * i::GlobalVars->flIntervalPerTick;
+//
+//		Vector vecOriginDelta = (vecTargetOrigin - g::pLocal->GetVecOrigin()) / i::GlobalVars->flIntervalPerTick;
+//		vecOriginDelta.z = 0.f;
+//
+//		if (CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon(); 
+//			pWeapon != nullptr && 
+//			pWeapon->GetCSWpnData() && 
+//			pWeapon->GetCSWpnData()->flMaxSpeed[0] * pWeapon->GetCSWpnData()->flMaxSpeed[0] < vecOriginDelta.LengthSqr()) {
+//
+//			const float flRatio = pWeapon->GetCSWpnData()->flMaxSpeed[0] / vecOriginDelta.Length();
+//			vecOriginDelta *= flRatio;
+//		}
+//
+//		vecOriginDelta -= vecLocalVelocity;
+//
+//		float vecCosDeg2Rad = cos(M_DEG2RAD(g::vecOriginalViewAngle.y));
+//		float vecSinDeg2Rad = sin(M_DEG2RAD(g::vecOriginalViewAngle.y));
+//
+//		auto flSideMove = (vecCosDeg2Rad * -vecOriginDelta.y) + (vecSinDeg2Rad * vecOriginDelta.x);
+//		auto flForwardMove = (vecSinDeg2Rad * vecOriginDelta.y) + (vecCosDeg2Rad * vecOriginDelta.x);
+//
+//		if (vecOriginDelta.Length2D() > 3.f) {
+//
+//			pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
+//			pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
+//		}
+//	}
+//}
+
+void misc::BlockBot(CUserCmd* pCmd) {
+
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::debugSwitch)
+		return;
+
+	if (CBaseEntity* pBlockedPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetGroundEntity())); pBlockedPlayer != nullptr && pBlockedPlayer->IsPlayer()) {
+
+		Vector vecExtrapolatedEnemyPos = (pBlockedPlayer->GetAbsOrigin() + (pBlockedPlayer->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 2)));
+		Vector vecExtrapolatedLocalPos = (g::pLocal->GetAbsOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 2)));
+
+		if ((vecExtrapolatedLocalPos - pBlockedPlayer->GetAbsOrigin()).Length2D() > 3.29217472f) {
+
+			Vector vecAngle;
+			M::VectorAngles(vecExtrapolatedEnemyPos - g::pLocal->GetEyePosition(), vecAngle);
+
+			float flBackupAngle = g::pCmd->angViewPoint.y;
+			float flBackupOriginal = g::vecOriginalViewAngle.y;
+
+			g::vecOriginalViewAngle.y = vecAngle.y;
+			g::pCmd->flForwardMove += 450.f;
+			g::pCmd->flSideMove = 0.f;
+		}
+	}
+}
+
+//void OtherBlockbot(CUserCmd* pCmd) {
+//
+//	auto& pLog = lagcomp.GetLog(pBlockedPlayer->EntIndex());
+//
+//		if (pLog.pRecord.size() <= 2)
+//			return;
+//
+//		vecTargetVelocity.z = 0.f;
+//		vecLocalVelocity.z = 0.f;
+//		vecTargetVelocity = pLog.pRecord.front().vecVelocity;
+//		float flOldDir = M_RAD2DEG(std::atan2(pLog.pRecord.at(1).vecVelocity.y, pLog.pRecord.at(1).vecVelocity.x));
+//		float flDir = M_RAD2DEG(std::atan2(vecTargetVelocity.y, vecTargetVelocity.x));
+//
+//		auto flChange = flDir - flOldDir;
+//
+//		if (flChange < 5.f) {
+//
+//			auto hyp = vecTargetVelocity.Length2D();
+//			vecTargetVelocity.x = std::cos(M_DEG2RAD(flDir + flChange));
+//			vecTargetVelocity.y = std::sin(M_DEG2RAD(flDir + flChange));
+//		}
+//		else {
+//			vecTargetVelocity = Vector(0, 0, 0);
+//		}
+//
+//		Vector vecTargetOrigin = pBlockedPlayer->GetVecOrigin() + vecTargetVelocity * i::GlobalVars->flIntervalPerTick;
+//
+//		//Friction(g::pLocal->GetFriction(), &vecLocalVelocity);
+//
+//		float flMaxAccel = 450.f;
+//		static CConVar* sv_accelerate = i::ConVar->FindVar("sv_accelerate");
+//		float flAccelSpeed = sv_accelerate->GetFloat() * i::GlobalVars->flIntervalPerTick * 450.f;
+//
+//		if (flMaxAccel > flAccelSpeed)
+//			flMaxAccel = flAccelSpeed;
+//
+//		Vector vecLocalDelta = (vecTargetOrigin - g::pLocal->GetVecOrigin()) / i::GlobalVars->flIntervalPerTick;
+//		vecLocalDelta.z = 0.f;
+//
+//		if (CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon(); 
+//			pWeapon != nullptr && 
+//			pWeapon->GetCSWpnData() && 
+//			pWeapon->GetCSWpnData()->flMaxSpeed[0] * pWeapon->GetCSWpnData()->flMaxSpeed[0] < vecLocalDelta.LengthSqr()) {
+//
+//			const float flRatio = pWeapon->GetCSWpnData()->flMaxSpeed[0] / vecLocalDelta.Length();
+//			vecLocalDelta *= flRatio;
+//		}
+//
+//		vecLocalDelta -= vecLocalVelocity;
+//
+//		const float flDeltaLen = fminf(vecLocalDelta.Length2D(), 450.f);
+//		g::vecOriginalViewAngle = Vector(0.f, M_RAD2DEG(atan2(vecLocalDelta.x, vecLocalDelta.y)), 0.f);
+//
+//		const float flCurrentSpeed = vecLocalVelocity.DotProduct(vecLocalDelta);
+//
+//		float flProjectedDelta = fminf(450.f, vecLocalDelta.Length() + flCurrentSpeed);
+//
+//		const float flAddSpeed = flProjectedDelta - flCurrentSpeed;
+//		if (flMaxAccel < flAddSpeed) {
+//			//distance is farther than we can account for
+//			//go as fast as we can
+//			pCmd->flForwardMove = 450.f;
+//			pCmd->flSideMove = 0.f;
+//		}
+//		else {
+//			// const float kAccelerationScale = MAX( 250.0f, wishspeed );
+//			// accelspeed = accel * gpGlobals->frametime * kAccelerationScale * player->m_surfaceFriction;
+//			flAccelSpeed = sv_accelerate->GetFloat() * i::GlobalVars->flIntervalPerTick * fmaxf(250.f, flDeltaLen);
+//
+//			if (flAccelSpeed <= flAddSpeed) {
+//				//add speed is too high, try to correct the accelspeed
+//				flProjectedDelta = flDeltaLen / (sv_accelerate->GetFloat() * i::GlobalVars->flIntervalPerTick);
+//			}
+//			pCmd->flForwardMove = std::clamp<float>(flProjectedDelta, -450.f, 450.f);
+//			pCmd->flSideMove = 0.f;
+//		}
+//}
 
 //void misc::CustomBombText(const char* szText) {
 //

@@ -29,13 +29,13 @@ public:
 
 private:
 
-	std::vector<Vector>	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, int, Vector);
+	std::vector<Vector>	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, Vector, bool = true);
 	CBaseEntity*		SelectTarget(CBaseEntity*, CBaseCombatWeapon*, Vector&);
 	Vector				Hitscan(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector&, int&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector, int);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*);
 	Vector				InterpolateLocalEyePosition(Vector vecEyePosition, int iInterpolateTick = 1);
-
+	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, float, Vector&, float&, std::array<bool, HITBOX_MAX>&);
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
 

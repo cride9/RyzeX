@@ -64,7 +64,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
-	misc::MovementFix(pCmd, oldViewAngle);
+	misc::MovementFix(pCmd, g::vecOriginalViewAngle);
 
 	// netchannel pointer
 	INetChannel* pNetChannel = i::ClientState->pNetChannel;

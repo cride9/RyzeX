@@ -56,6 +56,7 @@ namespace misc {
 	void PreserveKillfeed(IGameEvent*);
 	void BuyBot(IGameEvent*);
 	void BulletTracer(IGameEvent*);
+	void BlockBot(CUserCmd*);
 
 	void CustomBombText(const char*);
 

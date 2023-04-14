@@ -8,7 +8,6 @@
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
 #include "Animations/EnemyAnimations.h"
 
-bool SafePoint(Vector vecEyeAngles, Lagcompensation::LagRecord_t* pRecord, int iHitboxID, Vector vecShootposition, float& flMinDamage);
 bool LowestFov(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 
 	const Vector vecEyePosition = g::pLocal->GetEyePosition();
@@ -148,7 +147,7 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 
 	/* Loop through enemy hitboxes and scale damage, then return a valid position to shoot to */
 	bool safePointAvailable = false;
-	for (int& hitboxID : ConfigHitboxes(pWeapon)) {
+	for (const int& hitboxID : ConfigHitboxes(pWeapon)) {
 
 		if (safePointAvailable)
 			break;
@@ -169,36 +168,37 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 		float flRadius = 0.f;
 		if (!rageBotData.pBacktrackRecord ) {
 
+			if (safePointAvailable)
+				break;
+
 			Vector hitboxPosition = recordEntity->GetHitboxPosition(hitboxID, recordMatrix, flRadius);
 			
+			float flDamage;
+			if (SafePoint(vecEyePosition, pWeapon, &pLog->pRecord.front(), hitboxID, flRadius, hitboxPosition, flDamage, multiPointHitboxes)) {
+				if (flDamage >= iMinimumDamage) {
+					util::Print("Safe point!");
+					vectorDamageStuff.push_back(std::make_tuple(hitboxPosition, flDamage, hitboxID));
+					safePointAvailable = true;
+				}
+			}
+
 			std::vector<Vector> vecHitboxPosition;
 
-			if (multiPointHitboxes.at(hitboxID))
-				vecHitboxPosition = CreatePoints(recordEntity, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, recordEntity->EntIndex(), vecEyePosition);
+			if (multiPointHitboxes[hitboxID])
+				vecHitboxPosition = CreatePoints(recordEntity, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, vecEyePosition);
 			else
 				vecHitboxPosition.push_back(hitboxPosition);
 
-			float flDamage;
+			recordEntity->SetBoneCache(pLog->pRecord.front().pMatrix);
 			for (Vector& currentPoint : vecHitboxPosition) {
-
-				if (safePointAvailable)
-					break;
-
-				if (SafePoint(vecEyePosition, &pLog->pRecord.front(), hitboxID, currentPoint, flDamage)) {
-					if (flDamage >= iMinimumDamage) {
-						vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
-						safePointAvailable = true;
-					}
-				}
-				else if(anims.missedShots[pTarget->EntIndex()] < 3)
-					if (flDamage = autowall.GetDamage(pLocal, currentPoint); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5)
-						vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
+				if (flDamage = autowall.GetDamage(pLocal, currentPoint); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5)
+					vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
 			}
 		}
 		else {
 
 			Vector hitboxPosition = pTarget->GetHitboxPosition(hitboxID, rageBotData.pBacktrackRecord->pMatrix, flRadius);
-			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, pTarget->EntIndex(), vecEyePosition);
+			std::vector<Vector> vecHitboxPosition = CreatePoints(pTarget, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, vecEyePosition);
 			for (Vector& currentPoint : vecHitboxPosition) {
 
 				matrix3x4_t backupMatrix[128];
@@ -835,126 +835,90 @@ bool CRageBot::CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal ) {
 	return true;
 }
 
-std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector vecAngle, float flRadius, int nHitbox, int entIndex, Vector vecEyePosition) {
+std::vector<Vector> CRageBot::CreatePoints(CBaseEntity* pTarget, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector vecAngle, float flRadius, int nHitbox, Vector vecEyePosition, bool bGenerateNew) {
 
 	if (flRadius <= 0)
 		return std::vector<Vector>{vecAngle};
 
+	static Vector vecLastPoint;
+
+	if (!bGenerateNew)
+		return std::vector<Vector>{vecAngle, (vecAngle + vecLastPoint)};
+
 	static int multipointOptimization[65];
 	std::pair<int, int> multiPoints = ConfigMultipoint(g::pLocal->GetWeapon());
 	std::vector<Vector> points;
-	int iMinimumDamage = GetAsyncKeyState(cfg::rage::overrideBind) ? ConfigOverrideDamage(pWeapon) : ConfigMinimumDamage(pWeapon);
 
 	int* pHeadPoints = &multiPoints.first;
 	int* pBodyPoints = &multiPoints.second;
-	Vector vecOriginalAngle = vecAngle;
 
-	if (nHitbox == HITBOX_HEAD) {
+	float flHitboxDistance =  flRadius * ((nHitbox == HITBOX_HEAD ? *pHeadPoints : *pBodyPoints) / 150.f);
 
-		/* First check if we can hit the hitbox middle */
-		points.push_back(vecOriginalAngle);
+	points.push_back(vecAngle);
 
-		/* Check every point of the hitbox by making a 3D cube inside the hitbox */
-		/* I'm too lazy to actually make it perfectly round like hitboxes are */
+	switch (multipointOptimization[pTarget->EntIndex()] % 5) {
+		case 0:
+			vecLastPoint = Vector(flHitboxDistance, 0.f, 0.f);
+			break;
 
-		float flHeadDistance = flRadius * (*pHeadPoints / 150.f);
+		case 1:
+			vecLastPoint = Vector(0.f, flHitboxDistance, 0.f);
+			break;
 
-		/* Single axises */
-		{
-			switch (multipointOptimization[pTarget->EntIndex()] % 5) {
-			case 0:
-				points.push_back(vecOriginalAngle + Vector(flHeadDistance, 0.f, 0.f));
-				break;
+		case 2:
+			vecLastPoint = Vector(0.f, 0.f, flHitboxDistance);
+			break;
 
-			case 1:
-				points.push_back(vecOriginalAngle + Vector(0.f, flHeadDistance, 0.f));
-				break;
+		case 3:
+			vecLastPoint = Vector(0.f, -flHitboxDistance, 0.f);
+			break;
 
-			case 2:
-				points.push_back(vecOriginalAngle + Vector(0.f, 0.f, flHeadDistance));
-				break;
-
-			case 3:
-				points.push_back(vecOriginalAngle - Vector(0.f, flHeadDistance, 0.f));
-				break;
-
-			case 4:
-				points.push_back(vecOriginalAngle - Vector(flHeadDistance, 0.f, 0.f));
-				break;
-			}
-		}
-	}
-	else {
-
-		/* First check if we can hit the hitbox middle */
-		points.push_back(vecOriginalAngle);
-
-		/* Check every point of the hitbox by making a 3D cube inside the hitbox */
-		/* I'm too lazy to actually make it perfectly round like hitboxes are */
-
-		float flBodyDistance = flRadius * (*pBodyPoints / 150.f);
-
-		/* Single axises */
-		{
-			switch (multipointOptimization[pTarget->EntIndex()] % 5) {
-
-			case 0:
-				points.push_back(vecOriginalAngle + Vector(flBodyDistance, 0.f, 0.f));
-				break;
-
-			case 1:
-				points.push_back(vecOriginalAngle + Vector(0.f, flBodyDistance, 0.f));
-				break;
-
-			case 2:
-				points.push_back(vecOriginalAngle + Vector(0.f, 0.f, flBodyDistance));
-				break;
-
-			case 3:
-				points.push_back(vecOriginalAngle - Vector(0.f, flBodyDistance, 0.f));
-				break;
-
-			case 4:
-				points.push_back(vecOriginalAngle - Vector(flBodyDistance, 0.f, 0.f));
-				break;
-			}
-		}
+		case 4:
+			vecLastPoint = Vector(-flHitboxDistance, 0.f, 0.f);
+			break;
 	}
 
+	points.push_back(vecAngle + vecLastPoint);
 	multipointOptimization[pTarget->EntIndex()]++;
+
 	return points;
 }
 
-bool SafePoint(Vector vecEyePosition, Lagcompensation::LagRecord_t* pRecord, int iHitboxID, Vector vecShootposition, float& flMinDamage) {
+bool CRageBot::SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, int iHitboxID, float flRadius, Vector& vecShootposition, float& flMinDamage, std::array<bool, HITBOX_MAX>& bMultipoints) {
 
 	bool hitLeft = false, hitRight = false, hitCenter = false;
 	float dmgLeft = 0.f, dmgRight = 0.f, dmgCenter = 0.f;
 
-	Ray_t rayData(vecEyePosition, vecShootposition);
-	CTraceFilter rayFilter(g::pLocal);
-	Trace_t traceData;
-
-	// check if we can shoot it or not
-	pRecord->pEntity->SetBoneCache(pRecord->pRightMatrix);
-	i::EngineTrace->TraceRay(rayData, MASK_SHOT, &rayFilter, &traceData);
-	hitRight = traceData.pHitEntity == pRecord->pEntity;
-
-	pRecord->pEntity->SetBoneCache(pRecord->pCenterMatrix);
-	i::EngineTrace->TraceRay(rayData, MASK_SHOT, &rayFilter, &traceData);
-	hitCenter = traceData.pHitEntity == pRecord->pEntity;
-
-	pRecord->pEntity->SetBoneCache(pRecord->pLeftMatrix);
-	i::EngineTrace->TraceRay(rayData, MASK_SHOT, &rayFilter, &traceData);
-	hitLeft = traceData.pHitEntity == pRecord->pEntity;
-
-	pRecord->pEntity->SetBoneCache(pRecord->pMatrix);
-	if (hitLeft && hitRight && hitCenter) {
-
-		flMinDamage = autowall.GetDamage(g::pLocal, vecShootposition);
-		return true;
-	}
+	// cast a ray from the middle bcs that side has the best chance to intersect
+	Vector vecMiddleMatrix = pRecord->pEntity->GetHitboxPosition(iHitboxID, pRecord->pCenterMatrix);
+	
+	std::vector<Vector> vecGeneratedPoints;
+	if (bMultipoints[iHitboxID])
+		vecGeneratedPoints = CreatePoints(pRecord->pEntity, g::pLocal, pWeapon, vecMiddleMatrix, flRadius, iHitboxID, vecEyePosition, false);
 	else
-		return false;
+		vecGeneratedPoints.push_back(vecMiddleMatrix);
+
+	for (const Vector& vecPoint : vecGeneratedPoints) {
+
+		pRecord->pEntity->SetBoneCache(pRecord->pRightMatrix);
+		dmgRight = autowall.GetDamage(g::pLocal, vecPoint);
+
+		pRecord->pEntity->SetBoneCache(pRecord->pLeftMatrix);
+		dmgLeft = autowall.GetDamage(g::pLocal, vecPoint);
+
+		pRecord->pEntity->SetBoneCache(pRecord->pCenterMatrix);
+		dmgCenter = autowall.GetDamage(g::pLocal, vecPoint);
+
+		// if we hit every single angle that means that is a safepoint to shoot
+		if (dmgLeft > 0 && dmgRight > 0 && dmgCenter > 0) {
+
+			// manipulate the shooting position
+			vecShootposition = vecPoint;
+			flMinDamage = (dmgLeft + dmgRight + dmgCenter) / 3;
+			return true;
+		}
+	}
+	return false;
 }
 
 Vector CRageBot::InterpolateLocalEyePosition(Vector vecEyePosition, int iInterpolateTick) {

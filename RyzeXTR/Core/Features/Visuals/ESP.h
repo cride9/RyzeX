@@ -4,6 +4,7 @@
 #include "../../globals.h"
 #include "../../SDK/Menu/config.h"
 #include <deque>
+#include "../Rage/autowall.h"
 
 namespace visual {
 
