@@ -156,7 +156,7 @@ void menu::Antiaimtab() noexcept {
     using namespace cfg::antiaim;
 
     static const char* yawList[] = { "Forward", "Backward" };
-    static const char* pitchList[] = { "Up", "Zero" ,"Down" };
+    static const char* pitchList[] = { "Off", "Up", "Zero" ,"Down" };
     static const char* desyncList[] = { "Off", "Static", "Extended", "Jitter" };
     static const char* yawBaseList[] = { "Local view", "At target" };
     static const char* fakelagTypeList[] = { "Normal", "Adaptive", "Jitter" };

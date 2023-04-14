@@ -5,6 +5,7 @@
 
 enum EPITCH : int {
 
+	OFF,
 	UP,
 	ZERO,
 	DOWN
