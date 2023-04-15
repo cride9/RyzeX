@@ -28,7 +28,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
 
-	CBaseEntity* pLocal = g::pLocal = (CBaseEntity*)i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer());
+	CBaseEntity* pLocal = g::pLocal = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	g::pCmd = pCmd;
 
 	Vector oldViewAngle = pCmd->angViewPoint;

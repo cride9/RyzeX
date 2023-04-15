@@ -2,6 +2,7 @@
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../Misc/misc.h"
 #include "../Rage/Animations/EnemyAnimations.h"
+#include "../Rage/ragebot.h"
 
 void AIPoints() {
 
@@ -24,6 +25,32 @@ void AIPoints() {
 	}
 }
 
+//void HitboxVisualization(CBaseEntity* pEnt) {
+//
+//	Vector vecMins, vecMaxs;
+//	float flRadius;
+//
+//	for (int i = 0; i < HITBOX_MAX; i++) {
+//
+//		std::optional vecMiddle = pEnt->GetHitboxPosition(i, vecMins, vecMaxs, flRadius);
+//
+//		if (!vecMiddle.has_value())
+//			return;
+//
+//		std::vector<Vector> kys = ragebot.CreatePoints(pEnt, g::pLocal, g::pLocal->GetWeapon(), vecMiddle.value(), flRadius, i, g::pLocal->GetEyePosition());
+//
+//		for (const Vector& point : kys) {
+//
+//			Vector vecPoint;
+//			if (i::DebugOverlay->ScreenPosition(point, vecPoint))
+//				return;
+//
+//			i::Surface->DrawSetColor(255, 255, 255, 255);
+//			i::Surface->DrawFilledRect(vecPoint.x - 1, vecPoint.y - 1, vecPoint.x + 1, vecPoint.y + 1);
+//		}
+//	}
+//}
+
 void visual::VisualRender() {
 
 	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
@@ -40,6 +67,8 @@ void visual::VisualRender() {
 
 		if (!pEnt->GetHealth())
 			continue;
+
+		//HitboxVisualization(pEnt);
 
 		Vector bot;
 		if (i::DebugOverlay->ScreenPosition(pEnt->GetAbsOrigin() - Vector{ 0.f, 0.f, 9.f }, bot))

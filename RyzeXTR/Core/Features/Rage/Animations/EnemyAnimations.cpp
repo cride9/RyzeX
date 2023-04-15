@@ -61,6 +61,9 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 	}
 	if ( !strcmp( pEvent->GetName( ), "weapon_fire" ) ) {
 
+		if (!ragebot.rageBotData.pAimbotTarget)
+			return;
+
 		auto iUser = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) );
 
 		if (iUser == i::EngineClient->GetLocalPlayer())
@@ -1004,15 +1007,16 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 
 bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount) {
 
-	const auto pLog = &lagcomp.GetLog(pEnt->EntIndex());
-	if (!pLog->pEntity)
+	const auto& pLog = lagcomp.GetLog(pEnt->EntIndex());
+
+	if (pLog.pEntity == nullptr)
 		return false;
 	
-	if (pLog->pRecord.empty())
+	if (pLog.pRecord.empty())
 		return false;
 
-	pEnt->GetBoneAccessor()->matBones = const_cast<matrix3x4_t*>(pLog->pRecord.front().pMatrix);
-	std::memcpy(pMatrix, pLog->pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
+	pEnt->GetBoneAccessor()->matBones = const_cast<matrix3x4_t*>(pLog.pRecord.front().pMatrix);
+	std::memcpy(pMatrix, pLog.pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
 	return true;
 }
 

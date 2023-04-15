@@ -19,23 +19,22 @@ public:
 		CBaseEntity*					pAimbotTarget;
 		matrix3x4_t*					pTargetMatrix;
 		float							flTargetSimulation;
-		Lagcompensation::LagRecord_t*	pBacktrackRecord;
 		Vector							vecOldViewAngles;
 		bool							bCanShoot;
 
 	} rageBotData ;
 
-	
+	std::vector<Vector>	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, Vector, bool = true);
 
 private:
 
-	std::vector<Vector>	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, Vector, bool = true);
-	CBaseEntity*		SelectTarget(CBaseEntity*, CBaseCombatWeapon*, Vector&);
-	Vector				Hitscan(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector&, int&);
+	std::tuple<CBaseEntity*, bool>	SelectTarget(CBaseEntity*, CBaseCombatWeapon*, Vector&);
+	Vector				Hitscan(CBaseEntity*, std::tuple<CBaseEntity*, bool>, CBaseCombatWeapon*, Vector&, int&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector, int);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*);
-	Vector				InterpolateLocalEyePosition(Vector vecEyePosition, int iInterpolateTick = 1);
-	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, float, Vector&, float&, std::array<bool, HITBOX_MAX>&);
+	Vector				InterpolateLocalEyePosition(Vector, int = 1);
+	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, float&);
+	int					CalculateTickCount(float);
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
 

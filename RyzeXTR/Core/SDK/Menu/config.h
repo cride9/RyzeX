@@ -7,7 +7,7 @@
 
 namespace cfg {
 
-	inline int configID = 0;
+	inline int configID = -1;
 
 	inline bool debugSwitch = false;
 	inline int debugSlider = 1;
@@ -370,6 +370,7 @@ namespace cfg {
 		inline bool infiniteDuck = false;
 		inline bool blockbot = false;
 		inline int blockbotKey = 0;
+		inline bool clantag = false;
 
 		inline bool m_bDrawServerHitbox = false;
 		inline bool m_bDrawServerHitboxOnAllEntities = false;

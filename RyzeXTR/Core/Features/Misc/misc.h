@@ -46,6 +46,7 @@ namespace misc {
 	void WalkBot(CUserCmd*);
 	void WalkBotHandler(IGameEvent*);
 	void MoveToPosition(Vector&);
+	void ClanTag();
 
 	void DrawBream(Vector, Vector, Color);
 

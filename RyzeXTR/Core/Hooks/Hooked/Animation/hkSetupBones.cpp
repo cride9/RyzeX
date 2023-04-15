@@ -16,7 +16,7 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 	const auto pEnt = reinterpret_cast<CBaseEntity*>((uintptr_t)ecx - 4);
 
 	bool bResult = true;
-	if ( /*pEnt != g::pLocal ||*/ !pEnt || !g::pLocal || !pEnt->IsAlive() || (pEnt->GetTeam() == g::pLocal->GetTeam() && pEnt != g::pLocal))
+	if (!pEnt || !g::pLocal || !pEnt->IsAlive() || (pEnt->GetTeam() == g::pLocal->GetTeam() && pEnt != g::pLocal))
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
 	if (g::bSettingUpBones[pEnt->EntIndex()]) {

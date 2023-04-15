@@ -8,9 +8,6 @@
 #include "../../SDK/WavParser.h"
 #include "../Rage/autowall.h"
 #pragma comment(lib, "winmm.lib")
-
-
-
 #define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
@@ -31,6 +28,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	AutoPistol(pCmd, g::pLocal);
 	WalkBot(pCmd);
 	BlockBot(pCmd);
+	ClanTag();
 #if NDEBUG
 	Security();
 #endif
@@ -1373,69 +1371,6 @@ void Friction(float flFriction, Vector* vecVelocity)
 	*vecVelocity -= (g::pLocal->GetVelocity() * (1.f - newspeed));
 }
 
-//void misc::BlockBot(CUserCmd* pCmd) {
-//
-//	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::debugSwitch)
-//		return;
-//
-//	static Vector vecTargetVelocity;
-//	static Vector vecLocalVelocity;
-//
-//	if (CBaseEntity* pBlockedPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetGroundEntity())); pBlockedPlayer != nullptr && pBlockedPlayer->IsPlayer()) {
-//
-//		auto& pLog = lagcomp.GetLog(pBlockedPlayer->EntIndex());
-//
-//		if (pLog.pRecord.size() <= 2)
-//			return;
-//
-//		vecTargetVelocity.z = 0.f;
-//		vecLocalVelocity.z = 0.f;
-//		vecTargetVelocity = pLog.pRecord.front().vecVelocity;
-//		float flOldDir = M_RAD2DEG(std::atan2(pLog.pRecord.at(1).vecVelocity.y, pLog.pRecord.at(1).vecVelocity.x));
-//		float flDir = M_RAD2DEG(std::atan2(vecTargetVelocity.y, vecTargetVelocity.x));
-//
-//		auto flChange = flDir - flOldDir;
-//
-//		if (flChange < 5.f) {
-//
-//			auto hyp = vecTargetVelocity.Length2D();
-//			vecTargetVelocity.x = std::cos(M_DEG2RAD(flDir + flChange));
-//			vecTargetVelocity.y = std::sin(M_DEG2RAD(flDir + flChange));
-//		}
-//		else {
-//			vecTargetVelocity = Vector(0, 0, 0);
-//		}
-//
-//		Vector vecTargetOrigin = pBlockedPlayer->GetVecOrigin() + vecTargetVelocity * i::GlobalVars->flIntervalPerTick;
-//
-//		Vector vecOriginDelta = (vecTargetOrigin - g::pLocal->GetVecOrigin()) / i::GlobalVars->flIntervalPerTick;
-//		vecOriginDelta.z = 0.f;
-//
-//		if (CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon(); 
-//			pWeapon != nullptr && 
-//			pWeapon->GetCSWpnData() && 
-//			pWeapon->GetCSWpnData()->flMaxSpeed[0] * pWeapon->GetCSWpnData()->flMaxSpeed[0] < vecOriginDelta.LengthSqr()) {
-//
-//			const float flRatio = pWeapon->GetCSWpnData()->flMaxSpeed[0] / vecOriginDelta.Length();
-//			vecOriginDelta *= flRatio;
-//		}
-//
-//		vecOriginDelta -= vecLocalVelocity;
-//
-//		float vecCosDeg2Rad = cos(M_DEG2RAD(g::vecOriginalViewAngle.y));
-//		float vecSinDeg2Rad = sin(M_DEG2RAD(g::vecOriginalViewAngle.y));
-//
-//		auto flSideMove = (vecCosDeg2Rad * -vecOriginDelta.y) + (vecSinDeg2Rad * vecOriginDelta.x);
-//		auto flForwardMove = (vecSinDeg2Rad * vecOriginDelta.y) + (vecCosDeg2Rad * vecOriginDelta.x);
-//
-//		if (vecOriginDelta.Length2D() > 3.f) {
-//
-//			pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
-//			pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
-//		}
-//	}
-//}
-
 void misc::BlockBot(CUserCmd* pCmd) {
 
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::blockbot || !GetAsyncKeyState(cfg::misc::blockbotKey))
@@ -1498,83 +1433,61 @@ void misc::BlockBot(CUserCmd* pCmd) {
 	}
 }
 
-//void OtherBlockbot(CUserCmd* pCmd) {
-//
-//	auto& pLog = lagcomp.GetLog(pBlockedPlayer->EntIndex());
-//
-//		if (pLog.pRecord.size() <= 2)
-//			return;
-//
-//		vecTargetVelocity.z = 0.f;
-//		vecLocalVelocity.z = 0.f;
-//		vecTargetVelocity = pLog.pRecord.front().vecVelocity;
-//		float flOldDir = M_RAD2DEG(std::atan2(pLog.pRecord.at(1).vecVelocity.y, pLog.pRecord.at(1).vecVelocity.x));
-//		float flDir = M_RAD2DEG(std::atan2(vecTargetVelocity.y, vecTargetVelocity.x));
-//
-//		auto flChange = flDir - flOldDir;
-//
-//		if (flChange < 5.f) {
-//
-//			auto hyp = vecTargetVelocity.Length2D();
-//			vecTargetVelocity.x = std::cos(M_DEG2RAD(flDir + flChange));
-//			vecTargetVelocity.y = std::sin(M_DEG2RAD(flDir + flChange));
-//		}
-//		else {
-//			vecTargetVelocity = Vector(0, 0, 0);
-//		}
-//
-//		Vector vecTargetOrigin = pBlockedPlayer->GetVecOrigin() + vecTargetVelocity * i::GlobalVars->flIntervalPerTick;
-//
-//		//Friction(g::pLocal->GetFriction(), &vecLocalVelocity);
-//
-//		float flMaxAccel = 450.f;
-//		static CConVar* sv_accelerate = i::ConVar->FindVar("sv_accelerate");
-//		float flAccelSpeed = sv_accelerate->GetFloat() * i::GlobalVars->flIntervalPerTick * 450.f;
-//
-//		if (flMaxAccel > flAccelSpeed)
-//			flMaxAccel = flAccelSpeed;
-//
-//		Vector vecLocalDelta = (vecTargetOrigin - g::pLocal->GetVecOrigin()) / i::GlobalVars->flIntervalPerTick;
-//		vecLocalDelta.z = 0.f;
-//
-//		if (CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon(); 
-//			pWeapon != nullptr && 
-//			pWeapon->GetCSWpnData() && 
-//			pWeapon->GetCSWpnData()->flMaxSpeed[0] * pWeapon->GetCSWpnData()->flMaxSpeed[0] < vecLocalDelta.LengthSqr()) {
-//
-//			const float flRatio = pWeapon->GetCSWpnData()->flMaxSpeed[0] / vecLocalDelta.Length();
-//			vecLocalDelta *= flRatio;
-//		}
-//
-//		vecLocalDelta -= vecLocalVelocity;
-//
-//		const float flDeltaLen = fminf(vecLocalDelta.Length2D(), 450.f);
-//		g::vecOriginalViewAngle = Vector(0.f, M_RAD2DEG(atan2(vecLocalDelta.x, vecLocalDelta.y)), 0.f);
-//
-//		const float flCurrentSpeed = vecLocalVelocity.DotProduct(vecLocalDelta);
-//
-//		float flProjectedDelta = fminf(450.f, vecLocalDelta.Length() + flCurrentSpeed);
-//
-//		const float flAddSpeed = flProjectedDelta - flCurrentSpeed;
-//		if (flMaxAccel < flAddSpeed) {
-//			//distance is farther than we can account for
-//			//go as fast as we can
-//			pCmd->flForwardMove = 450.f;
-//			pCmd->flSideMove = 0.f;
-//		}
-//		else {
-//			// const float kAccelerationScale = MAX( 250.0f, wishspeed );
-//			// accelspeed = accel * gpGlobals->frametime * kAccelerationScale * player->m_surfaceFriction;
-//			flAccelSpeed = sv_accelerate->GetFloat() * i::GlobalVars->flIntervalPerTick * fmaxf(250.f, flDeltaLen);
-//
-//			if (flAccelSpeed <= flAddSpeed) {
-//				//add speed is too high, try to correct the accelspeed
-//				flProjectedDelta = flDeltaLen / (sv_accelerate->GetFloat() * i::GlobalVars->flIntervalPerTick);
-//			}
-//			pCmd->flForwardMove = std::clamp<float>(flProjectedDelta, -450.f, 450.f);
-//			pCmd->flSideMove = 0.f;
-//		}
-//}
+void misc::ClanTag() {
+
+	static auto SetClan = [](const char* csTag, const char* name) {
+
+		static auto pSetClantag = reinterpret_cast<void(__fastcall*)(const char*, const char*)>(util::FindSignature("engine.dll", "53 56 57 8B DA 8B F9 FF"));
+		pSetClantag(csTag, name);
+	};
+
+	static bool bShouldPrint = true;
+	INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
+
+	if (!pNetChannel)
+		return;
+
+	if (!bShouldPrint && !cfg::misc::clantag)
+		return;
+
+	static float flTime = 1;
+	int iTicks = TIME_TO_TICKS(pNetChannel->GetAvgLatency(FLOW_OUTGOING)) + (float)i::GlobalVars->iTickCount;
+	float intervals = 0.4f / i::GlobalVars->flIntervalPerTick;
+	int iMainTime = (int)(iTicks / intervals) % 17;
+	if (iMainTime != flTime)
+	{
+		if (cfg::misc::clantag) {
+
+			bShouldPrint = true;
+			switch (iMainTime) {
+
+			case 0: SetClan("R", "R"); break;
+			case 1: SetClan("TR", "TR"); break;
+			case 2: SetClan("XTR", "XTR"); break;
+			case 3: SetClan("eXTR", "eXTR"); break;
+			case 4: SetClan("zeXTR", "zeXTR"); break;
+			case 5: SetClan("yzeXTR", "yzeXTR"); break;
+			case 6: SetClan("RyzeXTR", "RyzeXTR"); break;
+			case 7: SetClan("RyzeXTR", "RyzeXTR"); break;
+			case 8: SetClan("RyzeXTR", "RyzeXTR"); break;
+			case 9: SetClan("RyzeXTR", "RyzeXTR"); break;
+			case 10: SetClan("RyzeXT", "RyzeXT"); break;
+			case 11: SetClan("RyzeX", "RyzeX"); break;
+			case 12: SetClan("Ryze", "Ryze"); break;
+			case 13: SetClan("Ryz", "Ryz"); break;
+			case 14: SetClan("Ry", "Ry"); break;
+			case 15: SetClan("R", "R"); break;
+			case 16: SetClan("", ""); break;
+			case 17: SetClan("", ""); break;
+			}
+		}
+		else {
+			bShouldPrint = false;
+			SetClan(" ", " ");
+		}
+	}
+	flTime = iMainTime;
+}
 
 //void misc::CustomBombText(const char* szText) {
 //

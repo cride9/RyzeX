@@ -622,6 +622,7 @@ void CConfig::Setup() {
 		SetupValue(infiniteDuck, false, "misc", "infiniteDuck");
 		SetupValue(blockbot, false, "misc", "blockbot");
 		SetupValue(blockbotKey, 0, "misc", "blockbotKey");
+		SetupValue(clantag, false, "misc", "clantag");
 
 		SetupValue(nightmode, false, "misc", "nightmode");
 		SetupValue(nightmodeColor[0], 1.f, "visual", "nightmodeColorR");

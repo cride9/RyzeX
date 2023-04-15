@@ -19,7 +19,7 @@ void menu::HandleMenuElements() noexcept {
             }
         }
 
-        if (pressedSave)
+        if (pressedSave && cfg::configID)
             SaveWarning(pressedSave, warningMethod);
 
         HandleLogoDrawing();
@@ -725,6 +725,7 @@ void menu::Misctab() noexcept {
         ImGui::Checkbox("Infinite duck", &infiniteDuck);
 		ImGui::Checkbox("Blockbot", &blockbot);
 		ImGui::Keybind("##blockbotKey", &blockbotKey);
+		ImGui::Checkbox("Clantag", &clantag);
 
 #if _DEBUG
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
@@ -885,7 +886,6 @@ void menu::ConfigTab() noexcept {
 			selectedConfig = Config2->vecConfigs[cfg::configID];
 		}
 
-		static std::string configName = "";
 		static char buf[255]{};
 		ImGui::InputText("Config name", buf, sizeof(buf));
 
