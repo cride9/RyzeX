@@ -12,7 +12,8 @@ enum ETabs : int {
 	ANTIAIM_TAB,
 	VISUAL_TAB,
 	MISC_TAB,
-	SKIN_TAB
+	SKIN_TAB,
+	CONFIG_TAB
 };
 
 enum EEntity : int {
@@ -86,6 +87,7 @@ namespace menu {
 	void Visualtab() noexcept;
 	void Misctab() noexcept;
 	void Skintab() noexcept;
+	void ConfigTab() noexcept;
 
 	void KeyBindList() noexcept;
 
@@ -93,7 +95,7 @@ namespace menu {
 
 	void HandleLogoDrawing() noexcept;
 
-	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*) noexcept;
+	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*) noexcept;
 }
 
 

@@ -42,9 +42,11 @@ private:
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);
 	int					ConfigOverrideDamage(CBaseCombatWeapon*);
 	int					ConfigHitChance(CBaseCombatWeapon*);
-	int					ConfigAutoScope( CBaseCombatWeapon* pWeapon );
+	bool				ConfigAutoScope( CBaseCombatWeapon* pWeapon );
+	bool				ConfigForceSafe(CBaseCombatWeapon* pWeapon);
 	std::vector<int>	ConfigHitboxes(CBaseCombatWeapon*);
 	std::pair<int, int> ConfigMultipoint(CBaseCombatWeapon*);
 	std::array<bool, HITBOX_MAX> ConfigMultiHitboxes(CBaseCombatWeapon*);
+	std::array<bool, HITBOX_MAX> ConfigSafeHitboxes(CBaseCombatWeapon*);
 };
 inline CRageBot ragebot;

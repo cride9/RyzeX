@@ -121,7 +121,7 @@ void CRageBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket
 					if ( flLerpRemainder > 0.f ) flSimulationTime += i::GlobalVars->flIntervalPerTick - flLerpRemainder;
 					
 					pCmd->iButtons |= IN_ATTACK;
-					pCmd->iTickCount = lagcomp.FixTickCount(flSimulationTime);
+					pCmd->iTickCount = TIME_TO_TICKS(flSimulationTime);
 				
 					if (!(cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) && !(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)))
 						bSendPacket = true;
@@ -144,6 +144,7 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 
 	std::vector<std::tuple<Vector, float, int>> vectorDamageStuff;
 	std::array<bool, HITBOX_MAX> multiPointHitboxes = ConfigMultiHitboxes(pWeapon);
+	std::array<bool, HITBOX_MAX> safePointHitboxes = ConfigSafeHitboxes(pWeapon);
 
 	/* Loop through enemy hitboxes and scale damage, then return a valid position to shoot to */
 	bool safePointAvailable = false;
@@ -174,13 +175,9 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 			Vector hitboxPosition = recordEntity->GetHitboxPosition(hitboxID, recordMatrix, flRadius);
 			
 			float flDamage;
-			if (SafePoint(vecEyePosition, pWeapon, &pLog->pRecord.front(), hitboxID, flRadius, hitboxPosition, flDamage, multiPointHitboxes)) {
-				if (flDamage >= iMinimumDamage) {
-					util::Print("Safe point!");
-					vectorDamageStuff.push_back(std::make_tuple(hitboxPosition, flDamage, hitboxID));
-					safePointAvailable = true;
-				}
-			}
+
+			if (ConfigForceSafe(pWeapon))
+				continue;
 
 			std::vector<Vector> vecHitboxPosition;
 
@@ -189,10 +186,26 @@ Vector CRageBot::Hitscan(CBaseEntity* pLocal, CBaseEntity* pTarget, CBaseCombatW
 			else
 				vecHitboxPosition.push_back(hitboxPosition);
 
-			recordEntity->SetBoneCache(pLog->pRecord.front().pMatrix);
 			for (Vector& currentPoint : vecHitboxPosition) {
-				if (flDamage = autowall.GetDamage(pLocal, currentPoint); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5)
-					vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
+
+				if (safePointAvailable)
+					break;
+
+				if (flDamage = autowall.GetDamage(pLocal, currentPoint); flDamage > iMinimumDamage || flDamage > pTarget->GetHealth() + 5) {
+
+					if (safePointHitboxes[hitboxID]) {
+
+						if (SafePoint(vecEyePosition, pWeapon, &pLog->pRecord.front(), hitboxID, flRadius, currentPoint, flDamage, multiPointHitboxes)) {
+							if (flDamage >= iMinimumDamage) {
+								vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
+								safePointAvailable = true;
+							}
+						}
+					}
+
+					if (!ConfigForceSafe(pWeapon))
+						vectorDamageStuff.push_back(std::make_tuple(currentPoint, flDamage, hitboxID));
+				}
 			}
 		}
 		else {
@@ -601,7 +614,31 @@ int CRageBot::ConfigHitChance(CBaseCombatWeapon* pWeapon) {
 	}
 }
 
-int CRageBot::ConfigAutoScope( CBaseCombatWeapon* pWeapon ) {
+bool CRageBot::ConfigForceSafe(CBaseCombatWeapon* pWeapon) {
+
+	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
+
+	if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
+		return cfg::rage::forceSafePoint[0];
+	}
+	else if (iDefinitionIndex == WEAPON_SSG08) {
+		return cfg::rage::forceSafePoint[1];
+	}
+	else if (iDefinitionIndex == WEAPON_AWP) {
+		return cfg::rage::forceSafePoint[2];
+	}
+	else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
+		return cfg::rage::forceSafePoint[4];
+	}
+	else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
+		return cfg::rage::forceSafePoint[3];
+	}
+	else {
+		return cfg::rage::forceSafePoint[5];
+	}
+}
+
+bool CRageBot::ConfigAutoScope( CBaseCombatWeapon* pWeapon ) {
 
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
@@ -678,31 +715,31 @@ std::vector<int> CRageBot::ConfigHitboxes(CBaseCombatWeapon* pWeapon) {
 	}
 
 	if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
-		for (int i = 0; i < sizeof(cfg::rage::autoHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::autoHitboxes[i])
 				AddHitbox(i, vecHitboxes);
 		}
 	}
 	else if (iDefinitionIndex == WEAPON_SSG08) {
-		for (int i = 0; i < sizeof(cfg::rage::scoutHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::scoutHitboxes[i])
 				AddHitbox(i, vecHitboxes);
 		}
 	}
 	else if (iDefinitionIndex == WEAPON_AWP) {
-		for (int i = 0; i < sizeof(cfg::rage::awpHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::awpHitboxes[i])
 				AddHitbox(i, vecHitboxes);
 		}
 	}
 	else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
-		for (int i = 0; i < sizeof(cfg::rage::heavypistolHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::heavypistolHitboxes[i])
 				AddHitbox(i, vecHitboxes);
 		}
 	}
 	else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
-		for (int i = 0; i < sizeof(cfg::rage::pistolHitboxes[i]); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::pistolHitboxes[i])
 				AddHitbox(i, vecHitboxes);
 		}
@@ -712,7 +749,7 @@ std::vector<int> CRageBot::ConfigHitboxes(CBaseCombatWeapon* pWeapon) {
 		AddHitbox(3, vecHitboxes);
 	}
 	else {
-		for (int i = 0; i < sizeof(cfg::rage::etcHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::etcHitboxes[i])
 				AddHitbox(i, vecHitboxes);
 		}
@@ -765,31 +802,31 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes(CBaseCombatWeapon* pW
 	};
 
 	if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
-		for (int i = 0; i < sizeof(cfg::rage::autoMultiHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::autoMultiHitboxes[i])
 				AddHitbox(i, arrHitboxes);
 		}
 	}
 	else if (iDefinitionIndex == WEAPON_SSG08) {
-		for (int i = 0; i < sizeof(cfg::rage::scoutMultiHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::scoutMultiHitboxes[i])
 				AddHitbox(i, arrHitboxes);
 		}
 	}
 	else if (iDefinitionIndex == WEAPON_AWP) {
-		for (int i = 0; i < sizeof(cfg::rage::awpMultiHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::awpMultiHitboxes[i])
 				AddHitbox(i, arrHitboxes);
 		}
 	}
 	else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
-		for (int i = 0; i < sizeof(cfg::rage::heavypistolMultiHitboxes); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::heavypistolMultiHitboxes[i])
 				AddHitbox(i, arrHitboxes);
 		}
 	}
 	else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
-		for (int i = 0; i < sizeof(cfg::rage::pistolMultiHitboxes[i]); i++) {
+		for (int i = 0; i < 6; i++) {
 			if (cfg::rage::pistolMultiHitboxes[i])
 				AddHitbox(i, arrHitboxes);
 		}
@@ -799,8 +836,95 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes(CBaseCombatWeapon* pW
 		AddHitbox(3, arrHitboxes);
 	}
 	else {
-		for (int i = 0; i < sizeof(cfg::rage::etcMultiHitboxes); i++) {
-			if (cfg::rage::etcHitboxes[i])
+		for (int i = 0; i < 6; i++) {
+			if (cfg::rage::etcMultiHitboxes[i])
+				AddHitbox(i, arrHitboxes);
+		}
+	}
+
+	return arrHitboxes;
+}
+
+std::array<bool, HITBOX_MAX> CRageBot::ConfigSafeHitboxes(CBaseCombatWeapon* pWeapon) {
+
+	std::array<bool, HITBOX_MAX> arrHitboxes = {};
+	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
+
+	static auto AddHitbox = [](int index, std::array<bool, HITBOX_MAX>& vecHitboxList) {
+
+		if (index == 0) {
+			vecHitboxList[HITBOX_HEAD] = true;
+		}
+		if (index == 1) {
+			vecHitboxList[HITBOX_UPPER_CHEST] = true;
+		}
+		if (index == 2) {
+			vecHitboxList[HITBOX_CHEST] = true;
+			vecHitboxList[HITBOX_THORAX] = true;
+		}
+		if (index == 3) {
+			vecHitboxList[HITBOX_STOMACH] = true;
+			vecHitboxList[HITBOX_PELVIS] = true;
+		}
+		if (index == 4) {
+			vecHitboxList[HITBOX_RIGHT_FOREARM] = true;
+			vecHitboxList[HITBOX_LEFT_FOREARM] = true;
+
+			vecHitboxList[HITBOX_LEFT_UPPER_ARM] = true;
+			vecHitboxList[HITBOX_RIGHT_UPPER_ARM] = true;
+
+			vecHitboxList[HITBOX_RIGHT_HAND] = true;
+			vecHitboxList[HITBOX_LEFT_HAND] = true;
+		}
+		if (index == 5) {
+			vecHitboxList[HITBOX_RIGHT_THIGH] = true;
+			vecHitboxList[HITBOX_LEFT_THIGH] = true;
+
+			vecHitboxList[HITBOX_RIGHT_CALF] = true;
+			vecHitboxList[HITBOX_LEFT_CALF] = true;
+
+			vecHitboxList[HITBOX_RIGHT_FOOT] = true;
+			vecHitboxList[HITBOX_LEFT_FOOT] = true;
+		}
+	};
+
+	if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
+		for (int i = 0; i < 6; i++) {
+			if (cfg::rage::autoSafeHitboxes[i])
+				AddHitbox(i, arrHitboxes);
+		}
+	}
+	else if (iDefinitionIndex == WEAPON_SSG08) {
+		for (int i = 0; i < 6; i++) {
+			if (cfg::rage::scoutSafeHitboxes[i])
+				AddHitbox(i, arrHitboxes);
+		}
+	}
+	else if (iDefinitionIndex == WEAPON_AWP) {
+		for (int i = 0; i < 6; i++) {
+			if (cfg::rage::awpSafeHitboxes[i])
+				AddHitbox(i, arrHitboxes);
+		}
+	}
+	else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
+		for (int i = 0; i < 6; i++) {
+			if (cfg::rage::heavypistolSafeHitboxes[i])
+				AddHitbox(i, arrHitboxes);
+		}
+	}
+	else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
+		for (int i = 0; i < 6; i++) {
+			if (cfg::rage::pistolSafeHitboxes[i])
+				AddHitbox(i, arrHitboxes);
+		}
+	}
+	else if (iDefinitionIndex == WEAPON_TASER) {
+		AddHitbox(2, arrHitboxes);
+		AddHitbox(3, arrHitboxes);
+	}
+	else {
+		for (int i = 0; i < 6; i++) {
+			if (cfg::rage::etcSafeHitboxes[i])
 				AddHitbox(i, arrHitboxes);
 		}
 	}
@@ -889,34 +1013,22 @@ bool CRageBot::SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lag
 	bool hitLeft = false, hitRight = false, hitCenter = false;
 	float dmgLeft = 0.f, dmgRight = 0.f, dmgCenter = 0.f;
 
-	// cast a ray from the middle bcs that side has the best chance to intersect
-	Vector vecMiddleMatrix = pRecord->pEntity->GetHitboxPosition(iHitboxID, pRecord->pCenterMatrix);
-	
-	std::vector<Vector> vecGeneratedPoints;
-	if (bMultipoints[iHitboxID])
-		vecGeneratedPoints = CreatePoints(pRecord->pEntity, g::pLocal, pWeapon, vecMiddleMatrix, flRadius, iHitboxID, vecEyePosition, false);
-	else
-		vecGeneratedPoints.push_back(vecMiddleMatrix);
+	pRecord->pEntity->SetBoneCache(pRecord->pRightMatrix);
+	dmgRight = autowall.GetDamage(g::pLocal, vecShootposition);
 
-	for (const Vector& vecPoint : vecGeneratedPoints) {
+	pRecord->pEntity->SetBoneCache(pRecord->pLeftMatrix);
+	dmgLeft = autowall.GetDamage(g::pLocal, vecShootposition);
 
-		pRecord->pEntity->SetBoneCache(pRecord->pRightMatrix);
-		dmgRight = autowall.GetDamage(g::pLocal, vecPoint);
+	pRecord->pEntity->SetBoneCache(pRecord->pCenterMatrix);
+	dmgCenter = autowall.GetDamage(g::pLocal, vecShootposition);
 
-		pRecord->pEntity->SetBoneCache(pRecord->pLeftMatrix);
-		dmgLeft = autowall.GetDamage(g::pLocal, vecPoint);
+	// if we hit every single angle that means that is a safepoint to shoot
+	if (dmgLeft > 0 && dmgRight > 0 && dmgCenter > 0) {
 
-		pRecord->pEntity->SetBoneCache(pRecord->pCenterMatrix);
-		dmgCenter = autowall.GetDamage(g::pLocal, vecPoint);
-
-		// if we hit every single angle that means that is a safepoint to shoot
-		if (dmgLeft > 0 && dmgRight > 0 && dmgCenter > 0) {
-
-			// manipulate the shooting position
-			vecShootposition = vecPoint;
-			flMinDamage = (dmgLeft + dmgRight + dmgCenter) / 3;
-			return true;
-		}
+		// manipulate the shooting position
+		vecShootposition = vecShootposition;
+		flMinDamage = (dmgLeft + dmgRight + dmgCenter) / 3;
+		return true;
 	}
 	return false;
 }

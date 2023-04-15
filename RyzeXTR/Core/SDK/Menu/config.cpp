@@ -35,6 +35,13 @@ void CConfig::Setup() {
 		SetupValue( autoscope[ 1 ], false, "rage", "autoscope2" );
 		SetupValue( autoscope[ 2 ], false, "rage", "autoscope3" );
 
+		SetupValue(forceSafePoint[0], false, "rage", "forceSafePoint1");
+		SetupValue(forceSafePoint[1], false, "rage", "forceSafePoint2");
+		SetupValue(forceSafePoint[2], false, "rage", "forceSafePoint3");
+		SetupValue(forceSafePoint[3], false, "rage", "forceSafePoint4");
+		SetupValue(forceSafePoint[4], false, "rage", "forceSafePoint5");
+		SetupValue(forceSafePoint[5], false, "rage", "forceSafePoint6");
+
 		SetupValue(doubletap, false, "rage", "Ragedoubletap");
 		SetupValue(doubletapkey, 0, "rage", "Ragedoubletapkey");
 
@@ -42,6 +49,7 @@ void CConfig::Setup() {
 
 		SetupValue(etcMultiHitboxes, false, 6, "rage", "etcMultiHitboxes");
 		SetupValue(etcHitboxes, false, 6, "rage", "etcHitboxes");
+		SetupValue(etcSafeHitboxes, false, 6, "rage", "etcSafeHitboxes");
 		SetupValue(etcHitchance, 0, "rage", "etcHitchance");
 		SetupValue(etcMindmg, 0, "rage", "etcMindmg");
 		SetupValue(etcHeadPoints, 0, "rage", "etcHeadPoints");
@@ -50,6 +58,7 @@ void CConfig::Setup() {
 
 		SetupValue(autoMultiHitboxes, false, 6, "rage", "autoMultiHitboxes");
 		SetupValue(autoHitboxes, false, 6, "rage", "autoHitboxes");
+		SetupValue(autoSafeHitboxes, false, 6, "rage", "autoSafeHitboxes");
 		SetupValue(autoHitchance, 0, "rage", "autoHitchance");
 		SetupValue(autoMindmg, 0, "rage", "autoMindmg");
 		SetupValue(autoHeadPoints, 0, "rage", "autoHeadPoints");
@@ -58,6 +67,7 @@ void CConfig::Setup() {
 
 		SetupValue(scoutMultiHitboxes, false, 6, "rage", "scoutMultiHitboxes");
 		SetupValue(scoutHitboxes, false, 6, "rage", "scoutHitboxes");
+		SetupValue(scoutSafeHitboxes, false, 6, "rage", "scoutSafeHitboxes");
 		SetupValue(scoutHitchance, 0, "rage", "scoutHitchance");
 		SetupValue(scoutMindmg, 0, "rage", "scoutMindmg");
 		SetupValue(scoutHeadPoints, 0, "rage", "scoutHeadPoints");
@@ -66,6 +76,7 @@ void CConfig::Setup() {
 
 		SetupValue(awpMultiHitboxes, false, 6, "rage", "awpMultiHitboxes");
 		SetupValue(awpHitboxes, false, 6, "rage", "awpHitboxes");
+		SetupValue(awpSafeHitboxes, false, 6, "rage", "awpSafeHitboxes");
 		SetupValue(awpHitchance, 0, "rage", "awpHitchance");
 		SetupValue(awpMindmg, 0, "rage", "awpMindmg");
 		SetupValue(awpHeadPoints, 0, "rage", "awpHeadPoints");
@@ -74,6 +85,7 @@ void CConfig::Setup() {
 
 		SetupValue(pistolMultiHitboxes, false, 6, "rage", "pistolMultiHitboxes");
 		SetupValue(pistolHitboxes, false, 6, "rage", "pistolHitboxes");
+		SetupValue(pistolSafeHitboxes, false, 6, "rage", "pistolSafeHitboxes");
 		SetupValue(pistolHitchance, 0, "rage", "pistolHitchance");
 		SetupValue(pistolMindmg, 0, "rage", "pistolMindmg");
 		SetupValue(pistolHeadPoints, 0, "rage", "pistolHeadPoints");
@@ -82,6 +94,7 @@ void CConfig::Setup() {
 
 		SetupValue(heavypistolMultiHitboxes, false, 6, "rage", "heavypistolMultiHitboxes");
 		SetupValue(heavypistolHitboxes, false, 6, "rage", "heavypistolHitboxes");
+		SetupValue(heavypistolSafeHitboxes, false, 6, "rage", "heavypistolSafeHitboxes");
 		SetupValue(heavypistolHitchance, 0, "rage", "heavypistolHitchance");
 		SetupValue(heavypistolMindmg, 0, "rage", "heavypistolMindmg");
 		SetupValue(heavypistolHeadPoints, 0, "rage", "heavypistolHeadPoints");
@@ -160,6 +173,11 @@ void CConfig::Setup() {
 		SetupValue(enemyHealthColor[2], 0.000f, "visual", "enemyHealthColorB");
 		SetupValue(enemyHealthColor[3], 1.f, "visual", "enemyHealthColorA");
 
+		SetupValue(enemyHealthColorEnd[0], 0.044f, "visual", "enemyHealthColorEndR"); // (0.044f, 1.000f, 0.000f, 1.000f)
+		SetupValue(enemyHealthColorEnd[1], 1.000f, "visual", "enemyHealthColorEndG");
+		SetupValue(enemyHealthColorEnd[2], 0.000f, "visual", "enemyHealthColorEndB");
+		SetupValue(enemyHealthColorEnd[3], 1.f, "visual", "enemyHealthColorEndA");
+
 		SetupValue(enemyGlow, false, "visual", "enemyGlow");
 		SetupValue(enemyGlowColor[0], 0.303f, "visual", "enemyGlowColorR"); // (0.303f, 0.302f, 0.140f, 1.000f)
 		SetupValue(enemyGlowColor[1], 0.302f, "visual", "enemyGlowColorG");
@@ -211,6 +229,11 @@ void CConfig::Setup() {
 		SetupValue(teamHealthColor[2], 0.000f, "visual", "teamHealthColorB");
 		SetupValue(teamHealthColor[3], 1.f, "visual", "teamHealthColorA");
 
+		SetupValue(teamHealthColorEnd[0], 0.211f, "visual", "teamHealthColorEndR"); // (0.211f, 1.000f, 0.000f, 1.000f)
+		SetupValue(teamHealthColorEnd[1], 1.f, "visual", "teamHealthColorEndG");
+		SetupValue(teamHealthColorEnd[2], 0.000f, "visual", "teamHealthColorEndB");
+		SetupValue(teamHealthColorEnd[3], 1.f, "visual", "teamHealthColorEndA");
+
 		SetupValue(teamGlow, false, "visual", "teamGlow");
 		SetupValue(teamGlowColor[0], 0.125f, "visual", "teamGlowColorR"); // (0.125f, 0.272f, 0.000f, 1.000f)
 		SetupValue(teamGlowColor[1], 0.272f, "visual", "teamGlowColorG");
@@ -255,6 +278,11 @@ void CConfig::Setup() {
 		SetupValue(localHealthColor[1], 1.f, "visual", "localHealthColorG");
 		SetupValue(localHealthColor[2], 1.f, "visual", "localHealthColorB");
 		SetupValue(localHealthColor[3], 1.f, "visual", "localHealthColorA");
+
+		SetupValue(localHealthColorEnd[0], 1.f, "visual", "localHealthColorEndR");
+		SetupValue(localHealthColorEnd[1], 1.f, "visual", "localHealthColorEndG");
+		SetupValue(localHealthColorEnd[2], 1.f, "visual", "localHealthColorEndB");
+		SetupValue(localHealthColorEnd[3], 1.f, "visual", "localHealthColorEndA");
 
 		SetupValue(localGlow, false, "visual", "localGlow");
 		SetupValue(localGlowColor[0], 0.137f, "visual", "localGlowColorR"); // (0.137f, 0.091f, 0.230f, 1.000f)
@@ -592,6 +620,8 @@ void CConfig::Setup() {
 		SetupValue(autoStrafe, false, "misc", "autoStrafe");
 		SetupValue(faststop, false, "misc", "faststop");
 		SetupValue(infiniteDuck, false, "misc", "infiniteDuck");
+		SetupValue(blockbot, false, "misc", "blockbot");
+		SetupValue(blockbotKey, 0, "misc", "blockbotKey");
 
 		SetupValue(nightmode, false, "misc", "nightmode");
 		SetupValue(nightmodeColor[0], 1.f, "visual", "nightmodeColorR");

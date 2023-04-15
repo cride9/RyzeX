@@ -40,6 +40,8 @@ void menu::HandleMenuElements() noexcept {
             break;
         case SKIN_TAB: Skintab();
             break;
+		case CONFIG_TAB: ConfigTab();
+			break;
         }
 
         ImGui::PopFont();
@@ -70,6 +72,10 @@ void menu::Tabselection() noexcept {
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
         if (ImGui::Button("Skins", ImVec2(ImGui::GetContentRegionAvail().x, 50), selectedTab == SKIN_TAB))
             selectedTab = SKIN_TAB;
+
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+		if (ImGui::Button("Config", ImVec2(ImGui::GetContentRegionAvail().x, 50), selectedTab == CONFIG_TAB))
+			selectedTab = CONFIG_TAB;
     }
     ImGui::EndChild();
     ImGui::PopFont();
@@ -108,13 +114,13 @@ void menu::Ragetab() noexcept {
     ImGui::SameLine();
     ImGui::BeginChild("rightside", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_NoMove );
     {
-        static const char* item[] = { "auto", "scout", "awp", "pistol", "heavy pistol", "other" };
+        static const char* item[] = { "Auto", "Scout", "Awp", "Pistol", "Heavy pistol", "Other" };
         static int selectedWeapon = 0;
         ImGui::Combo("Weapon Config", &selectedWeapon, item, IM_ARRAYSIZE(item));
 
-        static const char* items[] = { "head", "upper chest", "lower chest", "stomach", "arms", "legs" };
+        static const char* items[] = { "Head", "Upper chest", "Lower chest", "Stomach", "Arms", "Legs" };
 
-        static auto buildTabForWeapon = [](bool* hitboxes, bool* multiHitboxes, int& hitChance, int& minDmg, int& headPoints, int& bodyPoints, int& overridedmg, EWEAPON weapon) {
+        static auto buildTabForWeapon = [](bool* hitboxes, bool* multiHitboxes, int& hitChance, int& minDmg, int& headPoints, int& bodyPoints, int& overridedmg, EWEAPON weapon, bool* safePoints) {
 
             ImGui::MultiComboBox("Hitboxes", items, hitboxes, IM_ARRAYSIZE(items));
 
@@ -126,6 +132,9 @@ void menu::Ragetab() noexcept {
             ImGui::SliderInt("Head Pointscale", &headPoints, 0, 100);
             ImGui::SliderInt("Body Pointscale", &bodyPoints, 0, 100);
 
+			ImGui::MultiComboBox("Safe point", items, safePoints, IM_ARRAYSIZE(items));
+			ImGui::Checkbox("Force safe", &forceSafePoint[weapon]);
+
             if (weapon < 3)
                 ImGui::Checkbox("Auto-Scope", &autoscope[weapon]);
             ImGui::SliderInt("Damage override", &overridedmg, 0, 110);
@@ -134,17 +143,17 @@ void menu::Ragetab() noexcept {
 
         switch (selectedWeapon)
         {
-        case AUTO: buildTabForWeapon(autoHitboxes, autoMultiHitboxes, autoHitchance, autoMindmg, autoHeadPoints, autoBodyPoints, autoOverride, AUTO);
+        case AUTO: buildTabForWeapon(autoHitboxes, autoMultiHitboxes, autoHitchance, autoMindmg, autoHeadPoints, autoBodyPoints, autoOverride, AUTO, autoSafeHitboxes);
             break;
-        case SCOUT:buildTabForWeapon(scoutHitboxes, scoutMultiHitboxes, scoutHitchance, scoutMindmg, scoutHeadPoints, scoutBodyPoints, scoutOverride, SCOUT);
+        case SCOUT:buildTabForWeapon(scoutHitboxes, scoutMultiHitboxes, scoutHitchance, scoutMindmg, scoutHeadPoints, scoutBodyPoints, scoutOverride, SCOUT, scoutSafeHitboxes);
             break;
-        case AWP: buildTabForWeapon(awpHitboxes, awpMultiHitboxes, awpHitchance, awpMindmg, awpHeadPoints, awpBodyPoints, awpOverride, AWP);
+        case AWP: buildTabForWeapon(awpHitboxes, awpMultiHitboxes, awpHitchance, awpMindmg, awpHeadPoints, awpBodyPoints, awpOverride, AWP, awpSafeHitboxes);
             break;
-        case PISTOL: buildTabForWeapon(pistolHitboxes, pistolMultiHitboxes, pistolHitchance, pistolMindmg, pistolHeadPoints, pistolBodyPoints, pistolOverride, PISTOL);
+        case PISTOL: buildTabForWeapon(pistolHitboxes, pistolMultiHitboxes, pistolHitchance, pistolMindmg, pistolHeadPoints, pistolBodyPoints, pistolOverride, PISTOL, pistolSafeHitboxes);
             break;
-        case HEAVY_PISTOL: buildTabForWeapon(heavypistolHitboxes, heavypistolMultiHitboxes, heavypistolHitchance, heavypistolMindmg, heavypistolHeadPoints, heavypistolBodyPoints, heavypistolOverride, HEAVY_PISTOL);
+        case HEAVY_PISTOL: buildTabForWeapon(heavypistolHitboxes, heavypistolMultiHitboxes, heavypistolHitchance, heavypistolMindmg, heavypistolHeadPoints, heavypistolBodyPoints, heavypistolOverride, HEAVY_PISTOL, heavypistolSafeHitboxes);
             break;
-        case OTHER: buildTabForWeapon(etcHitboxes, etcMultiHitboxes, etcHitchance, etcMindmg, etcHeadPoints, etcBodyPoints, etcOverride, OTHER);
+        case OTHER: buildTabForWeapon(etcHitboxes, etcMultiHitboxes, etcHitchance, etcMindmg, etcHeadPoints, etcBodyPoints, etcOverride, OTHER, etcSafeHitboxes);
             break;
         }
     }
@@ -278,6 +287,7 @@ void menu::Visualtab() noexcept {
             enemyBoxColor,
             enemyHealth,
             enemyHealthColor,
+			enemyHealthColorEnd,
             enemyGlow,
             enemyGlowColor,
             enemyArmor,
@@ -299,6 +309,7 @@ void menu::Visualtab() noexcept {
             teamBoxColor,
             teamHealth,
             teamHealthColor,
+			teamHealthColorEnd,
             teamGlow,
             teamGlowColor,
             teamArmor,
@@ -320,6 +331,7 @@ void menu::Visualtab() noexcept {
             localBoxColor,
             localHealth,
             localHealthColor,
+			localHealthColorEnd,
             localGlow,
             localGlowColor,
             localArmor,
@@ -711,6 +723,8 @@ void menu::Misctab() noexcept {
         ImGui::Checkbox("Auto strafe", &autoStrafe);
         ImGui::Checkbox("Fast stop", &faststop);
         ImGui::Checkbox("Infinite duck", &infiniteDuck);
+		ImGui::Checkbox("Blockbot", &blockbot);
+		ImGui::Keybind("##blockbotKey", &blockbotKey);
 
 #if _DEBUG
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
@@ -718,45 +732,6 @@ void menu::Misctab() noexcept {
         ImGui::Checkbox("!Entity hitboxes!", &m_bDrawServerHitboxOnAllEntities);
         ImGui::PopStyleColor();
 #endif
-
-        ImGui::Checkbox("Fake ping", &fakePing);
-        ImGui::SliderFloat("Latency", &fakePingFactor, 0.f, 1000.f, "%.f");
-
-        if (g::pLocal) {
-            if (g::pLocal->GetTeam() == TEAM_CT) {
-                static const char* pistolsCT[] = { "None", "Usp-s / p2000", "Dual beretta", "P250", "Five-seven / Cz-auto", "Desert eagle / Revolver" };
-                static const char* riflesCT[] = { "None", "Famas", "M4a1-s / M4a4", "Aug" };
-                static const char* snipersCT[] = { "None", "Ssg08", "Awp", "Scar-20" };
-
-                static const char* equipmentsCT[] = { "Kevlar + Helmet", "Zeus", "Defuse kit" };
-                static const char* grenadesCT[] = { "Incendiary grenade", "Decoy grenade", "Flashbang", "He grenade", "Smoke grenade" };
-
-                ImGui::Checkbox("Autobuy masterswitch", &autobuyEnabled);
-
-                ImGui::Combo("Pistols", &cfg::misc::pistols, pistolsCT, IM_ARRAYSIZE(pistolsCT));
-                ImGui::Combo("Snipers", &cfg::misc::snipers, snipersCT, IM_ARRAYSIZE(snipersCT));
-
-                ImGui::MultiComboBox("Equipments", equipmentsCT, equipments, IM_ARRAYSIZE(equipmentsCT));
-                ImGui::MultiComboBox("Grenades", grenadesCT, grenades, IM_ARRAYSIZE(grenadesCT));
-            }
-            else if (g::pLocal->GetTeam() == TEAM_TT) {
-
-                static const char* pistolsT[] = { "none", "glock", "dual beretta", "p250", "tec9 / cz-auto", "desert eagle / revolver" };
-                static const char* riflesT[] = { "none", "galil ar", "ak47", "sg 553" };
-                static const char* snipersT[] = { "none", "ssg08", "awp", "g3sg1" };
-
-                static const char* equipmentsT[] = { "kevlar + helmet", "zeus" };
-                static const char* grenadesT[] = { "molotov", "decoy grenade", "flashbang", "he grenade", "smoke grenade" };
-
-                ImGui::Checkbox("Autobuy masterswitch", &autobuyEnabled);
-
-                ImGui::Combo("Pistols", &cfg::misc::pistols, pistolsT, IM_ARRAYSIZE(pistolsT));
-                ImGui::Combo("Snipers", &cfg::misc::snipers, snipersT, IM_ARRAYSIZE(snipersT));
-
-                ImGui::MultiComboBox("Equipments", equipmentsT, equipments, IM_ARRAYSIZE(equipmentsT));
-                ImGui::MultiComboBox("Grenades", grenadesT, grenades, IM_ARRAYSIZE(grenadesT));
-            }
-        }
     }
     ImGui::EndChild();
 
@@ -764,55 +739,44 @@ void menu::Misctab() noexcept {
 
     ImGui::BeginChild( "modelchild", ImVec2( ImGui::GetContentRegionAvail( ).x, ImGui::GetContentRegionAvail( ).y ), true, ImGuiWindowFlags_NoMove );
     {
-        static std::string selectedConfig = "";
-        ImGui::PushItemWidth( ImGui::GetContentRegionAvail( ).x );
-        if ( ImGui::ListBoxVector( "##configs", &cfg::configID, Config2->vecConfigs, 7 ) ) {
-            selectedConfig = Config2->vecConfigs[ cfg::configID ];
-        }
+		ImGui::Checkbox("Fake ping", &fakePing);
+		ImGui::SliderFloat("Latency", &fakePingFactor, 0.f, 1000.f, "%.f");
 
-        static std::string configName = "";
-        static char buf[ 255 ]{};
-        ImGui::InputText( "Config name", buf, sizeof( buf ) );
+		if (g::pLocal) {
+			if (g::pLocal->GetTeam() == TEAM_CT) {
+				static const char* pistolsCT[] = { "None", "Usp-s / p2000", "Dual beretta", "P250", "Five-seven / Cz-auto", "Desert eagle / Revolver" };
+				static const char* riflesCT[] = { "None", "Famas", "M4a1-s / M4a4", "Aug" };
+				static const char* snipersCT[] = { "None", "Ssg08", "Awp", "Scar-20" };
 
-        ImGui::PushStyleVar( ImGuiStyleVar_FrameBorderSize, 2.f );
-        if ( ImGui::Button( "Refresh", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
-            Config2->RefreshConfigs( );
-        }
+				static const char* equipmentsCT[] = { "Kevlar + Helmet", "Zeus", "Defuse kit" };
+				static const char* grenadesCT[] = { "Incendiary grenade", "Decoy grenade", "Flashbang", "He grenade", "Smoke grenade" };
 
-        ImGui::Spacing( );
-        if ( ImGui::Button( "Save", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
-            pressedSave = true;
-            warningMethod = true;
-        }
+				ImGui::Checkbox("Autobuy masterswitch", &autobuyEnabled);
 
-        ImGui::Spacing( );
-        if ( ImGui::Button( "Load", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
-            pressedSave = true;
-            warningMethod = false;
-        }
+				ImGui::Combo("Pistols", &cfg::misc::pistols, pistolsCT, IM_ARRAYSIZE(pistolsCT));
+				ImGui::Combo("Snipers", &cfg::misc::snipers, snipersCT, IM_ARRAYSIZE(snipersCT));
 
-        ImGui::Spacing( );
-        if ( ImGui::Button( "Create", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
+				ImGui::MultiComboBox("Equipments", equipmentsCT, equipments, IM_ARRAYSIZE(equipmentsCT));
+				ImGui::MultiComboBox("Grenades", grenadesCT, grenades, IM_ARRAYSIZE(grenadesCT));
+			}
+			else if (g::pLocal->GetTeam() == TEAM_TT) {
 
-            Config2->Save( buf );
-            Config2->RefreshConfigs( );
-        }
+				static const char* pistolsT[] = { "none", "glock", "dual beretta", "p250", "tec9 / cz-auto", "desert eagle / revolver" };
+				static const char* riflesT[] = { "none", "galil ar", "ak47", "sg 553" };
+				static const char* snipersT[] = { "none", "ssg08", "awp", "g3sg1" };
 
-        ImGui::Spacing( );
-        if ( ImGui::Button( "Delete", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
+				static const char* equipmentsT[] = { "kevlar + helmet", "zeus" };
+				static const char* grenadesT[] = { "molotov", "decoy grenade", "flashbang", "he grenade", "smoke grenade" };
 
-            Config2->DeleteConfig( selectedConfig );
-            Config2->RefreshConfigs( );
-        }
+				ImGui::Checkbox("Autobuy masterswitch", &autobuyEnabled);
 
-        ImGui::Spacing( );
-        if ( ImGui::Button( "Open config location", ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ) ) ) {
+				ImGui::Combo("Pistols", &cfg::misc::pistols, pistolsT, IM_ARRAYSIZE(pistolsT));
+				ImGui::Combo("Snipers", &cfg::misc::snipers, snipersT, IM_ARRAYSIZE(snipersT));
 
-            ShellExecuteA( NULL, "open", Config2->ConfigPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );;
-        }
-
-        ImGui::PopStyleVar( );
-        ImGui::PopItemWidth( );
+				ImGui::MultiComboBox("Equipments", equipmentsT, equipments, IM_ARRAYSIZE(equipmentsT));
+				ImGui::MultiComboBox("Grenades", grenadesT, grenades, IM_ARRAYSIZE(grenadesT));
+			}
+		}
     }
     ImGui::EndChild( );
 }
@@ -861,6 +825,7 @@ void menu::HandleVisualTypeGeneration(
 
     bool& health,
     float* healthColor,
+	float* healthColorEnd,
 
     bool& glow,
     float* glowColor,
@@ -892,7 +857,8 @@ noexcept {
         ImGui::ColorEdit4("##namecolor", nameColor);
 
         ImGui::Checkbox("Health", &health);
-        ImGui::ColorEdit4("##healthcolor", healthColor);
+        ImGui::ColorEdit4("##healthcolor", healthColor, true);
+		ImGui::ColorEdit4("##healthcolorEnd", healthColorEnd);
 
         ImGui::Checkbox("Armor", &armor);
         ImGui::ColorEdit4("##armorcolor", armorColor);
@@ -907,6 +873,71 @@ noexcept {
         ImGui::ColorEdit4("##moneycolor", moneyColor);
     }
     ImGui::EndChild();
+}
+
+void menu::ConfigTab() noexcept {
+
+	ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove);
+	{
+		static std::string selectedConfig = "";
+		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+		if (ImGui::ListBoxVector("##configs", &cfg::configID, Config2->vecConfigs, 7)) {
+			selectedConfig = Config2->vecConfigs[cfg::configID];
+		}
+
+		static std::string configName = "";
+		static char buf[255]{};
+		ImGui::InputText("Config name", buf, sizeof(buf));
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
+		if (ImGui::Button("Refresh", ImVec2(ImGui::GetContentRegionAvail().x, 20.f))) {
+			Config2->RefreshConfigs();
+		}
+
+		ImGui::Spacing();
+		if (ImGui::Button("Save", ImVec2(ImGui::GetContentRegionAvail().x, 20.f))) {
+			pressedSave = true;
+			warningMethod = true;
+		}
+
+		ImGui::Spacing();
+		if (ImGui::Button("Load", ImVec2(ImGui::GetContentRegionAvail().x, 20.f))) {
+			pressedSave = true;
+			warningMethod = false;
+		}
+
+		ImGui::Spacing();
+		if (ImGui::Button("Create", ImVec2(ImGui::GetContentRegionAvail().x, 20.f))) {
+
+			Config2->Save(buf);
+			Config2->RefreshConfigs();
+		}
+
+		ImGui::Spacing();
+		if (ImGui::Button("Delete", ImVec2(ImGui::GetContentRegionAvail().x, 20.f))) {
+
+			Config2->DeleteConfig(selectedConfig);
+			Config2->RefreshConfigs();
+		}
+
+		ImGui::Spacing();
+		if (ImGui::Button("Open config location", ImVec2(ImGui::GetContentRegionAvail().x, 20.f))) {
+
+			ShellExecuteA(NULL, "open", Config2->ConfigPath.c_str(), NULL, NULL, SW_SHOWNORMAL);;
+		}
+
+		ImGui::PopStyleVar();
+		ImGui::PopItemWidth();
+	}
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove);
+	{
+		ImGui::Text("scripts will be here in the future");
+	}
+	ImGui::EndChild();
 }
 
 void menu::KeyBindList() noexcept {

@@ -11,7 +11,7 @@ namespace visual {
 	void VisualRender();
 
 	void BoxEsp(int, int, int, int, Color);
-	void HealthEsp(int&, int, int, int, int, int, int, int, Color);
+	void HealthEsp(int&, int, int, int, int, int, int, int, Color, Color);
 	void NameEsp(int&, int, int, int, int, int, int, CBaseEntity*, Color);
 	void KevlarEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void AmmoEsp(int&, int, int, int, int, CBaseEntity*, Color);
@@ -19,11 +19,4 @@ namespace visual {
 	void WeaponEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void MoneyEsp(int&, int, int, int, int, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
-	void BruteForceState(int&, int, int, int, int, CBaseEntity*);
-
-	void AutoPeekCircle();
-
-	void DrawMultipoints(CBaseEntity*);
-
-	inline Vector selectedPoint[65][18];
 }

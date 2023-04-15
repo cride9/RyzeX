@@ -186,7 +186,7 @@ void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecor
 	float flOldGoalFeetYaw = pEntity->AnimState( )->flGoalFeetYaw;
 
 	// bot or either no resolver.
-	if (!cfg::rage::resolver || pEntity->GetPlayerInfo().bFakePlayer) {
+	if (!cfg::rage::resolver /*|| pEntity->GetPlayerInfo().bFakePlayer*/) {
 		// reset missed shots.
 		pData.iMissedShots = NULL;
 		pData.iAntiAimType = Lagcompensation::LEGIT;

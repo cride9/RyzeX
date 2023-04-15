@@ -5207,18 +5207,22 @@ static void ColorEditRestoreHS(const float* col, float* H, float* S, float* V)
 // Edit colors components (each component in 0.0f..1.0f range).
 // See enum ImGuiColorEditFlags_ for available options. e.g. Only access 3 floats if ImGuiColorEditFlags_NoAlpha flag is set.
 // With typical options: Left-click on color square to open color picker. Right-click to open option menu. CTRL-Click over input fields to edit them and TAB to go to next item.
-bool ImGui::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flags)
+bool ImGui::ColorEdit4(const char* label, float col[4], bool bSamerow, ImGuiColorEditFlags flags)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
         return false;
 
-    //SameLine();
+	if (bSamerow)
+		ImGui::SameLine(GetContentRegionAvail().x - (CalcItemWidth() * 1.08));
+	else
+		ImGui::SameLine(GetContentRegionAvail().x - (CalcItemWidth()));
+
     flags |= ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoSidePreview;
 
     ImGuiContext& g = *GImGui;
     const ImGuiStyle& style = g.Style;
-    SetCursorPos(ImVec2(GetContentRegionAvail().x - CalcItemWidth(), GetCursorPosY() - GetFrameHeight() - (4.f)));
+    //SetCursorPos(ImVec2(GetContentRegionAvail().x - (CalcItemWidth() * 1.25), GetCursorPosY() - GetFrameHeight() - (4.f)));
     const float square_sz = GetFrameHeight();
     const float w_full = CalcItemWidth();
     const float w_button = (flags & ImGuiColorEditFlags_NoSmallPreview) ? 0.0f : (square_sz + style.ItemInnerSpacing.x);

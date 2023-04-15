@@ -20,6 +20,7 @@ namespace cfg {
 		inline int	autostopAggressiveness;
 		inline int	aimbotTargetSelection;
 		inline bool autoscope[] = { false, false, false };
+		inline bool forceSafePoint[] = { false, false, false, false ,false, false };
 		inline bool m_bAutoStopInAir;
 		inline bool betweenshots;
 		inline bool doubletap;
@@ -34,6 +35,7 @@ namespace cfg {
 		// all weapon
 		inline bool etcMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool etcHitboxes[] = { false, false, false, false, false ,false };
+		inline bool etcSafeHitboxes[] = { false, false, false, false, false ,false };
 		inline int etcHitchance;
 		inline int etcMindmg;
 		inline int etcHeadPoints = 0;
@@ -42,6 +44,7 @@ namespace cfg {
 
 		inline bool autoMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool autoHitboxes[] = { false, false, false, false, false ,false };
+		inline bool autoSafeHitboxes[] = { false, false, false, false, false ,false };
 		inline int autoHitchance;
 		inline int autoMindmg;
 		inline int autoHeadPoints = 0;
@@ -50,6 +53,7 @@ namespace cfg {
 
 		inline bool scoutMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool scoutHitboxes[] = { false, false, false, false, false ,false };
+		inline bool scoutSafeHitboxes[] = { false, false, false, false, false ,false };
 		inline int scoutHitchance;
 		inline int scoutMindmg;
 		inline int scoutHeadPoints = 0;
@@ -58,6 +62,7 @@ namespace cfg {
 
 		inline bool awpMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool awpHitboxes[] = { false, false, false, false, false ,false };
+		inline bool awpSafeHitboxes[] = { false, false, false, false, false ,false };
 		inline int awpHitchance;
 		inline int awpMindmg;
 		inline int awpHeadPoints = 0;
@@ -66,6 +71,7 @@ namespace cfg {
 
 		inline bool pistolMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool pistolHitboxes[] = { false, false, false, false, false ,false };
+		inline bool pistolSafeHitboxes[] = { false, false, false, false, false ,false };
 		inline int pistolHitchance;
 		inline int pistolMindmg;
 		inline int pistolHeadPoints = 0;
@@ -74,6 +80,7 @@ namespace cfg {
 
 		inline bool heavypistolMultiHitboxes[] = { false, false, false, false, false ,false };
 		inline bool heavypistolHitboxes[] = { false, false, false, false, false ,false };
+		inline bool heavypistolSafeHitboxes[] = { false, false, false, false, false ,false };
 		inline int heavypistolHitchance;
 		inline int heavypistolMindmg;
 		inline int heavypistolHeadPoints = 0;
@@ -132,6 +139,7 @@ namespace cfg {
 
 		inline bool enemyHealth = false;
 		inline float enemyHealthColor[4] = { 1.f, 1.f, 1.f ,1.f };
+		inline float enemyHealthColorEnd[4] = { 1.f, 1.f, 1.f ,1.f };
 
 		inline bool enemyGlow = false;
 		inline float enemyGlowColor[4] = { 1.f, 1.f, 1.f, 1.f };
@@ -161,6 +169,7 @@ namespace cfg {
 
 		inline bool teamHealth = false;
 		inline float teamHealthColor[4] = { 1.f, 1.f, 1.f ,1.f };
+		inline float teamHealthColorEnd[4] = { 1.f, 1.f, 1.f ,1.f };
 
 		inline bool teamGlow = false;
 		inline float teamGlowColor[4] = { 1.f, 1.f, 1.f, 1.f };
@@ -189,6 +198,7 @@ namespace cfg {
 
 		inline bool localHealth = false;
 		inline float localHealthColor[4] = { 1.f, 1.f, 1.f ,1.f };
+		inline float localHealthColorEnd[4] = { 1.f, 1.f, 1.f ,1.f };
 
 		inline bool localGlow = false;
 		inline float localGlowColor[4] = { 1.f, 1.f, 1.f, 1.f };
@@ -358,6 +368,8 @@ namespace cfg {
 		inline bool autoStrafe = false;
 		inline bool faststop = false;
 		inline bool infiniteDuck = false;
+		inline bool blockbot = false;
+		inline int blockbotKey = 0;
 
 		inline bool m_bDrawServerHitbox = false;
 		inline bool m_bDrawServerHitboxOnAllEntities = false;

@@ -16,7 +16,8 @@
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
 	BunnyHop(pCmd);
-	FakeLag(bSendPacket);
+	if (!i::EngineClient->IsVoiceRecording())
+		FakeLag(bSendPacket);
 	AutoStrafe(vecViewAngle, pCmd);
 	AspectRatio();
 	Slowwalk(pCmd, cfg::antiaim::fakewalk); // need menu element && keybind
@@ -155,7 +156,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 		if (!bPositionSet) {
 
 			bPositionSet = true;
-			vecOrigin = g::pLocal->GetAbsOrigin();
+			vecOrigin = g::pLocal->GetVecOrigin();
 			vecRecord = vecOrigin;
 			g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
 		}
@@ -169,7 +170,20 @@ void misc::IdealTick(CUserCmd* pCmd) {
 
 	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && GetAsyncKeyState(cfg::antiaim::idealTickBind) && bRetreat) {
 
-		vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
+		if ((vecOrigin - g::pLocal->GetVecOrigin()).Length2D() > 3.29217472f) {
+
+			Vector vecAngle;
+			M::VectorAngles(vecOrigin - g::pLocal->GetEyePosition(), vecAngle);
+
+			g::vecOriginalViewAngle.y = vecAngle.y;
+			g::pCmd->flForwardMove += 450.f;
+			g::pCmd->flSideMove = 0.f;
+		}
+
+		if ((vecOrigin - g::pLocal->GetVecOrigin()).Length2D() < 2.f) {
+			bRetreat = false;
+		}
+		/*vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
 
 		auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
 		auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
@@ -179,7 +193,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 
 		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
 			bRetreat = false;
-		}
+		}*/
 	}
 }
 
@@ -1424,26 +1438,63 @@ void Friction(float flFriction, Vector* vecVelocity)
 
 void misc::BlockBot(CUserCmd* pCmd) {
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::debugSwitch)
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::blockbot || !GetAsyncKeyState(cfg::misc::blockbotKey))
 		return;
 
-	if (CBaseEntity* pBlockedPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetGroundEntity())); pBlockedPlayer != nullptr && pBlockedPlayer->IsPlayer()) {
+	if (CBaseEntity* pBlockedPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetGroundEntity())); 
+		pBlockedPlayer != nullptr && 
+		pBlockedPlayer->IsPlayer()) {
 
-		Vector vecExtrapolatedEnemyPos = (pBlockedPlayer->GetAbsOrigin() + (pBlockedPlayer->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 2)));
-		Vector vecExtrapolatedLocalPos = (g::pLocal->GetAbsOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 2)));
+		Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
 
-		if ((vecExtrapolatedLocalPos - pBlockedPlayer->GetAbsOrigin()).Length2D() > 3.29217472f) {
+		// allowed difference before we fall down cuz head has a bigger surface (idk why)
+		// so if player is going in small circles, we won't fall (or doing small changes that could kill most blockbots)
+		if ((vecExtrapolatedLocalPos - pBlockedPlayer->GetVecOrigin()).Length2D() > 3.29217472f) {
 
 			Vector vecAngle;
-			M::VectorAngles(vecExtrapolatedEnemyPos - g::pLocal->GetEyePosition(), vecAngle);
-
-			float flBackupAngle = g::pCmd->angViewPoint.y;
-			float flBackupOriginal = g::vecOriginalViewAngle.y;
+			M::VectorAngles(pBlockedPlayer->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
 
 			g::vecOriginalViewAngle.y = vecAngle.y;
-			g::pCmd->flForwardMove += 450.f;
+			g::pCmd->flForwardMove = 450.f;
 			g::pCmd->flSideMove = 0.f;
 		}
+	}
+	else {
+
+		float flBestDistance = 250.f;
+		CBaseEntity* pTarget = nullptr;
+
+		for (int i = 1; i < i::GlobalVars->nMaxClients; i++)
+		{
+			CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+			if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity == g::pLocal)
+				continue;
+
+			float flDistance = g::pLocal->GetVecOrigin().DistTo(pEntity->GetVecOrigin());
+
+			if (flDistance < flBestDistance) {
+
+				flBestDistance = flDistance;
+				pTarget = pEntity;
+			}
+		}
+
+		if (!pTarget)
+			return;
+
+		Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
+
+		Vector vecAngle;
+		M::VectorAngles(pTarget->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
+
+		vecAngle.y -= g::pLocal->GetEyeAngles().y;
+		vecAngle.NormalizeAngle();
+
+		if (vecAngle.y < -1.0f)
+			pCmd->flSideMove = 450.f;
+		else if (vecAngle.y > 1.0f)
+			pCmd->flSideMove = -450.f;
 	}
 }
 
