@@ -1007,16 +1007,22 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 
 bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount) {
 
-	const auto& pLog = lagcomp.GetLog(pEnt->EntIndex());
+	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex());
 
-	if (pLog.pEntity == nullptr)
+	if (!pLog)
+		return false;
+
+	if (pLog->pEntity == nullptr)
+		return false;
+
+	if (!pLog->pEntity->IsPlayer() || !pLog->pEntity->IsAlive() || pLog->pEntity->IsDormant())
 		return false;
 	
-	if (pLog.pRecord.empty())
+	if (pLog->pRecord.empty())
 		return false;
 
-	pEnt->GetBoneAccessor()->matBones = const_cast<matrix3x4_t*>(pLog.pRecord.front().pMatrix);
-	std::memcpy(pMatrix, pLog.pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
+	pEnt->GetBoneAccessor()->matBones = pLog->pRecord.front().pMatrix;
+	std::memcpy(pMatrix, pLog->pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
 	return true;
 }
 

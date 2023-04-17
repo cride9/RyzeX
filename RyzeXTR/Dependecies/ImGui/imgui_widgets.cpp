@@ -5214,7 +5214,7 @@ bool ImGui::ColorEdit4(const char* label, float col[4], bool bSamerow, ImGuiColo
         return false;
 
 	if (bSamerow)
-		ImGui::SameLine(GetContentRegionAvail().x - (CalcItemWidth() * 1.08));
+		ImGui::SameLine(GetContentRegionAvail().x - (CalcItemWidth() * 1.1));
 	else
 		ImGui::SameLine(GetContentRegionAvail().x - (CalcItemWidth()));
 

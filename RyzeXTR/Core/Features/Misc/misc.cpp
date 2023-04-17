@@ -13,8 +13,7 @@
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
 	BunnyHop(pCmd);
-	if (!i::EngineClient->IsVoiceRecording())
-		FakeLag(bSendPacket);
+	FakeLag(bSendPacket);
 	AutoStrafe(vecViewAngle, pCmd);
 	AspectRatio();
 	Slowwalk(pCmd, cfg::antiaim::fakewalk); // need menu element && keybind
@@ -896,16 +895,14 @@ void misc::FakeLag(bool& bSendPacket) {
 		return;
 	}
 
-	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
-		bSendPacket = true;
+	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey))
 		return;
-	}
 
 	static int iCurrentChoke = 0;
 
 	static CConVar* sv_maxspeed = i::ConVar->FindVar("sv_maxspeed");
 	float flVelocity = g::pLocal->GetVelocity().Length2D();
-	float flMaxVelocity = sv_maxspeed->GetFloat();
+	float flMaxVelocity = g::pLocal->GetWeapon() ? g::pLocal->IsScoped() ? g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[1] : g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[0] : sv_maxspeed->GetFloat();
 	static bool bChokeCycleEnded = false;
 
 	int iMin = cfg::antiaim::fakelagmin;
@@ -913,38 +910,8 @@ void misc::FakeLag(bool& bSendPacket) {
 
 	if (cfg::antiaim::fakelag) {
 
-		if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
-
-			if (g::bWaiting) {
-
-				switch (cfg::antiaim::fakelagType) {
-
-				case MAXIMUM:
-					iCurrentChoke = cfg::antiaim::fakelag;
-					break;
-
-				case ADAPTIVE:
-
-					iCurrentChoke = max(1, 15 * (flVelocity / flMaxVelocity));
-					break;
-
-				case JITTER:
-
-					if (bChokeCycleEnded) {
-
-						iCurrentChoke = iMin;
-						bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
-					}
-					else {
-
-						iCurrentChoke = cfg::antiaim::fakelag;
-						bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
-					}
-					break;
-				}
-			}
-			else
-				iCurrentChoke = min(2, iCurrentChoke);
+		if (!g::bWaiting && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && !exploits::bIsShiftingTicks) {
+			iCurrentChoke = min(2, iCurrentChoke);
 		}
 		else {
 

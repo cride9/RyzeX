@@ -99,6 +99,9 @@ namespace cfg {
 		inline float desyncvalue = 58.f;
 		inline int desyncinverter = 0;
 
+		inline int flickOffset = 0;
+		inline int flickAngleSwitch = 0;
+
 		inline bool m_bSwayDesync = false;
 
 		inline int modifier = 0;
@@ -128,94 +131,34 @@ namespace cfg {
 	}
 	namespace visual {
 
-		// Enemy
-		inline bool enemyEsp = false;
+		inline bool bEnable[3] = { false, false, false };
 
-		inline bool enemyName = false;
-		inline float enemyNameColor[4] = { 1.f, 1.f, 1.f ,1.f };
+		inline bool bName[3] = { false, false ,false };
+		inline float flNameColor[3][4];
 
-		inline bool enemyBox = false;
-		inline float enemyBoxColor[4] = { 1.f, 1.f, 1.f ,1.f };
+		inline bool bBox[3] = { false, false, false };
+		inline float flBoxColor[3][4];
 
-		inline bool enemyHealth = false;
-		inline float enemyHealthColor[4] = { 1.f, 1.f, 1.f ,1.f };
-		inline float enemyHealthColorEnd[4] = { 1.f, 1.f, 1.f ,1.f };
+		inline bool bHealth[3] = { false, false, false };
+		inline float flHealthColorStart[3][4];
+		inline float flHealthColorEnd[3][4];
 
-		inline bool enemyGlow = false;
-		inline float enemyGlowColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline bool bGlow[3] = { false, false ,false };
+		inline float flGlowColor[3][4];
 
-		inline bool enemyArmor = false;
-		inline float enemyArmorColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline bool bArmor[3] = { false, false, false };
+		inline float flArmorColor[3][4];
 
-		inline bool enemyAmmo = false;
-		inline float enemyAmmoColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline bool bAmmo[3] = { false, false, false };
+		inline float flAmmoColor[3][4];
 
-		inline bool enemyMoney = false;
-		inline float enemyMoneyColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline bool bWeapon[3] = { false, false, false };
+		inline float flWeaponColor[3][4];
 
-		inline bool enemyWeapon = false;
-		inline float enemyWeaponColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-		inline bool enemyBreakLC = false;
-
-		// Team
-		inline bool teamEsp = false;
-
-		inline bool teamName = false;
-		inline float teamNameColor[4] = { 1.f, 1.f, 1.f ,1.f };
-
-		inline bool teamBox = false;
-		inline float teamBoxColor[4] = { 1.f, 1.f, 1.f ,1.f };
-
-		inline bool teamHealth = false;
-		inline float teamHealthColor[4] = { 1.f, 1.f, 1.f ,1.f };
-		inline float teamHealthColorEnd[4] = { 1.f, 1.f, 1.f ,1.f };
-
-		inline bool teamGlow = false;
-		inline float teamGlowColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-		inline bool teamArmor = false;
-		inline float teamArmorColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-		inline bool teamAmmo = false;
-		inline float teamAmmoColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-		inline bool teamMoney = false;
-		inline float teamMoneyColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-		inline bool teamWeapon = false;
-		inline float teamWeaponColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-
-		// Local
-		inline bool localEsp = false;
-
-		inline bool localName = false;
-		inline float localNameColor[4] = { 1.f, 1.f, 1.f ,1.f };
-
-		inline bool localBox = false;
-		inline float localBoxColor[4] = { 1.f, 1.f, 1.f ,1.f };
-
-		inline bool localHealth = false;
-		inline float localHealthColor[4] = { 1.f, 1.f, 1.f ,1.f };
-		inline float localHealthColorEnd[4] = { 1.f, 1.f, 1.f ,1.f };
-
-		inline bool localGlow = false;
-		inline float localGlowColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-		inline bool localArmor = false;
-		inline float localArmorColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-		inline bool localAmmo = false;
-		inline float localAmmoColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
-		inline bool localMoney = false;
-		inline float localMoneyColor[4] = { 1.f, 1.f, 1.f, 1.f };
-		
-		inline bool localWeapon = false;
-		inline float localWeaponColor[4] = { 1.f, 1.f, 1.f, 1.f };
-
+		inline bool bFlags[3][6];
+		inline float flFlagsColor[3][6][4];
 	}
+
 	namespace model {
 
 		inline int enemyBTType = 0;

@@ -25,6 +25,17 @@ enum EEntity : int {
 	VIEWMODEL
 };
 
+enum EEspFlags : int {
+
+	NAME,
+	HEALTH,
+	ARMOR,
+	AMMO,
+	MONEY,
+	WEAPON,
+	FLAGMAX
+};
+
 enum EVISUAL : int {
 
 	ESP,
@@ -95,7 +106,7 @@ namespace menu {
 
 	void HandleLogoDrawing() noexcept;
 
-	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*) noexcept;
+	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool*, float[5][4]) noexcept;
 }
 
 

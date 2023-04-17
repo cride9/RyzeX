@@ -19,7 +19,7 @@ void menu::HandleMenuElements() noexcept {
             }
         }
 
-        if (pressedSave && cfg::configID)
+        if (pressedSave && cfg::configID != -1)
             SaveWarning(pressedSave, warningMethod);
 
         HandleLogoDrawing();
@@ -166,7 +166,7 @@ void menu::Antiaimtab() noexcept {
 
     static const char* yawList[] = { "Forward", "Backward" };
     static const char* pitchList[] = { "Off", "Up", "Zero" ,"Down" };
-    static const char* desyncList[] = { "Off", "Static", "Extended", "Jitter" };
+    static const char* desyncList[] = { "Off", "Static", "Extended", "Jitter", "Flick"};
     static const char* yawBaseList[] = { "Local view", "At target" };
     static const char* fakelagTypeList[] = { "Normal", "Adaptive", "Jitter" };
     static const char* yawModifierList[] = { "Off", "Jitter", "Random" };
@@ -184,14 +184,21 @@ void menu::Antiaimtab() noexcept {
         ImGui::Combo("Lower body yaw target", &desynctype, desyncList, IM_ARRAYSIZE(desyncList));
         if (desynctype != 0) {
 
-            if ( desynctype == 2 )
-                ImGui::Checkbox( "Sway LBY", &m_bSwayDesync );
-            
-            ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 58.f, "%.f");
-            ImGui::Keybind("invertButton", &desyncinverter);
-            ImGui::Combo("Yaw target modifier", &desyncModifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
-            if (desyncModifier != 0)
-                ImGui::SliderInt("Modifier value ##2", &desyncModifierValue, 0, 58);
+			if (desynctype == 4) {
+				ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 58.f, "%.f");
+				ImGui::SliderInt("Static offset", &cfg::antiaim::flickOffset, 0, 180);
+				ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch, 0, cfg::antiaim::fakelagmax);
+			}
+			else {
+				if (desynctype == 2)
+					ImGui::Checkbox("Sway LBY", &m_bSwayDesync);
+
+				ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 58.f, "%.f");
+				ImGui::Keybind("invertButton", &desyncinverter);
+				ImGui::Combo("Yaw target modifier", &desyncModifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
+				if (desyncModifier != 0)
+					ImGui::SliderInt("Modifier value ##2", &desyncModifierValue, 0, 58);
+			}
         }
 		ImGui::Combo("Fresstanding", &freestand, freestandList, IM_ARRAYSIZE(freestandList));
     }
@@ -280,68 +287,68 @@ void menu::Visualtab() noexcept {
     using namespace cfg::visual;
     case ENEMY:
         HandleVisualTypeGeneration(
-            enemyEsp,
-            enemyName,
-            enemyNameColor,
-            enemyBox,
-            enemyBoxColor,
-            enemyHealth,
-            enemyHealthColor,
-			enemyHealthColorEnd,
-            enemyGlow,
-            enemyGlowColor,
-            enemyArmor,
-            enemyArmorColor,
-            enemyAmmo,
-            enemyAmmoColor,
-            enemyMoney,
-            enemyMoneyColor,
-            enemyWeapon,
-            enemyWeaponColor);
+            bEnable[ENEMY],
+            bName[ENEMY],
+            flNameColor[ENEMY],
+            bBox[ENEMY],
+            flBoxColor[ENEMY],
+            bHealth[ENEMY],
+            flHealthColorStart[ENEMY],
+			flHealthColorEnd[ENEMY],
+            bGlow[ENEMY],
+            flGlowColor[ENEMY],
+            bArmor[ENEMY],
+            flArmorColor[ENEMY],
+            bAmmo[ENEMY],
+            flAmmoColor[ENEMY],
+            bWeapon[ENEMY],
+            flWeaponColor[ENEMY],
+			bFlags[ENEMY],
+			flFlagsColor[ENEMY]);
         break;
 
     case TEAM:
         HandleVisualTypeGeneration(
-            teamEsp,
-            teamName,
-            teamNameColor,
-            teamBox,
-            teamBoxColor,
-            teamHealth,
-            teamHealthColor,
-			teamHealthColorEnd,
-            teamGlow,
-            teamGlowColor,
-            teamArmor,
-            teamArmorColor,
-            teamAmmo,
-            teamAmmoColor,
-            teamMoney,
-            teamMoneyColor,
-            teamWeapon,
-            teamWeaponColor);
+			bEnable[TEAM],
+			bName[TEAM],
+			flNameColor[TEAM],
+			bBox[TEAM],
+			flBoxColor[TEAM],
+			bHealth[TEAM],
+			flHealthColorStart[TEAM],
+			flHealthColorEnd[TEAM],
+			bGlow[TEAM],
+			flGlowColor[TEAM],
+			bArmor[TEAM],
+			flArmorColor[TEAM],
+			bAmmo[TEAM],
+			flAmmoColor[TEAM],
+			bWeapon[TEAM],
+			flWeaponColor[TEAM],
+			bFlags[TEAM],
+			flFlagsColor[TEAM]);
         break;
 
     case LOCAL:
         HandleVisualTypeGeneration(
-            localEsp,
-            localName,
-            localNameColor,
-            localBox,
-            localBoxColor,
-            localHealth,
-            localHealthColor,
-			localHealthColorEnd,
-            localGlow,
-            localGlowColor,
-            localArmor,
-            localArmorColor,
-            localAmmo,
-            localAmmoColor,
-            localMoney,
-            localMoneyColor,
-            localWeapon,
-            localWeaponColor);
+			bEnable[LOCAL],
+			bName[LOCAL],
+			flNameColor[LOCAL],
+			bBox[LOCAL],
+			flBoxColor[LOCAL],
+			bHealth[LOCAL],
+			flHealthColorStart[LOCAL],
+			flHealthColorEnd[LOCAL],
+			bGlow[LOCAL],
+			flGlowColor[LOCAL],
+			bArmor[LOCAL],
+			flArmorColor[LOCAL],
+			bAmmo[LOCAL],
+			flAmmoColor[LOCAL],
+			bWeapon[LOCAL],
+			flWeaponColor[LOCAL],
+			bFlags[LOCAL],
+			flFlagsColor[LOCAL]);
         break;
 
     case WORLD:
@@ -817,31 +824,31 @@ void menu::HandleLogoDrawing() noexcept {
 }
 
 void menu::HandleVisualTypeGeneration(
-    bool& enable,
-    bool& name,
-    float* nameColor,
+	bool& enable,
+	bool& name,
+	float* nameColor,
 
-    bool& box,
-    float* boxColor,
+	bool& box,
+	float* boxColor,
 
-    bool& health,
-    float* healthColor,
+	bool& health,
+	float* healthColor,
 	float* healthColorEnd,
 
-    bool& glow,
-    float* glowColor,
+	bool& glow,
+	float* glowColor,
 
-    bool& armor,
-    float* armorColor,
+	bool& armor,
+	float* armorColor,
 
-    bool& ammo,
-    float* ammoColor,
+	bool& ammo,
+	float* ammoColor,
 
-    bool& money,
-    float* moneyColor,
+	bool& weapon,
+	float* weaponColor,
 
-    bool& weapon,
-    float* weaponColor
+	bool* bFlags,
+	float flFlagsColor[5][4]
 ) 
 noexcept {
 
@@ -870,8 +877,46 @@ noexcept {
         ImGui::Checkbox("Ammo", &ammo);
         ImGui::ColorEdit4("##ammocolor", ammoColor);
 
-        ImGui::Checkbox("Money", &money);
-        ImGui::ColorEdit4("##moneycolor", moneyColor);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
+		if (ImGui::Button("Flags", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
+			ImGui::OpenPopup("##flagsManager");
+		ImGui::PopStyleVar();
+
+		bool bOpen = true;
+		ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(200, 140));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200, 200));
+		if (ImGui::BeginPopupModal("##flagsManager", &bOpen, ImGuiWindowFlags_NoResize)) {
+
+			ImGui::BeginChild("##flags", ImGui::GetContentRegionAvail(), true);
+			{
+				ImGui::Checkbox("Name", &bFlags[NAME]);
+				ImGui::ColorEdit4("##nameColor", flFlagsColor[NAME]);
+
+				ImGui::Checkbox("Health", &bFlags[HEALTH]);
+				ImGui::ColorEdit4("##healthColor", flFlagsColor[HEALTH]);
+
+				ImGui::Checkbox("Armor", &bFlags[ARMOR]);
+				ImGui::ColorEdit4("##armorColor", flFlagsColor[ARMOR]);
+
+				ImGui::Checkbox("Ammo", &bFlags[AMMO]);
+				ImGui::ColorEdit4("##ammoColor", flFlagsColor[AMMO]);
+
+				ImGui::Checkbox("Money", &bFlags[MONEY]);
+				ImGui::ColorEdit4("##moneyColor", flFlagsColor[MONEY]);
+
+				ImGui::Checkbox("Weapon", &bFlags[WEAPON]);
+				ImGui::ColorEdit4("##weapon Color", flFlagsColor[WEAPON]);
+
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
+				if (ImGui::Button("Close", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
+					ImGui::CloseCurrentPopup();
+				ImGui::PopStyleVar();
+			}
+			ImGui::EndChild();
+
+			ImGui::EndPopup();
+		}
+		ImGui::PopStyleVar();
     }
     ImGui::EndChild();
 }

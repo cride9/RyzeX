@@ -61,7 +61,7 @@ void __fastcall h::hkSetChoked( void* ecx, void* edx )
 	INetChannel* pNetChannelInfo = reinterpret_cast< INetChannel* >( ecx );
 
 	// sanity checks so i dont blow my brains out
-	if ( !g::pLocal || !i::EngineClient->IsInGame( ) || pNetChannelInfo == nullptr )
+	if ( !g::pLocal || !i::EngineClient->IsInGame( ) || pNetChannelInfo == nullptr || i::EngineClient->IsVoiceRecording())
 		return original( ecx, edx );
 
 	// fix game delays when choking

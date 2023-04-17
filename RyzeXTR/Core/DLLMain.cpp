@@ -50,9 +50,11 @@ void SetupFonts() {
 
 	g::fonts::NameESP = i::Surface->FontCreate();
 	g::fonts::HealthESP = i::Surface->FontCreate();
+	g::fonts::FlagESP = i::Surface->FontCreate();
 
 	i::Surface->SetFontGlyphSet(g::fonts::NameESP, "Verdana", 12, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 	i::Surface->SetFontGlyphSet(g::fonts::HealthESP, "Verdana", 10, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
+	i::Surface->SetFontGlyphSet(g::fonts::FlagESP, "Small Fonts", 10, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 }
 
 DWORD WINAPI CheatThread(PVOID hinstDLL) {

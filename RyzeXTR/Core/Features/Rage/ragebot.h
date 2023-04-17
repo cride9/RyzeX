@@ -28,8 +28,8 @@ public:
 
 private:
 
-	std::tuple<CBaseEntity*, bool>	SelectTarget(CBaseEntity*, CBaseCombatWeapon*, Vector&);
-	Vector				Hitscan(CBaseEntity*, std::tuple<CBaseEntity*, bool>, CBaseCombatWeapon*, Vector&, int&);
+	std::tuple<CBaseEntity*, Lagcompensation::LagRecord_t*>	SelectTarget(CBaseEntity*, CBaseCombatWeapon*, Vector&);
+	Vector				Hitscan(CBaseEntity*, std::tuple<CBaseEntity*, Lagcompensation::LagRecord_t*>, CBaseCombatWeapon*, Vector&, int&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector, int);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*);
 	Vector				InterpolateLocalEyePosition(Vector, int = 1);

@@ -34,5 +34,6 @@ namespace g {
 	namespace fonts {
 		inline HFont HealthESP;
 		inline HFont NameESP;
+		inline HFont FlagESP;
 	}
 }

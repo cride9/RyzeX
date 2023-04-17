@@ -3,6 +3,7 @@
 #include "../Misc/misc.h"
 #include "../Rage/Animations/EnemyAnimations.h"
 #include "../Rage/ragebot.h"
+#include "../../SDK/Menu/gui.h"
 
 void AIPoints() {
 
@@ -50,6 +51,7 @@ void AIPoints() {
 //		}
 //	}
 //}
+using namespace cfg::visual;
 
 void visual::VisualRender() {
 
@@ -59,11 +61,15 @@ void visual::VisualRender() {
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEnt || !g::pLocal)
+		if (!pEnt || !g::pLocal) {
+			iHealth[i] = -1;
 			continue;
+		}
 
-		if (!pEnt->IsAlive() || pEnt->IsDormant())
+		if (!pEnt->IsAlive() || pEnt->IsDormant()) {
+			iHealth[i] = -1;
 			continue;
+		}
 
 		if (!pEnt->GetHealth())
 			continue;
@@ -86,55 +92,49 @@ void visual::VisualRender() {
 
 		const auto left = static_cast<int>(top.x - w);
 		const auto right = static_cast<int>(top.x + w);
+		bAmmoEnabled[i] = false;
 
 		if (pEnt->GetTeam() != g::pLocal->GetTeam()) { // Enemy
 
-			if (!cfg::visual::enemyEsp)
+			if (!bEnable[ENEMY])
 				continue;
 
-			int enemySpacing = -2;
-
-			if (cfg::visual::enemyName) NameEsp(enemySpacing, left, top.y, right, bot.y, w, h, pEnt, Color(cfg::visual::enemyNameColor));
-			if (cfg::visual::enemyBox) BoxEsp(left, top.y, right, bot.y, Color(cfg::visual::enemyBoxColor));
-			if (cfg::visual::enemyHealth) HealthEsp(enemySpacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(cfg::visual::enemyHealthColor), Color(cfg::visual::enemyHealthColorEnd));
-			if (cfg::visual::enemyArmor) KevlarEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyArmorColor));
-			if (cfg::visual::enemyMoney) MoneyEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyMoneyColor));
-			if (cfg::visual::enemyAmmo) AmmoEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyAmmoColor));
-			if (cfg::visual::enemyWeapon) WeaponEsp(enemySpacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::enemyWeaponColor));
-			if (cfg::visual::enemyBreakLC ) BreakLCESP(enemySpacing, left, top.y, right, bot.y, pEnt);
+			if (bName[ENEMY]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[ENEMY]));
+			if (bBox[ENEMY]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[ENEMY]));
+			if (bHealth[ENEMY]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[ENEMY]), Color(flHealthColorEnd[ENEMY]), i);
+			if (bArmor[ENEMY]) KevlarEsp(left, top.y, right, bot.y, pEnt, Color(flArmorColor[ENEMY]));
+			if (bAmmo[ENEMY]) AmmoEsp(left, top.y, right, bot.y, pEnt, Color(flAmmoColor[ENEMY]));
+			if (bWeapon[ENEMY]) WeaponEsp(left, top.y, right, bot.y, pEnt, Color(flWeaponColor[ENEMY]));
+			Flags(top.y, right, pEnt, bFlags[ENEMY], flFlagsColor[ENEMY]);
 		}
 		else {
 
 			if (pEnt == g::pLocal) { // Local
 
-				if (!cfg::visual::localEsp)
+				if (!bEnable[LOCAL])
 					continue;
 
-				int localspacing = -2;
-
-				if (cfg::visual::localName) NameEsp(localspacing, left, top.y, right, bot.y, w, h, pEnt, Color(cfg::visual::localNameColor[0], cfg::visual::localNameColor[1], cfg::visual::localNameColor[2], cfg::visual::localNameColor[3]));
-				if (cfg::visual::localBox) BoxEsp(left, top.y, right, bot.y, Color(cfg::visual::localBoxColor[0], cfg::visual::localBoxColor[1], cfg::visual::localBoxColor[2], cfg::visual::localBoxColor[3]));
-				if (cfg::visual::localHealth) HealthEsp(localspacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(cfg::visual::localHealthColor), Color(cfg::visual::localHealthColorEnd));
-				if (cfg::visual::localArmor) KevlarEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localArmorColor));
-				if (cfg::visual::localMoney) MoneyEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localMoneyColor));
-				if (cfg::visual::localAmmo) AmmoEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localAmmoColor));
-				if (cfg::visual::localWeapon) WeaponEsp(localspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::localWeaponColor));
+				if (bName[LOCAL]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[LOCAL]));
+				if (bBox[LOCAL]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[LOCAL]));
+				if (bHealth[LOCAL]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[LOCAL]), Color(flHealthColorEnd[LOCAL]), i);
+				if (bArmor[LOCAL]) KevlarEsp(left, top.y, right, bot.y, pEnt, Color(flArmorColor[LOCAL]));
+				if (bAmmo[LOCAL]) AmmoEsp(left, top.y, right, bot.y, pEnt, Color(flAmmoColor[LOCAL]));
+				if (bWeapon[LOCAL]) WeaponEsp(left, top.y, right, bot.y, pEnt, Color(flWeaponColor[LOCAL]));
+				Flags(top.y, right, pEnt, bFlags[LOCAL], flFlagsColor[LOCAL]);
 
 				continue;
 			}
-			if (!cfg::visual::teamEsp)
+			if (!bEnable[TEAM])
 				continue;
 
-			int teamspacing = -2;
-
 			// Teammate
-			if (cfg::visual::teamName) NameEsp(teamspacing, left, top.y, right, bot.y, w, h, pEnt, Color(cfg::visual::teamNameColor[0], cfg::visual::teamNameColor[1], cfg::visual::teamNameColor[2], cfg::visual::teamNameColor[3]));
-			if (cfg::visual::teamBox) BoxEsp(left, top.y, right, bot.y, Color(cfg::visual::teamBoxColor[0], cfg::visual::teamBoxColor[1], cfg::visual::teamBoxColor[2], cfg::visual::teamBoxColor[3]));
-			if (cfg::visual::teamHealth) HealthEsp(teamspacing, left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(cfg::visual::teamHealthColor), Color(cfg::visual::teamHealthColorEnd));
-			if (cfg::visual::teamArmor) KevlarEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamArmorColor));
-			if (cfg::visual::teamMoney) MoneyEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamMoneyColor));
-			if (cfg::visual::teamAmmo) AmmoEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamAmmoColor));
-			if (cfg::visual::teamWeapon) WeaponEsp(teamspacing, left, top.y, right, bot.y, pEnt, Color(cfg::visual::teamWeaponColor));
+			if (bName[TEAM]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[TEAM]));
+			if (bBox[TEAM]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[TEAM]));
+			if (bHealth[TEAM]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[TEAM]), Color(flHealthColorEnd[TEAM]), i);
+			if (bArmor[TEAM]) KevlarEsp(left, top.y, right, bot.y, pEnt, Color(flArmorColor[TEAM]));
+			if (bAmmo[TEAM]) AmmoEsp(left, top.y, right, bot.y, pEnt, Color(flAmmoColor[TEAM]));
+			if (bWeapon[TEAM]) WeaponEsp(left, top.y, right, bot.y, pEnt, Color(flWeaponColor[TEAM]));
+			Flags(top.y, right, pEnt, bFlags[TEAM], flFlagsColor[TEAM]);
 
 		}
 	}
@@ -149,10 +149,16 @@ void visual::BoxEsp(int left, int top, int right, int bot, Color color) {
 	i::Surface->DrawOutlinedRect(left - 1, top - 1, right + 1, bot + 1);
 }
 
-void visual::HealthEsp(int& spacing, int left, int top, int right, int bot, int width, int height, int health, Color startColor, Color endColor) {
+void visual::HealthEsp(int left, int top, int right, int bot, int width, int height, int health, Color startColor, Color endColor, int iEntIndex) {
+
+	if (iHealth[iEntIndex] <= 0)
+		iHealth[iEntIndex] = health;
+
+	if (iHealth[iEntIndex] > health)
+		iHealth[iEntIndex] -= (iHealth[iEntIndex] - health < 3 ? 1 : 3);
 
 	float fDistance = abs((float)(bot - top));
-	const float flFactor = static_cast<float>(health) / static_cast<float>(100.f);
+	const float flFactor = static_cast<float>(min(iHealth[iEntIndex], 100)) / static_cast<float>(100.f);
 	float colorChange = 255.0f / fDistance;
 
 	// Calculate the color change per step of the gradient
@@ -161,6 +167,8 @@ void visual::HealthEsp(int& spacing, int left, int top, int right, int bot, int 
 	float bStep = static_cast<float>(endColor[2] - startColor[2]) / fDistance;
 	float aStep = static_cast<float>(endColor[3] - startColor[3]) / fDistance;
 
+	i::Surface->DrawSetColor(0.f, 0.f, 0.f, (startColor[3] + endColor[3]) / 2);
+	i::Surface->DrawOutlinedRect(left - 8, top, left - 4, bot + 1);
 	for (size_t i = 0; i < fDistance; i++)
 	{
 		// Interpolate the color for the current step of the gradient
@@ -171,70 +179,61 @@ void visual::HealthEsp(int& spacing, int left, int top, int right, int bot, int 
 
 		i::Surface->DrawSetColor(red, green, blue, alpha);
 		i::Surface->DrawFilledRect(left - 7, bot - (i * flFactor), left - 5, bot - (i * flFactor) + 1);
+		if (i + 1 == fDistance)
+			i::Surface->DrawT(left - 15, bot - (i * flFactor) - 5, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
 	}
-
-	i::Surface->DrawSetColor(0.f, 0.f, 0.f, (startColor[3] + endColor[3]) / 2);
-	i::Surface->DrawOutlinedRect(left - 8, top, left - 4, bot + 1);
-
-	const float percentage = health / 100.f;
-	std::string text = "Health: ";
-	text += std::to_string(health);
-
-	//i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::NameESP, false, text.c_str());
-	i::Surface->DrawT(right + 2, top + spacing, startColor, g::fonts::NameESP, false, text.c_str());
-
-	spacing += 10;
 }
 
-void visual::NameEsp(int& spacing, int left, int top, int right, int bot, int width, int height, CBaseEntity* pEnt, Color color) {
+void visual::NameEsp(int left, int top, int right, int bot, int width, int height, CBaseEntity* pEnt, Color color) {
 
 	PlayerInfo_t info = { };
 
 	if (!i::EngineClient->GetPlayerInfo(pEnt->EntIndex(), &info))
 		return;
 
-	i::Surface->DrawT(left, top - 13, Color{ color[0], color[1], color[2], color[3] }, g::fonts::NameESP, false, info.szName);
+	i::Surface->DrawT(left, top - 13, Color{ color[0], color[1], color[2], color[3] }, g::fonts::FlagESP, false, info.szName);
 }
 
-void visual::KevlarEsp(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
+void visual::KevlarEsp(int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
 
-	std::string text = "Kevlar: [";
-	text += std::to_string(pEnt->GetArmor());
-	text += "]";
 
-	i::Surface->DrawT(right + 2, top + spacing, color, g::fonts::NameESP, false, text.c_str());
-
-	spacing += 10;
 }
 
-void visual::AmmoEsp(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
+void visual::AmmoEsp(int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
 
-	std::string text = "[ ";
+	int iEntIndex = pEnt->EntIndex();
 
-	if (!pEnt->GetWeapon())
+	if (!pEnt->GetWeapon() || !pEnt->GetWeapon()->GetCSWpnData() || pEnt->GetWeapon()->IsKnife() || pEnt->GetWeapon()->IsGrenade())
 		return;
 
-	text += std::to_string(pEnt->GetWeapon()->GetAmmo());
-	text += "/";
-	text += std::to_string(pEnt->GetWeapon()->GetAmmoReserve());
-	text += " ]";
+	bAmmoEnabled[iEntIndex] = true;
 
-	//auto maxbullet = pEnt->GetWeapon()->GetCSWpnData()->iMaxClip1;
+	static CBaseCombatWeapon* oldWeapon = pEnt->GetWeapon();
 
-	i::Surface->DrawT(right + 2, top + spacing, color, g::fonts::NameESP, false, text.c_str());
+	CBaseCombatWeapon* pWeapon = pEnt->GetWeapon();
+	CCSWeaponInfo* pWeaponInfo = pWeapon->GetCSWpnData();
 
-	spacing += 10;
+	const float flFactor = static_cast<float>(pWeapon->GetAmmo()) / static_cast<float>(pWeaponInfo->iMaxClip1);
+	const float flDifference = abs(right - left);
+
+	i::Surface->DrawSetColor(0.f, 0.f, 0.f, color[3]);
+	i::Surface->DrawOutlinedRect(left, bot + 4, right, bot + 8);
+
+	i::Surface->DrawSetColor(color[0], color[1], color[2], color[3]);
+	i::Surface->DrawOutlinedRect(left, bot + 5, left + (flDifference * flFactor), bot + 7);
+
+	i::Surface->DrawT(left + (flDifference * flFactor), bot + 6, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(pWeapon->GetAmmo()).c_str());
 }
 
-void visual::BreakLCESP( int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt ) 
+void visual::BreakLCESP(int left, int top, int right, int bot, CBaseEntity* pEnt ) 
 {
 	//if ( !lagcomp.IsBreakingLagcompensation( pEnt ) )
 	//	return;
 
-	i::Surface->DrawT( left, bot, Color{ 255, 255, 255, 255 }, g::fonts::NameESP, false, "Breaking Lagcomp" );
+	i::Surface->DrawT( left, bot, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, false, "Breaking Lagcomp" );
 }
 
-void visual::WeaponEsp(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
+void visual::WeaponEsp(int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
 
 	if (!pEnt->GetWeapon())
 		return;
@@ -247,18 +246,92 @@ void visual::WeaponEsp(int& spacing, int left, int top, int right, int bot, CBas
 	std::string text = pWeaponInfo->szWeaponName;
 	text.erase(0, 7);
 
-	i::Surface->DrawT(left, bot, Color{ color[0], color[1], color[2], color[3] }, g::fonts::NameESP, false, text.c_str());
+	if (bAmmoEnabled[pEnt->EntIndex()])
+		bot += 10;
+
+	i::Surface->DrawT(left, bot, Color(color), g::fonts::FlagESP, false, text.c_str());
 }
 
-void visual::MoneyEsp(int& spacing, int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
+void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float flFlagsColor[5][4]) {
 
-	std::string text = "$";
+	int spacing = -2;
+	if (bFlags[NAME]) {
+
+		PlayerInfo_t info = { };
+
+		if (!i::EngineClient->GetPlayerInfo(pEnt->EntIndex(), &info))
+			return;
+
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[NAME], g::fonts::FlagESP, false, info.szName);
+		spacing += 10;
+
+	}
 	
-	text += std::to_string(pEnt->GetMoney());
+	if (bFlags[HEALTH]) {
 
-	i::Surface->DrawT(right + 2, top + spacing, color, g::fonts::NameESP, false, text.c_str());
+		const float percentage = pEnt->GetHealth() / 100.f;
+		std::string text = "Health: [";
+		text += std::to_string(pEnt->GetHealth());
+		text += "]";
 
-	spacing += 10;
+		i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::FlagESP, false, text.c_str());
+
+		spacing += 10;
+	}
+
+	if (bFlags[ARMOR]) {
+
+		std::string text = "Kevlar: [";
+		text += std::to_string(pEnt->GetArmor());
+		text += "]";
+
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[ARMOR], g::fonts::FlagESP, false, text.c_str());
+
+		spacing += 10;
+	}
+
+	if (bFlags[AMMO]) {
+
+		if (!pEnt->GetWeapon())
+			return;
+
+		std::string text = "[ ";
+
+		text += std::to_string(pEnt->GetWeapon()->GetAmmo());
+		text += "/";
+		text += std::to_string(pEnt->GetWeapon()->GetAmmoReserve());
+		text += " ]";
+
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, text.c_str());
+
+		spacing += 10;
+	}
+
+	if (bFlags[MONEY]) {
+
+		std::string text = "$";
+		text += std::to_string(pEnt->GetMoney()) + "\n";
+
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[MONEY], g::fonts::FlagESP, false, text.c_str());
+
+		spacing += 10;
+	}
+
+	if (bFlags[WEAPON]) {
+
+		if (!pEnt->GetWeapon())
+			return;
+
+		auto pWeaponInfo = pEnt->GetWeapon()->GetCSWpnData();
+
+		if (!pWeaponInfo)
+			return;
+
+		std::string text = pWeaponInfo->szWeaponName;
+		text.erase(0, 7);
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
+		spacing += 10;
+	}
 }
 
 void visual::Glow(CBaseEntity* pLocal)
@@ -297,18 +370,14 @@ void visual::Glow(CBaseEntity* pLocal)
 			if (pEntity->IsDormant() || !pEntity->IsAlive())
 				break;
 
-			if (pEntity->GetTeam() != pLocal->GetTeam() && cfg::visual::enemyGlow) {
+			if (pEntity->GetTeam() != pLocal->GetTeam() && cfg::visual::bGlow[ENEMY]) 
+				hGlowObject.Set(Color(cfg::visual::flGlowColor[ENEMY]));
 
-				hGlowObject.Set(Color(cfg::visual::enemyGlowColor));
-			}
-			else if (pEntity->GetTeam() == pLocal->GetTeam() && pEntity != g::pLocal && cfg::visual::teamGlow) {
+			else if (pEntity->GetTeam() == pLocal->GetTeam() && pEntity != g::pLocal && cfg::visual::bGlow[TEAM])
+				hGlowObject.Set(Color(cfg::visual::flGlowColor[TEAM]));
 
-				hGlowObject.Set(Color(cfg::visual::teamGlowColor));
-			}
-			else if (pEntity == pLocal && cfg::visual::localGlow) {
-
-				hGlowObject.Set(Color(cfg::visual::localGlowColor));
-			}
+			else if (pEntity == pLocal && cfg::visual::bGlow[LOCAL])
+				hGlowObject.Set(Color(cfg::visual::flGlowColor[LOCAL]));
 
 			break;
 		}

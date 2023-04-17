@@ -23,6 +23,7 @@ enum EDESYNC : int {
 	STATIC,
 	EXTENDED,
 	JITTER,
+	FLICK
 };
 
 namespace antiaim {

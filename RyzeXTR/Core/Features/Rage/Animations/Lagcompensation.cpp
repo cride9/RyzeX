@@ -626,9 +626,14 @@ void Lagcompensation::RemoveInterpolation() {
 
 		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity == g::pLocal)
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant())
 			continue;
 
-		SetInterpolationFlags(pEntity);
+		if (pEntity == g::pLocal) {
+			if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && cfg::antiaim::defensive)
+				SetInterpolationFlags(pEntity);
+		}
+		else
+			SetInterpolationFlags(pEntity);
 	}
 }

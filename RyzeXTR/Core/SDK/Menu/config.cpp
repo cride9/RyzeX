@@ -14,6 +14,7 @@
 #include <shlwapi.h>
 #include <iomanip>
 #include <ctime>
+#include "gui.h"
 
 void CConfig::Setup() {
 
@@ -124,6 +125,8 @@ void CConfig::Setup() {
 		SetupValue(desynctype, 0, "antiaim", "desynctype");
 		SetupValue(desyncvalue, 0, "antiaim", "desyncvalue");
 		SetupValue(desyncinverter, 0, "antiaim", "desyncinverter");
+		SetupValue(flickOffset, 0, "antiaim", "flickOffset");
+		SetupValue(flickAngleSwitch, 0, "antiaim", "flickAngleSwitch");
 
 		SetupValue( m_bSwayDesync, false, "antiaim", "swaylby" );
 		
@@ -153,160 +156,265 @@ void CConfig::Setup() {
 		using namespace cfg::visual;
 
 		// enemy
-		SetupValue(enemyEsp, false, "visual", "enemyEsp");
+		SetupValue(bEnable[ENEMY], false, "visual", "enemyEsp");
 
-		SetupValue(enemyName, false, "visual", "enemyName");
-		SetupValue(enemyNameColor[0], 1.f, "visual", "enemyNameColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
-		SetupValue(enemyNameColor[1], 1.f, "visual", "enemyNameColorG");
-		SetupValue(enemyNameColor[2], 1.f, "visual", "enemyNameColorB");
-		SetupValue(enemyNameColor[3], 1.f, "visual", "enemyNameColorA");
+		SetupValue(bName[ENEMY], false, "visual", "enemyName");
+		SetupValue(flNameColor[ENEMY][0], 1.f, "visual", "enemyNameColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
+		SetupValue(flNameColor[ENEMY][1], 1.f, "visual", "enemyNameColorG");
+		SetupValue(flNameColor[ENEMY][2], 1.f, "visual", "enemyNameColorB");
+		SetupValue(flNameColor[ENEMY][3], 1.f, "visual", "enemyNameColorA");
 
-		SetupValue(enemyBox, false, "visual", "enemyBox");
-		SetupValue(enemyBoxColor[0], 1.f, "visual", "enemyBoxColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
-		SetupValue(enemyBoxColor[1], 1.f, "visual", "enemyBoxColorG");
-		SetupValue(enemyBoxColor[2], 1.f, "visual", "enemyBoxColorB");
-		SetupValue(enemyBoxColor[3], 1.f, "visual", "enemyBoxColorA");
+		SetupValue(bBox[ENEMY], false, "visual", "enemyBox");
+		SetupValue(flBoxColor[ENEMY][0], 1.f, "visual", "enemyBoxColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
+		SetupValue(flBoxColor[ENEMY][1], 1.f, "visual", "enemyBoxColorG");
+		SetupValue(flBoxColor[ENEMY][2], 1.f, "visual", "enemyBoxColorB");
+		SetupValue(flBoxColor[ENEMY][3], 1.f, "visual", "enemyBoxColorA");
 
-		SetupValue(enemyHealth, false, "visual", "enemyHealth");
-		SetupValue(enemyHealthColor[0], 0.044f, "visual", "enemyHealthColorR"); // (0.044f, 1.000f, 0.000f, 1.000f)
-		SetupValue(enemyHealthColor[1], 1.000f, "visual", "enemyHealthColorG");
-		SetupValue(enemyHealthColor[2], 0.000f, "visual", "enemyHealthColorB");
-		SetupValue(enemyHealthColor[3], 1.f, "visual", "enemyHealthColorA");
+		SetupValue(bHealth[ENEMY], false, "visual", "enemyHealth");
+		SetupValue(flHealthColorStart[ENEMY][0], 0.044f, "visual", "enemyHealthColorR"); // (0.044f, 1.000f, 0.000f, 1.000f)
+		SetupValue(flHealthColorStart[ENEMY][1], 1.000f, "visual", "enemyHealthColorG");
+		SetupValue(flHealthColorStart[ENEMY][2], 0.000f, "visual", "enemyHealthColorB");
+		SetupValue(flHealthColorStart[ENEMY][3], 1.f, "visual", "enemyHealthColorA");
 
-		SetupValue(enemyHealthColorEnd[0], 0.044f, "visual", "enemyHealthColorEndR"); // (0.044f, 1.000f, 0.000f, 1.000f)
-		SetupValue(enemyHealthColorEnd[1], 1.000f, "visual", "enemyHealthColorEndG");
-		SetupValue(enemyHealthColorEnd[2], 0.000f, "visual", "enemyHealthColorEndB");
-		SetupValue(enemyHealthColorEnd[3], 1.f, "visual", "enemyHealthColorEndA");
+		SetupValue(flHealthColorEnd[ENEMY][0], 0.044f, "visual", "enemyHealthColorEndR"); // (0.044f, 1.000f, 0.000f, 1.000f)
+		SetupValue(flHealthColorEnd[ENEMY][1], 1.000f, "visual", "enemyHealthColorEndG");
+		SetupValue(flHealthColorEnd[ENEMY][2], 0.000f, "visual", "enemyHealthColorEndB");
+		SetupValue(flHealthColorEnd[ENEMY][3], 1.f, "visual", "enemyHealthColorEndA");
 
-		SetupValue(enemyGlow, false, "visual", "enemyGlow");
-		SetupValue(enemyGlowColor[0], 0.303f, "visual", "enemyGlowColorR"); // (0.303f, 0.302f, 0.140f, 1.000f)
-		SetupValue(enemyGlowColor[1], 0.302f, "visual", "enemyGlowColorG");
-		SetupValue(enemyGlowColor[2], 0.140f, "visual", "enemyGlowColorB");
-		SetupValue(enemyGlowColor[3], 1.f, "visual", "enemyGlowColorA");
+		SetupValue(bGlow[ENEMY], false, "visual", "enemyGlow");
+		SetupValue(flGlowColor[ENEMY][0], 0.303f, "visual", "enemyGlowColorR"); // (0.303f, 0.302f, 0.140f, 1.000f)
+		SetupValue(flGlowColor[ENEMY][1], 0.302f, "visual", "enemyGlowColorG");
+		SetupValue(flGlowColor[ENEMY][2], 0.140f, "visual", "enemyGlowColorB");
+		SetupValue(flGlowColor[ENEMY][3], 1.f, "visual", "enemyGlowColorA");
 
-		SetupValue(enemyArmor, false, "visual", "enemyArmor");
-		SetupValue(enemyArmorColor[0], 0.000f, "visual", "enemyArmorColorR"); // (0.000f, 0.924f, 1.000f, 1.000f)
-		SetupValue(enemyArmorColor[1], 0.924f, "visual", "enemyArmorColorG");
-		SetupValue(enemyArmorColor[2], 1.000f, "visual", "enemyArmorColorB");
-		SetupValue(enemyArmorColor[3], 1.f, "visual", "enemyArmorColorA");
+		SetupValue(bArmor[ENEMY], false, "visual", "enemyArmor");
+		SetupValue(flArmorColor[ENEMY][0], 0.000f, "visual", "enemyArmorColorR"); // (0.000f, 0.924f, 1.000f, 1.000f)
+		SetupValue(flArmorColor[ENEMY][1], 0.924f, "visual", "enemyArmorColorG");
+		SetupValue(flArmorColor[ENEMY][2], 1.000f, "visual", "enemyArmorColorB");
+		SetupValue(flArmorColor[ENEMY][3], 1.f, "visual", "enemyArmorColorA");
 
-		SetupValue(enemyAmmo, false, "visual", "enemyAmmo");
-		SetupValue(enemyAmmoColor[0], 0.345f, "visual", "enemyAmmoColorR"); // (0.345f, 0.620f, 1.000f, 1.000f)
-		SetupValue(enemyAmmoColor[1], 0.620f, "visual", "enemyAmmoColorG");
-		SetupValue(enemyAmmoColor[2], 1.f, "visual", "enemyAmmoColorB");
-		SetupValue(enemyAmmoColor[3], 1.f, "visual", "enemyAmmoColorA");
+		SetupValue(bAmmo[ENEMY], false, "visual", "enemyAmmo");
+		SetupValue(flAmmoColor[ENEMY][0], 0.345f, "visual", "enemyAmmoColorR"); // (0.345f, 0.620f, 1.000f, 1.000f)
+		SetupValue(flAmmoColor[ENEMY][1], 0.620f, "visual", "enemyAmmoColorG");
+		SetupValue(flAmmoColor[ENEMY][2], 1.f, "visual", "enemyAmmoColorB");
+		SetupValue(flAmmoColor[ENEMY][3], 1.f, "visual", "enemyAmmoColorA");
 
-		SetupValue(enemyWeapon, false, "visual", "enemyWeapon");
-		SetupValue(enemyWeaponColor[0], 1.f, "visual", "enemyWeaponColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
-		SetupValue(enemyWeaponColor[1], 1.f, "visual", "enemyWeaponColorG");
-		SetupValue(enemyWeaponColor[2], 1.f, "visual", "enemyWeaponColorB");
-		SetupValue(enemyWeaponColor[3], 1.f, "visual", "enemyWeaponColorA");
+		SetupValue(bWeapon[ENEMY], false, "visual", "enemyWeapon");
+		SetupValue(flWeaponColor[ENEMY][0], 1.f, "visual", "enemyWeaponColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
+		SetupValue(flWeaponColor[ENEMY][1], 1.f, "visual", "enemyWeaponColorG");
+		SetupValue(flWeaponColor[ENEMY][2], 1.f, "visual", "enemyWeaponColorB");
+		SetupValue(flWeaponColor[ENEMY][3], 1.f, "visual", "enemyWeaponColorA");
 
-		SetupValue(enemyMoney, false, "visual", "enemyMoney");
-		SetupValue(enemyMoneyColor[0], 0.790f, "visual", "enemyMoneyColorR"); // (0.790f, 1.000f, 0.000f, 1.000f)
-		SetupValue(enemyMoneyColor[1], 1.000f, "visual", "enemyMoneyColorG");
-		SetupValue(enemyMoneyColor[2], 0.000f, "visual", "enemyMoneyColorB");
-		SetupValue(enemyMoneyColor[3], 1.f, "visual", "enemyMoneyColorA");
+		SetupValue(bFlags[ENEMY][0], false, "visual", "ENEMYbFlags0");
+		SetupValue(bFlags[ENEMY][1], false, "visual", "ENEMYbFlags1");
+		SetupValue(bFlags[ENEMY][2], false, "visual", "ENEMYbFlags2");
+		SetupValue(bFlags[ENEMY][3], false, "visual", "ENEMYbFlags3");
+		SetupValue(bFlags[ENEMY][4], false, "visual", "ENEMYbFlags4");
+		SetupValue(bFlags[ENEMY][5], false, "visual", "ENEMYbFlags5");
+
+		SetupValue(flFlagsColor[ENEMY][0][0], 1.f, "visual", "ENEMYflFlags0R");
+		SetupValue(flFlagsColor[ENEMY][0][1], 1.f, "visual", "ENEMYflFlags0G");
+		SetupValue(flFlagsColor[ENEMY][0][2], 1.f, "visual", "ENEMYflFlags0B");
+		SetupValue(flFlagsColor[ENEMY][0][3], 1.f, "visual", "ENEMYflFlags0A");
+
+		SetupValue(flFlagsColor[ENEMY][1][0], 1.f, "visual", "ENEMYflFlags1R");
+		SetupValue(flFlagsColor[ENEMY][1][1], 1.f, "visual", "ENEMYflFlags1G");
+		SetupValue(flFlagsColor[ENEMY][1][2], 1.f, "visual", "ENEMYflFlags1B");
+		SetupValue(flFlagsColor[ENEMY][1][3], 1.f, "visual", "ENEMYflFlags1A");
+
+		SetupValue(flFlagsColor[ENEMY][2][0], 1.f, "visual", "ENEMYflFlags2R");
+		SetupValue(flFlagsColor[ENEMY][2][1], 1.f, "visual", "ENEMYflFlags2G");
+		SetupValue(flFlagsColor[ENEMY][2][2], 1.f, "visual", "ENEMYflFlags2B");
+		SetupValue(flFlagsColor[ENEMY][2][3], 1.f, "visual", "ENEMYflFlags2A");
+
+		SetupValue(flFlagsColor[ENEMY][3][0], 1.f, "visual", "ENEMYflFlags3R");
+		SetupValue(flFlagsColor[ENEMY][3][1], 1.f, "visual", "ENEMYflFlags3G");
+		SetupValue(flFlagsColor[ENEMY][3][2], 1.f, "visual", "ENEMYflFlags3B");
+		SetupValue(flFlagsColor[ENEMY][3][3], 1.f, "visual", "ENEMYflFlags3A");
+
+		SetupValue(flFlagsColor[ENEMY][4][0], 1.f, "visual", "ENEMYflFlags4R");
+		SetupValue(flFlagsColor[ENEMY][4][1], 1.f, "visual", "ENEMYflFlags4G");
+		SetupValue(flFlagsColor[ENEMY][4][2], 1.f, "visual", "ENEMYflFlags4B");
+		SetupValue(flFlagsColor[ENEMY][4][3], 1.f, "visual", "ENEMYflFlags4A");
+
+		SetupValue(flFlagsColor[ENEMY][5][0], 1.f, "visual", "ENEMYflFlags5R");
+		SetupValue(flFlagsColor[ENEMY][5][1], 1.f, "visual", "ENEMYflFlags5G");
+		SetupValue(flFlagsColor[ENEMY][5][2], 1.f, "visual", "ENEMYflFlags5B");
+		SetupValue(flFlagsColor[ENEMY][5][3], 1.f, "visual", "ENEMYflFlags5A");
 
 		// teammate
-		SetupValue(teamEsp, false, "visual", "teamEsp");
+		SetupValue(bEnable[TEAM], false, "visual", "teamEsp");
 
-		SetupValue(teamName, false, "visual", "teamName");
-		SetupValue(teamNameColor[0], 1.f, "visual", "teamNameColorR"); 
-		SetupValue(teamNameColor[1], 1.f, "visual", "teamNameColorG");
-		SetupValue(teamNameColor[2], 1.f, "visual", "teamNameColorB");
-		SetupValue(teamNameColor[3], 1.f, "visual", "teamNameColorA");
+		SetupValue(bName[TEAM], false, "visual", "teamName");
+		SetupValue(flNameColor[TEAM][0], 1.f, "visual", "teamNameColorR");
+		SetupValue(flNameColor[TEAM][1], 1.f, "visual", "teamNameColorG");
+		SetupValue(flNameColor[TEAM][2], 1.f, "visual", "teamNameColorB");
+		SetupValue(flNameColor[TEAM][3], 1.f, "visual", "teamNameColorA");
 
-		SetupValue(teamBox, false, "visual", "teamBox");
-		SetupValue(teamBoxColor[0], 1.f, "visual", "teamBoxColorR"); 
-		SetupValue(teamBoxColor[1], 1.f, "visual", "teamBoxColorG");
-		SetupValue(teamBoxColor[2], 1.f, "visual", "teamBoxColorB");
-		SetupValue(teamBoxColor[3], 1.f, "visual", "teamBoxColorA");
+		SetupValue(bBox[TEAM], false, "visual", "teamBox");
+		SetupValue(flBoxColor[TEAM][0], 1.f, "visual", "teamBoxColorR");
+		SetupValue(flBoxColor[TEAM][1], 1.f, "visual", "teamBoxColorG");
+		SetupValue(flBoxColor[TEAM][2], 1.f, "visual", "teamBoxColorB");
+		SetupValue(flBoxColor[TEAM][3], 1.f, "visual", "teamBoxColorA");
 
-		SetupValue(teamHealth, false, "visual", "teamHealth");
-		SetupValue(teamHealthColor[0], 0.211f, "visual", "teamHealthColorR"); // (0.211f, 1.000f, 0.000f, 1.000f)
-		SetupValue(teamHealthColor[1], 1.f, "visual", "teamHealthColorG");
-		SetupValue(teamHealthColor[2], 0.000f, "visual", "teamHealthColorB");
-		SetupValue(teamHealthColor[3], 1.f, "visual", "teamHealthColorA");
+		SetupValue(bHealth[TEAM], false, "visual", "teamHealth");
+		SetupValue(flHealthColorStart[TEAM][0], 0.211f, "visual", "teamHealthColorR"); // (0.211f, 1.000f, 0.000f, 1.000f)
+		SetupValue(flHealthColorStart[TEAM][1], 1.f, "visual", "teamHealthColorG");
+		SetupValue(flHealthColorStart[TEAM][2], 0.000f, "visual", "teamHealthColorB");
+		SetupValue(flHealthColorStart[TEAM][3], 1.f, "visual", "teamHealthColorA");
 
-		SetupValue(teamHealthColorEnd[0], 0.211f, "visual", "teamHealthColorEndR"); // (0.211f, 1.000f, 0.000f, 1.000f)
-		SetupValue(teamHealthColorEnd[1], 1.f, "visual", "teamHealthColorEndG");
-		SetupValue(teamHealthColorEnd[2], 0.000f, "visual", "teamHealthColorEndB");
-		SetupValue(teamHealthColorEnd[3], 1.f, "visual", "teamHealthColorEndA");
+		SetupValue(flHealthColorEnd[TEAM][0], 0.211f, "visual", "teamHealthColorEndR"); // (0.211f, 1.000f, 0.000f, 1.000f)
+		SetupValue(flHealthColorEnd[TEAM][1], 1.f, "visual", "teamHealthColorEndG");
+		SetupValue(flHealthColorEnd[TEAM][2], 0.000f, "visual", "teamHealthColorEndB");
+		SetupValue(flHealthColorEnd[TEAM][3], 1.f, "visual", "teamHealthColorEndA");
 
-		SetupValue(teamGlow, false, "visual", "teamGlow");
-		SetupValue(teamGlowColor[0], 0.125f, "visual", "teamGlowColorR"); // (0.125f, 0.272f, 0.000f, 1.000f)
-		SetupValue(teamGlowColor[1], 0.272f, "visual", "teamGlowColorG");
-		SetupValue(teamGlowColor[2], 0.000f, "visual", "teamGlowColorB");
-		SetupValue(teamGlowColor[3], 1.f, "visual", "teamGlowColorA");
+		SetupValue(bGlow[TEAM], false, "visual", "teamGlow");
+		SetupValue(flGlowColor[TEAM][0], 0.125f, "visual", "teamGlowColorR"); // (0.125f, 0.272f, 0.000f, 1.000f)
+		SetupValue(flGlowColor[TEAM][1], 0.272f, "visual", "teamGlowColorG");
+		SetupValue(flGlowColor[TEAM][2], 0.000f, "visual", "teamGlowColorB");
+		SetupValue(flGlowColor[TEAM][3], 1.f, "visual", "teamGlowColorA");
 
-		SetupValue(teamArmor, false, "visual", "teamArmor");
-		SetupValue(teamArmorColor[0], 0.000f, "visual", "teamArmorColorR"); // (0.000f, 1.000f, 0.954f, 1.000f)
-		SetupValue(teamArmorColor[1], 1.f, "visual", "teamArmorColorG");
-		SetupValue(teamArmorColor[2], 0.954f, "visual", "teamArmorColorB");
-		SetupValue(teamArmorColor[3], 1.f, "visual", "teamArmorColorA");
+		SetupValue(bArmor[TEAM], false, "visual", "teamArmor");
+		SetupValue(flArmorColor[TEAM][0], 0.000f, "visual", "teamArmorColorR"); // (0.000f, 1.000f, 0.954f, 1.000f)
+		SetupValue(flArmorColor[TEAM][1], 1.f, "visual", "teamArmorColorG");
+		SetupValue(flArmorColor[TEAM][2], 0.954f, "visual", "teamArmorColorB");
+		SetupValue(flArmorColor[TEAM][3], 1.f, "visual", "teamArmorColorA");
 
-		SetupValue(teamAmmo, false, "visual", "teamAmmo");
-		SetupValue(teamAmmoColor[0], 0.000f, "visual", "teamAmmoColorR"); // (0.000f, 0.546f, 1.000f, 1.000f)
-		SetupValue(teamAmmoColor[1], 0.546f, "visual", "teamAmmoColorG");
-		SetupValue(teamAmmoColor[2], 1.f, "visual", "teamAmmoColorB");
-		SetupValue(teamAmmoColor[3], 1.f, "visual", "teamAmmoColorA");
+		SetupValue(bAmmo[TEAM], false, "visual", "teamAmmo");
+		SetupValue(flAmmoColor[TEAM][0], 0.000f, "visual", "teamAmmoColorR"); // (0.000f, 0.546f, 1.000f, 1.000f)
+		SetupValue(flAmmoColor[TEAM][1], 0.546f, "visual", "teamAmmoColorG");
+		SetupValue(flAmmoColor[TEAM][2], 1.f, "visual", "teamAmmoColorB");
+		SetupValue(flAmmoColor[TEAM][3], 1.f, "visual", "teamAmmoColorA");
 
-		SetupValue(teamMoney, false, "visual", "teamMoney");
-		SetupValue(teamMoneyColor[0], 0.669f, "visual", "teamMoneyColorR"); // (0.669f, 1.000f, 0.000f, 1.000f)
-		SetupValue(teamMoneyColor[1], 1.f, "visual", "teamMoneyColorG");
-		SetupValue(teamMoneyColor[2], 0.000f, "visual", "teamMoneyColorB");
-		SetupValue(teamMoneyColor[3], 1.f, "visual", "teamMoneyColorA");
+		SetupValue(bWeapon[TEAM], false, "visual", "teamWeapon");
+		SetupValue(flWeaponColor[TEAM][0], 1.f, "visual", "teamWeaponColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
+		SetupValue(flWeaponColor[TEAM][1], 1.f, "visual", "teamWeaponColorG");
+		SetupValue(flWeaponColor[TEAM][2], 1.f, "visual", "teamWeaponColorB");
+		SetupValue(flWeaponColor[TEAM][3], 1.f, "visual", "teamWeaponColorA");
+
+		SetupValue(bFlags[TEAM][0], false, "visual", "TEAMbFlags0");
+		SetupValue(bFlags[TEAM][1], false, "visual", "TEAMbFlags1");
+		SetupValue(bFlags[TEAM][2], false, "visual", "TEAMbFlags2");
+		SetupValue(bFlags[TEAM][3], false, "visual", "TEAMbFlags3");
+		SetupValue(bFlags[TEAM][4], false, "visual", "TEAMbFlags4");
+		SetupValue(bFlags[TEAM][5], false, "visual", "TEAMbFlags5");
+
+		SetupValue(flFlagsColor[TEAM][0][0], 1.f, "visual", "TEAMflFlags0R");
+		SetupValue(flFlagsColor[TEAM][0][1], 1.f, "visual", "TEAMflFlags0G");
+		SetupValue(flFlagsColor[TEAM][0][2], 1.f, "visual", "TEAMflFlags0B");
+		SetupValue(flFlagsColor[TEAM][0][3], 1.f, "visual", "TEAMflFlags0A");
+
+		SetupValue(flFlagsColor[TEAM][1][0], 1.f, "visual", "TEAMflFlags1R");
+		SetupValue(flFlagsColor[TEAM][1][1], 1.f, "visual", "TEAMflFlags1G");
+		SetupValue(flFlagsColor[TEAM][1][2], 1.f, "visual", "TEAMflFlags1B");
+		SetupValue(flFlagsColor[TEAM][1][3], 1.f, "visual", "TEAMflFlags1A");
+
+		SetupValue(flFlagsColor[TEAM][2][0], 1.f, "visual", "TEAMflFlags2R");
+		SetupValue(flFlagsColor[TEAM][2][1], 1.f, "visual", "TEAMflFlags2G");
+		SetupValue(flFlagsColor[TEAM][2][2], 1.f, "visual", "TEAMflFlags2B");
+		SetupValue(flFlagsColor[TEAM][2][3], 1.f, "visual", "TEAMflFlags2A");
+
+		SetupValue(flFlagsColor[TEAM][3][0], 1.f, "visual", "TEAMflFlags3R");
+		SetupValue(flFlagsColor[TEAM][3][1], 1.f, "visual", "TEAMflFlags3G");
+		SetupValue(flFlagsColor[TEAM][3][2], 1.f, "visual", "TEAMflFlags3B");
+		SetupValue(flFlagsColor[TEAM][3][3], 1.f, "visual", "TEAMflFlags3A");
+
+		SetupValue(flFlagsColor[TEAM][4][0], 1.f, "visual", "TEAMflFlags4R");
+		SetupValue(flFlagsColor[TEAM][4][1], 1.f, "visual", "TEAMflFlags4G");
+		SetupValue(flFlagsColor[TEAM][4][2], 1.f, "visual", "TEAMflFlags4B");
+		SetupValue(flFlagsColor[TEAM][4][3], 1.f, "visual", "TEAMflFlags4A");
+
+		SetupValue(flFlagsColor[TEAM][5][0], 1.f, "visual", "TEAMflFlags5R");
+		SetupValue(flFlagsColor[TEAM][5][1], 1.f, "visual", "TEAMflFlags5G");
+		SetupValue(flFlagsColor[TEAM][5][2], 1.f, "visual", "TEAMflFlags5B");
+		SetupValue(flFlagsColor[TEAM][5][3], 1.f, "visual", "TEAMflFlags5A");
 
 		// local
-		SetupValue(localEsp, false, "visual", "localEsp");
+		SetupValue(bEnable[LOCAL], false, "visual", "localEsp");
 
-		SetupValue(localName, false, "visual", "localName");
-		SetupValue(localNameColor[0], 1.f, "visual", "localNameColorR"); 
-		SetupValue(localNameColor[1], 1.f, "visual", "localNameColorG");
-		SetupValue(localNameColor[2], 1.f, "visual", "localNameColorB");
-		SetupValue(localNameColor[3], 1.f, "visual", "localNameColorA");
+		SetupValue(bName[LOCAL], false, "visual", "localName");
+		SetupValue(flNameColor[LOCAL][0], 1.f, "visual", "localNameColorR");
+		SetupValue(flNameColor[LOCAL][1], 1.f, "visual", "localNameColorG");
+		SetupValue(flNameColor[LOCAL][2], 1.f, "visual", "localNameColorB");
+		SetupValue(flNameColor[LOCAL][3], 1.f, "visual", "localNameColorA");
 
-		SetupValue(localBox, false, "visual", "localBox");
-		SetupValue(localBoxColor[0], 1.f, "visual", "localBoxColorR"); 
-		SetupValue(localBoxColor[1], 1.f, "visual", "localBoxColorG");
-		SetupValue(localBoxColor[2], 1.f, "visual", "localBoxColorB");
-		SetupValue(localBoxColor[3], 1.f, "visual", "localBoxColorA");
+		SetupValue(bBox[LOCAL], false, "visual", "localBox");
+		SetupValue(flBoxColor[LOCAL][0], 1.f, "visual", "localBoxColorR");
+		SetupValue(flBoxColor[LOCAL][1], 1.f, "visual", "localBoxColorG");
+		SetupValue(flBoxColor[LOCAL][2], 1.f, "visual", "localBoxColorB");
+		SetupValue(flBoxColor[LOCAL][3], 1.f, "visual", "localBoxColorA");
 
-		SetupValue(localHealth, false, "visual", "localHealth");
-		SetupValue(localHealthColor[0], 1.f, "visual", "localHealthColorR"); 
-		SetupValue(localHealthColor[1], 1.f, "visual", "localHealthColorG");
-		SetupValue(localHealthColor[2], 1.f, "visual", "localHealthColorB");
-		SetupValue(localHealthColor[3], 1.f, "visual", "localHealthColorA");
+		SetupValue(bHealth[LOCAL], false, "visual", "localHealth");
+		SetupValue(flHealthColorStart[LOCAL][0], 1.f, "visual", "localHealthColorR");
+		SetupValue(flHealthColorStart[LOCAL][1], 1.f, "visual", "localHealthColorG");
+		SetupValue(flHealthColorStart[LOCAL][2], 1.f, "visual", "localHealthColorB");
+		SetupValue(flHealthColorStart[LOCAL][3], 1.f, "visual", "localHealthColorA");
 
-		SetupValue(localHealthColorEnd[0], 1.f, "visual", "localHealthColorEndR");
-		SetupValue(localHealthColorEnd[1], 1.f, "visual", "localHealthColorEndG");
-		SetupValue(localHealthColorEnd[2], 1.f, "visual", "localHealthColorEndB");
-		SetupValue(localHealthColorEnd[3], 1.f, "visual", "localHealthColorEndA");
+		SetupValue(flHealthColorEnd[LOCAL][0], 1.f, "visual", "localHealthColorEndR");
+		SetupValue(flHealthColorEnd[LOCAL][1], 1.f, "visual", "localHealthColorEndG");
+		SetupValue(flHealthColorEnd[LOCAL][2], 1.f, "visual", "localHealthColorEndB");
+		SetupValue(flHealthColorEnd[LOCAL][3], 1.f, "visual", "localHealthColorEndA");
 
-		SetupValue(localGlow, false, "visual", "localGlow");
-		SetupValue(localGlowColor[0], 0.137f, "visual", "localGlowColorR"); // (0.137f, 0.091f, 0.230f, 1.000f)
-		SetupValue(localGlowColor[1], 0.091f, "visual", "localGlowColorG");
-		SetupValue(localGlowColor[2], 0.230f, "visual", "localGlowColorB");
-		SetupValue(localGlowColor[3], 1.f, "visual", "localGlowColorA");
+		SetupValue(bGlow[LOCAL], false, "visual", "localGlow");
+		SetupValue(flGlowColor[LOCAL][0], 0.137f, "visual", "localGlowColorR"); // (0.137f, 0.091f, 0.230f, 1.000f)
+		SetupValue(flGlowColor[LOCAL][1], 0.091f, "visual", "localGlowColorG");
+		SetupValue(flGlowColor[LOCAL][2], 0.230f, "visual", "localGlowColorB");
+		SetupValue(flGlowColor[LOCAL][3], 1.f, "visual", "localGlowColorA");
 
-		SetupValue(localArmor, false, "visual", "localArmor");
-		SetupValue(localArmorColor[0], 1.f, "visual", "localArmorColorR"); // (1.000f, 0.832f, 0.000f, 1.000f)
-		SetupValue(localArmorColor[1], 0.832f, "visual", "localArmorColorG");
-		SetupValue(localArmorColor[2], 0.000f, "visual", "localArmorColorB");
-		SetupValue(localArmorColor[3], 1.f, "visual", "localArmorColorA");
+		SetupValue(bArmor[LOCAL], false, "visual", "localArmor");
+		SetupValue(flArmorColor[LOCAL][0], 1.f, "visual", "localArmorColorR"); // (1.000f, 0.832f, 0.000f, 1.000f)
+		SetupValue(flArmorColor[LOCAL][1], 0.832f, "visual", "localArmorColorG");
+		SetupValue(flArmorColor[LOCAL][2], 0.000f, "visual", "localArmorColorB");
+		SetupValue(flArmorColor[LOCAL][3], 1.f, "visual", "localArmorColorA");
 
-		SetupValue(localAmmo, false, "visual", "localAmmo");
-		SetupValue(localAmmoColor[0], 1.f, "visual", "localAmmoColorR"); // (1.000f, 0.000f, 0.000f, 1.000f)
-		SetupValue(localAmmoColor[1], 0.000f, "visual", "localAmmoColorG");
-		SetupValue(localAmmoColor[2], 0.000f, "visual", "localAmmoColorB");
-		SetupValue(localAmmoColor[3], 1.f, "visual", "localAmmoColorA");
+		SetupValue(bAmmo[LOCAL], false, "visual", "localAmmo");
+		SetupValue(flAmmoColor[LOCAL][0], 1.f, "visual", "localAmmoColorR"); // (1.000f, 0.000f, 0.000f, 1.000f)
+		SetupValue(flAmmoColor[LOCAL][1], 0.000f, "visual", "localAmmoColorG");
+		SetupValue(flAmmoColor[LOCAL][2], 0.000f, "visual", "localAmmoColorB");
+		SetupValue(flAmmoColor[LOCAL][3], 1.f, "visual", "localAmmoColorA");
 
-		SetupValue(localMoney, false, "visual", "localMoney");
-		SetupValue(localMoneyColor[0], 0.793f, "visual", "localMoneyColorR");
-		SetupValue(localMoneyColor[1], 1.f, "visual", "localMoneyColorG");
-		SetupValue(localMoneyColor[2], 0.000f, "visual", "localMoneyColorB");
-		SetupValue(localMoneyColor[3], 1.f, "visual", "localMoneyColorA"); // (0.793f, 1.000f, 0.000f, 1.000f)
+		SetupValue(bWeapon[LOCAL], false, "visual", "localWeapon");
+		SetupValue(flWeaponColor[LOCAL][0], 1.f, "visual", "localWeaponColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
+		SetupValue(flWeaponColor[LOCAL][1], 1.f, "visual", "localWeaponColorG");
+		SetupValue(flWeaponColor[LOCAL][2], 1.f, "visual", "localWeaponColorB");
+		SetupValue(flWeaponColor[LOCAL][3], 1.f, "visual", "localWeaponColorA");
+
+		SetupValue(bFlags[LOCAL][0], false, "visual", "LOCALbFlags0");
+		SetupValue(bFlags[LOCAL][1], false, "visual", "LOCALbFlags1");
+		SetupValue(bFlags[LOCAL][2], false, "visual", "LOCALbFlags2");
+		SetupValue(bFlags[LOCAL][3], false, "visual", "LOCALbFlags3");
+		SetupValue(bFlags[LOCAL][4], false, "visual", "LOCALbFlags4");
+		SetupValue(bFlags[LOCAL][5], false, "visual", "LOCALbFlags5");
+
+		SetupValue(flFlagsColor[LOCAL][0][0], 1.f, "visual", "LOCALflFlags0R");
+		SetupValue(flFlagsColor[LOCAL][0][1], 1.f, "visual", "LOCALflFlags0G");
+		SetupValue(flFlagsColor[LOCAL][0][2], 1.f, "visual", "LOCALflFlags0B");
+		SetupValue(flFlagsColor[LOCAL][0][3], 1.f, "visual", "LOCALflFlags0A");
+
+		SetupValue(flFlagsColor[LOCAL][1][0], 1.f, "visual", "LOCALflFlags1R");
+		SetupValue(flFlagsColor[LOCAL][1][1], 1.f, "visual", "LOCALflFlags1G");
+		SetupValue(flFlagsColor[LOCAL][1][2], 1.f, "visual", "LOCALflFlags1B");
+		SetupValue(flFlagsColor[LOCAL][1][3], 1.f, "visual", "LOCALflFlags1A");
+
+		SetupValue(flFlagsColor[LOCAL][2][0], 1.f, "visual", "LOCALflFlags2R");
+		SetupValue(flFlagsColor[LOCAL][2][1], 1.f, "visual", "LOCALflFlags2G");
+		SetupValue(flFlagsColor[LOCAL][2][2], 1.f, "visual", "LOCALflFlags2B");
+		SetupValue(flFlagsColor[LOCAL][2][3], 1.f, "visual", "LOCALflFlags2A");
+
+		SetupValue(flFlagsColor[LOCAL][3][0], 1.f, "visual", "LOCALflFlags3R");
+		SetupValue(flFlagsColor[LOCAL][3][1], 1.f, "visual", "LOCALflFlags3G");
+		SetupValue(flFlagsColor[LOCAL][3][2], 1.f, "visual", "LOCALflFlags3B");
+		SetupValue(flFlagsColor[LOCAL][3][3], 1.f, "visual", "LOCALflFlags3A");
+
+		SetupValue(flFlagsColor[LOCAL][4][0], 1.f, "visual", "LOCALflFlags4R");
+		SetupValue(flFlagsColor[LOCAL][4][1], 1.f, "visual", "LOCALflFlags4G");
+		SetupValue(flFlagsColor[LOCAL][4][2], 1.f, "visual", "LOCALflFlags4B");
+		SetupValue(flFlagsColor[LOCAL][4][3], 1.f, "visual", "LOCALflFlags4A");
+
+		SetupValue(flFlagsColor[LOCAL][5][0], 1.f, "visual", "LOCALflFlags5R");
+		SetupValue(flFlagsColor[LOCAL][5][1], 1.f, "visual", "LOCALflFlags5G");
+		SetupValue(flFlagsColor[LOCAL][5][2], 1.f, "visual", "LOCALflFlags5B");
+		SetupValue(flFlagsColor[LOCAL][5][3], 1.f, "visual", "LOCALflFlags5A");
 	}
 
 	// model
