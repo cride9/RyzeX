@@ -43,6 +43,7 @@ private:
 	int					ConfigHitChance(CBaseCombatWeapon*);
 	bool				ConfigAutoScope( CBaseCombatWeapon* pWeapon );
 	bool				ConfigForceSafe(CBaseCombatWeapon* pWeapon);
+	bool				ConfigAutoStop( CBaseCombatWeapon* pWeapon );
 	std::vector<int>	ConfigHitboxes(CBaseCombatWeapon*);
 	std::pair<int, int> ConfigMultipoint(CBaseCombatWeapon*);
 	std::array<bool, HITBOX_MAX> ConfigMultiHitboxes(CBaseCombatWeapon*);

@@ -16,13 +16,14 @@ namespace cfg {
 	namespace rage {
 
 		inline bool enable;
-		inline bool autostop;
-		inline int	autostopAggressiveness;
+		inline bool autostop[ ] = { false, false, false, false ,false, false };
+		inline int	autostopAggressiveness[ ] = { false, false, false, false ,false, false };
+		inline bool m_bAutoStopInAir[ ] = { false, false, false, false ,false, false };
+		inline bool betweenshots[ ] = { false, false, false, false ,false, false };
 		inline int	aimbotTargetSelection;
 		inline bool autoscope[] = { false, false, false };
 		inline bool forceSafePoint[] = { false, false, false, false ,false, false };
-		inline bool m_bAutoStopInAir;
-		inline bool betweenshots;
+
 		inline bool doubletap;
 		inline int  doubletapkey;
 		inline bool resolver;

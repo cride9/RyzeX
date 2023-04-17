@@ -94,12 +94,7 @@ void menu::Ragetab() noexcept {
     {
         ImGui::Checkbox("Enable", &enable);
 		ImGui::Combo("Target selection", &aimbotTargetSelection, aimbotTargetSelectionList, IM_ARRAYSIZE(aimbotTargetSelectionList));
-        ImGui::Checkbox("Auto Stop", &autostop);
-        if (autostop) {
-            ImGui::Checkbox("Auto Stop In Air", &m_bAutoStopInAir);
-            ImGui::Checkbox("Between shots", &betweenshots);
-			ImGui::Combo("Predicted stop", &autostopAggressiveness, autoStopPhases, IM_ARRAYSIZE(autoStopPhases));
-        }
+        
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
         ImGui::Checkbox("Doubletap", &doubletap);
         ImGui::PopStyleColor();
@@ -137,6 +132,14 @@ void menu::Ragetab() noexcept {
 
             if (weapon < 3)
                 ImGui::Checkbox("Auto-Scope", &autoscope[weapon]);
+
+            ImGui::Checkbox( "Auto Stop", &autostop[ weapon ] );
+            if ( autostop[ weapon ] ) {
+                ImGui::Checkbox( "Auto Stop In Air", &m_bAutoStopInAir[ weapon ] );
+                ImGui::Checkbox( "Between shots", &betweenshots[ weapon ] );
+                ImGui::Combo( "Predicted stop", &autostopAggressiveness[ weapon ], autoStopPhases, IM_ARRAYSIZE( autoStopPhases ) );
+            }
+
             ImGui::SliderInt("Damage override", &overridedmg, 0, 110);
             ImGui::Keybind("damageoverridebind", &overrideBind);
         };
@@ -883,9 +886,9 @@ noexcept {
 		ImGui::PopStyleVar();
 
 		bool bOpen = true;
-		ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(200, 140));
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200, 200));
-		if (ImGui::BeginPopupModal("##flagsManager", &bOpen, ImGuiWindowFlags_NoResize)) {
+		ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(200, 200));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200, 165 ));
+		if (ImGui::BeginPopupModal("##flagsManager", &bOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar ) ) {
 
 			ImGui::BeginChild("##flags", ImGui::GetContentRegionAvail(), true);
 			{

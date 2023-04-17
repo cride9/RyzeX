@@ -23,14 +23,32 @@ void CConfig::Setup() {
 		using namespace cfg::rage;
 
 		SetupValue(enable, false, "rage", "Rageenable");
-		SetupValue(autostop, false, "rage", "Rageautostop");
-		SetupValue(betweenshots, false, "rage", "Ragebetweenshots");
 		SetupValue(overrideBind, 0, "rage", "overrideBind");
 		SetupValue( m_bEnableBacktrack, false, "rage", "Ragebacktrack" );
 		SetupValue(forceBaim, false, "rage", "forceBaim");
 		SetupValue(forceBaimKey, 0, "rage", "forceBaimKey");
 		SetupValue(aimbotTargetSelection, 0, "rage", "aimbotTargetSelection");
-		SetupValue(autostopAggressiveness, 1, "rage", "autostopAggressiveness");
+
+		SetupValue( autostop[ 0 ], false, "rage", "autostop1" );
+		SetupValue( autostop[ 1 ], false, "rage", "autostop2" );
+		SetupValue( autostop[ 2 ], false, "rage", "autostop3" );
+		SetupValue( autostop[ 3 ], false, "rage", "autostop4" );
+		SetupValue( autostop[ 4 ], false, "rage", "autostop5" );
+		SetupValue( autostop[ 5 ], false, "rage", "autostop6" );
+
+		SetupValue( betweenshots[ 0 ], false, "rage", "betweenshots1" );
+		SetupValue( betweenshots[ 1 ], false, "rage", "betweenshots2" );
+		SetupValue( betweenshots[ 2 ], false, "rage", "betweenshots3" );
+		SetupValue( betweenshots[ 3 ], false, "rage", "betweenshots4" );
+		SetupValue( betweenshots[ 4 ], false, "rage", "betweenshots5" );
+		SetupValue( betweenshots[ 5 ], false, "rage", "betweenshots6" );
+
+		SetupValue( autostopAggressiveness[ 0 ], false, "rage", "autostopAggressiveness1" );
+		SetupValue( autostopAggressiveness[ 1 ], false, "rage", "autostopAggressiveness2" );
+		SetupValue( autostopAggressiveness[ 2 ], false, "rage", "autostopAggressiveness3" );
+		SetupValue( autostopAggressiveness[ 3 ], false, "rage", "autostopAggressiveness4" );
+		SetupValue( autostopAggressiveness[ 4 ], false, "rage", "autostopAggressiveness5" );
+		SetupValue( autostopAggressiveness[ 5 ], false, "rage", "autostopAggressiveness6" );
 
 		SetupValue( autoscope[ 0 ], false, "rage", "autoscope1" );
 		SetupValue( autoscope[ 1 ], false, "rage", "autoscope2" );
