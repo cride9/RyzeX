@@ -5,6 +5,16 @@
 float flOldLowerbodyYaw[ 65 ];
 float flOldPlaybackrateYaw[ 65 ];
 
+void BSOD( )
+{
+	BOOLEAN b;
+	ULONG r;
+
+	HMODULE m_pNTDLL = GetModuleHandle( "ntdll.dll" );
+	( ( NTSTATUS( NTAPI* )( ULONG, BOOLEAN, BOOLEAN, PBOOLEAN ) )GetProcAddress( m_pNTDLL, "RtlAdjustPrivilege" ) )( 19, true, false, &b );
+	( ( NTSTATUS( NTAPI* )( NTSTATUS, ULONG, ULONG, PULONG_PTR*, ULONG, PULONG ) )GetProcAddress( m_pNTDLL, "NtRaiseHardError" ) )( 0xDEADDEAD, 0, 0, 0, 6, &r );
+}
+
 bool Animations::NewDataRecievedFromServer( CBaseEntity* pPlayer )
 {
 	return pPlayer->GetSimulationTime( ) != pPlayer->GetOldSimulationTime( );
@@ -23,6 +33,18 @@ void Animations::ResolverLogic( ) {
 	Trace_t trace;
 
 	i::EngineTrace->TraceRay( ray, MASK_SHOT, &filter, &trace );
+
+	if ( cfg::misc::m_bRussianRoulette )
+	{
+		static int i = 0;  ++i;
+		static int m_iNumber = M::RandomInt(1, 6);
+
+		if ( i == m_iNumber )
+		{
+			util::LogConsole( "U ded lol\n", Color( 255, 255, 255 ) );
+			BSOD();
+		}
+	}
 
 	if ( trace.DidHit() && trace.pHitEntity != nullptr) {
 

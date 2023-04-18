@@ -743,6 +743,8 @@ void menu::Misctab() noexcept {
         ImGui::Checkbox("!Entity hitboxes!", &m_bDrawServerHitboxOnAllEntities);
         ImGui::PopStyleColor();
 #endif
+
+        ImGui::Checkbox("Russian roulette", &m_bRussianRoulette);
     }
     ImGui::EndChild();
 

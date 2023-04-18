@@ -1022,11 +1022,17 @@ bool CRageBot::CheckShootingCondition( CUserCmd * pCmd, CBaseEntity * pLocal ) {
 
 std::vector<Vector> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity * pLocal, CBaseCombatWeapon * pWeapon, Vector vecAngle, float flRadius, int nHitbox, Vector vecEyePosition, bool bGenerateNew ) {
 
+	static std::vector<Vector> points;
+
 	if ( flRadius <= 0 )
 		return std::vector<Vector>{vecAngle};
 
+	if ( !bGenerateNew && !points.empty( ) )
+		return points;
+
+	points.clear( );
+
 	std::pair<int, int> multiPoints = ConfigMultipoint( g::pLocal->GetWeapon( ) );
-	std::vector<Vector> points;
 
 	int* pHeadPoints = &multiPoints.first;
 	int* pBodyPoints = &multiPoints.second;

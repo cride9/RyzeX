@@ -350,6 +350,9 @@ namespace cfg {
 		inline bool fakePing = false;
 		inline float fakePingFactor = 0.f;
 
+		// funny times
+		inline bool m_bRussianRoulette = false;
+
 		// hitsounds
 		inline int m_iHitSound = 0;
 		inline float m_flHitSoundVolume = 100.f;
