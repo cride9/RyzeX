@@ -75,11 +75,11 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		if ( !detour::processPacket.IsHooked( ) )
 			detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
 
-		//if ( !detour::sendNetMsg.IsHooked( ) )
-		//	detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
+		if ( !detour::sendNetMsg.IsHooked( ) )
+			detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
 
-		if ( !detour::setChoked.IsHooked( ) )
-			detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
+		//if ( !detour::setChoked.IsHooked( ) )
+		//	detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
 
 		if ( !detour::sendDatagram.IsHooked( ) )
 			detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );

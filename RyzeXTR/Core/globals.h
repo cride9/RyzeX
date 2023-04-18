@@ -3,6 +3,8 @@
 #include "SDK/Entity.h"
 #include "Interface/Interfaces/entityListener.h"
 
+#define _DEBUGTEXT "Cride Is A Nigger :kekw:"
+
 namespace g {
 
 	inline CUserCmd* pCmd;

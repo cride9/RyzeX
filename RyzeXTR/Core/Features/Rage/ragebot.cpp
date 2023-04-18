@@ -142,8 +142,15 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, std::tuple<CBaseEntity*, Lagcompe
 		/* Needed variables for later usage */
 		float flRadius = 0.f, flDamage = -1;
 
+		Lagcompensation::LagRecord_t m_BackupRecord( pRecordEntity );
+		pCurrentRecord->Apply( pRecordEntity, false );
+
 		/* Get the targetable entities current hitbox for scanning */
-		Vector hitboxPosition = pRecordEntity->GetHitboxPosition( hitboxID, pRecordMatrix, flRadius );
+		//Vector hitboxPosition = pRecordEntity->GetHitboxPosition( hitboxID, pRecordMatrix, flRadius );
+		auto hitbox = pRecordEntity->GetStudioHdr( )->pStudioHdr->GetHitboxSet( 0 )->GetHitbox( hitboxID );
+		if ( !hitbox )
+			continue;
+		Vector hitboxPosition = Vector( pRecordMatrix[hitbox->iBone][ 0 ][ 3 ], pRecordMatrix[ hitbox->iBone ][ 1 ][ 3 ], pRecordMatrix[ hitbox->iBone ][ 2 ][ 3 ] );
 
 		/* Check if player selected this hitbox for multipoint or not */
 		if ( multiPointHitboxes[ hitboxID ] ) {
@@ -152,7 +159,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, std::tuple<CBaseEntity*, Lagcompe
 			std::vector<Vector> vecHitboxPosition;
 			vecHitboxPosition = CreatePoints( pRecordEntity, pLocal, pWeapon, hitboxPosition, flRadius, hitboxID, vecEyePosition );
 
-			pRecordEntity->SetBoneCache( pRecordMatrix );
+			//pRecordEntity->SetBoneCache( pRecordMatrix );
 			/* Loop through the multipoint points */
 			for ( Vector& currentPoint : vecHitboxPosition ) {
 
@@ -178,7 +185,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, std::tuple<CBaseEntity*, Lagcompe
 		}
 		/* Not multipoint selected hitbox so just scan the middle of it */
 		else {
-			pRecordEntity->SetBoneCache( pRecordMatrix );
+			//pRecordEntity->SetBoneCache( pRecordMatrix );
 			if ( safePointHitboxes[ hitboxID ] ) {
 				if ( SafePoint( vecEyePosition, pWeapon, pCurrentRecord, hitboxPosition, flDamage ) ) {
 					if ( flDamage > iMinimumDamage && flDamage > std::get<1>( flBestDamage ) ) {
@@ -197,6 +204,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, std::tuple<CBaseEntity*, Lagcompe
 				}
 			}
 		}
+		m_BackupRecord.Apply( pRecordEntity, true );
 	}
 
 safepoint:
@@ -291,11 +299,17 @@ std::tuple<CBaseEntity*, Lagcompensation::LagRecord_t*> CRageBot::SelectTarget( 
 				continue;
 
 			/* Apply current matrix once to save some performance */
-			pEntity->SetBoneCache( pCurrentRecord->pMatrix );
+			//pEntity->SetBoneCache( pCurrentRecord->pMatrix );
+			Lagcompensation::LagRecord_t m_BackupRecord( pCurrentRecord->pEntity );
+			pCurrentRecord->Apply( pCurrentRecord->pEntity, false );
 
 			for ( int& iHitbox : vecSelectedHitboxes ) {
 
-				Vector vecHitboxPosition = pLog->pEntity->GetHitboxPosition( iHitbox, pCurrentRecord->pMatrix );
+				//Vector vecHitboxPosition = pLog->pEntity->GetHitboxPosition( iHitbox, pCurrentRecord->pMatrix );
+				auto hitbox = pCurrentRecord->pEntity->GetStudioHdr( )->pStudioHdr->GetHitboxSet( 0 )->GetHitbox( iHitbox );
+				if ( !hitbox )
+					continue;
+				Vector vecHitboxPosition = Vector( pCurrentRecord->pMatrix[ hitbox->iBone ][ 0 ][ 3 ], pCurrentRecord->pMatrix[ hitbox->iBone ][ 1 ][ 3 ], pCurrentRecord->pMatrix[ hitbox->iBone ][ 2 ][ 3 ] );
 				data.vecDirection = ( vecHitboxPosition - data.vecPosition ).Normalized( );
 
 				/* Check if we can shoot this record and add it if we can, sort later */
@@ -305,6 +319,8 @@ std::tuple<CBaseEntity*, Lagcompensation::LagRecord_t*> CRageBot::SelectTarget( 
 					break;
 				}
 			}
+
+			m_BackupRecord.Apply( pCurrentRecord->pEntity, true );
 		}
 	}
 
@@ -487,7 +503,7 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	if ( rageBotData.bCanShoot )
 		return;
 
-	float flIdealSpeed = ( .33f * 0.85f ) * ( g::pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
+	float flIdealSpeed = ( 0.33f /** 0.85f*/ ) * ( g::pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
 
 	//int predictTick = 0;
 	//switch (m_iPredictiveTicks( m_iPredictiveTicks ))
