@@ -7,6 +7,7 @@
 #include "../Rage/ragebot.h"
 #include "../../SDK/WavParser.h"
 #include "../Rage/autowall.h"
+#include "../Visuals/ESP.h"
 #pragma comment(lib, "winmm.lib")
 #define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 
@@ -22,9 +23,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	SlideFix();
 	OnlyCheatLogs();
 	RemovePostProcessing();
-	IdealTick(pCmd);
 	FixScopeSens();
-	AutoPistol(pCmd, g::pLocal);
 	WalkBot(pCmd);
 	BlockBot(pCmd);
 	ClanTag();
@@ -42,6 +41,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	BulletTracer(pEvent);
 	HandlePlayerHitEffects( pEvent );
 	WalkBotHandler(pEvent);
+	WorldCrosshairHandler(pEvent);
 }
 
 CBaseEntity* UTIL_PlayerByIndex(int index)
@@ -58,7 +58,7 @@ CBaseEntity* UTIL_PlayerByIndex(int index)
 void misc::ServerHitboxes() {
 
 	static uintptr_t* pCall = (uintptr_t*)(util::FindSignature("server.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8B 35 ? ? ? ? 8B D9 57 8B CE"));
-	float fDuration = i::GlobalVars->flIntervalPerTick * 2.0f;
+	float fDuration = i::GlobalVars->flIntervalPerTick * 1.0f;
 
 	PVOID pTEntity = nullptr;
 
@@ -155,8 +155,11 @@ void misc::IdealTick(CUserCmd* pCmd) {
 			bPositionSet = true;
 			vecOrigin = g::pLocal->GetVecOrigin();
 			vecRecord = vecOrigin;
-			g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
+			g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING, i::GlobalVars->flCurrentTime);
 		}
+
+		if (pCmd->iButtons & IN_ATTACK)
+			bRetreat = true;
 	}
 	else {
 
@@ -271,17 +274,11 @@ void misc::NightMode() {
 
 void misc::SlideFix() {
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->GetMoveType() == MOVETYPE_LADDER || cfg::antiaim::slidewalk)
+	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->GetMoveType() == MOVETYPE_LADDER || cfg::antiaim::bSlideWalk)
 		return;
 
 	g::pCmd->iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVERIGHT | IN_MOVELEFT);
 }
-
-struct ClientHitVerify_t {
-	Vector pos;
-	float time;
-	float expires;
-};
 
 void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) {
 
@@ -887,8 +884,10 @@ void misc::FakeLag(bool& bSendPacket) {
 		JITTER
 	};
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::fakelag || !cfg::antiaim::enableFakelag)
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::fakelag || !cfg::antiaim::enableFakelag) {
+		bSendPacket = true;
 		return;
+	}
 
 	if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
 		bSendPacket = i::ClientState->nChokedCommands >= 14;
@@ -911,7 +910,7 @@ void misc::FakeLag(bool& bSendPacket) {
 	if (cfg::antiaim::fakelag) {
 
 		if (!g::bWaiting && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && !exploits::bIsShiftingTicks) {
-			iCurrentChoke = min(2, iCurrentChoke);
+			iCurrentChoke = min(1, iCurrentChoke);
 		}
 		else {
 
@@ -946,19 +945,20 @@ void misc::FakeLag(bool& bSendPacket) {
 		iCurrentChoke = cfg::antiaim::fakelag;
 
 
-	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
+	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) ? 1 : iMin, iCurrentChoke));
 }
 
 void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
 
 	BeamInfo_t info;
 	info.m_nType = TE_BEAMPOINTS;
-	info.m_pszModelName = "sprites/purplelaser1.vmt";
+	//info.m_pszModelName = "sprites/purplelaser1.vmt";
+	info.m_pszModelName = "sprites/white.vmt";
 	info.m_nModelIndex = -1;
-	info.m_flHaloScale = 0.0f;
-	info.m_flLife = 4.0f;
-	info.m_flWidth = 5.0f;
-	info.m_flEndWidth = 3.0f;
+	info.m_flHaloScale = -1.0f;
+	info.m_flLife = 3.0f;
+	info.m_flWidth = 1.0f;
+	info.m_flEndWidth = 1.0f;
 	info.m_flFadeLength = 0.0f;
 	info.m_flAmplitude = 2.0f;
 	info.m_flBrightness = color[3];
@@ -984,6 +984,25 @@ void misc::BulletTracer(IGameEvent* pEvent) {
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bulletTracer)
 		return;
 
+	/* Get this once, so the beams won't deform bcs of multiple impact -> multiple position */
+	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+
+		if (iUser != i::EngineClient->GetLocalPlayer())
+			return;
+
+		Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+
+		DrawBream(vecEyePosition, vecImpact, cfg::misc::bulletTracerColor);
+	}
+}
+
+void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
+
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bWorldCrosshair)
+		return;
+
 	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
@@ -991,9 +1010,14 @@ void misc::BulletTracer(IGameEvent* pEvent) {
 		if (iUser != g::pLocal->EntIndex())
 			return;
 
-		Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+		static int i = 0;
 
-		DrawBream(g::pLocal->GetEyePosition(), vecImpact, cfg::misc::bulletTracerColor);
+		cfg::misc::flWorldCrosshairColor[3] = 1.f;
+		visual::flWorldCrosshairLength[i] = i::GlobalVars->flCurrentTime;
+		visual::vecWorldCrosshair[i] = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+		i++;
+		if (i >= 5)
+			i = 0;
 	}
 }
 
@@ -1031,7 +1055,7 @@ void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		pLocal->GetWeapon()->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_REVOLVER)
 		return;
 
-	if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() > TICKS_TO_TIME(pLocal->GetTickBase())))
+		if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() >= TICKS_TO_TIME(pLocal->GetTickBase())))
 		pCmd->iButtons &= ~IN_ATTACK;
 }
 

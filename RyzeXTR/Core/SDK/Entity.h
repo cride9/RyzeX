@@ -167,6 +167,13 @@ enum EItemDefinitionIndex : short
 	SPECIAL_AGENT_B_SQUADRON_OFFICER = 5601
 };
 
+struct ClientHitVerify_t {
+	Vector pos;
+	float time;
+	float expires;
+};
+
+
 class VarMapEntry_t {
 public:
 	unsigned short type;
@@ -692,6 +699,7 @@ public:
 	ADD_NETVAR(GetEyeAngles, Vector, "CCSPlayer->m_angEyeAngles");
 	ADD_NETVAR(IsDefusing, bool, "CCSPlayer->m_bIsDefusing");
 	ADD_NETVAR(IsScoped, bool, "CCSPlayer->m_bIsScoped");
+	ADD_NETVAR(IsResumingScope, bool, "CCSPlayer->m_bResumeZoom");
 	ADD_NETVAR(IsGrabbingHostage, bool, "CCSPlayer->m_bIsGrabbingHostage");
 	ADD_NETVAR(IsRescuing, bool, "CCSPlayer->m_bIsRescuing");
 	ADD_NETVAR(HasHelmet, bool, "CCSPlayer->m_bHasHelmet");

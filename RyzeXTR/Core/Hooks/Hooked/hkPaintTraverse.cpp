@@ -14,6 +14,8 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		g::pLocal = nullptr;
 		if (g::bSendPacket)
 			*g::bSendPacket = true;
+
+		ragebot.rageBotData.pAimbotTarget = nullptr;
 	}
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {

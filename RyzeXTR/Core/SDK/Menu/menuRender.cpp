@@ -177,27 +177,27 @@ void menu::Antiaimtab() noexcept {
 
     ImGui::BeginChild("LeftChild", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
-        ImGui::Checkbox("Enabled", &enabled);
-        ImGui::Combo("Pitch", &pitch, pitchList, IM_ARRAYSIZE(pitchList));
-        ImGui::Combo("Yaw base", &yawBase, yawBaseList, IM_ARRAYSIZE(yawBaseList));
-        ImGui::Combo("Yaw", &yaw, yawList, IM_ARRAYSIZE(yawList));
+        ImGui::Checkbox("Enabled", &bEnabled);
+        ImGui::Combo("Pitch", &iPitch, pitchList, IM_ARRAYSIZE(pitchList));
+        ImGui::Combo("Yaw base", &iYawBase, yawBaseList, IM_ARRAYSIZE(yawBaseList));
+        ImGui::Combo("Yaw", &iYaw, yawList, IM_ARRAYSIZE(yawList));
         ImGui::Combo("Modifier", &modifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
         if (modifier != 0)
             ImGui::SliderInt("Modifier value", &jittervalue, 0, 90);
-        ImGui::Combo("Lower body yaw target", &desynctype, desyncList, IM_ARRAYSIZE(desyncList));
-        if (desynctype != 0) {
+        ImGui::Combo("Lower body yaw target", &iDesyncType, desyncList, IM_ARRAYSIZE(desyncList));
+        if (iDesyncType != 0) {
 
-			if (desynctype == 4) {
-				ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 58.f, "%.f");
-				ImGui::SliderInt("Static offset", &cfg::antiaim::flickOffset, 0, 180);
+			if (iDesyncType == 4) {
+				ImGui::SliderFloat("Yaw desync angle", &flDesyncValue, 0.f, 58.f, "%.f");
+				ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset, 0, 180.f);
 				ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch, 0, cfg::antiaim::fakelagmax);
 			}
 			else {
-				if (desynctype == 2)
+				if (iDesyncType == 2)
 					ImGui::Checkbox("Sway LBY", &m_bSwayDesync);
 
-				ImGui::SliderFloat("Yaw desync angle", &desyncvalue, 0.f, 58.f, "%.f");
-				ImGui::Keybind("invertButton", &desyncinverter);
+				ImGui::SliderFloat("Yaw desync angle", &flDesyncValue, 0.f, 58.f, "%.f");
+				ImGui::Keybind("invertButton", &iInverterBind);
 				ImGui::Combo("Yaw target modifier", &desyncModifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
 				if (desyncModifier != 0)
 					ImGui::SliderInt("Modifier value ##2", &desyncModifierValue, 0, 58);
@@ -232,7 +232,7 @@ void menu::Antiaimtab() noexcept {
         ImGui::Checkbox("Slow motion", &fakewalkenable);
         ImGui::Keybind("slowmotionKey", &fakewalkKey);
         ImGui::SliderFloat("Slow motion speed", &fakewalk, 0.f, 100.f, "%.f");
-		ImGui::Checkbox("Leg breaker", &cfg::antiaim::slidewalk);
+		ImGui::Checkbox("Leg breaker", &cfg::antiaim::bSlideWalk);
 
         ImGui::Checkbox("Fake duck", &fakeduck);
         ImGui::Keybind("fakeduckBind", &fakeduckbind);
@@ -394,6 +394,8 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Show impact", &bulletImpact);
             ImGui::Checkbox( "Bullet tracer", &bulletTracer );
             ImGui::ColorEdit4( "##tracerColor", bulletTracerColor );
+			ImGui::Checkbox("World hitmarker", &cfg::misc::bWorldCrosshair);
+			ImGui::ColorEdit4("##hitmarkercolor", cfg::misc::flWorldCrosshairColor);
             ImGui::Combo( "Hitsound", &m_iHitSound, m_szHitsound, IM_ARRAYSIZE( m_szHitsound ) );
             static int soundItemCurrent1 = -1;
             static std::string soundItem;
@@ -1015,7 +1017,7 @@ void menu::KeyBindList() noexcept {
                 ImGui::Text("Thirdperson [OFF]");
                 height += 20;
             }
-            if (GetKeyState(cfg::antiaim::desyncinverter)) {
+            if (GetKeyState(cfg::antiaim::iInverterBind)) {
 
                 ImGui::Text("Invert [ON]");
                 height += 20;

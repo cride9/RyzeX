@@ -90,17 +90,18 @@ namespace cfg {
 	}
 	namespace antiaim {
 
-		inline bool enabled = false;
-		inline int pitch = 2;
-		inline int yawBase = 1;
-		inline int yaw = 1;
-		inline bool slidewalk = false;
+		inline bool bEnabled = false;
+		inline int iPitch = 2;
+		inline int iYawBase = 1;
+		inline int iYaw = 1;
+		inline bool bSlideWalk = false;
+		inline bool bInvertOnShoot = false;
 
-		inline int desynctype = 0;
-		inline float desyncvalue = 58.f;
-		inline int desyncinverter = 0;
+		inline int iDesyncType = 0;
+		inline float flDesyncValue = 58.f;
+		inline int iInverterBind = 0;
 
-		inline int flickOffset = 0;
+		inline int iFlickOffset = 0;
 		inline int flickAngleSwitch = 0;
 
 		inline bool m_bSwayDesync = false;
@@ -332,6 +333,9 @@ namespace cfg {
 
 		inline bool bulletTracer = false;
 		inline float bulletTracerColor[4] = { 1.f ,1.f, 1.f, 1.f };
+
+		inline bool bWorldCrosshair = false;
+		inline float flWorldCrosshairColor[4] = { 1.f ,1.f, 1.f, 1.f };
 
 		inline int viewmodelFov = 75;
 		inline int fov = 90;

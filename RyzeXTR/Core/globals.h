@@ -17,7 +17,7 @@ namespace g {
 	inline bool bWaiting;
 	inline bool bAntiaimEnabled;
 
-	inline bool bSettingUpBones[65];
+	inline std::tuple<bool, int> bSettingUpBones[65];
 
 	namespace localprediction {
 

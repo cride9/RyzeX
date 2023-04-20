@@ -3,115 +3,6 @@
 #include "../exploits.h"
 #include "../../Networking/networking.h"
 
-void Lagcompensation::SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* m_Record, matrix3x4_t* aMatrix, int nMask, int nFlags)
-{
-	/* Reset layers */
-	std::memcpy(pEnt->GetAnimationOverlays(), m_Record->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
-
-	// save globals
-	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
-	(
-		// backup globals
-		i::GlobalVars->flCurrentTime,
-		i::GlobalVars->flRealTime,
-		i::GlobalVars->flFrameTime,
-		i::GlobalVars->flAbsFrameTime,
-		i::GlobalVars->flInterpolationAmount,
-
-		// backup frame count and tick count
-		i::GlobalVars->iFrameCount,
-		i::GlobalVars->iTickCount
-	);
-
-	/* Store player's data */
-	std::tuple < int, int, int, int, int, Vector > m_PlayerData = std::make_tuple
-	(
-		pEnt->GetLastSkipFrameCount(),
-		pEnt->GetEffects(),
-		pEnt->GetClientEffects(),
-		pEnt->GetOcclusionFrameCount(),
-		pEnt->m_nOcclusionMask(),
-		pEnt->GetAbsOrigin()
-	);
-
-	/* Force game's globals */
-	int nSimulationTick = TIME_TO_TICKS(m_Record->flSimulationTime);
-	i::GlobalVars->flCurrentTime = m_Record->flSimulationTime;
-	i::GlobalVars->flRealTime = m_Record->flSimulationTime;
-	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
-	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
-	i::GlobalVars->iTickCount = nSimulationTick;
-	i::GlobalVars->iFrameCount = INT_MAX; /* ShouldSkipAnimationFrame fix */
-	i::GlobalVars->flInterpolationAmount = 0.0f;
-
-	/* Force it https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/game/client/c_baseanimating.cpp#L3102 */
-	pEnt->InvalidateBoneCache();
-
-	/* Force the owner of animation layers */
-	for (int iLayer = 0; iLayer < ANIMATION_LAYER_COUNT; iLayer++)
-	{
-		CAnimationLayer* m_Layer = &pEnt->GetAnimationOverlays()[iLayer];
-		if (!m_Layer)
-			continue;
-
-		m_Layer->pOwner = pEnt;
-	}
-
-	/* Disable ACT_CSGO_IDLE_TURN_BALANCEADJUST animation */
-	if (nFlags & 8)
-	{
-		pEnt->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.0f;
-		if (pEnt->GetSequenceActivity(pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].nSequence) == ACT_CSGO_IDLE_TURN_BALANCEADJUST)
-		{
-			pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].flCycle = 0.0f;
-			pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].flWeight = 0.0f;
-		}
-	}
-
-	/* Remove interpolation if required */
-	if (!(nFlags & 2))
-		pEnt->SetAbsOrigin(m_Record->vecOrigin);
-
-	/* Compute bone mask */
-	int nBoneMask = BONE_USED_BY_ANYTHING;
-	if (nFlags & 4)
-		nBoneMask = BONE_USED_BY_HITBOX;
-
-	/* Fix player's data */
-	pEnt->GetClientEffects() |= 2;
-	pEnt->GetEffects() |= EF_NOINTERP;
-	pEnt->GetOcclusionFrameCount() = -1;
-	pEnt->m_nOcclusionMask() &= ~2;
-	pEnt->GetLastSkipFrameCount() = 0;
-
-	/* Setup bones */
-	g::bSettingUpBones[pEnt->EntIndex()] = true;
-	pEnt->SetupBones(aMatrix, 128, nBoneMask, 0.f);
-	g::bSettingUpBones[pEnt->EntIndex()] = false;
-
-	/* Restore player's data */
-	pEnt->GetLastSkipFrameCount() = std::get < 0 >(m_PlayerData);
-	pEnt->GetEffects() = std::get < 1 >(m_PlayerData);
-	pEnt->GetClientEffects() = std::get < 2 >(m_PlayerData);
-	pEnt->GetOcclusionFrameCount() = std::get < 3 >(m_PlayerData);
-	pEnt->m_nOcclusionMask() = std::get < 4 >(m_PlayerData);
-	pEnt->SetAbsOrigin(std::get < 5 >(m_PlayerData));
-
-	/* Reset layers */
-	std::memcpy(pEnt->GetAnimationOverlays(), m_Record->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
-
-	// restore globals
-	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
-	i::GlobalVars->flRealTime = std::get < 1 >(m_Globals);
-	i::GlobalVars->flFrameTime = std::get < 2 >(m_Globals);
-	i::GlobalVars->flAbsFrameTime = std::get < 3 >(m_Globals);
-	i::GlobalVars->flInterpolationAmount = std::get < 4 >(m_Globals);
-
-	// restore frame count and tick count
-	i::GlobalVars->iFrameCount = std::get < 5 >(m_Globals);
-	i::GlobalVars->iTickCount = std::get < 6 >(m_Globals);
-}
-
 Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* pEntity )
 {
 	CBaseCombatWeapon* pWeapon = pEntity->GetWeapon( );
@@ -307,11 +198,14 @@ void Lagcompensation::FrameStageNotify() {
 			pCurrentLog->pEntity->SetAnimationLayers( pBackupRecord.pLayers );
 
 			// create bone matrix for this pRecord.
-			g::bSettingUpBones[i] = true;
-			//SetupPlayerBones(pCurrentLog->pEntity, pCurrentRecord, pCurrentRecord->pMatrix, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, 4);
-			//pCurrentLog->pEntity->SetupBonesFix( pCurrentLog->pEntity, BONE_USED_BY_ANYTHING & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatrix );
-			pCurrentLog->pEntity->SetupBones(pCurrentRecord->pMatrix, 128, BONE_USED_BY_HITBOX & ~BONE_USED_BY_ATTACHMENT, i::GlobalVars->flCurrentTime);
-			g::bSettingUpBones[i] = false;
+			g::bSettingUpBones[i] = std::make_tuple(true, EMatrixFlags::Interpolated | EMatrixFlags::VisualAdjustment);
+			pCurrentLog->pEntity->SetupBones(pCurrentRecord->pVisualMatrix, 128, 0, i::GlobalVars->flCurrentTime);
+
+			g::bSettingUpBones[i] = std::make_tuple(true, EMatrixFlags::BoneUsedByHitbox);
+			pCurrentLog->pEntity->SetupBones(pCurrentRecord->pMatrix, 128, 4, i::GlobalVars->flCurrentTime);
+
+			g::bSettingUpBones[i] = std::make_tuple(false, 0);
+
 			// restore correctly synced values.
 			pBackupRecord.Restore( pCurrentLog->pEntity );
 
@@ -442,8 +336,8 @@ bool Lagcompensation::IsBreakingLagcompensation( Lagcompensation::LagRecord_t* p
 			//L::PopConsoleColor( );
 			return true;
 		}
-		else if ( &pRecord && ( pInfo->pEntity->GetSimulationTime( ) == pRecord.flSimulationTime ) )
-			return true;
+		//else if ( &pRecord && ( pInfo->pEntity->GetSimulationTime( ) == pRecord.flSimulationTime ) )
+		//	return true;
 
 		// did we find a context smaller than target time?
 		if ( pRecord.flSimulationTime <= pLagRecord->flSimulationTime )
@@ -626,7 +520,7 @@ void Lagcompensation::RemoveInterpolation() {
 
 		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant())
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity())
 			continue;
 
 		if (pEntity == g::pLocal) {

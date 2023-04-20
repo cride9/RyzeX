@@ -28,6 +28,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
 
+	g::bSendPacket = &bSendPacket;
 	CBaseEntity* pLocal = g::pLocal = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	g::pCmd = pCmd;
 
@@ -59,6 +60,10 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
 		exploits::HandleBreakLagcomp(pCmd);
+		misc::IdealTick(pCmd);
+		misc::AutoPistol(pCmd, pLocal);
+		if (pCmd->iButtons & IN_ATTACK)
+			misc::vecEyePosition = pLocal->GetEyePosition();
 	}
 	prediction.End(pCmd, pLocal);
 
@@ -105,9 +110,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		if ( !detour::temptEntities.IsHooked( ) )
 			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
 	}
-
-	// let's re-aquire the convar every tick incase it has changed
-	g::bSendPacket = &bSendPacket;
 
 	static auto maxusercmd = i::ConVar->FindVar("sv_maxusrcmdprocessticks");
 	if (i::ClientState->nChokedCommands >= maxusercmd->GetInt() - 1)

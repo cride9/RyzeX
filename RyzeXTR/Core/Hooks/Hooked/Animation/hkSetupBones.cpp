@@ -19,7 +19,7 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 	if (!pEnt || !g::pLocal || !pEnt->IsAlive() || (pEnt->GetTeam() == g::pLocal->GetTeam() && pEnt != g::pLocal) || !pEnt->IsPlayer())
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
-	if (g::bSettingUpBones[pEnt->EntIndex()]) {
+	if (std::get<0>(g::bSettingUpBones[pEnt->EntIndex()])) {
 
 		if (pEnt == g::pLocal)
 			return original(ecx, edx, matrix, maxbones, bonemask, curtime);
@@ -29,7 +29,8 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 
 		auto m_Record = &lagcomp.GetLog(pEnt->EntIndex()).pRecord.front();
 
-		static int nFlags = 4;
+		int nFlags = std::get<1>(g::bSettingUpBones[pEnt->EntIndex()]);
+		nFlags = bonemask == 4 ? 4 : nFlags;
 
 		/* Reset layers */
 		std::memcpy(pEnt->GetAnimationOverlays(), m_Record->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
@@ -100,8 +101,8 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 
 		/* Compute bone mask */
 		int nBoneMask = BONE_USED_BY_ANYTHING;
-		//if (nFlags & 4)
-		//	nBoneMask = BONE_USED_BY_HITBOX;
+		if (nFlags & 4)
+			nBoneMask = BONE_USED_BY_HITBOX;
 
 		/* Fix player's data */
 		pEnt->GetClientEffects() |= 2;
@@ -139,12 +140,10 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 		return bResult;
 	}
 	else if (matrix) {
-		if (pEnt == g::pLocal) {
+		if (pEnt == g::pLocal) 
 			bResult = g_LocalAnimations->CopyCachedMatrix(matrix, maxbones);
-		}
-		else {
+		else 
 			bResult = anims.CopyCachedMatrix(pEnt, matrix, maxbones);
-		}
 	}
 
 	return bResult;

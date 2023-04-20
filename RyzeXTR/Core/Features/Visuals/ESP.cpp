@@ -74,6 +74,7 @@ void visual::VisualRender() {
 		if (!pEnt->GetHealth())
 			continue;
 
+		WorldCrosshair();
 		//HitboxVisualization(pEnt);
 
 		Vector bot;
@@ -180,7 +181,7 @@ void visual::HealthEsp(int left, int top, int right, int bot, int width, int hei
 		i::Surface->DrawSetColor(red, green, blue, alpha);
 		i::Surface->DrawFilledRect(left - 7, bot - (i * flFactor), left - 5, bot - (i * flFactor) + 1);
 		if (i + 1 == fDistance)
-			i::Surface->DrawT(left - 15, bot - (i * flFactor) - 5, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
+			i::Surface->DrawT(left - 7, bot - (i * flFactor), Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
 	}
 }
 
@@ -389,5 +390,39 @@ void visual::Glow(CBaseEntity* pLocal)
 		default:
 			break;
 		}
+	}
+}
+
+void visual::WorldCrosshair() {
+
+	for (size_t i = 0; i < 5; i++) {
+
+		if (vecWorldCrosshair[i] == Vector(0, 0, 0))
+			continue;
+
+		Vector vecScreenPoint;
+		if (i::DebugOverlay->ScreenPosition(vecWorldCrosshair[i], vecScreenPoint))
+			return;
+
+		if (i::GlobalVars->flCurrentTime - 3.f > flWorldCrosshairLength[i]) {
+			vecWorldCrosshair[i] = Vector(0, 0, 0);
+			continue;
+		}
+
+		if (cfg::misc::flWorldCrosshairColor[3] > 0.f)
+			cfg::misc::flWorldCrosshairColor[3] -= 0.0001f;
+
+		/* Set color */
+		i::Surface->DrawSetColor(Color(cfg::misc::flWorldCrosshairColor));
+
+		/* Top right */
+		i::Surface->DrawLine(vecScreenPoint.x + 2, vecScreenPoint.y - 2, vecScreenPoint.x + 8, vecScreenPoint.y - 8);
+		/* Bottom right*/
+		i::Surface->DrawLine(vecScreenPoint.x + 2, vecScreenPoint.y + 2, vecScreenPoint.x + 8, vecScreenPoint.y + 8);
+
+		/* Top left */
+		i::Surface->DrawLine(vecScreenPoint.x - 2, vecScreenPoint.y - 2, vecScreenPoint.x - 8, vecScreenPoint.y - 8);
+		/* Bottom right*/
+		i::Surface->DrawLine(vecScreenPoint.x - 2, vecScreenPoint.y + 2, vecScreenPoint.x - 8, vecScreenPoint.y + 8);
 	}
 }

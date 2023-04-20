@@ -16,12 +16,15 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	static float oldValue = 0;
 
 	// sanity checks
-	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::enabled) {
+	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::bEnabled) {
 
 		desyncValue = 0.f;
 		g::bAntiaimEnabled = false;
 		return;
 	}
+
+	if (ragebot.rageBotData.iTickCount + 1 >= i::GlobalVars->iTickCount)
+		bSendPacket = true;
 
 	// shooting checks
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
@@ -53,7 +56,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		unevenInvert = !unevenInvert;
 
 	// pitch
-	switch (cfg::antiaim::pitch) {
+	switch (cfg::antiaim::iPitch) {
 
 	case UP:
 		pCmd->angViewPoint.x = -89.f;
@@ -74,12 +77,12 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (cfg::antiaim::freestand == 2)
 		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
 
-	if (cfg::antiaim::yawBase == 1 && !bInitializedFreestand)
+	if (cfg::antiaim::iYawBase == 1 && !bInitializedFreestand)
 		AtTarget(pCmd, pCmd->angViewPoint);
 
 	if (!bInitializedFreestand) {
 		// yaw
-		switch (cfg::antiaim::yaw) {
+		switch (cfg::antiaim::iYaw) {
 
 		case FORWARD:
 			pCmd->angViewPoint.y += 0.f;
@@ -102,12 +105,12 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		needMicromovement = false;
 
 	// pure cancer 4line antiaim no shit why do ppl hit my head 100%
-	switch (cfg::antiaim::desynctype) {
+	switch (cfg::antiaim::iDesyncType) {
 
 		case STATIC:
 		{
 			needMicromovement = true;
-			desyncValue = GetKeyState( cfg::antiaim::desyncinverter ) ? ( cfg::antiaim::desyncvalue ) : -( cfg::antiaim::desyncvalue );	
+			desyncValue = GetKeyState( cfg::antiaim::iInverterBind ) ? ( cfg::antiaim::flDesyncValue ) : -( cfg::antiaim::flDesyncValue );	
 			break;
 		case EXTENDED:
 		{
@@ -117,7 +120,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			{
 				desyncValue = -120.f;
 
-				if ( GetKeyState( cfg::antiaim::desyncinverter ) )
+				if ( GetKeyState( cfg::antiaim::iInverterBind ) )
 					desyncValue *= -1.f;
 
 				if ( cfg::antiaim::m_bSwayDesync )
@@ -144,7 +147,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			break;
 		case JITTER:
 			needMicromovement = true;
-				desyncValue = cfg::antiaim::fakelag % 2 != 0 ? evenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue) : unevenInvert ? (cfg::antiaim::desyncvalue) : -(cfg::antiaim::desyncvalue);
+				desyncValue = cfg::antiaim::fakelag % 2 != 0 ? evenInvert ? (cfg::antiaim::flDesyncValue) : -(cfg::antiaim::flDesyncValue) : unevenInvert ? (cfg::antiaim::flDesyncValue) : -(cfg::antiaim::flDesyncValue);
 			break;
 
 		case FLICK:
@@ -152,19 +155,25 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			needMicromovement = false;
 			if (NextLBYUpdate(pCmd)) {
 
+				static int bDoFlick = 0;
 				if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey))
-					max(cfg::antiaim::flickOffset, 2);
+					max(cfg::antiaim::flickAngleSwitch, 2);
 
-				if (i::ClientState->nChokedCommands >= cfg::antiaim::flickAngleSwitch)
-					desyncValue = M::NormalizeYaw(cfg::antiaim::desyncvalue - cfg::antiaim::flickOffset);
-				else
-					desyncValue = M::NormalizeYaw(-cfg::antiaim::desyncvalue + cfg::antiaim::flickOffset);
+				if (bSendPacket)
+					bDoFlick++;
 
-				pCmd->angViewPoint.y += GetKeyState(cfg::antiaim::desyncinverter) ? desyncValue : -desyncValue;
+				if (bDoFlick == cfg::antiaim::flickAngleSwitch) {
+					desyncValue = M::NormalizeYaw(cfg::antiaim::flDesyncValue - cfg::antiaim::iFlickOffset);
+					bDoFlick = 0;
+				}
+				else {
+					desyncValue = M::NormalizeYaw(-cfg::antiaim::flDesyncValue + cfg::antiaim::iFlickOffset);
+				}
+				pCmd->angViewPoint.y += GetKeyState(cfg::antiaim::iInverterBind) ? desyncValue : -desyncValue;
 				bSendPacket = false;
 			}
 			else if (!bSendPacket) {
-				pCmd->angViewPoint.y -= GetKeyState(cfg::antiaim::desyncinverter) ? desyncValue : -desyncValue;
+				pCmd->angViewPoint.y -= GetKeyState(cfg::antiaim::iInverterBind) ? desyncValue : -desyncValue;
 			}
 			break;
 
@@ -179,14 +188,14 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
 		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
 
-	if (cfg::antiaim::desynctype) {
+	if (cfg::antiaim::iDesyncType) {
 		if (cfg::antiaim::desyncModifier == 1)
 			desyncValue += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue) : unevenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);
 		else if (cfg::antiaim::desyncModifier == 2)
 			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
 	}
 
-	if ( !bSendPacket && cfg::antiaim::desynctype != EXTENDED && cfg::antiaim::desynctype != FLICK ) {
+	if ( !bSendPacket && cfg::antiaim::iDesyncType != EXTENDED && cfg::antiaim::iDesyncType != FLICK ) {
 
 		pCmd->angViewPoint.y += M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue);
 		oldValue = desyncValue;

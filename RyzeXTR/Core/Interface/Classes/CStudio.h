@@ -66,6 +66,13 @@ public:
 	void* pActivityToSequence;
 };
 
+enum EMatrixFlags
+{
+	Interpolated = (1 << 1),
+	BoneUsedByHitbox = (1 << 2),
+	VisualAdjustment = (1 << 3)
+};
+
 struct mstudiobone_t
 {
 	int			nNameIndex;

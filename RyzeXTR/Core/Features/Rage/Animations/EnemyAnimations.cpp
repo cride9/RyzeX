@@ -146,7 +146,7 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 {
 	CAnimState pBackupState;
 	memcpy( &pBackupState, pEntity->AnimState( ), sizeof( CAnimState ) );
-
+	g::bSettingUpBones[pEntity->EntIndex()] = std::make_tuple(true, EMatrixFlags::BoneUsedByHitbox);
 	{
 		// center.
 		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw);
@@ -156,9 +156,7 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		g::bSettingUpBones[pEntity->EntIndex()] = true;
-		pEntity->SetupBones(pRecord->pCenterMatrix, 128, BONE_USED_BY_HITBOX, pEntity->GetSimulationTime());
-		g::bSettingUpBones[pEntity->EntIndex()] = false;
+		pEntity->SetupBones(pRecord->pCenterMatrix, 128, 0, pEntity->GetSimulationTime());
 		memcpy(pRecord->pResolverLayers[0], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
 
@@ -171,9 +169,7 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		g::bSettingUpBones[pEntity->EntIndex()] = true;
-		pEntity->SetupBones(pRecord->pLeftMatrix, 128, BONE_USED_BY_HITBOX, pEntity->GetSimulationTime());
-		g::bSettingUpBones[pEntity->EntIndex()] = false;
+		pEntity->SetupBones(pRecord->pLeftMatrix, 128, 0, pEntity->GetSimulationTime());
 		memcpy(pRecord->pResolverLayers[1], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
 
@@ -186,11 +182,11 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		g::bSettingUpBones[pEntity->EntIndex()] = true;
-		pEntity->SetupBones(pRecord->pRightMatrix, 128, BONE_USED_BY_HITBOX, pEntity->GetSimulationTime());
-		g::bSettingUpBones[pEntity->EntIndex()] = false;
+		pEntity->SetupBones(pRecord->pRightMatrix, 128, 0, pEntity->GetSimulationTime());
 		memcpy(pRecord->pResolverLayers[2], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
+	g::bSettingUpBones[pEntity->EntIndex()] = std::make_tuple(false, 0);
+
 }
 
 void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, float flServerVelocityXY, float flPlaybackrate )
@@ -1002,12 +998,12 @@ void Animations::InterpolateMatricies() {
 		TransformateMatrix(pPlayer);
 
 		// copy the entire matrix
-		std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
+		std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->front().pVisualMatrix, sizeof(matrix3x4_t) * nBoneCount);
 
 		// build attachments
-		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
+		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pVisualMatrix;
 		pPlayer->SetupBones_AttachmentHelper();
-		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
+		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pVisualMatrix;
 	}
 }
 
@@ -1019,7 +1015,7 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 
 	Vector vecOriginDelta = pEnt->GetAbsOrigin() - pRecord.at(1).vecAbsOrigin;
 
-	for (auto& Matrix : pRecord.front().pMatrix)
+	for (auto& Matrix : pRecord.front().pVisualMatrix)
 	{
 		Matrix[0][3] += vecOriginDelta.x;
 		Matrix[1][3] += vecOriginDelta.y;
@@ -1037,14 +1033,15 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (pLog->pEntity == nullptr)
 		return false;
 
-	if (!pLog->pEntity->IsPlayer() || !pLog->pEntity->IsAlive() || pLog->pEntity->IsDormant())
+	if (!pLog->pEntity->IsAlive() || pLog->pEntity->IsDormant())
 		return false;
 	
 	if (pLog->pRecord.empty())
 		return false;
 
-	pEnt->GetBoneAccessor()->matBones = pLog->pRecord.front().pMatrix;
-	std::memcpy(pMatrix, pLog->pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
+	pEnt->GetBoneAccessor()->matBones = pLog->pRecord.front().pVisualMatrix;
+	std::memcpy(pMatrix, pLog->pRecord.front().pVisualMatrix, sizeof(matrix3x4_t) * nBoneCount);
+
 	return true;
 }
 

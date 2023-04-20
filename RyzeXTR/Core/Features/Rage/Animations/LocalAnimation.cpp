@@ -66,6 +66,9 @@ void localanimation::SetLayerSequence(CAnimationLayer* layer, int sequence) {
 void C_LocalAnimations::OnCreateMove()
 {
 	g_LocalAnimations->StoreAnimationRecord();
+	if (!g::bSendPacket)
+		return;
+
 	if (!*g::bSendPacket)
 		return;
 
@@ -188,8 +191,7 @@ void C_LocalAnimations::OnCreateMove()
 	g::pLocal->SetAbsOrigin(m_LocalData.m_vecAbsOrigin);
 	//if ( !g_Globals->m_Packet.m_bSkipMatrix )
 	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Real.m_Matrix.data(), BONE_USED_BY_ANYTHING);
-	//if (cfg::model::localDesync)
-		g_LocalAnimations->UpdateDesyncAnimations();
+	g_LocalAnimations->UpdateDesyncAnimations();
 
 	/* restore globals */
 	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
@@ -359,7 +361,7 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 
 	m_LocalData.m_flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(g::pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(m_AnimationState.flGoalFeetYaw)));
 
-	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Fake.m_Matrix.data(), BONE_USED_BY_ANYTHING);
+	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Fake.m_Matrix.data(), 0);
 
 	std::memcpy(g::pLocal->AnimState(), &m_AnimationState, sizeof(CAnimState));
 	std::memcpy(g::pLocal->GetAnimationOverlays(), m_LocalData.m_Real.m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
@@ -647,9 +649,10 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask)
 	g::pLocal->GetLastSkipFrameCount() = 0;
 
 	// setup bones
-	g::bSettingUpBones[g::pLocal->EntIndex()] = true;
+	g::bSettingUpBones[g::pLocal->EntIndex()] = std::make_tuple(true, EMatrixFlags::Interpolated | EMatrixFlags::VisualAdjustment);
 	g::pLocal->SetupBones(aMatrix, MAXSTUDIOBONES, nMask, 0.0f);
-	g::bSettingUpBones[g::pLocal->EntIndex()] = false;
+	g::bSettingUpBones[g::pLocal->EntIndex()] = std::make_tuple(false, 0);
+
 
 	// restore animation layers
 	std::memcpy(g::pLocal->GetAnimationOverlays(), m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);

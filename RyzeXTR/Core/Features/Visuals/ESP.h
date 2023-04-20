@@ -24,4 +24,8 @@ namespace visual {
 	void Glow(CBaseEntity* pLocal);
 
 	void Flags(int, int, CBaseEntity*, bool*, float[5][4]);
+
+	void WorldCrosshair();
+	inline Vector vecWorldCrosshair[5];
+	inline float flWorldCrosshairLength[5];
 }

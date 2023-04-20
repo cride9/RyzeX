@@ -126,12 +126,12 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::antiaim;
 
-		SetupValue(enabled, false, "antiaim", "Antiaimenabled");
+		SetupValue(bEnabled, false, "antiaim", "Antiaimenabled");
 
-		SetupValue(pitch, 0, "antiaim", "pitch");
-		SetupValue(yaw, 0, "antiaim", "yaw");
-		SetupValue(yawBase, 0, "antiaim", "yawbase");
-		SetupValue(slidewalk, 0, "antiaim", "slidewalk");
+		SetupValue(iPitch, 0, "antiaim", "pitch");
+		SetupValue(iYaw, 0, "antiaim", "yaw");
+		SetupValue(iYawBase, 0, "antiaim", "yawbase");
+		SetupValue(bSlideWalk, 0, "antiaim", "slidewalk");
 
 		SetupValue(modifier, 0, "antiaim", "modifier");
 		SetupValue(desyncModifier, 0, "antiaim", "desyncModifier");
@@ -140,10 +140,10 @@ void CConfig::Setup() {
 		SetupValue(jittervalue, 0, "antiaim", "jittervalue");
 		SetupValue(invertangle, 0, "antiaim", "invertangle");
 
-		SetupValue(desynctype, 0, "antiaim", "desynctype");
-		SetupValue(desyncvalue, 0, "antiaim", "desyncvalue");
-		SetupValue(desyncinverter, 0, "antiaim", "desyncinverter");
-		SetupValue(flickOffset, 0, "antiaim", "flickOffset");
+		SetupValue(iDesyncType, 0, "antiaim", "desynctype");
+		SetupValue(flDesyncValue, 0, "antiaim", "desyncvalue");
+		SetupValue(iInverterBind, 0, "antiaim", "desyncinverter");
+		SetupValue(iFlickOffset, 0, "antiaim", "flickOffset");
 		SetupValue(flickAngleSwitch, 0, "antiaim", "flickAngleSwitch");
 
 		SetupValue( m_bSwayDesync, false, "antiaim", "swaylby" );
@@ -768,6 +768,12 @@ void CConfig::Setup() {
 		SetupValue(bulletTracerColor[1], 0.246f, "visual", "bulletTracerColorG");
 		SetupValue(bulletTracerColor[2], 0.646f, "visual", "bulletTracerColorB");
 		SetupValue(bulletTracerColor[3], 1.f, "visual", "bulletTracerColorA");
+
+		SetupValue(bWorldCrosshair, false, "misc", "bWorldCrosshair");
+		SetupValue(flWorldCrosshairColor[0], 1.f, "visual", "flWorldCrosshairColorR"); // (0.000f, 0.246f, 0.646f, 1.000f)
+		SetupValue(flWorldCrosshairColor[1], 1.f, "visual", "flWorldCrosshairColorG");
+		SetupValue(flWorldCrosshairColor[2], 1.f, "visual", "flWorldCrosshairColorB");
+		SetupValue(flWorldCrosshairColor[3], 1.f, "visual", "flWorldCrosshairColorA");
 
 		SetupValue(thirdperson, false, "misc", "thirdperson");
 		SetupValue(thirdpersonbind, 0, "misc", "thirdpersonbind");
