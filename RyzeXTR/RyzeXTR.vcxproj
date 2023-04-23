@@ -71,10 +71,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)output\debug</OutDir>
+    <OutDir>$(SolutionDir)output\debug\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)output\release</OutDir>
+    <OutDir>$(SolutionDir)output\release\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -96,12 +96,12 @@
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WINDOWS_IGNORE_PACKING_MISMATCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <Optimization>Disabled</Optimization>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -193,6 +193,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkOverrideView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkPaintTraverse.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkPhysicsSimulate.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkPlayerMove.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRunCommand.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkWriteUserCmdDeltaToBuffer.cpp" />
@@ -267,6 +268,7 @@
     <ClInclude Include="Core\Interface\Interfaces\IMaterial.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMaterialSystem.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMatRenderContext.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IMdlCache.h" />
     <ClInclude Include="Core\Interface\Interfaces\IPanel.h" />
     <ClInclude Include="Core\Interface\Interfaces\IPrediction.h" />
     <ClInclude Include="Core\Interface\Interfaces\IViewRenderBeams.h" />
@@ -278,6 +280,7 @@
     <ClInclude Include="Core\Interface\Interfaces\IVModelRender.h" />
     <ClInclude Include="Core\Interface\interfaces.h" />
     <ClInclude Include="Core\Interface\Interfaces\IWeaponSystem.h" />
+    <ClInclude Include="Core\memeSounds.h" />
     <ClInclude Include="Core\SDK\CRC32.h" />
     <ClInclude Include="Core\SDK\CUserCmd.h" />
     <ClInclude Include="Core\SDK\datamap.h" />

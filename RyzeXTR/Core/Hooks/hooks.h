@@ -69,6 +69,7 @@ namespace detour {
 	inline CDetourHook doPostScreenEffects; // clientmode -> 44
 	inline CDetourHook emitSound;			// client -> 55 8B EC 83 EC 4C 53 8B D9 8B
 	inline CDetourHook drawViewmodel;
+	inline CDetourHook playerMove;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -117,8 +118,8 @@ namespace h {
 			util::Print("Failed to initialize ", pattern);
 	}
 
-	long __stdcall		EndScene(IDirect3DDevice9* device);
-	HRESULT __stdcall	Reset(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* params);
+	long __stdcall		EndScene(IDirect3DDevice9*);
+	HRESULT __stdcall	Reset(IDirect3DDevice9*, D3DPRESENT_PARAMETERS*);
 
 	void* __fastcall	hkAllocKeyValuesMemory(CKeyValuesSystem*, int, int);
 	void __fastcall		hkCreateMoveProxy(IBaseClientDLL*, int, int, float, bool);
@@ -133,9 +134,10 @@ namespace h {
 	float __fastcall	hkGetViewModelFov(void*, void*);
 	bool __fastcall		hkWriteUserCmdDeltaToBuffer(void*, void*, int, bf_write*, int, int, bool);
 	bool __fastcall		hkFireEvent( void*, void*, IGameEvent* );
-	int __fastcall		hkDoPostScreenEffect(CClientModeShared*, int, CViewSetup*);
+	int __fastcall		hkDoPostScreenEffect(void*, int, CViewSetup*);
 	void __fastcall		hkEmitSound(void*, int, void*, int, int, const char*, unsigned int, const char*, float, int, float, int, int, const Vector*, const Vector*, void*, bool, float, int, int);
 	bool __fastcall		hkShouldDrawViewmodel(void*, void*);
+	void __fastcall		hkPlayerMove(void*, void*);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );
@@ -164,10 +166,13 @@ namespace h {
 	bool __stdcall		hkIsPaused();
 	void __fastcall		hkPhysicsSimulate(CBaseEntity*, void*);
 	void __fastcall		hkInterpolateServerEntites(void*, void*);
-	bool __fastcall		hkIsFollowingEntity(void* ecx, void* edx);
-	void __fastcall		hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector& vecVelocity);
+	bool __fastcall		hkIsFollowingEntity(void*, void*);
+	void __fastcall		hkEstimateAbsVelocity(CBaseEntity*, void*, Vector&);
 	//int					hkInterpolationList();
-	static LRESULT __stdcall	WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT __stdcall	WndProc(HWND, UINT, WPARAM, LPARAM);
+
+	void HookNetChannel(INetChannel*);
+	void HookClientState();
 
 	inline WNDPROC pOriginalWNDProc; // Original CSGO window proc
 }
@@ -177,6 +182,7 @@ class Event : public IGameEventListener
 public:
 	void FireGameEvent(IGameEvent* event);
 	int  GetEventDebugID = 42;
+
 	void Init() {
 
 		i::GameEvent->AddListener(this, "player_hurt", false);

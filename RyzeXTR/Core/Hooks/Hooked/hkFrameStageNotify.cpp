@@ -11,8 +11,6 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_START:
 
-
-
 		break;
 
 	case FRAME_RENDER_END:
@@ -23,11 +21,9 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 		misc::ServerHitboxes();
 
-		if (cfg::misc::removals[1]) {
-			if (g::pLocal)
+		if (cfg::misc::removals[1])
 				*g::pLocal->GetFlashMaxAlpha() = 0.f;
-		}
-
+		
 		misc::NightMode();
 		misc::BulletImpact(nullptr, curStage, true);
 
@@ -73,16 +69,16 @@ void hkPostFrameStageNotify(EStage curStage) {
 
 		break;
 	}
+	//engineprediction->ModifyDatamap();
+
+	//return engineprediction->OnFrameStageNotify(curStage);
 }
 
 void __fastcall h::hkFrameStageNotify(void* ecx, void* edx, EStage curStage) {
 
 	static auto original = detour::frameStageNotify.GetOriginal<decltype(&h::hkFrameStageNotify)>();
 
-	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
-		return original(ecx, edx, curStage);
-
-	if (!g::pLocal)
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal)
 		return original(ecx, edx, curStage);
 
 	hkPreFrameStageNotify(curStage);

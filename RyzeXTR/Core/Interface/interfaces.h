@@ -25,6 +25,7 @@
 #include "Interfaces/IEngineSoundClient.h"
 #include "Interfaces/IViewRenderBeams.h"
 #include "Interfaces/IInputSystem.h"
+#include "Interfaces/IMdlCache.h"
 
 // Classes aka that I can't find as interface in the source kbxdbdxjk
 #include "Classes/CClientState.h"
@@ -62,6 +63,7 @@ namespace i {
 	inline IEngineSoundClient* EngineSoundClient;
 	inline IViewRenderBeams* RenderBeam;
 	inline IInputSystem* InputSystem;
+	inline IMDLCache* MDLCache;
 
 	inline IDirect3DDevice9* DirectDevice;
 	inline IMoveHelper* MoveHelper;			// Runcommand parameter 
@@ -89,14 +91,19 @@ namespace i {
 
 			util::Print("Failed to get interface: ", szName);
 			return nullptr;
-		}
+		}		
 
 		using Fn = T * (*)(const char*, int*);
 		const auto StolenFunction = reinterpret_cast<Fn>(funcAddress);
 
-		util::Print("Found Interface: ", szName);
+		auto pBackupValue = StolenFunction(szName, nullptr);
 
-		return StolenFunction(szName, nullptr);
+		if (pBackupValue)
+			util::Print("Found Interface: ", szName);
+		else
+			util::Print("Failed to get interface: ", szName);
+
+		return pBackupValue;
 	}
 
 	void SetupInterfaces();

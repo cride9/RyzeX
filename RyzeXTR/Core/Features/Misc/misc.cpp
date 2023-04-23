@@ -35,13 +35,30 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
 void misc::EventHandler(IGameEvent* pEvent) {
 
+	CheatLog(pEvent);
 	PreserveKillfeed(pEvent);
-	BuyBot(pEvent);
-	BulletImpact(pEvent, FRAME_UNDEFINED, false );
-	BulletTracer(pEvent);
-	HandlePlayerHitEffects( pEvent );
-	WalkBotHandler(pEvent);
-	WorldCrosshairHandler(pEvent);
+	if (!strcmp(pEvent->GetName(), "player_hurt")) {
+		HandlePlayerHitEffects(pEvent);
+		CapsuleHandler(pEvent, 0);
+	}
+	if (!strcmp(pEvent->GetName(), "player_death")) {
+		CapsuleHandler(pEvent, 1);
+	}
+	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+		WorldCrosshairHandler(pEvent);
+		BulletImpact(pEvent, FRAME_UNDEFINED, false);
+		BulletTracer(pEvent);
+	}
+	if (!strcmp(pEvent->GetName(), "weapon_fire")) {
+
+	}
+	if (!strcmp(pEvent->GetName(), "round_start")) {
+		BuyBot(pEvent);
+		WalkBotHandler(pEvent);
+	}
+	if (!strcmp(pEvent->GetName(), "item_purchase")) {
+
+	}
 }
 
 CBaseEntity* UTIL_PlayerByIndex(int index)
@@ -294,27 +311,24 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) 
 
 	if (pEvent != nullptr && bFrameStage == false ) {
 
-		if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 
-			auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		if (iUser != g::pLocal->EntIndex())
+			return;
 
-			if (iUser != g::pLocal->EntIndex())
-				return;
+		Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
 
-			Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
-
-			i::DebugOverlay->AddBoxOverlay(
-				vecImpact,
-				Vector(-2.0f, -2.0f, -2.0f),
-				Vector(2.0f, 2.0f, 2.0f),
-				Vector(0.0f, 0.0f, 0.0f),
-				0.f,
-				0.f,
-				255.f,
-				127.f,
-				4.f
-			);
-		}
+		i::DebugOverlay->AddBoxOverlay(
+			vecImpact,
+			Vector(-2.0f, -2.0f, -2.0f),
+			Vector(2.0f, 2.0f, 2.0f),
+			Vector(0.0f, 0.0f, 0.0f),
+			0.f,
+			0.f,
+			255.f,
+			127.f,
+			4.f
+		);
 	}
 
 	if ( curStage == FRAME_RENDER_START && bFrameStage == true ) {
@@ -345,129 +359,121 @@ void misc::BuyBot(IGameEvent* event) { // need menu element
 	if (!cfg::misc::autobuyEnabled)
 		return;
 
-	if (!strcmp(event->GetName(), "round_start")) {
+	std::string buy = "";
 
-		std::string buy = "";
+	switch (cfg::misc::pistols) {
 
-		switch (cfg::misc::pistols) {
-
-		case 1: buy += "buy glock;buy usp_silencer;buy hkp2000;"; break;
-		case 2: buy += "buy elite;"; break;
-		case 3: buy += "buy p250;"; break;
-		case 4: buy += "buy cz75a;buy fiveseven; buy tec9;"; break;
-		case 5: buy += "buy deagle;buy revolver;"; break;
-		}
-		switch (cfg::misc::snipers) {
-
-		case 1: buy += "buy ssg08;"; break;
-		case 2: buy += "buy awp;"; break;
-		case 3: buy += "buy scar20;buy g3sg1;"; break;
-		}
-
-		if (cfg::misc::equipments[0])
-			buy += "buy vesthelm;";
-
-		if (cfg::misc::equipments[1])
-			buy += "buy taser;";
-
-		if (cfg::misc::equipments[2])
-			buy += "buy defuser;";
-
-		if (cfg::misc::grenades[0])
-			buy += "buy molotov;buy incgrenade;";
-
-		if (cfg::misc::grenades[1])
-			buy += "buy decoy;";
-
-		if (cfg::misc::grenades[2])
-			buy += "buy flashbang;";
-
-		if (cfg::misc::grenades[3])
-			buy += "buy hegrenade;";
-
-		if (cfg::misc::grenades[4])
-			buy += "buy smokegrenade;";
-
-		i::EngineClient->ExecuteClientCmd(buy.c_str());
-
-		bResetNightMode = true;
+	case 1: buy += "buy glock;buy usp_silencer;buy hkp2000;"; break;
+	case 2: buy += "buy elite;"; break;
+	case 3: buy += "buy p250;"; break;
+	case 4: buy += "buy cz75a;buy fiveseven; buy tec9;"; break;
+	case 5: buy += "buy deagle;buy revolver;"; break;
 	}
+	switch (cfg::misc::snipers) {
+
+	case 1: buy += "buy ssg08;"; break;
+	case 2: buy += "buy awp;"; break;
+	case 3: buy += "buy scar20;buy g3sg1;"; break;
+	}
+
+	if (cfg::misc::equipments[0])
+		buy += "buy vesthelm;";
+
+	if (cfg::misc::equipments[1])
+		buy += "buy taser;";
+
+	if (cfg::misc::equipments[2])
+		buy += "buy defuser;";
+
+	if (cfg::misc::grenades[0])
+		buy += "buy molotov;buy incgrenade;";
+
+	if (cfg::misc::grenades[1])
+		buy += "buy decoy;";
+
+	if (cfg::misc::grenades[2])
+		buy += "buy flashbang;";
+
+	if (cfg::misc::grenades[3])
+		buy += "buy hegrenade;";
+
+	if (cfg::misc::grenades[4])
+		buy += "buy smokegrenade;";
+
+	i::EngineClient->ExecuteClientCmd(buy.c_str());
 }
 
 void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
-	if ( !strcmp( pEvent->GetName( ), "player_hurt" ) ) {
+	IClientEntity* pAttacker = i::EntityList->GetClientEntity( i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "attacker" ) ) );
 
-		IClientEntity* pAttacker = i::EntityList->GetClientEntity( i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "attacker" ) ) );
+	if ( !pAttacker || pAttacker != g::pLocal )
+		return;
 
-		if ( !pAttacker || pAttacker != g::pLocal )
+	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity( i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) ) ) );
+
+	if ( !pEntity || pEntity == g::pLocal )
+		return;
+
+	// TODO: Add effects interface for cool hit effects :D
+	/*if ( C::Get<bool>( Vars.bScreenHitEffects ) )
+	{
+		std::optional<Vector> vecPosition;
+		vecPosition = pEntity->GetHitGroupPosition( pEvent->GetInt( "hitgroup" ) );
+
+		if ( !vecPosition.has_value( ) )
 			return;
 
-		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity( i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) ) ) );
-
-		if ( !pEntity || pEntity == g::pLocal )
-			return;
-
-		// TODO: Add effects interface for cool hit effects :D
-		/*if ( C::Get<bool>( Vars.bScreenHitEffects ) )
+		switch ( C::Get<int>( Vars.iScreenHitEffects ) )
 		{
-			std::optional<Vector> vecPosition;
-			vecPosition = pEntity->GetHitGroupPosition( pEvent->GetInt( "hitgroup" ) );
-
-			if ( !vecPosition.has_value( ) )
-				return;
-
-			switch ( C::Get<int>( Vars.iScreenHitEffects ) )
-			{
-			case 0:
-				i::Effects->Sparks( vecPosition.value( ), 10, 10 );
-				break;
-			case 1:
-				i::Effects->Smoke( vecPosition.value( ), 1, 10.f, 60.f );
-				break;
-			case 2:
-				i::Effects->EnergySplash( vecPosition.value( ), vecPosition.value( ) + 50, true );
-				break;
-			}
-		}*/
-
-		// play hit sound
-		if ( cfg::misc::m_iHitSound == 1 ) {
-			i::EngineSoundClient->EmitAmbientSound( "buttons\\arena_switch_press_02.wav", cfg::misc::m_flHitSoundVolume / 100.f );
-			// physics\\metal\\paintcan_impact_hard3.wav
+		case 0:
+			i::Effects->Sparks( vecPosition.value( ), 10, 10 );
+			break;
+		case 1:
+			i::Effects->Smoke( vecPosition.value( ), 1, 10.f, 60.f );
+			break;
+		case 2:
+			i::Effects->EnergySplash( vecPosition.value( ), vecPosition.value( ) + 50, true );
+			break;
 		}
-		else if ( cfg::misc::m_iHitSound == 2 && !cfg::misc::m_szWavPath.empty( ) ) {
+	}*/
 
-			static bool m_bNeedsUpdate = true;
-			static float m_flOldVolume = 0.f;
-			static std::string m_szOldWavPath;
-			// store the parsed hitsound bytes to a dummy byte.
-			static BYTE* m_pParsedHitsound;
+	// play hit sound
+	if ( cfg::misc::m_iHitSound == 1 ) {
+		i::EngineSoundClient->EmitAmbientSound( "buttons\\arena_switch_press_02.wav", cfg::misc::m_flHitSoundVolume / 100.f );
+		// physics\\metal\\paintcan_impact_hard3.wav
+	}
+	else if ( cfg::misc::m_iHitSound == 2 && !cfg::misc::m_szWavPath.empty( ) ) {
 
-			// read the .wav file into memory.
-			BYTE* m_pSoundBytes = util::ReadWavFileIntoMemory( cfg::misc::m_szWavPath );
+		static bool m_bNeedsUpdate = true;
+		static float m_flOldVolume = 0.f;
+		static std::string m_szOldWavPath;
+		// store the parsed hitsound bytes to a dummy byte.
+		static BYTE* m_pParsedHitsound;
 
-			if ( cfg::misc::m_flHitSoundVolume != m_flOldVolume || m_szOldWavPath != cfg::misc::m_szWavPath )
-				m_bNeedsUpdate = true;
+		// read the .wav file into memory.
+		BYTE* m_pSoundBytes = util::ReadWavFileIntoMemory( cfg::misc::m_szWavPath );
 
-			if ( m_bNeedsUpdate )
-			{
-				m_szOldWavPath = cfg::misc::m_szWavPath;
-				m_flOldVolume = cfg::misc::m_flHitSoundVolume;
-				m_bNeedsUpdate = false;
+		if ( cfg::misc::m_flHitSoundVolume != m_flOldVolume || m_szOldWavPath != cfg::misc::m_szWavPath )
+			m_bNeedsUpdate = true;
 
-				// adjust the hitsound volume.
-				m_pParsedHitsound = m_pSoundBytes;
+		if ( m_bNeedsUpdate )
+		{
+			m_szOldWavPath = cfg::misc::m_szWavPath;
+			m_flOldVolume = cfg::misc::m_flHitSoundVolume;
+			m_bNeedsUpdate = false;
 
-				CWavParser::WavHeader_t header;
-				header.ParseWavHeader( m_pParsedHitsound );
-				wavparser.AdjustWavVolume( header, ( cfg::misc::m_flHitSoundVolume / 200.f ) );
-			}
-			// play the sound.
-			if ( m_pParsedHitsound ) {
+			// adjust the hitsound volume.
+			m_pParsedHitsound = m_pSoundBytes;
 
-				PlaySoundA( LPCSTR( m_pParsedHitsound ), NULL, SND_MEMORY | SND_ASYNC );
-			}
+			CWavParser::WavHeader_t header;
+			header.ParseWavHeader( m_pParsedHitsound );
+			wavparser.AdjustWavVolume( header, ( cfg::misc::m_flHitSoundVolume / 200.f ) );
+		}
+		// play the sound.
+		if ( m_pParsedHitsound ) {
+
+			PlaySoundA( LPCSTR( m_pParsedHitsound ), NULL, SND_MEMORY | SND_ASYNC );
 		}
 	}
 }
@@ -985,17 +991,14 @@ void misc::BulletTracer(IGameEvent* pEvent) {
 		return;
 
 	/* Get this once, so the beams won't deform bcs of multiple impact -> multiple position */
-	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+	auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 
-		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	if (iUser != i::EngineClient->GetLocalPlayer())
+		return;
 
-		if (iUser != i::EngineClient->GetLocalPlayer())
-			return;
+	Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
 
-		Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
-
-		DrawBream(vecEyePosition, vecImpact, cfg::misc::bulletTracerColor);
-	}
+	DrawBream(vecEyePosition, vecImpact, cfg::misc::bulletTracerColor);
 }
 
 void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
@@ -1003,22 +1006,19 @@ void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bWorldCrosshair)
 		return;
 
-	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+	auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 
-		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	if (iUser != g::pLocal->EntIndex())
+		return;
 
-		if (iUser != g::pLocal->EntIndex())
-			return;
+	static int i = 0;
 
-		static int i = 0;
-
-		cfg::misc::flWorldCrosshairColor[3] = 1.f;
-		visual::flWorldCrosshairLength[i] = i::GlobalVars->flCurrentTime;
-		visual::vecWorldCrosshair[i] = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
-		i++;
-		if (i >= 5)
-			i = 0;
-	}
+	cfg::misc::flWorldCrosshairColor[3] = 1.f;
+	visual::flWorldCrosshairLength[i] = i::GlobalVars->flCurrentTime;
+	visual::vecWorldCrosshair[i] = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+	i++;
+	if (i >= 5)
+		i = 0;
 }
 
 void misc::FixScopeSens() {
@@ -1032,12 +1032,12 @@ void misc::FixScopeSens() {
 		zoom_sensitivity_ratio_mouse->SetValue(backup);
 	}
 
-	if (!g::pLocal->IsScoped() || i::EngineClient->IsInGame()) {
+	if (!g::pLocal->IsScoped() || !i::EngineClient->IsInGame()) {
 		zoom_sensitivity_ratio_mouse->SetValue(backup);
 		return;
 	}
 
-	if (zoom_sensitivity_ratio_mouse->GetFloat() != 0 && backup != zoom_sensitivity_ratio_mouse->GetFloat())
+	if (g::pLocal->IsScoped() && zoom_sensitivity_ratio_mouse->GetFloat() != 0 && backup != zoom_sensitivity_ratio_mouse->GetFloat())
 		backup = zoom_sensitivity_ratio_mouse->GetFloat();
 
 	zoom_sensitivity_ratio_mouse->SetValue(g::pLocal->IsScoped() ? cfg::misc::removals[3] ? 0 : backup : backup);
@@ -1189,9 +1189,9 @@ void misc::WalkBot(CUserCmd* pCmd) {
 		while (AIVizualization.size() >= 32)
 			AIVizualization.pop_back();
 	}
-	else {
-		TraceRayBot(pCmd);
-	}
+	//else {
+	//	TraceRayBot(pCmd);
+	//}
 }
 
 void TraceRayBot(CUserCmd* pCmd) // wip
@@ -1307,16 +1307,6 @@ void TraceRayBot(CUserCmd* pCmd) // wip
 }
 
 void misc::MoveToPosition(Vector& vecPosition) {
-
-	//Vector vecOriginDelta = vecPosition - g::pLocal->GetAbsOrigin();
-
-	//auto deg2rad = M_DEG2RAD(M::NormalizeAngle(g::pCmd->angViewPoint.y));
-
-	//auto flSideMove = ((cos(deg2rad) * -vecOriginDelta.y) + (sin(deg2rad) * vecOriginDelta.x));
-	//auto flForwardMove = ((sin(deg2rad) * vecOriginDelta.y) + (cos(deg2rad) * vecOriginDelta.x));
-
-	//g::pCmd->flSideMove = std::clamp(flSideMove, -450.f, 450.f);
-	//g::pCmd->flForwardMove = std::clamp(flForwardMove, -450.f, 450.f);
 
 	Vector vecMoveDirection;
 	M::VectorAngles(vecPosition - g::pLocal->GetEyePosition(), vecMoveDirection);
@@ -1478,6 +1468,142 @@ void misc::ClanTag() {
 		}
 	}
 	flTime = iMainTime;
+}
+
+void misc::CapsuleHandler(IGameEvent* pEvent, int iCall) {
+
+	if (!g::pLocal || !cfg::misc::bDrawCapsule)
+		return;
+
+	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+	int iHitgroup = pEvent->GetInt("hitgroup");
+	if (int iLocalIndex = i::EngineClient->GetLocalPlayer(); iUserID != iLocalIndex && iAttacker == iLocalIndex) {
+		if (iCall) 
+			CapsuleOnHit(iUserID, iHitgroup, Color(cfg::misc::flDrawCapsuleColor), 3.f);
+		else 
+			CapsuleOnHit(iUserID, iHitgroup, Color(cfg::misc::flDrawCapsuleColor), 3.f);
+	}
+}
+
+void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDuration) {
+
+	if (pEntity >= 64 || pEntity < 1)
+		return;
+
+	auto pLog = &lagcomp.GetLog(pEntity);
+	if (!pLog->pEntity || pLog->pRecord.empty()) 
+		return;
+	
+	const auto pModel = pLog->pEntity->GetModel();
+	if (!pModel)
+		return;
+
+	studiohdr_t* pStudioModel = i::ModelInfo->GetStudioModel(pModel);
+	if (!pStudioModel)
+		return;
+
+	for (size_t i = 0; i < pStudioModel->nBones; i++) {
+
+		mstudiobbox_t* pHitbox = pStudioModel->GetHitbox(i, 0);
+		if (!pHitbox)
+			continue;
+
+		Vector vMin, vMax;
+		vMin = M::VectorTransform(pHitbox->vecBBMin, pLog->pRecord.front().pMatrix[pHitbox->iBone]);
+		vMax = M::VectorTransform(pHitbox->vecBBMax, pLog->pRecord.front().pMatrix[pHitbox->iBone]);
+
+		if (pHitbox->flRadius > -1) {
+			if (pHitbox->iGroup == iHitgroup) 
+				i::DebugOverlay->AddCapsuleOverlay(vMin, vMax, pHitbox->flRadius, Color(cfg::misc::flDrawCapsuleColorHit), flDuration);
+			else
+				i::DebugOverlay->AddCapsuleOverlay(vMin, vMax, pHitbox->flRadius, arrColor, flDuration);
+		}
+	}
+}
+
+std::string GetHitgroupName(int iHitgroup) {
+
+	switch (iHitgroup)
+	{
+	case HITGROUP_GENERIC:
+		return "Generic";
+	case HITGROUP_HEAD:
+		return "Head";
+	case HITGROUP_CHEST:
+		return "Chest";
+	case HITGROUP_STOMACH:
+		return "Stomach";
+	case HITGROUP_LEFTARM:
+		return "Left arm";
+	case HITGROUP_RIGHTARM:
+		return "Right arm";
+	case HITGROUP_LEFTLEG:
+		return "Left lef";
+	case HITGROUP_RIGHTLEG:
+		return "Right leg";
+	case HITGROUP_NECK:
+		return "Neck";
+	case HITGROUP_GEAR:
+		return "Gear";
+	}
+}
+void misc::CheatLog(IGameEvent* pEvent) {
+
+	if (!strcmp(pEvent->GetName(), "player_death")) {
+
+		int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+		int iHitgroup = pEvent->GetInt("hitgroup");
+
+		CBaseEntity* pHitEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iUserID));
+		CBaseEntity* pAttackEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iAttacker));
+
+		if (pAttackEntity == g::pLocal) {
+
+			std::string szOutput = "";
+			PlayerInfo_t info = pHitEntity->GetPlayerInfo();
+
+			szOutput += "Hit ";
+			szOutput += info.szName;
+			szOutput += " in the ";
+			szOutput += GetHitgroupName(iHitgroup);
+			szOutput += " (0 health remaining)\n";
+
+			util::LogConsole(szOutput.c_str());
+		}
+	}
+	else if (!strcmp(pEvent->GetName(), "player_hurt")) {
+
+		int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+		int iHitgroup = pEvent->GetInt("hitgroup");
+		int iRemainingHealth = pEvent->GetInt("health");
+		int iRemainingKevlar = pEvent->GetInt("armor");
+		int iDamageHealth = pEvent->GetInt("dmg_health");
+		int iDamageKevlar = pEvent->GetInt("dmg_armor");
+
+		CBaseEntity* pHitEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iUserID));
+		CBaseEntity* pAttackEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iAttacker));
+
+		if (pAttackEntity == g::pLocal && pAttackEntity->IsAlive()) {
+
+			std::string szOutput = "";
+			PlayerInfo_t info = pHitEntity->GetPlayerInfo();
+
+			szOutput += "Hit ";
+			szOutput += info.szName;
+			szOutput += " in the ";
+			szOutput += GetHitgroupName(iHitgroup);
+			szOutput += " for ";
+			szOutput += iDamageHealth;
+			szOutput += " (";
+			szOutput += iRemainingHealth;
+			szOutput += " health remaining)\n";
+
+			util::LogConsole(szOutput.c_str());
+		}
+	}
 }
 
 //void misc::CustomBombText(const char* szText) {

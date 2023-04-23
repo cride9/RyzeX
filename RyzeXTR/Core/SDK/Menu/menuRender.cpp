@@ -216,7 +216,7 @@ void menu::Antiaimtab() noexcept {
         fakelagmax = std::clamp(fakelagmax, fakelagmin, fakelag);
         ImGui::Checkbox("Enabled", &enableFakelag);
         ImGui::Combo("Choke type", &fakelagType, fakelagTypeList, IM_ARRAYSIZE(fakelagTypeList));
-        ImGui::SliderInt("Base amount", &fakelag, 0, 15);
+        ImGui::SliderInt("Base amount", &fakelag, 0, 14);
         ImGui::SliderInt("Minimum choke", &fakelagmin, 0, fakelag);
         ImGui::SliderInt("Maximum choke", &fakelagmax, fakelagmin, fakelag);
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
@@ -393,7 +393,10 @@ void menu::Visualtab() noexcept {
         {
             ImGui::Checkbox("Show impact", &bulletImpact);
             ImGui::Checkbox( "Bullet tracer", &bulletTracer );
-            ImGui::ColorEdit4( "##tracerColor", bulletTracerColor );
+			ImGui::ColorEdit4("##tracerColor", bulletTracerColor);
+			ImGui::Checkbox("Draw capsule", &bDrawCapsule);
+			ImGui::ColorEdit4("##capsuleCOlor", flDrawCapsuleColor, true);
+			ImGui::ColorEdit4("##capsuleColorHit", flDrawCapsuleColorHit);
 			ImGui::Checkbox("World hitmarker", &cfg::misc::bWorldCrosshair);
 			ImGui::ColorEdit4("##hitmarkercolor", cfg::misc::flWorldCrosshairColor);
             ImGui::Combo( "Hitsound", &m_iHitSound, m_szHitsound, IM_ARRAYSIZE( m_szHitsound ) );
@@ -1046,7 +1049,7 @@ void menu::KeyBindList() noexcept {
                 ImGui::Text("Slow motion [ON]");
                 height += 20;
             }
-            if (GetAsyncKeyState(cfg::rage::forceBaimKey) && cfg::rage::forceBaim) {
+            if (GetKeyState(cfg::rage::forceBaimKey) && cfg::rage::forceBaim) {
                 ImGui::Text("Force baim [ON]");
                 height += 20;
             }

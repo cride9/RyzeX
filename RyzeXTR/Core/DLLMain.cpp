@@ -11,6 +11,8 @@
 #include "globals.h"
 #include "SDK/math.h"
 #include "SDK/Menu/config.h"
+#include <mmsystem.h>
+#include "memeSounds.h"
 DWORD WINAPI CheatThread(PVOID);
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
@@ -72,11 +74,11 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	i::SetupInterfaces();
 	SetupFonts();
 	n::SetupNetvars();
+	PlaySound(reinterpret_cast<LPCSTR>(memeSound::BUWAWA), NULL, SND_MEMORY | SND_ASYNC);
 	menu::Setup();
 	M::Setup();
 	h::SetupHooks();
 	g::entityListener.Setup();
-
 #if _DEBUG
 
 	while (!GetAsyncKeyState(VK_DELETE))

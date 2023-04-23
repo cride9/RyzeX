@@ -6,14 +6,11 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 
 	static auto original = detour::interpolateEntites.GetOriginal<decltype(&h::hkInterpolateServerEntites)>();
 
-	if (!g::pLocal || !i::EngineClient->IsInGame() || !g::pLocal->IsAlive())
-		return original(ecx, edx);
-
-	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+	if (!g::pLocal || i::ClientState->iSignonState != SIGNONSTATE_FULL)
 		return original(ecx, edx);
 
 	original(ecx, edx);
 
-	anims.InterpolateMatricies();
+	//anims.InterpolateMatricies();
 	g_LocalAnimations->InterpolateMatricies();
 }

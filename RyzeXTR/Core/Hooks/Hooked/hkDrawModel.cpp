@@ -7,7 +7,7 @@ void __fastcall h::hkDrawModel(IStudioRender* thisptr, int edx, DrawModelResults
 
 	static auto original = detour::drawModel.GetOriginal<decltype(&h::hkDrawModel)>();
 
-	if (!i::EngineClient->IsInGame())
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
 		return original(thisptr, edx, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 	bool bClearOverride = false;
@@ -15,7 +15,6 @@ void __fastcall h::hkDrawModel(IStudioRender* thisptr, int edx, DrawModelResults
 	if (g::pLocal) {
 
 		bClearOverride = chams::DrawChams(g::pLocal, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	
 		misc::RemoveSmoke();
 	}
 

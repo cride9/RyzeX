@@ -3,6 +3,13 @@
 #include "../exploits.h"
 #include "../../Networking/networking.h"
 
+void Lagcompensation::SetupPlayerBones(CBaseEntity* pPlayer, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* Matrix, int nFlags) {
+
+	g::bSettingUpBones[pPlayer->EntIndex()] = std::make_tuple(true, nFlags);
+	pPlayer->SetupBones(Matrix, 128, nFlags, 0.f);
+	g::bSettingUpBones[pPlayer->EntIndex()] = std::make_tuple(false, 0);
+}
+
 Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* pEntity )
 {
 	CBaseCombatWeapon* pWeapon = pEntity->GetWeapon( );
@@ -95,27 +102,24 @@ void Lagcompensation::FrameStageNotify() {
 	for ( int i = 1; i <= i::GlobalVars->nMaxClients; i++ )
 	{
 		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>( i::EntityList->GetClientEntity( i ) );
-
-		auto pCurrentLog = &pPlayerLogs[i];
+		Lagcompensation::AnimationInfo_t* pCurrentLog = &pPlayerLogs[i];
 
 		// check if nullptr.
-		if ( !pEntity )
-		{
+		if ( !pEntity ) {
 			pCurrentLog->pRecord.clear( );
 			continue;
 		}
 
 		// update entity ptr if required.
 		// reset entity if changed.
-		if ( pCurrentLog->pEntity != pEntity )
-			pCurrentLog->pRecord.clear( );
+		if (pCurrentLog->pEntity != pEntity) {
 
-		// update entity ptr.
-		pCurrentLog->pEntity = pEntity;
+			pCurrentLog->pRecord.clear();
+			pCurrentLog->pEntity = pEntity;
+		}
 
 		// check if nullptr, etc.
-		if ( !pCurrentLog->pEntity || pCurrentLog->pEntity->EntIndex() == g::pLocal->EntIndex() || !pCurrentLog->pEntity->IsPlayer( ) )
-		{
+		if (pCurrentLog->pEntity->EntIndex() == g::pLocal->EntIndex()) {
 			pCurrentLog->pRecord.clear( );
 			continue;
 		}
@@ -125,8 +129,8 @@ void Lagcompensation::FrameStageNotify() {
 			pCurrentLog->pRecord.pop_back( );
 
 		// if this happens, delete all the animation.
-		if ( !pCurrentLog->pEntity->IsAlive( ) )
-		{
+		if ( !pCurrentLog->pEntity->IsAlive( ) ) {
+
 			pCurrentLog->pEntity->IsClientSideAnimation( ) = g::bAllowAnimations[ pCurrentLog->pEntity->EntIndex( ) ] = true;
 			pCurrentLog->pRecord.clear( );
 			continue;
@@ -142,13 +146,13 @@ void Lagcompensation::FrameStageNotify() {
 		// indicate that this entity has been out of pvs.
 		// insert dummy record to separate records
 		// to fix stuff like lag record and pPrediction.
-		if ( pCurrentLog->pEntity->IsDormant( ) )
-		{
+		if ( pCurrentLog->pEntity->IsDormant( ) ) {
+
 			bool bInsert = true;
 
 			// we have any records already?
-			if ( !pCurrentLog->pRecord.empty( ) )
-			{
+			if ( !pCurrentLog->pRecord.empty( ) ) {
+
 				Lagcompensation::LagRecord_t& iFront = pCurrentLog->pRecord.front( );
 
 				// we already have a dormancy separator.
@@ -156,8 +160,7 @@ void Lagcompensation::FrameStageNotify() {
 					bInsert = false;
 			}
 
-			if ( bInsert )
-			{
+			if ( bInsert ) {
 				// add new record.
 				pCurrentLog->pRecord.push_front( Lagcompensation::LagRecord_t( pCurrentLog->pEntity ) );
 
@@ -197,14 +200,7 @@ void Lagcompensation::FrameStageNotify() {
 			// set animation layers.
 			pCurrentLog->pEntity->SetAnimationLayers( pBackupRecord.pLayers );
 
-			// create bone matrix for this pRecord.
-			g::bSettingUpBones[i] = std::make_tuple(true, EMatrixFlags::Interpolated | EMatrixFlags::VisualAdjustment);
-			pCurrentLog->pEntity->SetupBones(pCurrentRecord->pVisualMatrix, 128, 0, i::GlobalVars->flCurrentTime);
-
-			g::bSettingUpBones[i] = std::make_tuple(true, EMatrixFlags::BoneUsedByHitbox);
-			pCurrentLog->pEntity->SetupBones(pCurrentRecord->pMatrix, 128, 4, i::GlobalVars->flCurrentTime);
-
-			g::bSettingUpBones[i] = std::make_tuple(false, 0);
+			SetupPlayerBones(pCurrentLog->pEntity, pCurrentRecord, pCurrentRecord->pMatrix, EMatrixFlags::VisualAdjustment);
 
 			// restore correctly synced values.
 			pBackupRecord.Restore( pCurrentLog->pEntity );
@@ -316,9 +312,9 @@ bool Lagcompensation::IsBreakingLagcompensation( Lagcompensation::LagRecord_t* p
 		Vector delta = pRecord.vecOrigin - previousOrigin;
 		if ( delta.LengthSqr( ) > LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR )
 		{
-			ExtrapolatePlayer( pRecord.pEntity, &pRecord, pPrevious );
+			//ExtrapolatePlayer( pRecord.pEntity, &pRecord, pPrevious );
 
-			Vector m_vecAbsOrigin = pRecord.pEntity->GetAbsOrigin( );
+			//Vector m_vecAbsOrigin = pRecord.pEntity->GetAbsOrigin( );
 			//L::PushConsoleColor( FOREGROUND_RED );
 			//L::Print( XorStr( "Lagcomp: client [{:d}] teleported, not lag compensating!" ), pRecord.pEntity->EntIndex( ) );
 			//L::Print( XorStr( "Current Origin: [{:f}] [{:f}] [{:f}]" ), m_vecAbsOrigin.x, m_vecAbsOrigin.y, m_vecAbsOrigin.z );
@@ -376,7 +372,7 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 	{
 		for ( ; delta_ticks >= 0; delta_ticks -= iSimulationTickDelta )
 		{
-			auto ticks_left = iSimulationTickDelta;
+			auto ticks_left = std::clamp(iSimulationTickDelta, 0, 16);
 			do
 			{
 				Trace_t      trace;

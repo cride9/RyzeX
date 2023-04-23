@@ -67,7 +67,7 @@ struct AnimationRecord_t
 class C_LocalAnimations
 {
 public:
-	virtual void OnCreateMove();
+	virtual void OnCreateMove(bool& bSendPacket);
 	virtual void BeforePrediction();
 	virtual void StoreAnimationRecord();
 	virtual void ModifyEyePosition(Vector& vecInputEyePos, matrix3x4_t* aMatrix);

@@ -12,33 +12,30 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 	misc::EventHandler(pEvent);
 	anims.ResolverHandler(pEvent);
 
-	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
-		return;
+	//auto pEventInfo = i::ClientState->pEvents; //0x4E6C
+	//CEventInfo* pNextEvent = nullptr;
 
-	auto pEventInfo = i::ClientState->pEvents; //0x4E6C
-	CEventInfo* pNextEvent = nullptr;
+	//if ( !pEventInfo )
+	//	return;
 
-	if ( !pEventInfo )
-		return;
+	//do
+	//{
+	//	pNextEvent = pEventInfo->pNext;
 
-	do
-	{
-		pNextEvent = pEventInfo->pNext;
+	//	const uint16_t class_id = pEventInfo->iClassID - 1;
 
-		const uint16_t class_id = pEventInfo->iClassID - 1;
+	//	const auto m_p_create_event_fn = pEventInfo->pClientClass->pCreateEventFn;
+	//	if ( !m_p_create_event_fn )
+	//		continue;
 
-		const auto m_p_create_event_fn = pEventInfo->pClientClass->pCreateEventFn;
-		if ( !m_p_create_event_fn )
-			continue;
+	//	const auto p_ce = m_p_create_event_fn( );
+	//	if ( !p_ce )
+	//		continue;
 
-		const auto p_ce = m_p_create_event_fn( );
-		if ( !p_ce )
-			continue;
+	//	pEventInfo->flFireDelay = 0.f;
 
-		pEventInfo->flFireDelay = 0.f;
-
-		pEventInfo = pNextEvent;
-	} while ( pNextEvent != nullptr );
+	//	pEventInfo = pNextEvent;
+	//} while ( pNextEvent != nullptr );
 }
 
 bool __fastcall h::hkFireEvent( void* ecx, void* edx, IGameEvent* m_pEvent )

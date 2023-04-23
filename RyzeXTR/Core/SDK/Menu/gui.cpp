@@ -3,13 +3,20 @@
 #include "../../globals.h"
 #include "config.h"
 #include <string>
+#include "../../memeSounds.h"
+#include "../../SDK/math.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK WindowProcess(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
-	if (GetAsyncKeyState(VK_INSERT) & 1)
+	if (GetAsyncKeyState(VK_INSERT) & 1) {
+
 		menu::open = !menu::open;
+		//if (menu::open)
+		//	PlaySound(reinterpret_cast<LPCSTR>(M::RandomInt(0, 1) == 0 ? memeSound::BUWAWA : memeSound::MISERY), NULL, SND_MEMORY | SND_ASYNC);
+	}
+		
 
 	if (menu::open && ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) {
 

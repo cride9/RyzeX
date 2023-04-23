@@ -31,17 +31,17 @@ void h::SetupHooks() {
 	HookTable(detour::getViewmodelFov, i::ClientMode, table::getViewmodelFov, &hkGetViewModelFov);
 	//HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
-	HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
+	//HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
 	//HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
 	
 	// Signature hooks
-	HookSignature(detour::clMove, "engine.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8A F9", &hkClMove);
+	//HookSignature(detour::clMove, "engine.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8A F9", &hkClMove);
 	HookSignature(detour::buildTransform, "client.dll", "55 8B EC 83 E4 F0 81 ? ? ? ? ? 56 57 8B F9 8B ? ? ? ? ? 89 7C 24 28", &hkBuildTransformation);
 	HookSignature(detour::calculateView, "client.dll", "55 8B EC 83 EC 14 53 56 57 FF 75 18", &hkCalculateView);
 	HookSignature(detour::sequenceChange, "client.dll", "55 8B EC 51 53 8B 5D 08 56 8B F1 57 85", &hkCheckForSequenceChange);
 	//HookSignature(detour::procedrualFoot, "client.dll", "55 8B EC 83 E4 F0 83 EC 78 56 8B F1 57 8B", &hkDoProceduralFootPlant);
-	HookSignature(detour::isHltv, "engine.dll", "A1 ? ? ? ? 80 ? ? ? ? ? ? 75 0C", &hkIsHltv);
+	//HookSignature(detour::isHltv, "engine.dll", "A1 ? ? ? ? 80 ? ? ? ? ? ? 75 0C", &hkIsHltv);
 	HookSignature(detour::modifyEyePosition, "client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 14", &hkModifyEyePosition);
 	HookSignature(detour::skipAnimation, "client.dll", "57 8B F9 8B 07 8B 80 ? ? ? ? FF D0 84 C0 75 02", &hkShouldSkipAnimationFrame);
 	HookSignature(detour::blendingRules, "client.dll", "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 8B 75 08 57 8B F9 85 F6", &hkStandardBlendingRules);
@@ -54,12 +54,56 @@ void h::SetupHooks() {
 	HookSignature(detour::drawViewmodel, "client.dll", "55 8B EC 51 57 E8", hkShouldDrawViewmodel);
 	//HookSignature(detour::emitSound, "client.dll", "8D 8F ? ? ? ? F3 0F 10 84 24 ? ? ? ? 50", &hkEmitSound, 0x2);
 	HookSignature(detour::isFollowingEntity, "client.dll", "F6 ? ? ? ? ? ? 74 31 80", &hkIsFollowingEntity);
+	HookSignature(detour::playerMove, "client.dll", "55 8B EC 83 EC 08 56 8B F1 8B 8E 54 0E 00 00 E8", &hkPlayerMove);
+	// ( "client.dll" ), _S( "55 8B EC 83 EC 08 56 8B F1 8B 8E 54 0E 00 00 E8" )
 
 	menu::DestroyDirectX();
 
 	util::LogConsole("Hooks Initialized!\n", Color(255, 255, 255));
 
 	util::Print("Hooks initialized!");
+}
+
+void h::HookNetChannel(INetChannel* pNetChannel) {
+
+	// netchannel pointer
+	if (!pNetChannel)
+		return;
+
+	// @note: doesnt need rehook cuz detours here
+	if (pNetChannel != nullptr)
+	{
+		if (!detour::processPacket.IsHooked())
+			h::HookTable(detour::processPacket, pNetChannel, table::processPacket, &h::hkProcessPacket);
+
+		if (!detour::sendNetMsg.IsHooked())
+			h::HookTable(detour::sendNetMsg, pNetChannel, table::sendNetMsg, &h::hkSendNetMsg);
+
+		//if ( !detour::setChoked.IsHooked( ) )
+			//h::HookTable(detour::setChoked, pNetChannel, table::setChoked, &h::hkSetChoked);
+
+		if (!detour::sendDatagram.IsHooked())
+			h::HookTable(detour::sendDatagram, pNetChannel, table::sendDatagram, &h::hkSendDatagram);
+	}
+}
+
+void h::HookClientState() {
+
+	static const auto clientStateHookable = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(i::ClientState) + 0x8);
+
+	if (clientStateHookable != nullptr)
+	{
+		// PacketStart Detour
+		if (!detour::packetStart.IsHooked())
+			h::HookTable(detour::packetStart, clientStateHookable, table::packetStart, &h::hkPacketStart);
+
+		// PacketEnd Detour
+		if (!detour::packetEnd.IsHooked())
+			h::HookTable(detour::packetEnd, clientStateHookable, table::packetEnd, &h::hkPacketEnd);
+
+		if (!detour::temptEntities.IsHooked())
+			h::HookTable(detour::temptEntities, clientStateHookable, table::temptEntities, &h::hkTemptEntities);
+	}
 }
 
 void h::DestroyHooks() {

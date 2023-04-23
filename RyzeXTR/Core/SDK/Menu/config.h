@@ -308,6 +308,10 @@ namespace cfg {
 	}
 	namespace misc {
 
+		inline bool bDrawCapsule = false;
+		inline float flDrawCapsuleColor[4] = {1.f, 1.f, 1.f, 1.f};
+		inline float flDrawCapsuleColorHit[4] = { 1.f, 1.f, 1.f, 1.f };
+
 		inline bool keyBindList = false;
 		inline bool bunnyhop = false;
 		inline bool autoStrafe = false;

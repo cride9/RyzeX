@@ -10,11 +10,16 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 	if (cfg::misc::removals[3] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
 
+	/* If we're not connected to a server clear every pointer to not crash */
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL) {
-		g::pLocal = nullptr;
-		if (g::bSendPacket)
-			*g::bSendPacket = true;
+		for (size_t index = 0; index < 65; index++) {
+			if (auto pCurrent = &lagcomp.GetLog(index); !pCurrent->pRecord.empty()) {
+				pCurrent->pRecord.clear();
+				pCurrent->pEntity = nullptr;
+			}
+		}
 
+		g::pLocal = nullptr;
 		ragebot.rageBotData.pAimbotTarget = nullptr;
 	}
 

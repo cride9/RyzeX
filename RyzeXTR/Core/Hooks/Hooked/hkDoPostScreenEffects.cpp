@@ -1,15 +1,15 @@
 #include "../hooks.h"
 #include "../../Features/Visuals/ESP.h"
 
-int __fastcall h::hkDoPostScreenEffect(CClientModeShared* thisptr, int edx, CViewSetup* pSetup) {
+int __fastcall h::hkDoPostScreenEffect(void* thisptr, int edx, CViewSetup* pSetup) {
 
 	static auto original = detour::doPostScreenEffects.GetOriginal<decltype(&h::hkDoPostScreenEffect)>();
 
-	if (!i::EngineClient->IsInGame())
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
 		return original(thisptr, edx, pSetup);
 
-	if (CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer(); pLocal != nullptr)
-		visual::Glow(pLocal);
+	if (g::pLocal)
+		visual::Glow(g::pLocal);
 
 	return original(thisptr, edx, pSetup);
 }

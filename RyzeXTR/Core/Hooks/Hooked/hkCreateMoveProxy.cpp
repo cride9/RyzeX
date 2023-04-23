@@ -28,12 +28,11 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
 
-	g::bSendPacket = &bSendPacket;
+	bSendPacket = true;
 	CBaseEntity* pLocal = g::pLocal = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	g::pCmd = pCmd;
 
-	Vector oldViewAngle = pCmd->angViewPoint;
-	ragebot.rageBotData.vecOldViewAngles = g::vecOriginalViewAngle = oldViewAngle;
+	Vector oldViewAngle = g::vecOriginalViewAngle = pCmd->angViewPoint;
 
 	// for now that is the fix for the menu xddxdx
 	if (pCmd->iButtons & IN_ATTACK && menu::open)
@@ -64,6 +63,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		misc::AutoPistol(pCmd, pLocal);
 		if (pCmd->iButtons & IN_ATTACK)
 			misc::vecEyePosition = pLocal->GetEyePosition();
+		if (ragebot.rageBotData.iTickCount + 3 >= i::GlobalVars->iTickCount)
+			bSendPacket = true;
 	}
 	prediction.End(pCmd, pLocal);
 
@@ -71,45 +72,16 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	misc::MovementFix(pCmd, g::vecOriginalViewAngle);
 
-	// netchannel pointer
 	INetChannel* pNetChannel = i::ClientState->pNetChannel;
 
-	// @note: doesnt need rehook cuz detours here
-	if ( pNetChannel != nullptr )
-	{
-		if ( !detour::processPacket.IsHooked( ) )
-			detour::processPacket.Create( util::GetVFunc( pNetChannel, table::processPacket ), &h::hkProcessPacket );
+	//h::HookNetChannel(pNetChannel);
 
-		if ( !detour::sendNetMsg.IsHooked( ) )
-			detour::sendNetMsg.Create( util::GetVFunc( pNetChannel, table::sendNetMsg ), &h::hkSendNetMsg );
-
-		//if ( !detour::setChoked.IsHooked( ) )
-		//	detour::setChoked.Create( util::GetVFunc( pNetChannel, table::setChoked ), &h::hkSetChoked );
-
-		if ( !detour::sendDatagram.IsHooked( ) )
-			detour::sendDatagram.Create( util::GetVFunc( pNetChannel, table::sendDatagram ), &h::hkSendDatagram );
-	}
-
-	if ( cfg::misc::fakePing )
+	if ( cfg::misc::fakePing && pNetChannel)
 		lagcomp.UpdateIncomingSequences( pNetChannel );
 	else
 		lagcomp.ClearIncomingSequences( );
 
-	static const auto clientStateHookable = (void*)(uintptr_t(i::ClientState) + 0x8); // ignore c-style casting
-
-	if ( clientStateHookable != nullptr )
-	{
-		// PacketStart Detour
-		if ( !detour::packetStart.IsHooked( ) )
-			detour::packetStart.Create( util::GetVFunc( clientStateHookable, table::packetStart ), &h::hkPacketStart );
-
-		// PacketEnd Detour
-		if ( !detour::packetEnd.IsHooked( ) )
-			detour::packetEnd.Create( util::GetVFunc( clientStateHookable, table::packetEnd ), &h::hkPacketEnd );
-
-		if ( !detour::temptEntities.IsHooked( ) )
-			detour::temptEntities.Create( util::GetVFunc( clientStateHookable, table::temptEntities ), &h::hkTemptEntities );
-	}
+	h::HookClientState();
 
 	static auto maxusercmd = i::ConVar->FindVar("sv_maxusrcmdprocessticks");
 	if (i::ClientState->nChokedCommands >= maxusercmd->GetInt() - 1)
@@ -127,7 +99,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (bSendPacket)
 		localanim.localdata.vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
 
-	g_LocalAnimations->OnCreateMove();
+	g_LocalAnimations->OnCreateMove(bSendPacket);
 }
 
 __declspec(naked) void __fastcall h::hkCreateMoveProxy(IBaseClientDLL* thisptr, int edx, int nSequenceNumber, float flInputSampleFrametime, bool bIsActive)

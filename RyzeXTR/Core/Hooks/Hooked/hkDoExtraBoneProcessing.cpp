@@ -5,30 +5,32 @@ void __fastcall h::hkDoExtraBoneProcessing(void* entityPointer, void* edx, int a
 
 	static auto original = detour::extraBoneProcessing.GetOriginal<decltype(&h::hkDoExtraBoneProcessing)>();
 
-	CBaseEntity* pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
+	return;
 
-	if (!pEnt)
-		return original(entityPointer, edx, a1, a2, a3, a4, a5, a6);
+	//CBaseEntity* pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 
-	if (pEnt->IsPlayer() && pEnt->IsAlive()) {
+	//if (!pEnt)
+	//	return original(entityPointer, edx, a1, a2, a3, a4, a5, a6);
 
-		auto pAnimlayerOwner = pEnt->GetAnimationOverlays()->pOwner;
+	//if (pEnt->IsPlayer() && pEnt->IsAlive()) {
 
-		for (int i = 13; i; --i) {
+	//	auto pAnimlayerOwner = pEnt->GetAnimationOverlays()->pOwner;
 
-			if (pAnimlayerOwner != pEnt)
-				pAnimlayerOwner = pEnt;
+	//	for (int i = 13; i; --i) {
 
-			pAnimlayerOwner += 14;
-		}
+	//		if (pAnimlayerOwner != pEnt)
+	//			pAnimlayerOwner = pEnt;
 
-		const auto bOnGround = pEnt->AnimState()->bOnGround;
-		pEnt->AnimState()->bOnGround = false;
+	//		pAnimlayerOwner += 14;
+	//	}
 
-		original(entityPointer, edx, a1, a2, a3, a4, a5, a6);
+	//	const auto bOnGround = pEnt->AnimState()->bOnGround;
+	//	pEnt->AnimState()->bOnGround = false;
 
-		pEnt->AnimState()->bOnGround = bOnGround;
-	}
-	else
-		return original(entityPointer, edx, a1, a2, a3, a4, a5, a6);
+	//	original(entityPointer, edx, a1, a2, a3, a4, a5, a6);
+
+	//	pEnt->AnimState()->bOnGround = bOnGround;
+	//}
+	//else
+	//	return original(entityPointer, edx, a1, a2, a3, a4, a5, a6);
 }

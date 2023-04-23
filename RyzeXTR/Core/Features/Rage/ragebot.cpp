@@ -20,10 +20,10 @@ bool LowestFov( std::tuple<CBaseEntity*, Lagcompensation::LagRecord_t*> pEnt1, s
 		return true;
 
 	M::VectorAngles( pEnt1Hitbox.value( ) - vecEyePosition, vecCalcAngle );
-	Vector vecDistanceBetween1 = ( ragebot.rageBotData.vecOldViewAngles - vecCalcAngle.NormalizeAngle( ) );
+	Vector vecDistanceBetween1 = ( g::vecOriginalViewAngle - vecCalcAngle.NormalizeAngle( ) );
 
 	M::VectorAngles( pEnt2Hitbox.value( ) - vecEyePosition, vecCalcAngle );
-	Vector vecDistanceBetween2 = ( ragebot.rageBotData.vecOldViewAngles - vecCalcAngle.NormalizeAngle( ) );
+	Vector vecDistanceBetween2 = ( g::vecOriginalViewAngle - vecCalcAngle.NormalizeAngle( ) );
 
 	float flFirstFov = abs( vecDistanceBetween1.Length2D( ) );
 	float flSecondFov = abs( vecDistanceBetween2.Length2D( ) );
@@ -83,6 +83,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 		if ( cfg::rage::betweenshots )
 			rageBotData.bCanShoot = false;
 
+		AutoStop(pLocal, pWeapon, rageBotData.pAimbotTarget, g::pCmd, vecHitscan);
 		// get better eye position.
 		// calculate aim angle.
 		Vector shootAngle;
@@ -99,7 +100,6 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 				pCmd->iTickCount = CalculateTickCount( rageBotData.flTargetSimulation );
 
 				ShouldSendPacket(bSendPacket);
-				rageBotData.iTickCount = i::GlobalVars->iTickCount;
 			}
 			else {
 				rageBotData.bCanShoot = false;
@@ -113,8 +113,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 
 Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
 
-	static bool vecHitscanLimitation[65];
-	std::vector<int> vecSelectedHitboxes = ConfigHitboxes(pWeapon);
+	std::array<bool, HITBOX_MAX> vecSelectedHitboxes = ConfigHitboxes(pWeapon);
 	std::array<bool, HITBOX_MAX> vecSelectedSafePoints = ConfigSafeHitboxes(pWeapon);
 	std::array<bool, HITBOX_MAX> vecSelectedMultipoint = ConfigMultiHitboxes(pWeapon);
 	int iMinimumDamage = ConfigMinimumDamage(pWeapon);
@@ -135,45 +134,87 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			continue;
 
 		Lagcompensation::LagRecord_t* pCurrentApplied = nullptr;
-		pCurrentApplied = (vecHitscanLimitation[i] ? &pLog->pRecord.front() : cfg::rage::m_bEnableBacktrack ? &pLog->pRecord.at(pLog->iLastValid) : &pLog->pRecord.front());
-
-		vecHitscanLimitation[i] = !vecHitscanLimitation[i];
+		pCurrentApplied = &pLog->pRecord.front();
 
 		if (!pCurrentApplied)
 			continue;
 
-		if (!pCurrentApplied->bValid)
-			continue;
-
+		bool bSafePoint = false;
 		pEntity->SetBoneCache(pCurrentApplied->pMatrix);
 
 		float flRadius = -1.f, flDamage = -1.f;
-		for (int& iHitbox : vecSelectedHitboxes) {
+		Vector vecMins, vecMaxs;
+		for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
 
-			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, flRadius);
+			if (!vecSelectedHitboxes[iHitbox])
+				continue;
 
-			if (vecSelectedMultipoint[iHitbox]) {
-				Vector tempVecHitboxPosition = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, vecEyePosition, true);
-				vecHitboxPosition = tempVecHitboxPosition;
-			}
-			AutoStop(pLocal, pWeapon, rageBotData.pAimbotTarget, g::pCmd, vecHitboxPosition);
+			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
+			std::vector<Vector> multiPointed;
 
-			if (vecSelectedSafePoints[iHitbox]) {
+			if (vecSelectedMultipoint[iHitbox])
+				CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, multiPointed);
 
-				if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecHitboxPosition, flDamage) && flDamage > iMinimumDamage) {
+			for (Vector& vecPoint : multiPointed) {
 
-					rageBotData.SetTarget(pCurrentApplied, iHitbox);
-					return vecHitboxPosition;
+				if (vecSelectedSafePoints[iHitbox]) {
+
+					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius)) 
+						bSafePoint = true;
+					
+					if (bForceSafe && !bSafePoint)
+						continue;
 				}
 
-				if (bForceSafe)
-					continue;
+				if (flDamage = autowall.GetDamage(pLocal, vecPoint); flDamage > iMinimumDamage) {
+
+					rageBotData.SetTarget(pCurrentApplied, iHitbox);
+					return vecPoint;
+				}
 			}
+		}
 
-			if (flDamage = autowall.GetDamage(pLocal, vecHitboxPosition); flDamage > iMinimumDamage) {
+		if (!cfg::rage::m_bEnableBacktrack)
+			continue;
 
-				rageBotData.SetTarget(pCurrentApplied, iHitbox);
-				return vecHitboxPosition;
+		const unsigned int iLastValid = min(pLog->iLastValid, pLog->pRecord.size() - 1);
+
+		if ((pCurrentApplied->vecOrigin - pLog->pRecord.at(iLastValid).vecOrigin).Length2D() < 25.f && !pLog->pRecord.at(iLastValid).bDidShot)
+			continue;
+
+		pCurrentApplied = &pLog->pRecord.at(iLastValid);
+		pEntity->SetBoneCache(pCurrentApplied->pMatrix);
+
+		if (!pCurrentApplied->bValid)
+			continue;
+
+		for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
+
+			if (!vecSelectedHitboxes[iHitbox])
+				continue;
+
+			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
+			std::vector<Vector> multiPointed;
+
+			if (vecSelectedMultipoint[iHitbox]) 
+				CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, multiPointed);
+			
+			for (Vector& vecPoint : multiPointed) {
+
+				if (vecSelectedSafePoints[iHitbox]) {
+
+					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius))
+						bSafePoint = true;
+
+					if (bForceSafe && !bSafePoint)
+						continue;
+				}
+
+				if (flDamage = autowall.GetDamage(pLocal, vecPoint); flDamage > iMinimumDamage) {
+
+					rageBotData.SetTarget(pCurrentApplied, iHitbox);
+					return vecPoint;
+				}
 			}
 		}
 	}
@@ -370,9 +411,9 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	if ( rageBotData.bCanShoot )
 		return;
 
-	float flIdealSpeed = ( 0.33f /** 0.85f*/ ) * ( g::pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
+	float flIdealSpeed = ( 0.28f ) * ( g::pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
 
-	int predictTick = 0;
+	/*int predictTick = 0;
 	switch (m_iAggressiveness(pWeapon))
 	{
 	case 1:
@@ -387,12 +428,12 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 
 	Vector vecInterpolatedEyePosition = InterpolateLocalEyePosition(g::pLocal->GetEyePosition(), predictTick);
 
-	Trace_t traceData;
-	Ray_t rayData(vecInterpolatedEyePosition, vecShootPosition);
-	CTraceFilter rayFilter(g::pLocal);
+	FireBulletData_t data = { };
+	data.vecPosition = vecInterpolatedEyePosition;
+	data.vecDirection = (vecShootPosition - vecInterpolatedEyePosition).Normalized();
 
-	if (i::EngineTrace->TraceRay(rayData, MASK_SHOT_HULL | CONTENTS_HITBOX, &rayFilter, &traceData); traceData.pHitEntity != pTarget)
-		return;
+	if (!autowall.SimulateFireBullet(g::pLocal, g::pLocal->GetWeapon(), data))
+		return;*/
 
 	pCmd->iButtons &= ~IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT;
 
@@ -596,61 +637,57 @@ bool CRageBot::ConfigAutoStop( CBaseCombatWeapon* pWeapon ) {
 	}
 }
 
-std::vector<int> CRageBot::ConfigHitboxes( CBaseCombatWeapon * pWeapon ) {
+std::array<bool, HITBOX_MAX> CRageBot::ConfigHitboxes( CBaseCombatWeapon * pWeapon ) {
 
 	// "head", "upper chest", "lower chest", "stomach", "arms", "legs"
 
-	std::vector<int> vecHitboxes;
+	std::array<bool, HITBOX_MAX> vecHitboxes = {};
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
-	static auto AddHitbox = []( int index, std::vector<int>& vecHitboxList ) {
+	static auto AddHitbox = []( int index, std::array<bool, HITBOX_MAX>& vecHitboxList ) {
 
 		// server only allows headshots, so let's only push_back head and return!
-		if ( i::ConVar->FindVar( "mp_damage_headshot_only" )->GetBool( ) )
-		{
-			vecHitboxList.push_back( HITBOX_HEAD );
+		if ( i::ConVar->FindVar( "mp_damage_headshot_only" )->GetBool( ) ) {
+			vecHitboxList[HITBOX_HEAD] = true;
 			return;
 		}
+		switch (index)
+		{
+		case 0:
+			vecHitboxList[HITBOX_HEAD] = true;
+			break;
 
-		if ( index == 0 ) {
-			vecHitboxList.push_back( HITBOX_HEAD );
-		}
-		if ( index == 1 ) {
-			vecHitboxList.push_back( HITBOX_UPPER_CHEST );
-		}
-		if ( index == 2 ) {
-			vecHitboxList.push_back( HITBOX_CHEST );
-			vecHitboxList.push_back( HITBOX_THORAX );
-		}
-		if ( index == 3 ) {
-			vecHitboxList.push_back( HITBOX_STOMACH );
-			vecHitboxList.push_back( HITBOX_PELVIS );
-		}
-		if ( index == 4 ) {
-			vecHitboxList.push_back( HITBOX_RIGHT_FOREARM );
-			vecHitboxList.push_back( HITBOX_LEFT_FOREARM );
+		case 1:
+			vecHitboxList[HITBOX_UPPER_CHEST] = true;
+			break;
 
-			vecHitboxList.push_back( HITBOX_LEFT_UPPER_ARM );
-			vecHitboxList.push_back( HITBOX_RIGHT_UPPER_ARM );
+		case 2:
+			vecHitboxList[HITBOX_CHEST] = true;;
+			break;
 
-			vecHitboxList.push_back( HITBOX_RIGHT_HAND );
-			vecHitboxList.push_back( HITBOX_LEFT_HAND );
-		}
-		if ( index == 5 ) {
-			vecHitboxList.push_back( HITBOX_RIGHT_THIGH );
-			vecHitboxList.push_back( HITBOX_LEFT_THIGH );
+		case 3:
+			vecHitboxList[HITBOX_STOMACH] = true;
+			break;
+			
+		case 4:
+			vecHitboxList[HITBOX_RIGHT_FOREARM] = true;
+			vecHitboxList[HITBOX_LEFT_FOREARM] = true;
 
-			vecHitboxList.push_back( HITBOX_RIGHT_CALF );
-			vecHitboxList.push_back( HITBOX_LEFT_CALF );
+			vecHitboxList[HITBOX_LEFT_UPPER_ARM] = true;
+			vecHitboxList[HITBOX_RIGHT_UPPER_ARM] = true;
+			break;
 
-			vecHitboxList.push_back( HITBOX_RIGHT_FOOT );
-			vecHitboxList.push_back( HITBOX_LEFT_FOOT );
+		case 5:
+			vecHitboxList[HITBOX_RIGHT_FOOT] = true;
+			vecHitboxList[HITBOX_LEFT_FOOT] = true;
+			break;
 		}
 	};
 
-	if ( cfg::rage::forceBaim && GetAsyncKeyState( cfg::rage::forceBaimKey ) ) {
-		AddHitbox( 2, vecHitboxes );
-		AddHitbox( 3, vecHitboxes );
+
+	if (cfg::rage::forceBaim && GetKeyState(cfg::rage::forceBaimKey)) {
+		AddHitbox(2, vecHitboxes);
+		AddHitbox(3, vecHitboxes);
 		return vecHitboxes;
 	}
 
@@ -703,41 +740,43 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes( CBaseCombatWeapon * 
 	std::array<bool, HITBOX_MAX> arrHitboxes = {};
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
-	static auto AddHitbox = []( int index, std::array<bool, HITBOX_MAX>& vecHitboxList ) {
+	static auto AddHitbox = [](int index, std::array<bool, HITBOX_MAX>& vecHitboxList) {
 
-		if ( index == 0 ) {
-			vecHitboxList[ HITBOX_HEAD ] = true;
+		// server only allows headshots, so let's only push_back head and return!
+		if (i::ConVar->FindVar("mp_damage_headshot_only")->GetBool()) {
+			vecHitboxList[HITBOX_HEAD] = true;
+			return;
 		}
-		if ( index == 1 ) {
-			vecHitboxList[ HITBOX_UPPER_CHEST ] = true;
-		}
-		if ( index == 2 ) {
-			vecHitboxList[ HITBOX_CHEST ] = true;
-			vecHitboxList[ HITBOX_THORAX ] = true;
-		}
-		if ( index == 3 ) {
-			vecHitboxList[ HITBOX_STOMACH ] = true;
-			vecHitboxList[ HITBOX_PELVIS ] = true;
-		}
-		if ( index == 4 ) {
-			vecHitboxList[ HITBOX_RIGHT_FOREARM ] = true;
-			vecHitboxList[ HITBOX_LEFT_FOREARM ] = true;
+		switch (index)
+		{
+		case 0:
+			vecHitboxList[HITBOX_HEAD] = true;
+			break;
 
-			vecHitboxList[ HITBOX_LEFT_UPPER_ARM ] = true;
-			vecHitboxList[ HITBOX_RIGHT_UPPER_ARM ] = true;
+		case 1:
+			vecHitboxList[HITBOX_UPPER_CHEST] = true;
+			break;
 
-			vecHitboxList[ HITBOX_RIGHT_HAND ] = true;
-			vecHitboxList[ HITBOX_LEFT_HAND ] = true;
-		}
-		if ( index == 5 ) {
-			vecHitboxList[ HITBOX_RIGHT_THIGH ] = true;
-			vecHitboxList[ HITBOX_LEFT_THIGH ] = true;
+		case 2:
+			vecHitboxList[HITBOX_CHEST] = true;;
+			break;
 
-			vecHitboxList[ HITBOX_RIGHT_CALF ] = true;
-			vecHitboxList[ HITBOX_LEFT_CALF ] = true;
+		case 3:
+			vecHitboxList[HITBOX_STOMACH] = true;
+			break;
 
-			vecHitboxList[ HITBOX_RIGHT_FOOT ] = true;
-			vecHitboxList[ HITBOX_LEFT_FOOT ] = true;
+		case 4:
+			vecHitboxList[HITBOX_RIGHT_FOREARM] = true;
+			vecHitboxList[HITBOX_LEFT_FOREARM] = true;
+
+			vecHitboxList[HITBOX_LEFT_UPPER_ARM] = true;
+			vecHitboxList[HITBOX_RIGHT_UPPER_ARM] = true;
+			break;
+
+		case 5:
+			vecHitboxList[HITBOX_RIGHT_FOOT] = true;
+			vecHitboxList[HITBOX_LEFT_FOOT] = true;
+			break;
 		}
 	};
 
@@ -790,41 +829,43 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigSafeHitboxes( CBaseCombatWeapon * p
 	std::array<bool, HITBOX_MAX> arrHitboxes = {};
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
-	static auto AddHitbox = []( int index, std::array<bool, HITBOX_MAX>& vecHitboxList ) {
+	static auto AddHitbox = [](int index, std::array<bool, HITBOX_MAX>& vecHitboxList) {
 
-		if ( index == 0 ) {
-			vecHitboxList[ HITBOX_HEAD ] = true;
+		// server only allows headshots, so let's only push_back head and return!
+		if (i::ConVar->FindVar("mp_damage_headshot_only")->GetBool()) {
+			vecHitboxList[HITBOX_HEAD] = true;
+			return;
 		}
-		if ( index == 1 ) {
-			vecHitboxList[ HITBOX_UPPER_CHEST ] = true;
-		}
-		if ( index == 2 ) {
-			vecHitboxList[ HITBOX_CHEST ] = true;
-			vecHitboxList[ HITBOX_THORAX ] = true;
-		}
-		if ( index == 3 ) {
-			vecHitboxList[ HITBOX_STOMACH ] = true;
-			vecHitboxList[ HITBOX_PELVIS ] = true;
-		}
-		if ( index == 4 ) {
-			vecHitboxList[ HITBOX_RIGHT_FOREARM ] = true;
-			vecHitboxList[ HITBOX_LEFT_FOREARM ] = true;
+		switch (index)
+		{
+		case 0:
+			vecHitboxList[HITBOX_HEAD] = true;
+			break;
 
-			vecHitboxList[ HITBOX_LEFT_UPPER_ARM ] = true;
-			vecHitboxList[ HITBOX_RIGHT_UPPER_ARM ] = true;
+		case 1:
+			vecHitboxList[HITBOX_UPPER_CHEST] = true;
+			break;
 
-			vecHitboxList[ HITBOX_RIGHT_HAND ] = true;
-			vecHitboxList[ HITBOX_LEFT_HAND ] = true;
-		}
-		if ( index == 5 ) {
-			vecHitboxList[ HITBOX_RIGHT_THIGH ] = true;
-			vecHitboxList[ HITBOX_LEFT_THIGH ] = true;
+		case 2:
+			vecHitboxList[HITBOX_CHEST] = true;;
+			break;
 
-			vecHitboxList[ HITBOX_RIGHT_CALF ] = true;
-			vecHitboxList[ HITBOX_LEFT_CALF ] = true;
+		case 3:
+			vecHitboxList[HITBOX_STOMACH] = true;
+			break;
 
-			vecHitboxList[ HITBOX_RIGHT_FOOT ] = true;
-			vecHitboxList[ HITBOX_LEFT_FOOT ] = true;
+		case 4:
+			vecHitboxList[HITBOX_RIGHT_FOREARM] = true;
+			vecHitboxList[HITBOX_LEFT_FOREARM] = true;
+
+			vecHitboxList[HITBOX_LEFT_UPPER_ARM] = true;
+			vecHitboxList[HITBOX_RIGHT_UPPER_ARM] = true;
+			break;
+
+		case 5:
+			vecHitboxList[HITBOX_RIGHT_FOOT] = true;
+			vecHitboxList[HITBOX_LEFT_FOOT] = true;
+			break;
 		}
 	};
 
@@ -898,92 +939,82 @@ bool CRageBot::CheckShootingCondition( CUserCmd * pCmd, CBaseEntity * pLocal ) {
 	return true;
 }
 
-Vector CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity * pLocal, CBaseCombatWeapon * pWeapon, Vector vecAngle, float flRadius, int nHitbox, Vector vecEyePosition, bool bGenerateNew ) {
+void CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity * pLocal, CBaseCombatWeapon * pWeapon, Vector vecAngle, float flRadius, int iHitbox, std::vector<Vector>& output) {
 
 	if ( flRadius <= 0 )
-		return vecAngle;
+		return output.push_back(vecAngle);
 
-	std::pair<int, int> multiPoints = ConfigMultipoint( g::pLocal->GetWeapon( ) );
+	std::pair<int, int> multiPoints = ConfigMultipoint(pWeapon);
 
 	int* pHeadPoints = &multiPoints.first;
 	int* pBodyPoints = &multiPoints.second;
+	float flHitboxDistance = flRadius * ( (iHitbox == HITBOX_HEAD ? *pHeadPoints : *pBodyPoints ) * 0.01f );
 
-	Trace_t traceData;
-	CTraceFilter rayFilter(g::pLocal);
+	bool bGenerateMore = (iHitbox == HITBOX_HEAD ? *pHeadPoints > 50.f ? true : false : *pBodyPoints > 50.f ? true : false);
 
-	static Vector vecCurrentScan;
-	float flHitboxDistance = flRadius * ( ( nHitbox == HITBOX_HEAD ? *pHeadPoints : *pBodyPoints ) / 100.f );
+	static int iMultiOptimization[HITBOX_MAX];
 
-	for (size_t i = 0; i < 6; i++)
+	output.push_back(vecAngle);
+	switch (iMultiOptimization[iHitbox] % 5)
 	{
-		switch (i) {
-		case 0:
-			vecCurrentScan = vecAngle;
-			break;
-		case 1:
-			vecCurrentScan = (vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
-			break;
-
-		case 2:
-			vecCurrentScan = (vecAngle + Vector(0.f, flHitboxDistance, 0.f));
-			break;
-
-		case 3:
-			vecCurrentScan = (vecAngle + Vector(0.f, 0.f, flHitboxDistance));
-			break;
-
-		case 4:
-			vecCurrentScan = (vecAngle + Vector(0.f, -flHitboxDistance, 0.f));
-			break;
-
-		case 5:
-			vecCurrentScan = (vecAngle + Vector(-flHitboxDistance, 0.f, 0.f));
-			break;
-		}
-
-		if (i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecCurrentScan), MASK_SHOT_HULL | CONTENTS_HITBOX, &rayFilter, &traceData); traceData.pHitEntity == pTarget) {
-			return vecCurrentScan;
-		}
+	case 0:
+		output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
+		if (bGenerateMore)
+			output.push_back(vecAngle + Vector(flHitboxDistance * 0.5f, 0.f, 0.f));
+		break;
+	case 1:
+		output.push_back(vecAngle + Vector(0.f, flHitboxDistance, 0.f));
+		if (bGenerateMore)
+			output.push_back(vecAngle + Vector(0.f, flHitboxDistance * 0.5f, 0.f));
+		break;
+	case 2:
+		output.push_back(vecAngle + Vector(0.f, 0.f, flHitboxDistance));
+		if (bGenerateMore)
+			output.push_back(vecAngle + Vector(0.f, 0.f, flHitboxDistance * 0.5f));
+		break;
+	case 3:
+		output.push_back(vecAngle + Vector(0.f, -flHitboxDistance, 0.f));
+		if (bGenerateMore)
+			output.push_back(vecAngle + Vector(0.f, -flHitboxDistance * 0.5f, 0.f));
+		break;
+	case 4:
+		output.push_back(vecAngle + Vector(-flHitboxDistance, 0.f, 0.f));
+		if (bGenerateMore)
+			output.push_back(vecAngle + Vector(-flHitboxDistance * 0.5f, 0.f, 0.f));
+		break;
 	}
-	return vecCurrentScan;
+	iMultiOptimization[iHitbox]++;
 }
 
-bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, float& flMinDamage ) {
+bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, Vector vecMins, Vector vecMaxs, float flRadius ) {
 
 	if (pRecord->pRightMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pLeftMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pCenterMatrix->GetOrigin() == Vector(0, 0, 0))
 		return false;
 
-	Trace_t traceData;
-	Ray_t rayData(vecEyePosition, vecShootposition);
-	CTraceFilter rayFilter(g::pLocal);
+	RayTracer::Ray rebuiltRay(vecEyePosition, vecShootposition);
+	RayTracer::Hitbox rebuiltHitbox(vecMins, vecMaxs, flRadius);
+	RayTracer::Trace output;
 
 	bool hitLeft = false, hitRight = false, hitCenter = false;
 
-
 	pRecord->pEntity->SetBoneCache( pRecord->pRightMatrix );
-	if (i::EngineTrace->TraceRay(rayData, MASK_SHOT, &rayFilter, &traceData); traceData.pHitEntity == pRecord->pEntity)
+	if (RayTracer::TraceHitbox(rebuiltRay, rebuiltHitbox, output); output.m_hit)
 		hitRight = true;
 
 	pRecord->pEntity->SetBoneCache( pRecord->pLeftMatrix );
-	if (i::EngineTrace->TraceRay(rayData, MASK_SHOT, &rayFilter, &traceData); traceData.pHitEntity == pRecord->pEntity)
+	if (RayTracer::TraceHitbox(rebuiltRay, rebuiltHitbox, output); output.m_hit)
 		hitLeft = true;
 
 	pRecord->pEntity->SetBoneCache( pRecord->pCenterMatrix );
-	if (i::EngineTrace->TraceRay(rayData, MASK_SHOT, &rayFilter, &traceData); traceData.pHitEntity == pRecord->pEntity)
+	if (RayTracer::TraceHitbox(rebuiltRay, rebuiltHitbox, output); output.m_hit)
 		hitCenter = true;
 
 	pRecord->pEntity->SetBoneCache(pRecord->pMatrix);
-	// if we hit every single angle that means that is a safepoint to shoot
-	if ( hitLeft && hitRight && hitCenter ) {
-
-		// manipulate the shooting position
-		vecShootposition = vecShootposition;
-		flMinDamage = autowall.GetDamage(g::pLocal, vecShootposition);
-
+	if ( hitLeft && hitRight && hitCenter ) 
 		return true;
-	}
+	
 	return false;
 }
 
@@ -1021,8 +1052,11 @@ bool CRageBot::ShouldSendPacket(bool& bSendPacket) {
 	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey))
 		return false;
 
-	if (g::bWaiting)
+	if (g::bWaiting) {
+		rageBotData.iTickCount = i::GlobalVars->iTickCount;
 		return true;
+	}
 
+	rageBotData.iTickCount = i::GlobalVars->iTickCount;
 	return true;
 }

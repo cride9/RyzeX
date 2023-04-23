@@ -117,9 +117,6 @@ bool CPacketManager::ShouldProcessPacketStart( int iCommand )
 		return true;
 	}
 
-	while (pCommandList.size() >= 16384)
-		pCommandList.pop_front();
-
 	for (auto pCmd = pCommandList.begin(); pCmd != pCommandList.end(); pCmd++)
 	{
 		if (*pCmd != iCommand)

@@ -6,6 +6,7 @@
 #include "../../Features/Networking/networking.h"
 #undef max
 
+/* CBasePlayer::PhysicsSimulate */
 void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 
 	static auto original = detour::physicsSimulate.GetOriginal<decltype(&h::hkPhysicsSimulate)>();
@@ -19,11 +20,13 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 		}
 	*/
 
-	if (!g::pLocal || !g::pCmd)
+	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(ecx);
+
+	if (pEntity != g::pLocal)
 		return original(ecx, edx);
 
-	int& SimulationTick = *g::pLocal->GetOffsetPointer<int>( 0x2ACU );
-	CCommandContext* pCommandContext = g::pLocal->GetOffsetPointer<CCommandContext>(0x350C);
+	int& SimulationTick = *pEntity->GetOffsetPointer<int>( 0x2ACU );
+	CCommandContext* pCommandContext = pEntity->GetOffsetPointer<CCommandContext>(0x350C);
 
 	if ( SimulationTick == i::GlobalVars->iTickCount )
 		return original( ecx, edx );
@@ -38,15 +41,15 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	}
 		
 	if ( pCommandContext->pCmd.iCommandNumber == ( i::ClientState->iCommandAck + 1 ) )
-		g::pLocal->GetVelocityModifier( ) = localanim.localdata.flVelocityModifier;
+		pEntity->GetVelocityModifier( ) = localanim.localdata.flVelocityModifier;
 
 	networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
 
-	const int iTickBaseBackup = g::pLocal->GetTickBase( );
-	g::pLocal->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
+	const int iTickBaseBackup = pEntity->GetTickBase( );
+	pEntity->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
 
 	original(ecx, edx);
 
-	prediction.SaveViewmodelData( g::pLocal );
+	prediction.SaveViewmodelData(pEntity);
 	return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 }

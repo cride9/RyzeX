@@ -10,6 +10,7 @@ namespace visual {
 
 	inline int iHealth[65];
 	inline bool bAmmoEnabled[65];
+	inline Vector safePoint;
 
 	void VisualRender();
 

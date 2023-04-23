@@ -70,7 +70,6 @@ public:
 		void Apply( CBaseEntity* pEntity );
 
 		CBaseEntity* pEntity{};
-		matrix3x4_t pVisualMatrix[128];
 		matrix3x4_t pMatrix[ 128 ];
 		matrix3x4_t pLeftMatrix[128];
 		matrix3x4_t pRightMatrix[128];
@@ -178,7 +177,7 @@ public:
 
 	void RemoveInterpolation();
 
-	void SetupPlayerBones(CBaseEntity* pPlayer, LagRecord_t* m_Record, matrix3x4_t* Matrix, int nFlags);
+	void SetupPlayerBones(CBaseEntity* pPlayer, Lagcompensation::LagRecord_t* pRecord,matrix3x4_t* Matrix, int nFlags);
 
 	// get client interp amount
 	static float GetClientInterpAmount( );

@@ -19,7 +19,6 @@ public:
 		CBaseEntity*					pAimbotTarget;
 		matrix3x4_t*					pTargetMatrix;
 		float							flTargetSimulation;
-		Vector							vecOldViewAngles;
 		bool							bCanShoot;
 		int								iTargetedHitbox;
 		int								iTickCount;
@@ -34,7 +33,7 @@ public:
 
 	} rageBotData ;
 
-	Vector	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, Vector, bool = true);
+	void	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, std::vector<Vector>&);
 
 private:
 
@@ -42,7 +41,7 @@ private:
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector, int);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*, Vector);
 	Vector				InterpolateLocalEyePosition(Vector, int = 1);
-	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, float&);
+	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, Vector, Vector, float);
 	int					CalculateTickCount(float);
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
@@ -54,7 +53,7 @@ private:
 	bool				ConfigAutoScope( CBaseCombatWeapon* pWeapon );
 	bool				ConfigForceSafe(CBaseCombatWeapon* pWeapon);
 	bool				ConfigAutoStop( CBaseCombatWeapon* pWeapon );
-	std::vector<int>	ConfigHitboxes(CBaseCombatWeapon*);
+	std::array<bool, HITBOX_MAX>	ConfigHitboxes(CBaseCombatWeapon*);
 	std::pair<int, int> ConfigMultipoint(CBaseCombatWeapon*);
 	std::array<bool, HITBOX_MAX> ConfigMultiHitboxes(CBaseCombatWeapon*);
 	std::array<bool, HITBOX_MAX> ConfigSafeHitboxes(CBaseCombatWeapon*);

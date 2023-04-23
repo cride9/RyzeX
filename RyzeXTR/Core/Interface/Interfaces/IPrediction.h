@@ -61,15 +61,40 @@ public:
 class IGameMovement
 {
 public:
+
+	inline CBaseEntity*& Player() {
+		return *(CBaseEntity**)((DWORD)(this) + 0x4);
+	}
+	inline CMoveData*& MoveData() {
+		return *(CMoveData**)((DWORD)(this) + 0x8);
+	}
+	inline Vector& vecForward() {
+		return *(Vector*)((DWORD)(this) + 0x18); }
+	inline Vector& vecRight() {
+		return *(Vector*)((DWORD)(this) + 0x24);
+	}
+	inline Vector& vecUp() {
+		return *(Vector*)((DWORD)(this) + 0x30);
+	}
+	inline int& nTraceCount() {
+		return *(int*)((DWORD)(this) + 0xE50);
+	}
+	inline int& iSpeedCropped() {
+		return *(int*)((DWORD)(this) + 0xC3C);
+	}
+	inline bool& bProcessingMovement() {
+		return *(bool*)((DWORD)(this) + 0xC40);
+	}
+
 	virtual						~IGameMovement() { }
 	virtual void				ProcessMovement(CBaseEntity* pEntity, CMoveData* pMove) = 0;
 	virtual void				Reset() = 0;
 	virtual void				StartTrackPredictionErrors(CBaseEntity* pEntity) = 0;
 	virtual void				FinishTrackPredictionErrors(CBaseEntity* pEntity) = 0;
 	virtual void				DiffPrint(char const* fmt, ...) = 0;
-	virtual Vector const&		GetPlayerMins(bool bDucked) const = 0;
-	virtual Vector const&		GetPlayerMaxs(bool bDucked) const = 0;
-	virtual Vector const&		GetPlayerViewOffset(bool bDucked) const = 0;
+	virtual Vector const&		GetPlayerMins(bool IsDucked) const = 0;
+	virtual Vector const&		GetPlayerMaxs(bool IsDucked) const = 0;
+	virtual Vector const&		GetPlayerViewOffset(bool IsDucked) const = 0;
 	virtual bool				IsMovingPlayerStuck() const = 0;
 	virtual CBaseEntity*		GetMovingPlayer() const = 0;
 	virtual void				UnblockPusher(CBaseEntity* pEntity, CBaseEntity* pPusher) = 0;
@@ -109,6 +134,7 @@ public:
 	// SavedGlobals 0x4C
 
 public:
+
 	void Update(int iStartFrame, bool bValidFrame, int nIncomingAcknowledged, int nOutgoingCommand) {
 		util::CallVFunc<void>(this, 3, iStartFrame, bValidFrame, nIncomingAcknowledged, nOutgoingCommand);
 	}

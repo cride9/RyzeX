@@ -6,7 +6,7 @@ RayTracer::Ray::Ray(const Vector& direction) : m_startPoint(), m_direction(direc
 
 RayTracer::Ray::Ray(const Vector& startPoint, const Vector& endPoint) : m_startPoint(startPoint)
 {
-	assert(startPoint != endPoint);
+	//assert(startPoint != endPoint);
 
 	auto vectorDiff = endPoint - startPoint;
 	m_direction = vectorDiff.Normalized();
@@ -23,7 +23,7 @@ RayTracer::Trace::Trace() : m_hit(false), m_fraction(0.f), m_traceEnd() {}
 
 void RayTracer::TraceFromCenter(const Ray& ray, const Hitbox& hitbox, Trace& trace, int flags)
 {
-	assert(ray.m_direction.Length() > 0.f);
+	//assert(ray.m_direction.Length() > 0.f);
 
 	// we are treating the cylinder as a cylinder y^2+z^2=r^2, in the x-direction, so we will make it the x direction
 	constexpr Vector unitDesired(1.f, 0.f, 0.f);
@@ -113,7 +113,7 @@ void RayTracer::TraceFromCenter(const Ray& ray, const Hitbox& hitbox, Trace& tra
 	// also -4*a*c will always be positive because c is always negative and a is always positive
 	auto t = (sqrtf(-4.f * a * c)) / (2.f * a);
 
-	assert(t >= 0.f);
+	//assert(t >= 0.f);
 
 	// virutal direction is in the 3-D plane of x
 	auto virtualPos = rotatedDirection * t;
@@ -143,7 +143,7 @@ void RayTracer::TraceFromCenter(const Ray& ray, const Hitbox& hitbox, Trace& tra
 
 		t = (-b_s + operand) / 2.f;
 
-		assert(t - FLT_EPSILON >= 0.f);
+		//assert(t - FLT_EPSILON >= 0.f);
 	}
 
 	auto offset = ray.m_direction * t;
@@ -158,7 +158,7 @@ void RayTracer::TraceFromCenter(const Ray& ray, const Hitbox& hitbox, Trace& tra
 
 void RayTracer::TraceHitbox(const Ray& ray, const Hitbox& hitbox, Trace& trace, int flags)
 {
-	assert(ray.m_direction.Length() > 0.f);
+	//assert(ray.m_direction.Length() > 0.f);
 
 	trace.m_fraction = 1.f;
 

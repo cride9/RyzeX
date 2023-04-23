@@ -63,13 +63,11 @@ void localanimation::SetLayerSequence(CAnimationLayer* layer, int sequence) {
 }
 
 /* New stuff */
-void C_LocalAnimations::OnCreateMove()
+void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 {
 	g_LocalAnimations->StoreAnimationRecord();
-	if (!g::bSendPacket)
-		return;
 
-	if (!*g::bSendPacket)
+	if (!bSendPacket)
 		return;
 
 	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
@@ -93,7 +91,7 @@ void C_LocalAnimations::OnCreateMove()
 		g::pLocal->GetDuckSpeed(),
 		g::pLocal->GetAbsOrigin(),
 		g::pLocal->GetVecOrigin(),
-		g::pLocal->m_vecAbsVelocity(),
+		g::pLocal->GetVecAbsVelocity(),
 		g::pLocal->GetVelocity(),
 		g::pLocal->GetEFlags(),
 		g::pLocal->GetFlags(),
@@ -118,13 +116,13 @@ void C_LocalAnimations::OnCreateMove()
 	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.m_nSimulationTicks; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int nTickBase = g::pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
-		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(nTickBase);
-		i::GlobalVars->flRealTime = TICKS_TO_TIME(nTickBase);
+		int GetTickBase = g::pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
+		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
+		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
 		i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
-		i::GlobalVars->iFrameCount = nTickBase;
-		i::GlobalVars->iTickCount = nTickBase;
+		i::GlobalVars->iFrameCount = GetTickBase;
+		i::GlobalVars->iTickCount = GetTickBase;
 
 		AnimationRecord_t* m_Record = &m_LocalData.m_AnimRecords[(g::pCmd->iCommandNumber - m_LocalData.m_nSimulationTicks + nSimulationTick) % 150];
 		if (m_Record)
@@ -132,7 +130,7 @@ void C_LocalAnimations::OnCreateMove()
 			/* set player data from the animation record */ 
 			g::pLocal->m_flThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
 			g::pLocal->GetVelocity() = m_Record->m_vecVelocity;
-			g::pLocal->m_vecAbsVelocity() = m_Record->m_vecVelocity;
+			g::pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
 			g::pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
 			g::pLocal->GetDuckSpeed() = m_Record->m_flDuckSpeed;
 			g::pLocal->m_angVisualAngles() = m_Record->m_angRealAngles;
@@ -208,7 +206,7 @@ void C_LocalAnimations::OnCreateMove()
 	g::pLocal->GetDuckAmount() = std::get < 2 >(m_Data);
 	g::pLocal->GetDuckSpeed() = std::get < 3 >(m_Data);
 	g::pLocal->GetVecOrigin() = std::get < 5 >(m_Data);
-	g::pLocal->m_vecAbsVelocity() = std::get < 6 >(m_Data);
+	g::pLocal->GetVecAbsVelocity() = std::get < 6 >(m_Data);
 	g::pLocal->GetVelocity() = std::get < 7 >(m_Data);
 	g::pLocal->GetEFlags() = std::get < 8 >(m_Data);
 	g::pLocal->GetFlags() = std::get < 9 >(m_Data);
@@ -274,13 +272,13 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.m_nSimulationTicks; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int nTickBase = g::pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
-		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(nTickBase);
-		i::GlobalVars->flRealTime = TICKS_TO_TIME(nTickBase);
+		int GetTickBase = g::pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
+		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
+		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
 		i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
-		i::GlobalVars->iFrameCount = nTickBase;
-		i::GlobalVars->iTickCount = nTickBase;
+		i::GlobalVars->iFrameCount = GetTickBase;
+		i::GlobalVars->iTickCount = GetTickBase;
 
 		AnimationRecord_t* m_Record = &m_LocalData.m_AnimRecords[(g::pCmd->iCommandNumber - m_LocalData.m_nSimulationTicks + nSimulationTick) % 150];
 		if (m_Record)
@@ -288,7 +286,7 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 			/* set player data from the animation record */
 			g::pLocal->m_flThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
 			g::pLocal->GetVelocity() = m_Record->m_vecVelocity;
-			g::pLocal->m_vecAbsVelocity() = m_Record->m_vecVelocity;
+			g::pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
 			g::pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
 			g::pLocal->GetDuckSpeed() = m_Record->m_flDuckSpeed;
 			g::pLocal->m_angVisualAngles() = m_Record->m_angFakeAngles;
@@ -346,26 +344,27 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 	std::memcpy
 	(
 		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
-		&m_LocalData.m_Real.m_Layers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
+		&m_LocalData.m_Fake.m_Layers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
 		sizeof(CAnimationLayer)
 	);
 	std::memcpy
 	(
 		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
-		&m_LocalData.m_Real.m_Layers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
+		&m_LocalData.m_Fake.m_Layers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
 		sizeof(CAnimationLayer)
 	);
 
-	g::pLocal->GetPoseParameter()[1] = m_LocalData.m_Real.m_PoseParameters[1];
-	std::memcpy(&g::pLocal->GetAnimationOverlays()[7], &m_LocalData.m_Real.m_Layers[7], sizeof(CAnimationLayer));
+	g::pLocal->GetPoseParameter()[1] = m_LocalData.m_Fake.m_PoseParameters[1];
+	std::memcpy(&g::pLocal->GetAnimationOverlays()[7], &m_LocalData.m_Fake.m_Layers[7], sizeof(CAnimationLayer));
+	g::pLocal->GetPoseParameter()[JUMP_FALL] = 1.f;
 
 	m_LocalData.m_flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(g::pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(m_AnimationState.flGoalFeetYaw)));
 
 	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Fake.m_Matrix.data(), 0);
 
 	std::memcpy(g::pLocal->AnimState(), &m_AnimationState, sizeof(CAnimState));
-	std::memcpy(g::pLocal->GetAnimationOverlays(), m_LocalData.m_Real.m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
-	std::memcpy(g::pLocal->GetPoseParameter().data(), m_LocalData.m_Real.m_PoseParameters.data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
+	std::memcpy(g::pLocal->GetAnimationOverlays(), m_LocalData.m_Fake.m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+	std::memcpy(g::pLocal->GetPoseParameter().data(), m_LocalData.m_Fake.m_PoseParameters.data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
 }
 void C_LocalAnimations::SimulateStrafe(int nButtons)
 {
@@ -503,14 +502,14 @@ void C_LocalAnimations::BeforePrediction()
 void C_LocalAnimations::SetupShootPosition()
 {
 	/* fix view offset */
-	Vector vecViewOffset = g::pLocal->GetViewOffset();
-	if (vecViewOffset.z <= 46.05f)
-		vecViewOffset.z = 46.0f;
-	else if (vecViewOffset.z > 64.0f)
-		vecViewOffset.z = 64.0f;
+	Vector GetViewOffset = g::pLocal->GetViewOffset();
+	if (GetViewOffset.z <= 46.05f)
+		GetViewOffset.z = 46.0f;
+	else if (GetViewOffset.z > 64.0f)
+		GetViewOffset.z = 64.0f;
 
 	/* calculate default shoot position */
-	m_LocalData.m_vecShootPosition = g::pLocal->GetVecOrigin() + vecViewOffset;
+	m_LocalData.m_vecShootPosition = g::pLocal->GetVecOrigin() + GetViewOffset;
 
 	/* backup data */
 	std::tuple < Vector, Vector > m_Backup = std::make_tuple(g::pLocal->GetAbsOrigin(), g::pLocal->GetEyeAngles());

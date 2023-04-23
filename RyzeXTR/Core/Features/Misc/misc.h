@@ -48,6 +48,8 @@ namespace misc {
 	void WalkBotHandler(IGameEvent*);
 	void MoveToPosition(Vector&);
 	void ClanTag();
+	void CapsuleHandler(IGameEvent*, int);
+	void CapsuleOnHit(int, int, Color, float);
 
 	void DrawBream(Vector, Vector, Color);
 	void WorldCrosshairHandler(IGameEvent*);
@@ -62,6 +64,8 @@ namespace misc {
 	void BlockBot(CUserCmd*);
 
 	void CustomBombText(const char*);
+
+	void CheatLog(IGameEvent*);
 
 	inline bool bResetNightMode = true;
 

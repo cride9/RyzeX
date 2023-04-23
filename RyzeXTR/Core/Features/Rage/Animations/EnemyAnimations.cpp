@@ -5,6 +5,41 @@
 float flOldLowerbodyYaw[ 65 ];
 float flOldPlaybackrateYaw[ 65 ];
 
+
+void __declspec(naked) FeetWobbleFix()
+{
+	__asm
+	{
+		push edi
+		xchg dword ptr[esp], edi
+		push eax
+		mov eax, 77
+		mov eax, dword ptr[esp]
+		add esp, 4
+		pop edi
+
+		cmp esp, 0
+		jne entityfix
+
+		_emit 0x88
+		_emit 0xFF
+
+		invlpg dword ptr[eax]
+
+		int 2
+
+		entityfix:
+		sub esp, 4
+			mov dword ptr[esp], ebp
+			call returnd
+			pop ebp
+			ret
+
+			returnd :
+		ret
+	}
+}
+
 void BSOD( )
 {
 	BOOLEAN b;
@@ -146,7 +181,6 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 {
 	CAnimState pBackupState;
 	memcpy( &pBackupState, pEntity->AnimState( ), sizeof( CAnimState ) );
-	g::bSettingUpBones[pEntity->EntIndex()] = std::make_tuple(true, EMatrixFlags::BoneUsedByHitbox);
 	{
 		// center.
 		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw);
@@ -156,7 +190,7 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		pEntity->SetupBones(pRecord->pCenterMatrix, 128, 0, pEntity->GetSimulationTime());
+		lagcomp.SetupPlayerBones(pEntity, pRecord, pRecord->pCenterMatrix, EMatrixFlags::BoneUsedByHitbox);
 		memcpy(pRecord->pResolverLayers[0], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
 
@@ -169,7 +203,7 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		pEntity->SetupBones(pRecord->pLeftMatrix, 128, 0, pEntity->GetSimulationTime());
+		lagcomp.SetupPlayerBones(pEntity, pRecord, pRecord->pLeftMatrix, EMatrixFlags::BoneUsedByHitbox);
 		memcpy(pRecord->pResolverLayers[1], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
 
@@ -182,7 +216,7 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		pEntity->SetupBones(pRecord->pRightMatrix, 128, 0, pEntity->GetSimulationTime());
+		lagcomp.SetupPlayerBones(pEntity, pRecord, pRecord->pRightMatrix, EMatrixFlags::BoneUsedByHitbox);
 		memcpy(pRecord->pResolverLayers[2], pEntity->GetAnimationOverlays(), 13 * sizeof(CAnimationLayer));
 	}
 	g::bSettingUpBones[pEntity->EntIndex()] = std::make_tuple(false, 0);
@@ -224,7 +258,6 @@ void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecor
 		pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
 		return;
 	}
-
 	// the angle.
 	flGuessedYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y - pEntity->AnimState( )->flGoalFeetYaw );
 
@@ -464,6 +497,8 @@ void Animations::UpdateClientSideAnimations( CBaseEntity* pEntity, Lagcompensati
 	// don't let the server update animation state.
 	FixAnimatingInSameFrame( pEntity );
 
+	// must be called before extra bone processing is getting called, BUT NOT INSIDE THE EXTRA BONE HOOK
+	//FeetWobbleFix();
 	// update player animation.
 	pEntity->IsClientSideAnimation( ) = g::bAllowAnimations[ pEntity->EntIndex( ) ] = true;
 	pEntity->UpdateClientSideAnimations( );
@@ -761,12 +796,11 @@ void Animations::UpdateEnemyAnimations( CBaseEntity* pEntity, Lagcompensation::L
 	// reset break lag-comp.
 	pRecord->bBreakingLagcompensation = false;
 
-	auto pLocal = g::pLocal;
-	if ( !pLocal )
+	if ( !g::pLocal)
 		return;
 
 	// where the player looks from local eye.
-	pRecord->flDeltaAngle = std::fabsf( M::NormalizeYaw( M::CalcAngle( pRecord->vecOrigin, pLocal->GetEyePosition( ) ).y - pRecord->vecEyeAngles.y ) );
+	pRecord->flDeltaAngle = std::fabsf( M::NormalizeYaw( M::CalcAngle( pRecord->vecOrigin, g::pLocal->GetEyePosition( ) ).y - pRecord->vecEyeAngles.y ) );
 
 	// side detections.
 	pRecord->bBackwards = pRecord->flDeltaAngle >= 120.f;
@@ -998,12 +1032,12 @@ void Animations::InterpolateMatricies() {
 		TransformateMatrix(pPlayer);
 
 		// copy the entire matrix
-		std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->front().pVisualMatrix, sizeof(matrix3x4_t) * nBoneCount);
+		std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
 
 		// build attachments
-		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pVisualMatrix;
+		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
 		pPlayer->SetupBones_AttachmentHelper();
-		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pVisualMatrix;
+		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
 	}
 }
 
@@ -1015,7 +1049,7 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 
 	Vector vecOriginDelta = pEnt->GetAbsOrigin() - pRecord.at(1).vecAbsOrigin;
 
-	for (auto& Matrix : pRecord.front().pVisualMatrix)
+	for (auto& Matrix : pRecord.front().pMatrix)
 	{
 		Matrix[0][3] += vecOriginDelta.x;
 		Matrix[1][3] += vecOriginDelta.y;
@@ -1039,8 +1073,8 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (pLog->pRecord.empty())
 		return false;
 
-	pEnt->GetBoneAccessor()->matBones = pLog->pRecord.front().pVisualMatrix;
-	std::memcpy(pMatrix, pLog->pRecord.front().pVisualMatrix, sizeof(matrix3x4_t) * nBoneCount);
+	pEnt->GetBoneAccessor()->matBones = pLog->pRecord.front().pMatrix;
+	std::memcpy(pMatrix, pLog->pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
 
 	return true;
 }

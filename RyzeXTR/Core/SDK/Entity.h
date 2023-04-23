@@ -907,6 +907,7 @@ public:
 	std::optional<Vector>	GetHitboxPosition(const int iHitbox, Vector& vecMins, Vector& vecMaxs, float& flRadius);
 	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128]);					// selected matrix
 	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float& flRadius);// selected matrix + radius
+	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], Vector& vecMins, Vector& vecMaxs, float& flRadius);
 	std::optional<Vector>	GetHitGroupPosition(const int iHitGroup);
 	void					ModifyEyePosition(const CAnimState* pAnimState, Vector* vecPosition) const;
 	void					PostThink();

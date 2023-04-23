@@ -81,6 +81,7 @@
     <ClCompile Include="Core\Features\Changers\glovechanger.cpp" />
     <ClCompile Include="Core\SDK\RayTracer rebuilt\CRayTrace.cpp" />
     <ClCompile Include="Core\SDK\InputSystem.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkPlayerMove.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -174,5 +175,7 @@
     <ClInclude Include="Core\SDK\RayTracer rebuilt\CRayTrace.h" />
     <ClInclude Include="Core\Interface\Interfaces\IInputSystem.h" />
     <ClInclude Include="Core\SDK\InputSystem.h" />
+    <ClInclude Include="Core\memeSounds.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IMdlCache.h" />
   </ItemGroup>
 </Project>

@@ -769,6 +769,17 @@ void CConfig::Setup() {
 		SetupValue(bulletTracerColor[2], 0.646f, "visual", "bulletTracerColorB");
 		SetupValue(bulletTracerColor[3], 1.f, "visual", "bulletTracerColorA");
 
+		SetupValue(bDrawCapsule, false, "misc", "bDrawCapsule");
+		SetupValue(flDrawCapsuleColor[0], 1.f, "visual", "flDrawCapsuleColorR"); // (0.000f, 0.246f, 0.646f, 1.000f)
+		SetupValue(flDrawCapsuleColor[1], 1.f, "visual", "flDrawCapsuleColorG");
+		SetupValue(flDrawCapsuleColor[2], 1.f, "visual", "flDrawCapsuleColorB");
+		SetupValue(flDrawCapsuleColor[3], 1.f, "visual", "flDrawCapsuleColorA");
+
+		SetupValue(flDrawCapsuleColorHit[0], 1.f, "visual", "flDrawCapsuleColorHitR"); // (0.000f, 0.246f, 0.646f, 1.000f)
+		SetupValue(flDrawCapsuleColorHit[1], 1.f, "visual", "flDrawCapsuleColorHitG");
+		SetupValue(flDrawCapsuleColorHit[2], 1.f, "visual", "flDrawCapsuleColorHitB");
+		SetupValue(flDrawCapsuleColorHit[3], 1.f, "visual", "flDrawCapsuleColorHitA");
+
 		SetupValue(bWorldCrosshair, false, "misc", "bWorldCrosshair");
 		SetupValue(flWorldCrosshairColor[0], 1.f, "visual", "flWorldCrosshairColorR"); // (0.000f, 0.246f, 0.646f, 1.000f)
 		SetupValue(flWorldCrosshairColor[1], 1.f, "visual", "flWorldCrosshairColorG");

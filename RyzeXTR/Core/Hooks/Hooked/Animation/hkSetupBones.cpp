@@ -16,7 +16,7 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 	const auto pEnt = reinterpret_cast<CBaseEntity*>((uintptr_t)ecx - 4);
 
 	bool bResult = true;
-	if (!pEnt || !g::pLocal || !pEnt->IsAlive() || (pEnt->GetTeam() == g::pLocal->GetTeam() && pEnt != g::pLocal) || !pEnt->IsPlayer())
+	if (!g::pLocal || !pEnt->IsAlive() || (pEnt->GetTeam() == g::pLocal->GetTeam() && pEnt != g::pLocal) || !pEnt->IsPlayer())
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
 	if (std::get<0>(g::bSettingUpBones[pEnt->EntIndex()])) {
@@ -33,7 +33,7 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 		nFlags = bonemask == 4 ? 4 : nFlags;
 
 		/* Reset layers */
-		std::memcpy(pEnt->GetAnimationOverlays(), m_Record->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+		pEnt->SetAnimationLayers(m_Record->pLayers);
 
 		// save globals
 		std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple

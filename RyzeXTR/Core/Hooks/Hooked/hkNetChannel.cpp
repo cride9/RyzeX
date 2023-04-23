@@ -60,20 +60,26 @@ void __fastcall h::hkSetChoked( void* ecx, void* edx )
 
 	INetChannel* pNetChannelInfo = reinterpret_cast< INetChannel* >( ecx );
 
+	/*
+	void CNetChan::SetChoked( void )
+	{
+		m_nOutSequenceNr++;	// sends to be done since move command use sequence number
+		m_nChokedPackets++;
+	}
+	*/
+
 	// sanity checks so i dont blow my brains out
 	if ( !g::pLocal || !i::EngineClient->IsInGame( ) || pNetChannelInfo == nullptr || i::EngineClient->IsVoiceRecording())
 		return original( ecx, edx );
-
-	// fix game delays when choking
+	
 	const int iChockedPackets = pNetChannelInfo->iChokedPackets;
 
 	pNetChannelInfo->iChokedPackets = 0;
-	pNetChannelInfo->SendDatagram( NULL );
-
+	pNetChannelInfo->SendDatagram(NULL); // send datagram does: "return iOutSequenceNr = -1" if choked commands is 0
 	--pNetChannelInfo->iOutSequenceNr;
 	pNetChannelInfo->iChokedPackets = iChockedPackets;
 
-	original( ecx, edx );
+	return original(ecx, edx);
 }
 
 int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pDatagram )

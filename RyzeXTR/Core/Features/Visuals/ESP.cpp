@@ -26,31 +26,15 @@ void AIPoints() {
 	}
 }
 
-//void HitboxVisualization(CBaseEntity* pEnt) {
-//
-//	Vector vecMins, vecMaxs;
-//	float flRadius;
-//
-//	for (int i = 0; i < HITBOX_MAX; i++) {
-//
-//		std::optional vecMiddle = pEnt->GetHitboxPosition(i, vecMins, vecMaxs, flRadius);
-//
-//		if (!vecMiddle.has_value())
-//			return;
-//
-//		std::vector<Vector> kys = ragebot.CreatePoints(pEnt, g::pLocal, g::pLocal->GetWeapon(), vecMiddle.value(), flRadius, i, g::pLocal->GetEyePosition());
-//
-//		for (const Vector& point : kys) {
-//
-//			Vector vecPoint;
-//			if (i::DebugOverlay->ScreenPosition(point, vecPoint))
-//				return;
-//
-//			i::Surface->DrawSetColor(255, 255, 255, 255);
-//			i::Surface->DrawFilledRect(vecPoint.x - 1, vecPoint.y - 1, vecPoint.x + 1, vecPoint.y + 1);
-//		}
-//	}
-//}
+void HitboxVisualization() {
+
+	Vector screenPoint;
+	if (i::DebugOverlay->ScreenPosition(visual::safePoint, screenPoint))
+		return;
+
+	i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
+	i::Surface->DrawOutlinedCircle(screenPoint.x, screenPoint.y, 10, 64);
+}
 using namespace cfg::visual;
 
 void visual::VisualRender() {
@@ -75,7 +59,7 @@ void visual::VisualRender() {
 			continue;
 
 		WorldCrosshair();
-		//HitboxVisualization(pEnt);
+		//HitboxVisualization();
 
 		Vector bot;
 		if (i::DebugOverlay->ScreenPosition(pEnt->GetAbsOrigin() - Vector{ 0.f, 0.f, 9.f }, bot))
@@ -181,7 +165,7 @@ void visual::HealthEsp(int left, int top, int right, int bot, int width, int hei
 		i::Surface->DrawSetColor(red, green, blue, alpha);
 		i::Surface->DrawFilledRect(left - 7, bot - (i * flFactor), left - 5, bot - (i * flFactor) + 1);
 		if (i + 1 == fDistance)
-			i::Surface->DrawT(left - 7, bot - (i * flFactor), Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
+			i::Surface->DrawT(left - 7, bot - (i * flFactor) - 3, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
 	}
 }
 
@@ -260,14 +244,14 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 
 		PlayerInfo_t info = { };
 
-		if (!i::EngineClient->GetPlayerInfo(pEnt->EntIndex(), &info))
-			return;
+		if (i::EngineClient->GetPlayerInfo(pEnt->EntIndex(), &info)) {
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[NAME], g::fonts::FlagESP, false, info.szName);
-		spacing += 10;
 
+			i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[NAME], g::fonts::FlagESP, false, info.szName);
+			spacing += 10;
+		}
 	}
-	
+
 	if (bFlags[HEALTH]) {
 
 		const float percentage = pEnt->GetHealth() / 100.f;
@@ -293,19 +277,18 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 
 	if (bFlags[AMMO]) {
 
-		if (!pEnt->GetWeapon())
-			return;
+		if (!pEnt->GetWeapon()) {
+			std::string text = "[ ";
 
-		std::string text = "[ ";
+			text += std::to_string(pEnt->GetWeapon()->GetAmmo());
+			text += "/";
+			text += std::to_string(pEnt->GetWeapon()->GetAmmoReserve());
+			text += " ]";
 
-		text += std::to_string(pEnt->GetWeapon()->GetAmmo());
-		text += "/";
-		text += std::to_string(pEnt->GetWeapon()->GetAmmoReserve());
-		text += " ]";
+			i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, text.c_str());
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, text.c_str());
-
-		spacing += 10;
+			spacing += 10;
+		}
 	}
 
 	if (bFlags[MONEY]) {
@@ -320,17 +303,48 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 
 	if (bFlags[WEAPON]) {
 
-		if (!pEnt->GetWeapon())
-			return;
+		if (pEnt->GetWeapon()) {
 
-		auto pWeaponInfo = pEnt->GetWeapon()->GetCSWpnData();
+			auto pWeaponInfo = pEnt->GetWeapon()->GetCSWpnData();
 
-		if (!pWeaponInfo)
-			return;
+			if (pWeaponInfo) {
 
-		std::string text = pWeaponInfo->szWeaponName;
-		text.erase(0, 7);
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
+				std::string text = pWeaponInfo->szWeaponName;
+				text.erase(0, 7);
+				i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
+				spacing += 10;
+			}
+		}
+	}
+
+	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
+
+		using enum Lagcompensation::EResolverMode;
+
+		std::string text = "";
+		switch (pLog->iAntiAimType) {
+		case LEGIT:
+			text = "LEGIT"; break;
+		case DESYNC:
+			text = "DESYNC"; break;
+		case OPPOSITE:
+			text = "OPPOSITE"; break;
+		case SWAY:
+			text = "SWAY"; break;
+		case FAKE:
+			text = "FAKE"; break;
+		case OVERRIDE:
+			text = "OVERRIDE"; break;
+		case ONSHOT:
+			text = "ONSHOT"; break;
+		case JITTER:
+			text = "JITTER"; break;
+		case ANIMATION:
+			text = "ANIMATION"; break;
+		}
+
+		i::Surface->DrawT(right + 2, top + spacing, Color(184, 203, 131, 255), g::fonts::FlagESP, false, text.c_str());
+
 		spacing += 10;
 	}
 }

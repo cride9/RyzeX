@@ -13,25 +13,9 @@ namespace g {
 	inline Vector vecOriginalViewAngle;
 
 	inline bool bAllowAnimations[65];
-	inline bool* bSendPacket;
 	inline bool bWaiting;
-	inline bool bAntiaimEnabled;
 
 	inline std::tuple<bool, int> bSettingUpBones[65];
-
-	namespace localprediction {
-
-		namespace before {
-
-			inline int nFlags;
-			inline int nMoveType;
-		}
-		namespace after {
-
-			inline int nFlags;
-			inline int nMoveType;
-		}
-	}
 
 	namespace fonts {
 		inline HFont HealthESP;

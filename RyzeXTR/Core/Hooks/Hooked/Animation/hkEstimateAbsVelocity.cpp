@@ -6,17 +6,13 @@ void __fastcall h::hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector
 {
 	static auto EstimateAbsVelocity = detour::estimateAbsVelocity.GetOriginal<decltype(&hkEstimateAbsVelocity)>();
 
-	// sanity check
-	if (!pPlayer || !pPlayer->IsPlayer() || pPlayer->EntIndex() - 1 > 63 || !pPlayer->IsAlive() || g::pLocal == nullptr)
-		return EstimateAbsVelocity(pPlayer, edx, vecVelocity);
-
 	// no interpolation, we dont want to estimate abs velocity
 	if (pPlayer->GetEffects() & EF_NOINTERP)
 		return;
 
-	//// setting up bones, we dont want to estimate abs velocity
-	//if (g::bSettingUpBones)
-	//	return;
+	// setting up bones, we dont want to estimate abs velocity
+	if (std::get<0>(g::bSettingUpBones[pPlayer->EntIndex()]))
+		return;
 
 	// player is abusing tickbase, we dont want to estimate abs velocity
 	if (pPlayer->GetSimulationTime() < pPlayer->GetOldSimulationTime())

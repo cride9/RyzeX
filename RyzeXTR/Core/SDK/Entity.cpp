@@ -102,6 +102,35 @@ Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float
 	return Vector(0, 0, 0);
 }
 
+Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], Vector& vecMins, Vector& vecMaxs, float& flRadius)
+{
+	if (hitbox >= HITBOX_MAX)
+		return Vector(0, 0, 0);
+
+	const Model_t* model = this->GetModel();
+	if (!model)
+		return Vector(0, 0, 0);
+
+	studiohdr_t* studioHdr = i::ModelInfo->GetStudioModel(model);
+	if (!studioHdr)
+		return Vector(0, 0, 0);
+
+	mstudiobbox_t* studioBox = studioHdr->GetHitboxSet(0)->GetHitbox(hitbox);
+	if (!studioBox)
+		return Vector(0, 0, 0);
+
+	Vector min, max;
+
+	vecMins = M::VectorTransform(studioBox->vecBBMin, matrix[studioBox->iBone]);
+	vecMaxs = M::VectorTransform(studioBox->vecBBMax, matrix[studioBox->iBone]);
+
+	flRadius = studioBox->flRadius;
+
+	return (vecMins + vecMaxs) * 0.5f;
+
+	return Vector(0, 0, 0);
+}
+
 Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128])
 {
 	if (hitbox >= HITBOX_MAX)

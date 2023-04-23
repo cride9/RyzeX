@@ -19,18 +19,19 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::bEnabled) {
 
 		desyncValue = 0.f;
-		g::bAntiaimEnabled = false;
 		return;
 	}
 
-	if (ragebot.rageBotData.iTickCount + 1 >= i::GlobalVars->iTickCount)
+	if (ragebot.rageBotData.iTickCount + 3 >= i::GlobalVars->iTickCount) {
+
+		desyncValue = 0.f;
 		bSendPacket = true;
+	}
 
 	// shooting checks
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
 
 		desyncValue = 0.f;
-		g::bAntiaimEnabled = false;
 		bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
 
 		return;
@@ -40,12 +41,9 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (g::pCmd->iButtons & IN_USE || g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP) {
 
 		desyncValue = 0.f;
-		g::bAntiaimEnabled = false;
 
 		return;
 	}
-
-	g::bAntiaimEnabled = true;
 
 	// Update lower body yaw
 	Update( pCmd );
@@ -493,7 +491,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 		auto vecHitboxPosition = pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST);
 		if (vecHitboxPosition.has_value()) {
 			M::VectorAngles(vecHitboxPosition.value() - g::pLocal->GetEyePosition(), vecCalcAngle);
-			Vector vecDistanceBetween = (ragebot.rageBotData.vecOldViewAngles.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+			Vector vecDistanceBetween = (g::vecOriginalViewAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
 
 			arrPlayerDistances.push_back(std::make_pair(abs(vecDistanceBetween.Length2D()), vecCalcAngle));
 		}
