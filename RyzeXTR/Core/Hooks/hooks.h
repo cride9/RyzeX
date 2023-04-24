@@ -70,6 +70,7 @@ namespace detour {
 	inline CDetourHook emitSound;			// client -> 55 8B EC 83 EC 4C 53 8B D9 8B
 	inline CDetourHook drawViewmodel;
 	inline CDetourHook playerMove;
+	inline CDetourHook clampBonesInBBox;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -138,6 +139,7 @@ namespace h {
 	void __fastcall		hkEmitSound(void*, int, void*, int, int, const char*, unsigned int, const char*, float, int, float, int, int, const Vector*, const Vector*, void*, bool, float, int, int);
 	bool __fastcall		hkShouldDrawViewmodel(void*, void*);
 	void __fastcall		hkPlayerMove(void*, void*);
+	void __fastcall		hkClampBonesInBBox(void*, void*, matrix3x4_t*, int);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );
@@ -153,7 +155,7 @@ namespace h {
 	// animation hooks
 	bool __fastcall		hkShouldSkipAnimationFrame(void*, void*);
 	void __fastcall		hkDoProceduralFootPlant(void*, void*, void*, void*, void*, void*);
-	void __fastcall		hkBuildTransformation(void*, void*, CStudioHdr*, void*, void*, const void*, int, void*);
+	void __fastcall		hkBuildTransformation(void*, void*, CStudioHdr*, Vector*, Quaternion*, const matrix3x4_t&, int, uint8_t*);
 	void __fastcall		hkCheckForSequenceChange(void*, void*, void*, int, bool, bool);
 	bool __fastcall		hkIsHltv(void*, void*);
 	void __fastcall		hkStandardBlendingRules(void*, void*, void*, void*, void*, float, int);
@@ -162,7 +164,7 @@ namespace h {
 	void __fastcall		hkUpdateClientSideAnimations(void*, void*);
 	void __vectorcall	hkUpdateAnimationState(void*, void*, float, float, float, void*);
 	bool __fastcall		hkSetupBones(void*, void*, matrix3x4_t*, int, int, float);
-	void __fastcall		hkDoExtraBoneProcessing(void*, void*, int, int, int, int, int, int);
+	void __fastcall		hkDoExtraBoneProcessing(void*, void*, CStudioHdr*, Vector*, Quaternion*, const matrix3x4_t&, byte*, void*);
 	bool __stdcall		hkIsPaused();
 	void __fastcall		hkPhysicsSimulate(CBaseEntity*, void*);
 	void __fastcall		hkInterpolateServerEntites(void*, void*);

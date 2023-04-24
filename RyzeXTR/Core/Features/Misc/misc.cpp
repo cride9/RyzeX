@@ -172,7 +172,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 			bPositionSet = true;
 			vecOrigin = g::pLocal->GetVecOrigin();
 			vecRecord = vecOrigin;
-			g::pLocal->SetupBones(matrixRecord, 128, BONE_USED_BY_ANYTHING, i::GlobalVars->flCurrentTime);
+			g::pLocal->SetupBones(matrixRecord, 128, 0, i::GlobalVars->flCurrentTime);
 		}
 
 		if (pCmd->iButtons & IN_ATTACK)

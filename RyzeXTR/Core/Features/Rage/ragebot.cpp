@@ -154,6 +154,8 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 			if (vecSelectedMultipoint[iHitbox])
 				CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, multiPointed);
+			else
+				multiPointed.push_back(vecHitboxPosition);
 
 			for (Vector& vecPoint : multiPointed) {
 
@@ -196,8 +198,10 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
 			std::vector<Vector> multiPointed;
 
-			if (vecSelectedMultipoint[iHitbox]) 
+			if (vecSelectedMultipoint[iHitbox])
 				CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, multiPointed);
+			else
+				multiPointed.push_back(vecHitboxPosition);
 			
 			for (Vector& vecPoint : multiPointed) {
 

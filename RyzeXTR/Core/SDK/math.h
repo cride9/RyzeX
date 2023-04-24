@@ -58,6 +58,8 @@ namespace M
 	/* rotates given center point and outputs to given outpoint by given angle */
 	void	RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutPoint);
 
+	float Bias(float x, float biasAmt);
+
 	float	GenerateRandom(float, float);
 
 	void SinCos(float, float*, float*);

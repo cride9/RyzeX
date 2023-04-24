@@ -320,6 +320,18 @@ void M::RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutP
 	pOutPoint->y = y + vecCenter.y;
 }
 
+float M::Bias(float x, float biasAmt)
+{
+	// WARNING: not thread safe
+	static float lastAmt = -1;
+	static float lastExponent = 0;
+	if (lastAmt != biasAmt)
+	{
+		lastExponent = log(biasAmt) * -1.4427f; // (-1.4427 = 1 / log(0.5))
+	}
+	return pow(x, lastExponent);
+}
+
 float M::Approach(float target, float value, float speed) {
 	float delta = target - value;
 

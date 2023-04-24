@@ -1,7 +1,7 @@
 #include "../../hooks.h"
 #include "../../../SDK/Entity.h"
 
-void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudioHdr* hdr, void* unused2, void* unused3, const void* unused4, int unused5, void* unused6) {
+void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudioHdr* hdr, Vector* pos, Quaternion* q, const matrix3x4_t& transform, int mask, uint8_t* computed) {
 
 	static auto original = detour::buildTransform.GetOriginal<decltype(&h::hkBuildTransformation)>();
 
@@ -12,7 +12,7 @@ void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudio
 	for (auto i = 0; i < hdr->vecBoneFlags.Count(); i++)
 		hdr->vecBoneFlags.Element(i) &= ~BONE_ALWAYS_PROCEDURAL;
 
-	original(entityPointer, edx, hdr, unused2, unused3, unused4, unused5, unused6);
+	original(entityPointer, edx, hdr, pos, q, transform, mask, computed);
 
 	hdr->vecBoneFlags = backup;
 }

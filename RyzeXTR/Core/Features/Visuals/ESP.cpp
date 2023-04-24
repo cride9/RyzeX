@@ -317,6 +317,7 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 		}
 	}
 
+#if _DEBUG
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
 		using enum Lagcompensation::EResolverMode;
@@ -344,9 +345,20 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 		}
 
 		i::Surface->DrawT(right + 2, top + spacing, Color(184, 203, 131, 255), g::fonts::FlagESP, false, text.c_str());
-
 		spacing += 10;
+
+		static auto something = [](int right, int top, int& spacing, const char* print) {
+
+			i::Surface->DrawT(right + 2, top + spacing, Color(184, 203, 131, 255), g::fonts::FlagESP, false, print);
+			spacing += 10;
+		};
+
+		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[0].flPlaybackRate * 10000000).c_str());
+		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[1].flPlaybackRate * 10000000).c_str());
+		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[2].flPlaybackRate * 10000000).c_str());
+		something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[6].flPlaybackRate * 10000000).c_str());
 	}
+#endif
 }
 
 void visual::Glow(CBaseEntity* pLocal)

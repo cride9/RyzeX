@@ -82,6 +82,8 @@
     <ClCompile Include="Core\SDK\RayTracer rebuilt\CRayTrace.cpp" />
     <ClCompile Include="Core\SDK\InputSystem.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkPlayerMove.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkClampBonesInBBox.cpp" />
+    <ClCompile Include="Core\Features\Rage\Animations\Setupbones.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -177,5 +179,6 @@
     <ClInclude Include="Core\SDK\InputSystem.h" />
     <ClInclude Include="Core\memeSounds.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMdlCache.h" />
+    <ClInclude Include="Core\Features\Rage\Animations\Setupbones.h" />
   </ItemGroup>
 </Project>

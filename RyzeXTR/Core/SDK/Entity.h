@@ -456,6 +456,7 @@ public:
 class IKContext
 {
 public:
+
 	void Init( CStudioHdr* hdr, Vector& angles, Vector& origin, float curtime, int framecount, int boneMask ) {
 		static const auto ik_init_address = util::FindSignature( "client.dll", "55 8B EC 83 EC 08 8B 45 08 56 57 8B F9 8D 8F" );
 		reinterpret_cast< void( __thiscall* )( IKContext*, CStudioHdr*, Vector&, Vector&, float, int, int ) >( ik_init_address )( this, hdr, angles, origin, curtime, framecount, boneMask );
@@ -548,6 +549,8 @@ public:
 	ADD_NETVAROFFSET(AnimState, CAnimState*, "CCSPlayer->m_bIsScoped", -0x14); // @ida: 8B 8E ? ? ? ? F3 0F 10 48 ? E8 ? ? ? ? C7 + 0x2
 	ADD_NETVAR(m_flThirdpersonRecoil, float, "CCSPlayer->m_flThirdpersonRecoil");
 	ADD_NETVAR(m_bStrafing, bool, "CCSPlayer->m_bStrafing");
+	ADD_NETVAR(GetMoveState, int, "CCSPlayer->m_iMoveState");
+
 
 	// pointer offset variables
 	ADD_PNETVAROFFSET(GetViewAngles, Vector, "CBasePlayer->deadflag", 0x4);
@@ -796,6 +799,13 @@ public:
 		return *(std::array<float, 24>*)((uintptr_t)this + _m_flPoseParameter);
 	}
 
+	// pattern::find( m_client_dll, XOR( "55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75" ) ).as<uintptr_t>( );
+	int LookupSequence(const char* name) {
+
+		static uintptr_t sig = (uintptr_t)util::FindSignature("client.dll", "55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75");
+		return ((int(__thiscall*)(CBaseEntity*, const char*))sig)(this, name);
+	}
+
 	inline void SetPoseAngles(float flYaw, float flPitch) {
 
 		auto& arrPose = this->GetPoseParameter();
@@ -813,6 +823,14 @@ public:
 
 		using StandardBlendingRules_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, Quaternion*, float, int );
 		return util::GetVFunc< StandardBlendingRules_t >( this, 206 )( this, hdr, pos, q, time, mask );
+	}
+
+	void ClampBonesInBBox(matrix3x4_t* bones, int boneMask) {
+
+		using ClampBonesInBBox_t = void(__thiscall*)(decltype(this), matrix3x4_t*, int);
+		static auto oClampBonesInBBox = reinterpret_cast<ClampBonesInBBox_t>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38"));
+		return oClampBonesInBBox(this, bones, boneMask);
+		//return util::GetVFunc< ClampBonesInBBox_t >(this, 206)(this, pMatrix, iMask);
 	}
 
 	int& GetSimulationTick( ) {

@@ -154,6 +154,7 @@
     <ClCompile Include="Core\Features\Rage\Animations\EnemyAnimations.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\LocalAnimation.cpp" />
+    <ClCompile Include="Core\Features\Rage\Animations\Setupbones.cpp" />
     <ClCompile Include="Core\Features\Rage\antiaim.cpp" />
     <ClCompile Include="Core\Features\Rage\autowall.cpp" />
     <ClCompile Include="Core\Features\Rage\exploits.cpp" />
@@ -163,6 +164,7 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkBuildTransformation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkCalculateView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkCheckForSequenceChange.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkClampBonesInBBox.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkDoProceduralFootPlant.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkEstimateAbsVelocity.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkInterpolateServerEntites.cpp" />
@@ -236,6 +238,7 @@
     <ClInclude Include="Core\Features\Rage\Animations\EnemyAnimations.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\LocalAnimation.h" />
+    <ClInclude Include="Core\Features\Rage\Animations\Setupbones.h" />
     <ClInclude Include="Core\Features\Rage\antiaim.h" />
     <ClInclude Include="Core\Features\Rage\autowall.h" />
     <ClInclude Include="Core\Features\Rage\exploits.h" />

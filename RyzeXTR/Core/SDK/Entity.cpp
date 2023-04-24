@@ -487,11 +487,16 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 	if ( !hdr )
 		return false;
 
-	if (!detour::blendingRules.IsHooked() || !detour::buildTransform.IsHooked())
+	if (!detour::blendingRules.IsHooked() || 
+		!detour::buildTransform.IsHooked() || 
+		!detour::clampBonesInBBox.IsHooked() ||
+		!detour::extraBoneProcessing.IsHooked())
 		return false;
 
 	static auto standardBlendingRulesOriginal = detour::blendingRules.GetOriginal<decltype(&h::hkStandardBlendingRules)>();
 	static auto buildTransformationOriginal = detour::buildTransform.GetOriginal<decltype(&h::hkBuildTransformation)>();
+	static auto clampBonesInHitboxOriginal = detour::clampBonesInBBox.GetOriginal<decltype(&h::hkClampBonesInBBox)>();
+	static auto doExtraBoneProcessingOriginal = detour::extraBoneProcessing.GetOriginal<decltype(&h::hkDoExtraBoneProcessing)>();
 
 	const auto oldBones = target->GetBoneAccessor()->matBones;
 	const auto o_abs = target->GetAbsAngles( );
@@ -534,9 +539,12 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 		IK_context->UpdateTargets( pos, q, pBoneToWorldOut, boneComputed );
 		target->CalculateIKLocks( currentTime );
 		IK_context->SolveDependencies( pos, q, pBoneToWorldOut, boneComputed);
+
+		doExtraBoneProcessingOriginal(target, 0, hdr, pos, q, baseMatrix, &boneComputed[0], IK_context);
 	}
 
-	buildTransformationOriginal(target, 0, hdr, pos, q, &baseMatrix, boneMask, boneComputed);
+	buildTransformationOriginal(target, 0, hdr, pos, q, baseMatrix, boneMask, boneComputed);
+	clampBonesInHitboxOriginal(target, 0, pBoneToWorldOut, boneMask);
 
 	target->GetEffects( ) &= ~0x008;
 
@@ -545,6 +553,7 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 	target->SetAbsOrigin( o_origin );
 	target->SetAbsAngles( o_abs );
 	target->GetBoneAccessor( )->matBones = oldBones;
+
 	return true;
 }
 

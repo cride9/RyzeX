@@ -39,6 +39,7 @@ public:
 	void FixLowerbody( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, int i );
 	float GetVelocityLengthXY( CBaseEntity* );
 	void UpdateEnemyAnimations( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* pRecord );
+	void RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
 
 	/* enemy anims */
 

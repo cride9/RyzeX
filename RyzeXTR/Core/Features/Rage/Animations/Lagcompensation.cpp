@@ -372,7 +372,7 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 	{
 		for ( ; delta_ticks >= 0; delta_ticks -= iSimulationTickDelta )
 		{
-			auto ticks_left = std::clamp(iSimulationTickDelta, 0, 16);
+			auto ticks_left = iSimulationTickDelta;
 			do
 			{
 				Trace_t      trace;
