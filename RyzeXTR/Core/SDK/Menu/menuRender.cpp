@@ -187,6 +187,9 @@ void menu::Antiaimtab() noexcept {
         ImGui::Combo("Lower body yaw target", &iDesyncType, desyncList, IM_ARRAYSIZE(desyncList));
         if (iDesyncType != 0) {
 
+			ImGui::SliderFloat("Body lean", &cfg::antiaim::bodyLean[0], -58.f, 58.f, "%.f");
+			ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1], -58.f, 58.f, "%.f");
+
 			if (iDesyncType == 4) {
 				ImGui::SliderFloat("Yaw desync angle", &flDesyncValue, 0.f, 58.f, "%.f");
 				ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset, 0, 180.f);
@@ -203,6 +206,7 @@ void menu::Antiaimtab() noexcept {
 					ImGui::SliderInt("Modifier value ##2", &desyncModifierValue, 0, 58);
 			}
         }
+		ImGui::Checkbox("Invert on shoot", &bInvertOnShoot);
 		ImGui::Combo("Fresstanding", &freestand, freestandList, IM_ARRAYSIZE(freestandList));
     }
     ImGui::EndChild();

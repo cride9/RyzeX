@@ -33,7 +33,7 @@ public:
 
 	} rageBotData ;
 
-	void	CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, std::vector<Vector>&);
+	std::array<Vector, 3> CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int);
 
 private:
 

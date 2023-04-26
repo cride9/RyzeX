@@ -169,14 +169,15 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 				continue;
 
 			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
-			std::vector<Vector> multiPointed;
+			std::array<Vector, 3> multiPointed;
 
 			if (vecSelectedMultipoint[iHitbox])
-				CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, multiPointed);
-			else
-				multiPointed.push_back(vecHitboxPosition);
+				multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
 
 			for (Vector& vecPoint : multiPointed) {
+
+				if (vecPoint == Vector(0, 0, 0))
+					continue;
 
 				if (vecSelectedSafePoints[iHitbox]) {
 
@@ -215,14 +216,15 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 				continue;
 
 			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
-			std::vector<Vector> multiPointed;
+			std::array<Vector, 3> multiPointed;
 
 			if (vecSelectedMultipoint[iHitbox])
-				CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, multiPointed);
-			else
-				multiPointed.push_back(vecHitboxPosition);
-			
+				multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
+
 			for (Vector& vecPoint : multiPointed) {
+
+				if (vecPoint == Vector(0, 0, 0))
+					continue;
 
 				if (vecSelectedSafePoints[iHitbox]) {
 
@@ -965,10 +967,12 @@ bool CRageBot::CheckShootingCondition( CUserCmd * pCmd, CBaseEntity * pLocal ) {
 	return true;
 }
 
-void CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity * pLocal, CBaseCombatWeapon * pWeapon, Vector vecAngle, float flRadius, int iHitbox, std::vector<Vector>& output) {
+std::array<Vector, 3> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity * pLocal, CBaseCombatWeapon * pWeapon, Vector vecAngle, float flRadius, int iHitbox) {
+
+	static std::array<Vector, 3> output;
 
 	if ( flRadius <= 0 )
-		return output.push_back(vecAngle);
+		return { vecAngle, Vector(0, 0, 0), Vector(0, 0, 0) };
 
 	std::pair<int, int> multiPoints = ConfigMultipoint(pWeapon);
 
@@ -980,36 +984,40 @@ void CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity * pLocal, CBaseC
 
 	static int iMultiOptimization[HITBOX_MAX];
 
-	output.push_back(vecAngle);
+	output[0] = vecAngle;
 	switch (iMultiOptimization[iHitbox] % 5)
 	{
 	case 0:
-		output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
+		output[1] = (vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
 		if (bGenerateMore)
-			output.push_back(vecAngle + Vector(flHitboxDistance * 0.5f, 0.f, 0.f));
+			output[2] = (vecAngle + Vector(flHitboxDistance * 0.5f, 0.f, 0.f));
 		break;
 	case 1:
-		output.push_back(vecAngle + Vector(0.f, flHitboxDistance, 0.f));
+		output[1] = (vecAngle + Vector(0.f, flHitboxDistance, 0.f));
 		if (bGenerateMore)
-			output.push_back(vecAngle + Vector(0.f, flHitboxDistance * 0.5f, 0.f));
+			output[2] = (vecAngle + Vector(0.f, flHitboxDistance * 0.5f, 0.f));
 		break;
 	case 2:
-		output.push_back(vecAngle + Vector(0.f, 0.f, flHitboxDistance));
+		output[1] = (vecAngle + Vector(0.f, 0.f, flHitboxDistance));
 		if (bGenerateMore)
-			output.push_back(vecAngle + Vector(0.f, 0.f, flHitboxDistance * 0.5f));
+			output[2] = (vecAngle + Vector(0.f, 0.f, flHitboxDistance * 0.5f));
 		break;
 	case 3:
-		output.push_back(vecAngle + Vector(0.f, -flHitboxDistance, 0.f));
+		output[1] = (vecAngle + Vector(0.f, -flHitboxDistance, 0.f));
 		if (bGenerateMore)
-			output.push_back(vecAngle + Vector(0.f, -flHitboxDistance * 0.5f, 0.f));
+			output[2] = (vecAngle + Vector(0.f, -flHitboxDistance * 0.5f, 0.f));
 		break;
 	case 4:
-		output.push_back(vecAngle + Vector(-flHitboxDistance, 0.f, 0.f));
+		output[1] = (vecAngle + Vector(-flHitboxDistance, 0.f, 0.f));
 		if (bGenerateMore)
-			output.push_back(vecAngle + Vector(-flHitboxDistance * 0.5f, 0.f, 0.f));
+			output[2] = (vecAngle + Vector(-flHitboxDistance * 0.5f, 0.f, 0.f));
 		break;
 	}
+	if (!bGenerateMore)
+		output[2] = Vector(0, 0, 0);
 	iMultiOptimization[iHitbox]++;
+
+	return output;
 }
 
 bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, Vector vecMins, Vector vecMaxs, float flRadius) {

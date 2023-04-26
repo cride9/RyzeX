@@ -24,9 +24,42 @@ namespace visual {
 	void MoneyEsp(int, int, int, int, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
 
-	void Flags(int, int, CBaseEntity*, bool*, float[5][4]);
+	void Flags(int, int, CBaseEntity*, int, bool*, float[5][4]);
 
 	void WorldCrosshair();
 	inline Vector vecWorldCrosshair[5];
 	inline float flWorldCrosshairLength[5];
+
+	struct flagsInfo {
+
+		void StoreData(CBaseEntity* pEnt) {
+
+			PlayerInfo_t info = { };
+
+			if (i::EngineClient->GetPlayerInfo(pEnt->EntIndex(), &info)) 
+				szName = info.szName;
+			
+			if (CBaseCombatWeapon* pWeapon = pEnt->GetWeapon(); pWeapon	) {
+
+				iAmmo = pWeapon->GetAmmo();
+				iAmmoReserve = pWeapon->GetAmmoReserve();
+				szWeaponName = pWeapon->GetCSWpnData()->szWeaponName;
+			}
+			iHealth = pEnt->GetHealth();
+			iArmor = pEnt->GetArmor();
+			iMoney = pEnt->GetMoney();
+
+			g::bNewTick[pEnt->EntIndex()] = false;
+		}
+
+		const char* szName;
+		int iHealth;
+		int iArmor;
+		int iAmmo;
+		int iAmmoReserve;
+		int iMoney;
+		const char* szWeaponName;
+	};
+
+	inline std::array<flagsInfo, 65> flagsData = {};
 }

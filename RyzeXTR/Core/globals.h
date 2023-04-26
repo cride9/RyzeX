@@ -14,6 +14,7 @@ namespace g {
 
 	inline bool bAllowAnimations[65];
 	inline bool bWaiting;
+	inline bool bNewTick[65];
 
 	inline std::tuple<bool, int> bSettingUpBones[65];
 

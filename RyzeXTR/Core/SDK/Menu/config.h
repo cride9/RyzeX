@@ -101,6 +101,8 @@ namespace cfg {
 		inline float flDesyncValue = 58.f;
 		inline int iInverterBind = 0;
 
+		inline float bodyLean[2];
+
 		inline int iFlickOffset = 0;
 		inline int flickAngleSwitch = 0;
 

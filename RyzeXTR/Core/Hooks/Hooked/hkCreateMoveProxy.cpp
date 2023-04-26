@@ -16,6 +16,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	static auto original = detour::createMove.GetOriginal<decltype(&h::hkCreateMoveProxy)>();
 
+	for (size_t i = 0; i < 65; i++) 
+		g::bNewTick[i] = true;
+	
 	// call original first so our movement and other stuff will be sent normally
 	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
 
@@ -65,6 +68,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 			misc::vecEyePosition = pLocal->GetEyePosition();
 		if (ragebot.rageBotData.iTickCount + 3 >= i::GlobalVars->iTickCount)
 			bSendPacket = true;
+		antiaim::InvertOnShoot(pCmd);
 	}
 	prediction.End(pCmd, pLocal);
 

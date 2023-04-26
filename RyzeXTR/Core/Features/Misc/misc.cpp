@@ -1048,21 +1048,20 @@ void misc::RemoveSmoke() {
 	flCurrentTime = i::GlobalVars->flCurrentTime;
 	static auto sigLineGoesThroughSmoke = util::FindSignature("client.dll", "55 8B EC 83 EC 08 8B 15 ? ? ? ? 0F 57 C0");
 
-	static std::vector<const char*> vecSmokeWireframe =
+	static const char* vecSmokeWireframe =
 	{
 		"particle/vistasmokev1/vistasmokev1_smokegrenade",
 	};
 
-	static std::vector<const char*> vecSmokeNoDraw =
+	static std::array<const char*, 3> vecSmokeNoDraw =
 	{
 		"particle/vistasmokev1/vistasmokev1_fire",
 		"particle/vistasmokev1/vistasmokev1_emods",
 		"particle/vistasmokev1/vistasmokev1_emods_impactdust",
 	};
 
-	for (auto szCurrentMat : vecSmokeWireframe) {
-
-		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(szCurrentMat, "Other textures");
+	{
+		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(vecSmokeWireframe, "Other textures");
 		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, true); //wireframe
 	}
 

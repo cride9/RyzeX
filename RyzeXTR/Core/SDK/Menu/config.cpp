@@ -132,6 +132,9 @@ void CConfig::Setup() {
 		SetupValue(iYaw, 0, "antiaim", "yaw");
 		SetupValue(iYawBase, 0, "antiaim", "yawbase");
 		SetupValue(bSlideWalk, 0, "antiaim", "slidewalk");
+		SetupValue(bInvertOnShoot, false, "antiaim", "bInvertOnShoot");
+		SetupValue(bodyLean[0], 0.f, "antiaim", "bodyLean1");
+		SetupValue(bodyLean[1], 0.f, "antiaim", "bodyLean2");
 
 		SetupValue(modifier, 0, "antiaim", "modifier");
 		SetupValue(desyncModifier, 0, "antiaim", "desyncModifier");

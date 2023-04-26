@@ -7,7 +7,7 @@
 void Lagcompensation::SetupPlayerBones(CBaseEntity* pPlayer, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* Matrix, int nFlags) {
 
 	g::bSettingUpBones[pPlayer->EntIndex()] = std::make_tuple(true, nFlags);
-	pPlayer->SetupBones(Matrix, 128, nFlags, 0.f);
+	pPlayer->SetupBones(Matrix, 128, nFlags, TICKS_TO_TIME(lagcomp.FixTickCount(pRecord->flSimulationTime)));
 	g::bSettingUpBones[pPlayer->EntIndex()] = std::make_tuple(false, 0);
 }
 

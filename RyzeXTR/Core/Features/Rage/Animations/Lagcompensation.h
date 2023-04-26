@@ -74,6 +74,7 @@ public:
 		matrix3x4_t pLeftMatrix[128];
 		matrix3x4_t pRightMatrix[128];
 		matrix3x4_t pCenterMatrix[128];
+		bool bSetupMatrixes = false;
 
 		bool bBreakingLagcompensation{};
 		bool bFakewalking{};

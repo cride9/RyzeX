@@ -179,12 +179,9 @@ float Animations::GetLocalCycleIncrement( CBaseEntity* pEntity, float flPlayback
 
 void Animations::UpdateSafePointMatrixes(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
 
-	if (pRecord->pCenterMatrix->GetOrigin() != Vector(0, 0, 0) || 
-		pRecord->pLeftMatrix->GetOrigin() != Vector(0, 0, 0) ||
-		pRecord->pRightMatrix->GetOrigin() != Vector(0, 0, 0))
-	{
+	if (!pRecord->bSetupMatrixes)
 		return;
-	}
+	
 	CAnimState pBackupState;
 	memcpy(&pBackupState, pEntity->AnimState(), sizeof(CAnimState));
 	{
@@ -222,6 +219,7 @@ void Animations::UpdateSafePointMatrixes(CBaseEntity* pEntity, Lagcompensation::
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 		lagcomp.SetupPlayerBones(pEntity, pRecord, pRecord->pRightMatrix, EMatrixFlags::BoneUsedByHitbox);
 	}
+	pRecord->bSetupMatrixes = true;
 }
 
 void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord )
@@ -1101,6 +1099,9 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 
 bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount) {
 
+	if (!g::pLocal)
+		return false;
+
 	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex());
 
 	if (!pLog)
@@ -1109,10 +1110,13 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (pLog->pEntity == nullptr)
 		return false;
 
-	if (!pLog->pEntity->IsAlive() || pLog->pEntity->IsDormant())
+	if (!pLog->pEntity->IsAlive())
 		return false;
 	
 	if (pLog->pRecord.empty())
+		return false;
+
+	if (pLog->pEntity->IsDormant() || pLog->pRecord.front().bDormant || !pLog->pRecord.front().pMatrix)
 		return false;
 
 	pEnt->GetBoneAccessor()->matBones = pLog->pRecord.front().pMatrix;

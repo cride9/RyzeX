@@ -39,7 +39,6 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
 
-		//localanim.FixVelocityModifer();
 		break;
 	}
 }
@@ -68,9 +67,6 @@ void hkPostFrameStageNotify(EStage curStage) {
 
 		break;
 	}
-	//engineprediction->ModifyDatamap();
-
-	//return engineprediction->OnFrameStageNotify(curStage);
 }
 
 void __fastcall h::hkFrameStageNotify(void* ecx, void* edx, EStage curStage) {

@@ -49,6 +49,7 @@ namespace antiaim {
 	
 	bool FreeStandingDistance(CUserCmd*, Vector&);
 	bool FreeStandingThreat(Vector& angle);
+    void InvertOnShoot(CUserCmd* pCmd);
 	int ClosestToLocal();
 	void AtTarget(CUserCmd*, Vector&);
 }

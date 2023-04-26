@@ -90,7 +90,7 @@ void visual::VisualRender() {
 			if (bArmor[ENEMY]) KevlarEsp(left, top.y, right, bot.y, pEnt, Color(flArmorColor[ENEMY]));
 			if (bAmmo[ENEMY]) AmmoEsp(left, top.y, right, bot.y, pEnt, Color(flAmmoColor[ENEMY]));
 			if (bWeapon[ENEMY]) WeaponEsp(left, top.y, right, bot.y, pEnt, Color(flWeaponColor[ENEMY]));
-			Flags(top.y, right, pEnt, bFlags[ENEMY], flFlagsColor[ENEMY]);
+			Flags(top.y, right, pEnt, i, bFlags[ENEMY], flFlagsColor[ENEMY]);
 		}
 		else {
 
@@ -105,7 +105,7 @@ void visual::VisualRender() {
 				if (bArmor[LOCAL]) KevlarEsp(left, top.y, right, bot.y, pEnt, Color(flArmorColor[LOCAL]));
 				if (bAmmo[LOCAL]) AmmoEsp(left, top.y, right, bot.y, pEnt, Color(flAmmoColor[LOCAL]));
 				if (bWeapon[LOCAL]) WeaponEsp(left, top.y, right, bot.y, pEnt, Color(flWeaponColor[LOCAL]));
-				Flags(top.y, right, pEnt, bFlags[LOCAL], flFlagsColor[LOCAL]);
+				Flags(top.y, right, pEnt, i, bFlags[LOCAL], flFlagsColor[LOCAL]);
 
 				continue;
 			}
@@ -119,7 +119,7 @@ void visual::VisualRender() {
 			if (bArmor[TEAM]) KevlarEsp(left, top.y, right, bot.y, pEnt, Color(flArmorColor[TEAM]));
 			if (bAmmo[TEAM]) AmmoEsp(left, top.y, right, bot.y, pEnt, Color(flAmmoColor[TEAM]));
 			if (bWeapon[TEAM]) WeaponEsp(left, top.y, right, bot.y, pEnt, Color(flWeaponColor[TEAM]));
-			Flags(top.y, right, pEnt, bFlags[TEAM], flFlagsColor[TEAM]);
+			Flags(top.y, right, pEnt, i, bFlags[TEAM], flFlagsColor[TEAM]);
 
 		}
 	}
@@ -237,26 +237,23 @@ void visual::WeaponEsp(int left, int top, int right, int bot, CBaseEntity* pEnt,
 	i::Surface->DrawT(left, bot, Color(color), g::fonts::FlagESP, false, text.c_str());
 }
 
-void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float flFlagsColor[5][4]) {
+void visual::Flags(int top, int right, CBaseEntity* pEnt, int iIndex, bool* bFlags, float flFlagsColor[5][4]) {
 
+	if (g::bNewTick[iIndex])
+		flagsData[iIndex].StoreData(pEnt);
+	
 	int spacing = -2;
 	if (bFlags[NAME]) {
 
-		PlayerInfo_t info = { };
-
-		if (i::EngineClient->GetPlayerInfo(pEnt->EntIndex(), &info)) {
-
-
-			i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[NAME], g::fonts::FlagESP, false, info.szName);
-			spacing += 10;
-		}
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[NAME], g::fonts::FlagESP, false, flagsData[iIndex].szName);
+		spacing += 10;
 	}
 
 	if (bFlags[HEALTH]) {
 
-		const float percentage = pEnt->GetHealth() / 100.f;
+		const float percentage = flagsData[iIndex].iHealth / 100.f;
 		std::string text = "Health: [";
-		text += std::to_string(pEnt->GetHealth());
+		text += std::to_string(flagsData[iIndex].iHealth);
 		text += "]";
 
 		i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::FlagESP, false, text.c_str());
@@ -267,7 +264,7 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 	if (bFlags[ARMOR]) {
 
 		std::string text = "Kevlar: [";
-		text += std::to_string(pEnt->GetArmor());
+		text += std::to_string(flagsData[iIndex].iArmor);
 		text += "]";
 
 		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[ARMOR], g::fonts::FlagESP, false, text.c_str());
@@ -280,9 +277,9 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 		if (!pEnt->GetWeapon()) {
 			std::string text = "[ ";
 
-			text += std::to_string(pEnt->GetWeapon()->GetAmmo());
+			text += std::to_string(flagsData[iIndex].iAmmo);
 			text += "/";
-			text += std::to_string(pEnt->GetWeapon()->GetAmmoReserve());
+			text += std::to_string(flagsData[iIndex].iAmmoReserve);
 			text += " ]";
 
 			i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, text.c_str());
@@ -294,7 +291,7 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 	if (bFlags[MONEY]) {
 
 		std::string text = "$";
-		text += std::to_string(pEnt->GetMoney()) + "\n";
+		text += std::to_string(flagsData[iIndex].iMoney) + "\n";
 
 		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[MONEY], g::fonts::FlagESP, false, text.c_str());
 
@@ -303,21 +300,13 @@ void visual::Flags(int top, int right, CBaseEntity* pEnt, bool* bFlags, float fl
 
 	if (bFlags[WEAPON]) {
 
-		if (pEnt->GetWeapon()) {
-
-			auto pWeaponInfo = pEnt->GetWeapon()->GetCSWpnData();
-
-			if (pWeaponInfo) {
-
-				std::string text = pWeaponInfo->szWeaponName;
-				text.erase(0, 7);
-				i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
-				spacing += 10;
-			}
-		}
+		std::string text = flagsData[iIndex].szWeaponName;
+		text.erase(0, 7);
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
+		spacing += 10;
 	}
 
-#if _DEBUG
+#if no
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
 		using enum Lagcompensation::EResolverMode;

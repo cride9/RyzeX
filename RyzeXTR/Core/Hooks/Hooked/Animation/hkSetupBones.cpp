@@ -137,8 +137,6 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 		i::GlobalVars->iFrameCount = std::get < 5 >(m_Globals);
 		i::GlobalVars->iTickCount = std::get < 6 >(m_Globals);
 
-		anims.CopyCachedMatrix(pEnt, matrix, maxbones);
-
 		return bResult;
 	}
 	else if (matrix) {

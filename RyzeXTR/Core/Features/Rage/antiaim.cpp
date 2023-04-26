@@ -21,6 +21,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		desyncValue = 0.f;
 		return;
 	}
+	int inverter = GetKeyState(cfg::antiaim::iInverterBind) ? 1 : -1;
 
 	if (ragebot.rageBotData.iTickCount + 3 >= i::GlobalVars->iTickCount) {
 
@@ -108,7 +109,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		case STATIC:
 		{
 			needMicromovement = true;
-			desyncValue = GetKeyState( cfg::antiaim::iInverterBind ) ? ( cfg::antiaim::flDesyncValue ) : -( cfg::antiaim::flDesyncValue );	
+			desyncValue = cfg::antiaim::flDesyncValue;
 			break;
 		case EXTENDED:
 		{
@@ -117,9 +118,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			if ( NextLBYUpdate( pCmd ) )
 			{
 				desyncValue = -120.f;
-
-				if ( GetKeyState( cfg::antiaim::iInverterBind ) )
-					desyncValue *= -1.f;
 
 				if ( cfg::antiaim::m_bSwayDesync )
 				{
@@ -133,13 +131,13 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 				}
 
 				// set lby angle.
-				pCmd->angViewPoint.y += desyncValue;
+				pCmd->angViewPoint.y += desyncValue * inverter;
 
 				// set bSendPacket to false.
 				bSendPacket = false;
 			}
 			else if (!bSendPacket) {
-				pCmd->angViewPoint.y -= desyncValue;
+				pCmd->angViewPoint.y -= desyncValue * inverter;
 			}
 		}
 			break;
@@ -167,11 +165,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 				else {
 					desyncValue = M::NormalizeYaw(-cfg::antiaim::flDesyncValue + cfg::antiaim::iFlickOffset);
 				}
-				pCmd->angViewPoint.y += GetKeyState(cfg::antiaim::iInverterBind) ? desyncValue : -desyncValue;
+				pCmd->angViewPoint.y += desyncValue * inverter;
 				bSendPacket = false;
 			}
 			else if (!bSendPacket) {
-				pCmd->angViewPoint.y -= GetKeyState(cfg::antiaim::iInverterBind) ? desyncValue : -desyncValue;
+				pCmd->angViewPoint.y -= desyncValue * inverter;
 			}
 			break;
 
@@ -181,6 +179,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			break;
 		}
 	}
+	if (bSendPacket)
+		pCmd->angViewPoint.y += cfg::antiaim::bodyLean[inverter == 1 ? 0 : 1];
 
 	// no lby break sry its 2022 nobody stands still and breaks lby
 	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
@@ -192,6 +192,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		else if (cfg::antiaim::desyncModifier == 2)
 			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
 	}
+
+	desyncValue *= inverter;
 
 	if ( !bSendPacket && cfg::antiaim::iDesyncType != EXTENDED && cfg::antiaim::iDesyncType != FLICK ) {
 
@@ -475,11 +477,8 @@ int antiaim::ClosestToLocal() {
 
 void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 
-	auto lowestFov = [&](std::pair<float, Vector> this1, std::pair<float, Vector> this2) -> float {
-		return this1.first < this2.first;
-	};
-
-	std::vector<std::pair<float, Vector>> arrPlayerDistances;
+	Vector vecBestEntity = Vector(0, 0, 0);
+	float flBestFov = 180.f;
 	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
 	{
 		CBaseEntity* pEnt = (CBaseEntity*)i::EntityList->GetClientEntity(i);
@@ -488,21 +487,21 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 			continue;
 
 		Vector vecCalcAngle;
-		auto vecHitboxPosition = pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST);
-		if (vecHitboxPosition.has_value()) {
-			M::VectorAngles(vecHitboxPosition.value() - g::pLocal->GetEyePosition(), vecCalcAngle);
-			Vector vecDistanceBetween = (g::vecOriginalViewAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+		auto vecHitboxPosition = pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST, pEnt->GetCachedBoneData().Base());
 
-			arrPlayerDistances.push_back(std::make_pair(abs(vecDistanceBetween.Length2D()), vecCalcAngle));
+		M::VectorAngles(vecHitboxPosition - g::pLocal->GetEyePosition(), vecCalcAngle);
+		Vector vecDistanceBetween = (g::vecOriginalViewAngle - vecCalcAngle);
+
+		if (abs(vecDistanceBetween.Length2D()) < flBestFov) {
+
+			vecBestEntity = vecCalcAngle;
+			flBestFov = abs(vecDistanceBetween.Length2D());
 		}
 	}
-
-	if (arrPlayerDistances.empty())
+	if (vecBestEntity == Vector(0, 0, 0))
 		return;
 
-	std::sort(arrPlayerDistances.begin(), arrPlayerDistances.end(), lowestFov);
-
-	pCmd->angViewPoint.y = (arrPlayerDistances.front().second.y);
+	pCmd->angViewPoint.y = vecBestEntity.y;
 }
 
 bool antiaim::FreeStandingThreat(Vector& angle)
@@ -590,4 +589,24 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 		angle.y = FinalAngle;
 
 	return true;
+}
+
+void antiaim::InvertOnShoot(CUserCmd* pCmd) {
+
+	/* Invert on shoot */
+	if (pCmd->iButtons & IN_ATTACK && cfg::antiaim::bInvertOnShoot) {
+
+		// Set up a generic keyboard event.
+		INPUT inputs[2] = {};
+		ZeroMemory(inputs, sizeof(inputs));
+
+		inputs[0].type = INPUT_KEYBOARD;
+		inputs[0].ki.wVk = cfg::antiaim::iInverterBind;
+
+		inputs[1].type = INPUT_KEYBOARD;
+		inputs[1].ki.wVk = cfg::antiaim::iInverterBind;
+		inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+
+		SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+	}
 }
