@@ -64,6 +64,16 @@ public:
 	CUtlVector<int>	vecBoneFlags;
 	CUtlVector<int>	vecBoneParent;
 	void* pActivityToSequence;
+
+
+	// full class from other cheat. Try to figure out the padding :(
+	//studiohdr_t* m_pStudioHdr;
+	//void* m_pVModel;
+	//char pad[ 120 ];
+
+	//int m_nPerfAnimatedBones;
+	//int m_nPerfUsedBones;
+	//int m_nPerfAnimationLayers;
 };
 
 enum EMatrixFlags

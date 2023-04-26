@@ -71,141 +71,142 @@ bool features::bones::HandleBoneSetup(CBaseEntity* player, matrix3x4_t* bone_to_
 	return true;
 }
 
-//bool features::bones::SetupBonesRebuild(CBaseEntity* entity, matrix3x4_t* pBoneMatrix, int nBoneCount, int boneMask, float time, int flags)
-//{
-//	if (!entity)
-//		return false;
-//
-//	if (entity->GetSequence() == -1)
-//		return false;
-//
-//	if (boneMask == -1) {
-//		boneMask = entity->m_iPrevBoneMask();
-//	}
-//
-//	boneMask = boneMask | 0x80000; // BONE_ALWAYS_SETUP
-//
-//	// If we're setting up LOD N, we have set up all lower LODs also
-//	// because lower LODs always use subsets of the bones of higher LODs.
-//	int nLOD = 0;
-//	int nMask = BONE_USED_BY_VERTEX_LOD0;
-//	for (; nLOD < MAX_NUM_LODS; ++nLOD, nMask <<= 1) {
-//		if (boneMask & nMask)
-//			break;
-//	}
-//	for (; nLOD < MAX_NUM_LODS; ++nLOD, nMask <<= 1) {
-//		boneMask |= nMask;
-//	}
-//
-//	CBoneAccessor backup_bone_accessor = *entity->GetBoneAccessor();
-//	CBoneAccessor* bone_accessor = entity->GetBoneAccessor();
-//	if (!bone_accessor)
-//		return false;
-//
-//	static auto _InvalidateBoneCache = reinterpret_cast<uintptr_t>(util::FindSignature("client.dll", "80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"));
-//	unsigned long model_bone_counter = **(unsigned long**)(_InvalidateBoneCache + 0x000A);
-//
-//	if (entity->m_iMostRecentModelBoneCounter() != model_bone_counter || (flags & BoneSetupFlags::ForceInvalidateBoneCache)) {
-//		if (FLT_MAX >= entity->GetLastSetupBonesTime() || time < entity->GetLastSetupBonesTime()) {
-//			bone_accessor->nReadableBones = 0;
-//			bone_accessor->nWritableBones = 0;
-//			entity->GetLastSetupBonesTime() = (time);
-//		}
-//
-//		entity->m_iPrevBoneMask() = entity->m_iAccumulatedBoneMask();
-//		entity->m_iAccumulatedBoneMask() = 0;
-//
-//		auto hdr = entity->GetStudioHdr();
-//		if (hdr) { // profiler stuff
-//			hdr->m_nPerfAnimatedBones = 0;
-//			hdr->m_nPerfUsedBones = 0;
-//			hdr->m_nPerfAnimationLayers = 0;
-//		}
-//	}
-//
-//	// we don't need bones to jiggle
-//	//entity->m_isJiggleBonesEnabled() = false;
-//
-//	// Keep track of everything asked for over the entire frame
-//	// But not those things asked for during bone setup
-//	entity->m_iAccumulatedBoneMask() |= boneMask;
-//
-//	// fix enemy poses getting raped when going out of pvs
-//	entity->GetOcclusionFrameCount() = 0;
-//	entity->m_iOcclusionFlags() = 0;
-//
-//	// Make sure that we know that we've already calculated some bone stuff this time around.
-//	entity->m_iMostRecentModelBoneCounter() = model_bone_counter;
-//
-//	bool bReturnCustomMatrix = (flags & BoneSetupFlags::UseCustomOutput) && pBoneMatrix;
-//	CStudioHdr* hdr = entity->m_studioHdr();
-//	if (!hdr) {
-//		return false;
-//	}
-//
-//	// Setup our transform based on render angles and origin.
-//	vec3_t origin = (flags & BoneSetupFlags::UseInterpolatedOrigin) ? entity->GetAbsOrigin() : entity->m_vecOrigin();
-//	vec3_t angles = entity->GetAbsAngles();
-//
-//	matrix3x4a_t parentTransform;
-//	math::angle_matrix(angles, origin, parentTransform);
-//
-//	boneMask |= entity->m_iPrevBoneMask();
-//
-//	if (bReturnCustomMatrix) {
-//		bone_accessor->m_pBones = pBoneMatrix;
-//	}
-//
-//	// Allow access to the bones we're setting up so we don't get asserts in here.
-//	int oldReadableBones = bone_accessor->m_ReadableBones;
-//	int oldWritableBones = bone_accessor->m_WritableBones;
-//	int newWritableBones = oldReadableBones | boneMask;
-//	bone_accessor->m_WritableBones = newWritableBones;
-//	bone_accessor->m_ReadableBones = newWritableBones;
-//
-//	if (!(hdr->m_pStudioHdr->m_flags & 0x00000010)) {
-//		entity->m_fEffects() |= EF_NOINTERP;
-//
-//		entity->m_iEFlags() |= EFL_SETTING_UP_BONES;
-//
-//		entity->GetIKContext() = nullptr;
-//		entity->m_EntClientFlags() |= 2; // ENTCLIENTFLAGS_DONTUSEIK
-//
-//		alignas(16) vec3_t pos[128];
-//		alignas(16) quaternion q[128];
-//		uint8_t computed[0x100];
-//
-//		entity->StandardBlendingRules(hdr, pos, q, time, boneMask);
-//
-//		std::memset(computed, 0, 0x100);
-//		entity->BuildTransformations(hdr, pos, q, parentTransform, boneMask, computed);
-//
-//		entity->m_iEFlags() &= ~EFL_SETTING_UP_BONES;
-//
-//		// entity->ControlMouth( hdr );
-//
-//		if (!bReturnCustomMatrix /*&& !bSkipAnimFrame*/) {
-//			// https://github.com/perilouswithadollarsign/cstrike15_src/blob/master/game/client/c_baseanimating.cpp#L3390
-//			// for future updates we need to sig it..
-//			memcpy((void*)(uintptr_t(entity) + 0xA68), &pos[0], sizeof(vec3_t) * hdr->m_pStudioHdr->m_num_bones);
-//			memcpy((void*)(uintptr_t(entity) + 0x166C), &q[0], sizeof(quaternion) * hdr->m_pStudioHdr->m_num_bones);
-//		}
-//	}
-//	else {
-//		parentTransform = bone_accessor->m_pBones[0];
-//	}
-//
-//	if ( /*boneMask & BONE_USED_BY_ATTACHMENT*/ flags & BoneSetupFlags::AttachmentHelper) {
-//		static auto SetupBones_AttachmentHelper = patterns::SetupBones_AttachmentHelper.get< void(__thiscall*)(void*, CStudioHdr*)>();
-//		SetupBones_AttachmentHelper(entity, hdr);
-//	}
-//
-//	// don't override bone cache if we're just generating a standalone matrix
-//	if (bReturnCustomMatrix) {
-//		*bone_accessor = backup_bone_accessor;
-//
-//		return true;
-//	}
-//
-//	return true;
-//}
+bool features::bones::SetupBonesRebuild(CBaseEntity* entity, matrix3x4_t* pBoneMatrix, int nBoneCount, int boneMask, float time, int flags)
+{
+	if (!entity)
+		return false;
+
+	if (entity->GetSequence() == -1)
+		return false;
+
+	if (boneMask == -1) {
+		boneMask = entity->GetPrevBoneMask();
+	}
+
+	boneMask = boneMask | 0x80000; // BONE_ALWAYS_SETUP
+
+	// If we're setting up LOD N, we have set up all lower LODs also
+	// because lower LODs always use subsets of the bones of higher LODs.
+	int nLOD = 0;
+	int nMask = BONE_USED_BY_VERTEX_LOD0;
+	for (; nLOD < MAX_NUM_LODS; ++nLOD, nMask <<= 1) {
+		if (boneMask & nMask)
+			break;
+	}
+	for (; nLOD < MAX_NUM_LODS; ++nLOD, nMask <<= 1) {
+		boneMask |= nMask;
+	}
+
+	CBoneAccessor backup_bone_accessor = *entity->GetBoneAccessor();
+	CBoneAccessor* bone_accessor = entity->GetBoneAccessor();
+	if (!bone_accessor)
+		return false;
+
+	static auto _InvalidateBoneCache = reinterpret_cast<uintptr_t>(util::FindSignature("client.dll", "80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"));
+	unsigned long model_bone_counter = **(unsigned long**)(_InvalidateBoneCache + 0x000A);
+
+	if (entity->GetRecentModelBoneCounter() != model_bone_counter || (flags & BoneSetupFlags::ForceInvalidateBoneCache)) {
+		if (FLT_MAX >= entity->GetLastSetupBonesTime() || time < entity->GetLastSetupBonesTime()) {
+			bone_accessor->nReadableBones = 0;
+			bone_accessor->nWritableBones = 0;
+			entity->GetLastSetupBonesTime() = (time);
+		}
+
+		entity->GetPrevBoneMask() = entity->GetAccumulatedBoneMask();
+		entity->GetAccumulatedBoneMask() = 0;
+
+		auto hdr = entity->GetStudioHdr();
+		if (hdr) { // profiler stuff
+			hdr->m_nPerfAnimatedBones = 0;
+			hdr->m_nPerfUsedBones = 0;
+			hdr->m_nPerfAnimationLayers = 0;
+		}
+	}
+
+	// we don't need bones to jiggle
+	//entity->m_isJiggleBonesEnabled() = false;
+
+	// Keep track of everything asked for over the entire frame
+	// But not those things asked for during bone setup
+	entity->GetAccumulatedBoneMask() |= boneMask;
+
+	// fix enemy poses getting raped when going out of pvs
+	entity->GetOcclusionFrameCount() = 0;
+	entity->GetOcclusionFlags() = 0;
+
+	// Make sure that we know that we've already calculated some bone stuff this time around.
+	entity->GetRecentModelBoneCounter() = model_bone_counter;
+
+	bool bReturnCustomMatrix = (flags & BoneSetupFlags::UseCustomOutput) && pBoneMatrix;
+	CStudioHdr* hdr = entity->GetStudioHdr();
+	if (!hdr) {
+		return false;
+	}
+
+	// Setup our transform based on render angles and origin.
+	Vector origin = (flags & BoneSetupFlags::UseInterpolatedOrigin) ? entity->GetAbsOrigin() : entity->GetVecOrigin();
+	Vector angles = entity->GetAbsAngles();
+
+	matrix3x4a_t parentTransform;
+	M::AngleMatrix(angles, origin, parentTransform);
+
+	boneMask |= entity->GetPrevBoneMask();
+
+	if (bReturnCustomMatrix) {
+		bone_accessor->matBones = pBoneMatrix;
+	}
+
+	// Allow access to the bones we're setting up so we don't get asserts in here.
+	int oldReadableBones = bone_accessor->nReadableBones;
+	int oldWritableBones = bone_accessor->nWritableBones;
+	int newWritableBones = oldReadableBones | boneMask;
+	bone_accessor->nWritableBones = newWritableBones;
+	bone_accessor->nReadableBones = newWritableBones;
+
+	if (!(hdr->pStudioHdr->iFlags & 0x00000010)) {
+		entity->GetEffects() |= EF_NOINTERP;
+
+		entity->GetEFlags() |= EFL_SETTING_UP_BONES;
+
+		entity->GetIKContext2() = nullptr;
+		entity->GetOffset<unsigned short>( 0x68 ) |= 2; // ENTCLIENTFLAGS_DONTUSEIK
+
+		alignas(16) Vector pos[128];
+		alignas(16) Quaternion q[128];
+		uint8_t computed[0x100];
+
+		entity->StandardBlendingRules(hdr, pos, q, time, boneMask);
+
+		std::memset(computed, 0, 0x100);
+		entity->BuildTransformations(hdr, pos, q, parentTransform, boneMask, computed);
+
+		entity->GetEFlags() &= ~EFL_SETTING_UP_BONES;
+
+		// entity->ControlMouth( hdr );
+
+		if (!bReturnCustomMatrix /*&& !bSkipAnimFrame*/) {
+			// https://github.com/perilouswithadollarsign/cstrike15_src/blob/master/game/client/c_baseanimating.cpp#L3390
+			// for future updates we need to sig it..
+			memcpy((void*)(uintptr_t(entity) + 0xA68), &pos[0], sizeof( Vector ) * hdr->pStudioHdr->nBones);
+			memcpy((void*)(uintptr_t(entity) + 0x166C), &q[0], sizeof( Quaternion ) * hdr->pStudioHdr->nBones );
+		}
+	}
+	else {
+		parentTransform = bone_accessor->matBones[0];
+	}
+
+	if ( /*boneMask & BONE_USED_BY_ATTACHMENT*/ flags & BoneSetupFlags::AttachmentHelper) {
+		entity->SetupBones_AttachmentHelper( );
+	/*	static auto SetupBones_AttachmentHelper = patterns::SetupBones_AttachmentHelper.get< void(__thiscall*)(void*, CStudioHdr*)>();
+		SetupBones_AttachmentHelper(entity, hdr);*/
+	}
+
+	// don't override bone cache if we're just generating a standalone matrix
+	if (bReturnCustomMatrix) {
+		*bone_accessor = backup_bone_accessor;
+
+		return true;
+	}
+
+	return true;
+}

@@ -684,6 +684,10 @@ public:
 		return *( IKContext** )( ( uintptr_t )this + 9836 + 0x4 );
 	}
 
+	IKContext*& GetIKContext2( ) {
+		return *( IKContext** )( ( uintptr_t )this + 0x2670 );
+	}
+
 	CStudioHdr* GetModelPtr( )
 	{
 		using LockStudioHdr_t = void( __thiscall* )( decltype( this ) );
@@ -787,6 +791,9 @@ public:
 	ADD_NETVAR(GetHitboxSet, int, "CBaseAnimating->m_nHitboxSet");
 	ADD_NETVAR(IsClientSideAnimation, bool, "CBaseAnimating->m_bClientSideAnimation");
 	ADD_NETVAR(GetCycle, float, "CBaseAnimating->m_flCycle");
+
+	ADD_NETVAROFFSET( GetPrevBoneMask, int, "CBaseAnimating->m_nForceBone", 0x10 );
+	ADD_NETVAROFFSET( GetAccumulatedBoneMask, int, "CBaseAnimating->m_iAccumulatedBoneMask", 0x14 );
 
 	Vector& m_angVisualAngles()
 	{
