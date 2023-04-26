@@ -548,12 +548,12 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 
 			if (autowall.CanHitFloatingPoint(vecOriginAutowall, vecViewPoint)) {
 
-				if (iSide == 0)	{
+				if (iSide == 1)	{
 
 					bSide1 = true;
 					FinalAngle = flAngToLocal + 90;
 				}
-				else if (iSide == 1) {
+				else if (iSide == 0) {
 
 					bSide2 = true;
 					FinalAngle = flAngToLocal - 90;
@@ -567,12 +567,12 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 
 					if (autowall.CanHitFloatingPoint(vecOriginAutowall3, vecOriginAutowall2)) {
 
-						if (iSideID == 0) {
+						if (iSideID == 1) {
 
 							bSide1 = true;
 							FinalAngle = flAngToLocal + 90;
 						}
-						else if (iSideID == 1) {
+						else if (iSideID == 0) {
 
 							bSide2 = true;
 							FinalAngle = flAngToLocal - 90;

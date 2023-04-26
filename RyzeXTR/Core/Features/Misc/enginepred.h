@@ -51,6 +51,7 @@ public:
 	void AdjustViewmodelData(CBaseEntity* pLocal);
 
 	std::array < CNetvarData, 150 > pNetvarData = { };
+	CUserCmd* pLastCmd = nullptr;
 
 private:
 

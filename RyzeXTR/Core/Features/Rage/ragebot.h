@@ -41,10 +41,11 @@ private:
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector, int);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*, Vector);
 	Vector				InterpolateLocalEyePosition(Vector, int = 1);
-	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, Vector, Vector, float);
+	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, Vector vecMins, Vector vecMaxs, float flRadius);
 	int					CalculateTickCount(float);
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
+	Lagcompensation::LagRecord_t* CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog);
 	bool				ShouldSendPacket(bool&);
 
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);

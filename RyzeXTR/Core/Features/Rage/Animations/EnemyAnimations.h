@@ -40,6 +40,7 @@ public:
 	float GetVelocityLengthXY( CBaseEntity* );
 	void UpdateEnemyAnimations( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* pRecord );
 	void RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
+	void UpdateSafePointMatrixes(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 
 	/* enemy anims */
 

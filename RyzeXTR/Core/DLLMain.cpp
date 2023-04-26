@@ -74,7 +74,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	i::SetupInterfaces();
 	SetupFonts();
 	n::SetupNetvars();
-	PlaySound(reinterpret_cast<LPCSTR>(memeSound::BUWAWA), NULL, SND_MEMORY | SND_ASYNC);
+	//PlaySound(reinterpret_cast<LPCSTR>(memeSound::BUWAWA), NULL, SND_MEMORY | SND_ASYNC);
 	menu::Setup();
 	M::Setup();
 	h::SetupHooks();

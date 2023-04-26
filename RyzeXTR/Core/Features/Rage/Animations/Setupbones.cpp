@@ -1,10 +1,22 @@
 #include "Setupbones.h"
+#include "../../../Hooks/hooks.h"
 #define BONE_USED_BY_SERVER BONE_USED_BY_ANYTHING | BONE_USED_BY_VERTEX_LOD0 | BONE_USED_BY_VERTEX_LOD1 | BONE_USED_BY_VERTEX_LOD2 | BONE_USED_BY_VERTEX_LOD3 | BONE_USED_BY_VERTEX_LOD4 | BONE_USED_BY_VERTEX_LOD5 | BONE_USED_BY_VERTEX_LOD6 | BONE_USED_BY_VERTEX_LOD7
 
 bool features::bones::HandleBoneSetup(CBaseEntity* player, matrix3x4_t* bone_to_world, int bone_mask, float curtime)
 {
 	if (!player || !player->GetClientClass() || player->GetClientClass()->nClassID != EClassIndex::CCSPlayer || !player->IsAlive())
 		return false;
+
+	if (!detour::blendingRules.IsHooked() ||
+		!detour::buildTransform.IsHooked() ||
+		!detour::clampBonesInBBox.IsHooked() ||
+		!detour::extraBoneProcessing.IsHooked())
+		return false;
+
+	static auto standardBlendingRulesOriginal = detour::blendingRules.GetOriginal<decltype(&h::hkStandardBlendingRules)>();
+	static auto buildTransformationOriginal = detour::buildTransform.GetOriginal<decltype(&h::hkBuildTransformation)>();
+	static auto clampBonesInHitboxOriginal = detour::clampBonesInBBox.GetOriginal<decltype(&h::hkClampBonesInBBox)>();
+	static auto doExtraBoneProcessingOriginal = detour::extraBoneProcessing.GetOriginal<decltype(&h::hkDoExtraBoneProcessing)>();
 
 	CStudioHdr* hdr = player->GetModelPtr();
 	if (!hdr)
@@ -48,7 +60,7 @@ bool features::bones::HandleBoneSetup(CBaseEntity* player, matrix3x4_t* bone_to_
 
 	uint32_t fBackupOcclusionFlags = player->GetOcclusionFlags();
 	player->GetOcclusionFlags() |= 0xA; // skipp call to accumulatelayers in standardblendingrules
-	player->StandardBlendingRules(hdr, pos, q, curtime, bone_mask);
+	standardBlendingRulesOriginal(player, 0, hdr, pos, q, curtime, bone_mask);
 	player->GetOcclusionFlags() = fBackupOcclusionFlags; // standardblendingrules was called now restore
 
 	if (IK_context)
@@ -57,9 +69,12 @@ bool features::bones::HandleBoneSetup(CBaseEntity* player, matrix3x4_t* bone_to_
 		IK_context->UpdateTargets(pos, q, bone_to_world, &boneComputed[0] /*boneComputed*/);
 		player->CalculateIKLocks(i::GlobalVars->flCurrentTime /*curtime*/);
 		IK_context->SolveDependencies(pos, q, bone_to_world, &boneComputed[0] /*boneComputed*/);
+
+		doExtraBoneProcessingOriginal(player, 0, hdr, pos, q, parent_transform, &boneComputed[0], IK_context);
 	}
 
-	player->BuildTransformations(hdr, pos, q, parent_transform, bone_mask, &boneComputed[0] /*boneComputed*/);
+	buildTransformationOriginal(player, 0, hdr, pos, q, parent_transform, bone_mask, &boneComputed[0] /*boneComputed*/);
+	clampBonesInHitboxOriginal(player, 0, bone_to_world, bone_mask);
 
 	player->GetEffects() = backup_effects;
 
@@ -102,7 +117,7 @@ bool features::bones::SetupBonesRebuild(CBaseEntity* entity, matrix3x4_t* pBoneM
 	if (!bone_accessor)
 		return false;
 
-	static auto _InvalidateBoneCache = reinterpret_cast<uintptr_t>(util::FindSignature("client.dll", "80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"));
+	static auto _InvalidateBoneCache = uintptr_t(util::FindSignature("client.dll", "80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"));
 	unsigned long model_bone_counter = **(unsigned long**)(_InvalidateBoneCache + 0x000A);
 
 	if (entity->GetRecentModelBoneCounter() != model_bone_counter || (flags & BoneSetupFlags::ForceInvalidateBoneCache)) {
@@ -117,9 +132,9 @@ bool features::bones::SetupBonesRebuild(CBaseEntity* entity, matrix3x4_t* pBoneM
 
 		auto hdr = entity->GetStudioHdr();
 		if (hdr) { // profiler stuff
-			hdr->m_nPerfAnimatedBones = 0;
-			hdr->m_nPerfUsedBones = 0;
-			hdr->m_nPerfAnimationLayers = 0;
+			hdr->m_nPerfAnimatedBones() = 0;
+			hdr->m_nPerfUsedBones() = 0;
+			hdr->m_nPerfAnimationLayers() = 0;
 		}
 	}
 
@@ -204,7 +219,6 @@ bool features::bones::SetupBonesRebuild(CBaseEntity* entity, matrix3x4_t* pBoneM
 	// don't override bone cache if we're just generating a standalone matrix
 	if (bReturnCustomMatrix) {
 		*bone_accessor = backup_bone_accessor;
-
 		return true;
 	}
 

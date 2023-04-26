@@ -73,8 +73,8 @@ void h::HookNetChannel(INetChannel* pNetChannel) {
 	// @note: doesnt need rehook cuz detours here
 	if (pNetChannel != nullptr)
 	{
-		if (!detour::processPacket.IsHooked())
-			h::HookTable(detour::processPacket, pNetChannel, table::processPacket, &h::hkProcessPacket);
+		//if (!detour::processPacket.IsHooked())
+		//	h::HookTable(detour::processPacket, pNetChannel, table::processPacket, &h::hkProcessPacket);
 
 		if (!detour::sendNetMsg.IsHooked())
 			h::HookTable(detour::sendNetMsg, pNetChannel, table::sendNetMsg, &h::hkSendNetMsg);

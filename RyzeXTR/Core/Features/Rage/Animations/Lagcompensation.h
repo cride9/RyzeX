@@ -99,7 +99,7 @@ public:
 		CAnimationLayer pResolverLayers[ 3 ][ 13 ];
 		CAnimationLayer pResolverLayers2[ 3 ][ 13 ];
 
-		LayerData_t LayerData[ 3 ];
+		LayerData_t LayerData[ 4 ];
 
 		CAnimationLayer pLayers[ 13 ];
 

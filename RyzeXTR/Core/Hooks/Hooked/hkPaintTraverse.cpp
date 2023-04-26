@@ -2,6 +2,7 @@
 #include "../../Features/Visuals/ESP.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Rage/ragebot.h"
+#include "../../Features/Misc/enginepred.h"
 
 void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vguiPanel, bool forceRepaint, bool allowForce) {
 
@@ -19,6 +20,7 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 			}
 		}
 
+		prediction.pLastCmd = nullptr;
 		g::pLocal = nullptr;
 		ragebot.rageBotData.pAimbotTarget = nullptr;
 	}

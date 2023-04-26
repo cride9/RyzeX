@@ -119,8 +119,6 @@ Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], Vecto
 	if (!studioBox)
 		return Vector(0, 0, 0);
 
-	Vector min, max;
-
 	vecMins = M::VectorTransform(studioBox->vecBBMin, matrix[studioBox->iBone]);
 	vecMaxs = M::VectorTransform(studioBox->vecBBMax, matrix[studioBox->iBone]);
 
@@ -481,89 +479,74 @@ float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
 //	return vecReturn.Length( );
 //}
 
-bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int boneMask, float currentTime )
+bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int boneMask, float currentTime)
 {
-	auto hdr = target->GetModelPtr( );
-	if ( !hdr )
+	auto hdr = target->GetStudioHdr();
+	if (!hdr)
 		return false;
-
-	if (!detour::blendingRules.IsHooked() || 
-		!detour::buildTransform.IsHooked() || 
-		!detour::clampBonesInBBox.IsHooked() ||
-		!detour::extraBoneProcessing.IsHooked())
-		return false;
-
-	static auto standardBlendingRulesOriginal = detour::blendingRules.GetOriginal<decltype(&h::hkStandardBlendingRules)>();
-	static auto buildTransformationOriginal = detour::buildTransform.GetOriginal<decltype(&h::hkBuildTransformation)>();
-	static auto clampBonesInHitboxOriginal = detour::clampBonesInBBox.GetOriginal<decltype(&h::hkClampBonesInBBox)>();
-	static auto doExtraBoneProcessingOriginal = detour::extraBoneProcessing.GetOriginal<decltype(&h::hkDoExtraBoneProcessing)>();
 
 	const auto oldBones = target->GetBoneAccessor()->matBones;
-	const auto o_abs = target->GetAbsAngles( );
-	const auto o_origin = target->GetAbsOrigin( );
+	const auto o_abs = target->GetAbsAngles();
+	const auto o_origin = target->GetAbsOrigin();
 
-	CAnimationLayer layers[ 13 ];
+	CAnimationLayer layers[13];
 
-	target->GetAnimationLayers( layers );
-	float poses[ 24 ];
-	target->GetPoseParameters( poses );
+	target->GetAnimationLayers(layers);
+	float poses[24];
+	target->GetPoseParameters(poses);
 
 	matrix3x4_t baseMatrix;
-	M::AngleMatrix( target->GetAbsAngles( ), target->GetAbsOrigin( ), baseMatrix );
+	M::AngleMatrix(target->GetAbsAngles(), target->GetAbsOrigin(), baseMatrix);
 
-	target->GetEffects( ) |= 0x008;
+	target->GetEffects() |= 0x008;
 
-	IKContext* IK_context = target->GetIKContext( );
-	if ( IK_context )
+	IKContext* IK_context = target->GetIKContext();
+	if (IK_context)
 	{
-		auto absAngles = const_cast< Vector& >( target->GetAbsAngles( ) );
+		auto absAngles = const_cast<Vector&>(target->GetAbsAngles());
 
-		IK_context->ClearTargets( );
-		IK_context->Init( hdr, absAngles, target->GetVecOrigin( ),
-			currentTime, i::GlobalVars->iFrameCount, BONE_USED_BY_ANYTHING | BONE_USED_BY_VERTEX_LOD0 | BONE_USED_BY_VERTEX_LOD1 | BONE_USED_BY_VERTEX_LOD2
-			| BONE_USED_BY_VERTEX_LOD3 | BONE_USED_BY_VERTEX_LOD4 | BONE_USED_BY_VERTEX_LOD5 | BONE_USED_BY_VERTEX_LOD6 | BONE_USED_BY_VERTEX_LOD7 );
-		target->SetAbsAngles( absAngles );
+		IK_context->ClearTargets();
+		IK_context->Init(hdr, absAngles, target->GetVecOrigin(),
+			currentTime, i::GlobalVars->iFrameCount, BONE_USED_BY_HITBOX | BONE_USED_BY_VERTEX_LOD0 | BONE_USED_BY_VERTEX_LOD1 | BONE_USED_BY_VERTEX_LOD2
+			| BONE_USED_BY_VERTEX_LOD3 | BONE_USED_BY_VERTEX_LOD4 | BONE_USED_BY_VERTEX_LOD5 | BONE_USED_BY_VERTEX_LOD6 | BONE_USED_BY_VERTEX_LOD7);
+		target->SetAbsAngles(absAngles);
 	}
 
-	static Vector pos[ 128 ];
-	__declspec( align( 16 ) ) Quaternion     q[ 128 ];
-	uint8_t boneComputed[ 0x100 ];
-	std::memset( boneComputed, 0, 0x100 );
+	Vector pos[128]{};
+	__declspec(align(16)) Quaternion     q[128];
+	uint8_t boneComputed[0x100];
+	std::memset(boneComputed, 0, 0x100);
 
-	target->GetBoneAccessor( )->matBones = pBoneToWorldOut;
-	standardBlendingRulesOriginal(target, 0, hdr, pos, q, currentTime, boneMask);
+	target->GetBoneAccessor()->matBones = pBoneToWorldOut;
+	target->StandardBlendingRules(hdr, pos, q, currentTime, boneMask);
 
-	if ( IK_context )
+	if (IK_context)
 	{
-		target->UpdateIKLocks( currentTime );
-		IK_context->UpdateTargets( pos, q, pBoneToWorldOut, boneComputed );
-		target->CalculateIKLocks( currentTime );
-		IK_context->SolveDependencies( pos, q, pBoneToWorldOut, boneComputed);
-
-		doExtraBoneProcessingOriginal(target, 0, hdr, pos, q, baseMatrix, &boneComputed[0], IK_context);
+		target->UpdateIKLocks(currentTime);
+		IK_context->UpdateTargets(pos, q, pBoneToWorldOut, boneComputed);
+		target->CalculateIKLocks(currentTime);
+		IK_context->SolveDependencies(pos, q, pBoneToWorldOut, boneComputed);
 	}
 
-	buildTransformationOriginal(target, 0, hdr, pos, q, baseMatrix, boneMask, boneComputed);
-	clampBonesInHitboxOriginal(target, 0, pBoneToWorldOut, boneMask);
+	target->BuildTransformations(hdr, pos, q, baseMatrix, boneMask, boneComputed);
 
-	target->GetEffects( ) &= ~0x008;
+	target->GetEffects() &= ~0x008;
 
-	target->SetAnimationLayers( layers );
-	target->SetPoseParameters( poses );
-	target->SetAbsOrigin( o_origin );
-	target->SetAbsAngles( o_abs );
-	target->GetBoneAccessor( )->matBones = oldBones;
+	target->SetAnimationLayers(layers);
+	target->SetPoseParameters(poses);
+	target->SetAbsOrigin(o_origin);
+	target->SetAbsAngles(o_abs);
+	target->GetBoneAccessor()->matBones = oldBones;
 
 	return true;
 }
 
-bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut )
+bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut)
 {
-	alignas( 16 ) matrix3x4_t bone_out[ 128 ];
-	const auto ret = HandleBoneSetup( target, bone_out, boneMask, currentTime );
-	memcpy( pBoneToWorldOut, bone_out, sizeof(matrix3x4_t) * 128 );
+	alignas(16) matrix3x4_t bone_out[128];
+	const auto ret = HandleBoneSetup(target, bone_out, boneMask, currentTime);
+	memcpy(pBoneToWorldOut, bone_out, sizeof(matrix3x4_t[128]));
 	return ret;
-	//return this->SetupBones(pBoneToWorldOut, 128, boneMask, currentTime);
 }
 
 bool CBaseEntity::IsBreakable()

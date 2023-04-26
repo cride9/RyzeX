@@ -24,7 +24,6 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	flOldFrameTime = i::GlobalVars->flFrameTime;
 	iOldTickCount = i::GlobalVars->iTickCount;
 
-	static CUserCmd* pLastCmd = nullptr;
 	int SeqDiff = 0;
 	int TickBase = 0;
 

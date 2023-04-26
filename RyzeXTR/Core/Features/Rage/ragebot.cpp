@@ -66,49 +66,69 @@ Vector VelocityExtrapolate( CBaseEntity* player, Vector aimPos )
 void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket ) {
 
 	static CConVar* recoilScale = i::ConVar->FindVar( "weapon_recoil_scale" );
-	if ( !pLocal || !cfg::rage::enable )
+	if ( !pLocal || !cfg::rage::enable ) {
+		exploits::bCanCharge = true;
 		return;
+	}
 
 	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon( );
-	if ( !pWeapon || !pWeapon->GetCSWpnData( ) )
+	if (!pWeapon || !pWeapon->GetCSWpnData()) {
+		exploits::bCanCharge = true;
 		return;
+	}
 
-	if ( pWeapon->IsKnife( ) || pWeapon->IsGrenade( ) )
+	if (pWeapon->IsKnife() || pWeapon->IsGrenade()) {
+		exploits::bCanCharge = true;
 		return;
+	}
 
 	Vector vecEyePosition = pLocal->GetEyePosition( );
 
-	if ( Vector vecHitscan = Hitscan( pLocal, pWeapon, vecEyePosition); vecHitscan != Vector( 0, 0, 0 ) ) {
+	if (Vector vecHitscan = Hitscan(pLocal, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
 
-		if ( cfg::rage::betweenshots )
+		exploits::bCanCharge = false;
+		if (cfg::rage::betweenshots)
 			rageBotData.bCanShoot = false;
 
 		AutoStop(pLocal, pWeapon, rageBotData.pAimbotTarget, g::pCmd, vecHitscan);
 		// get better eye position.
 		// calculate aim angle.
 		Vector shootAngle;
-		M::VectorAngles( vecHitscan - vecEyePosition, shootAngle ); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
+		M::VectorAngles(vecHitscan - vecEyePosition, shootAngle); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
 
-		if ( CheckShootingCondition( pCmd, pLocal ) ) {
+		if (CheckShootingCondition(pCmd, pLocal)) {
 
-			if ( Hitchance(rageBotData.pAimbotTarget, pWeapon, shootAngle, ConfigHitChance( pWeapon ), vecEyePosition, rageBotData.iTargetedHitbox ) ) {
+			if (Hitchance(rageBotData.pAimbotTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition, rageBotData.iTargetedHitbox)) {
 
 				rageBotData.bCanShoot = true;
 
-				pCmd->angViewPoint = ( shootAngle -= ( pLocal->GetAimPunch( ) * recoilScale->GetFloat( ) ) );
+				pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 				pCmd->iButtons |= IN_ATTACK;
-				pCmd->iTickCount = CalculateTickCount( rageBotData.flTargetSimulation );
+				pCmd->iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
 
 				ShouldSendPacket(bSendPacket);
 			}
 			else {
 				rageBotData.bCanShoot = false;
-				if ( ConfigAutoScope( pWeapon ) && IsAutoScopeable( pWeapon->GetItemDefinitionIndex( ) ) && !pLocal->IsScoped( ) ) //only scope if we have a scoped weapon and we arent scoped
-					if (!pLocal->IsResumingScope()) 
+				if (ConfigAutoScope(pWeapon) && IsAutoScopeable(pWeapon->GetItemDefinitionIndex()) && !pLocal->IsScoped()) //only scope if we have a scoped weapon and we arent scoped
+					if (!pLocal->IsResumingScope())
 						pCmd->iButtons |= IN_ZOOM;
 			}
 		}
 	}
+	else {
+
+		exploits::bCanCharge = true;
+	}
+}
+
+Lagcompensation::LagRecord_t* CRageBot::CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog) {
+
+	for (size_t i = 0; i < pLog->iLastValid; i++) 
+		if (pLog->pRecord.at(i).bDidShot)
+			return &pLog->pRecord.at(i);
+	
+	return nullptr;
 }
 
 Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
@@ -133,11 +153,10 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		if (!pLog || !pLog->pEntity || pLog->pEntity != pEntity || pLog->pRecord.size() < 2)
 			continue;
 
-		Lagcompensation::LagRecord_t* pCurrentApplied = nullptr;
-		pCurrentApplied = &pLog->pRecord.front();
+		Lagcompensation::LagRecord_t* pCurrentApplied = CheckOnShotRecord(pLog);
 
-		if (!pCurrentApplied)
-			continue;
+		if (!pCurrentApplied) 
+			pCurrentApplied = &pLog->pRecord.front();
 
 		bool bSafePoint = false;
 		pEntity->SetBoneCache(pCurrentApplied->pMatrix);
@@ -161,7 +180,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 				if (vecSelectedSafePoints[iHitbox]) {
 
-					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius)) 
+					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius))
 						bSafePoint = true;
 					
 					if (bForceSafe && !bSafePoint)
@@ -413,6 +432,9 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 			return;
 
 	if ( rageBotData.bCanShoot )
+		return;
+
+	if (misc::bRetreat && GetAsyncKeyState(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick)
 		return;
 
 	float flIdealSpeed = ( 0.28f ) * ( g::pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
@@ -990,7 +1012,7 @@ void CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity * pLocal, CBaseC
 	iMultiOptimization[iHitbox]++;
 }
 
-bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, Vector vecMins, Vector vecMaxs, float flRadius ) {
+bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, Vector vecMins, Vector vecMaxs, float flRadius) {
 
 	if (pRecord->pRightMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pLeftMatrix->GetOrigin() == Vector(0, 0, 0) ||
@@ -1053,7 +1075,7 @@ bool CRageBot::ShouldSendPacket(bool& bSendPacket) {
 	if (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind))
 		return bSendPacket;
 
-	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey))
+	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && !g::bWaiting)
 		return false;
 
 	if (g::bWaiting) {

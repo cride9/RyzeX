@@ -112,7 +112,7 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 		pEnt->GetLastSkipFrameCount() = 0;
 
 		/* Setup bones */
-		bResult = original(ecx, edx, matrix, maxbones, nBoneMask, curtime);
+		bResult = original(ecx, edx, matrix, maxbones, nBoneMask, TICKS_TO_TIME(lagcomp.FixTickCount(m_Record->flSimulationTime)));
 		pEnt->SetupBones_AttachmentHelper();
 
 		/* Restore player's data */
@@ -136,6 +136,8 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 		// restore frame count and tick count
 		i::GlobalVars->iFrameCount = std::get < 5 >(m_Globals);
 		i::GlobalVars->iTickCount = std::get < 6 >(m_Globals);
+
+		anims.CopyCachedMatrix(pEnt, matrix, maxbones);
 
 		return bResult;
 	}

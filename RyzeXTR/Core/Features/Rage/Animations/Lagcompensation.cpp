@@ -2,6 +2,7 @@
 #include "EnemyAnimations.h"
 #include "../exploits.h"
 #include "../../Networking/networking.h"
+#include "Setupbones.h"
 
 void Lagcompensation::SetupPlayerBones(CBaseEntity* pPlayer, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* Matrix, int nFlags) {
 

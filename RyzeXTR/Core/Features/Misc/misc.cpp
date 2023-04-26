@@ -35,7 +35,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
 void misc::EventHandler(IGameEvent* pEvent) {
 
-	CheatLog(pEvent);
+	//CheatLog(pEvent);
 	PreserveKillfeed(pEvent);
 	if (!strcmp(pEvent->GetName(), "player_hurt")) {
 		HandlePlayerHitEffects(pEvent);
@@ -128,27 +128,6 @@ void misc::Security() {
 
 	if (showerror->GetInt() != 0)
 		showerror->SetValue(0);
-}
-
-void gotoStart(CUserCmd* cmd, std::vector<CUserCmd>& recordedCmds) {
-
-	static int commandCount = 0;
-
-	if (recordedCmds.empty()) 
-		return;
-
-	if (misc::bRetreat) {
-		if (commandCount > 0) {
-			cmd->flUpMove = -std::clamp(recordedCmds.at(commandCount).flUpMove * 500.f, -450.f, 450.f);
-			cmd->flSideMove = -std::clamp(recordedCmds.at(commandCount).flSideMove * 500.f, -450.f, 450.f);
-			cmd->flForwardMove = -std::clamp(recordedCmds.at(commandCount).flForwardMove * 500.f, -450.f, 450.f);
-			cmd->angViewPoint = recordedCmds.at(commandCount).angViewPoint;
-			i::EngineClient->SetViewAngles(cmd->angViewPoint);
-			commandCount--;
-		}
-	}
-	else
-		commandCount = recordedCmds.size();
 }
 
 void misc::IdealTick(CUserCmd* pCmd) {
@@ -916,7 +895,7 @@ void misc::FakeLag(bool& bSendPacket) {
 	if (cfg::antiaim::fakelag) {
 
 		if (!g::bWaiting && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && !exploits::bIsShiftingTicks) {
-			iCurrentChoke = min(1, iCurrentChoke);
+			iCurrentChoke = min(2, iCurrentChoke);
 		}
 		else {
 
@@ -951,7 +930,7 @@ void misc::FakeLag(bool& bSendPacket) {
 		iCurrentChoke = cfg::antiaim::fakelag;
 
 
-	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) ? 1 : iMin, iCurrentChoke));
+	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
 }
 
 void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
@@ -1550,30 +1529,30 @@ std::string GetHitgroupName(int iHitgroup) {
 }
 void misc::CheatLog(IGameEvent* pEvent) {
 
-	if (!strcmp(pEvent->GetName(), "player_death")) {
+	//if (!strcmp(pEvent->GetName(), "player_death")) {
 
-		int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-		int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
-		int iHitgroup = pEvent->GetInt("hitgroup");
+	//	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	//	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+	//	int iHitgroup = pEvent->GetInt("hitgroup");
 
-		CBaseEntity* pHitEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iUserID));
-		CBaseEntity* pAttackEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iAttacker));
+	//	CBaseEntity* pHitEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iUserID));
+	//	CBaseEntity* pAttackEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iAttacker));
 
-		if (pAttackEntity == g::pLocal) {
+	//	if (pAttackEntity == g::pLocal) {
 
-			std::string szOutput = "";
-			PlayerInfo_t info = pHitEntity->GetPlayerInfo();
+	//		std::string szOutput = "";
+	//		PlayerInfo_t info = pHitEntity->GetPlayerInfo();
 
-			szOutput += "Hit ";
-			szOutput += info.szName;
-			szOutput += " in the ";
-			szOutput += GetHitgroupName(iHitgroup);
-			szOutput += " (0 health remaining)\n";
+	//		szOutput += "Hit ";
+	//		szOutput += info.szName;
+	//		szOutput += " in the ";
+	//		szOutput += GetHitgroupName(iHitgroup);
+	//		szOutput += " (0 health remaining)\n";
 
-			util::LogConsole(szOutput.c_str());
-		}
-	}
-	else if (!strcmp(pEvent->GetName(), "player_hurt")) {
+	//		util::LogConsole(szOutput.c_str());
+	//	}
+	//}
+	if (!strcmp(pEvent->GetName(), "player_hurt")) {
 
 		int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 		int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
