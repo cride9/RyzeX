@@ -72,11 +72,11 @@ void visual::VisualRender() {
 		if (i::DebugOverlay->ScreenPosition(pEnt->GetAbsOrigin() + Vector(0, 0, vecMax.z + 5), top))
 			continue;
 
-		const float h = bot.y - top.y;
-		const float w = h * 0.25f;
+		float h = bot.y - top.y;
+		float w = h * 0.25f;
 
-		const auto left = static_cast<int>(top.x - w);
-		const auto right = static_cast<int>(top.x + w);
+		int left = static_cast<int>(top.x - w);
+		int right = static_cast<int>(top.x + w);
 		bAmmoEnabled[i] = false;
 
 		if (pEnt->GetTeam() != g::pLocal->GetTeam()) { // Enemy
@@ -125,7 +125,7 @@ void visual::VisualRender() {
 	}
 }
 
-void visual::BoxEsp(int left, int top, int right, int bot, Color color) {
+void visual::BoxEsp(int& left, float& top, int& right, float& bot, Color color) {
 
 	i::Surface->DrawSetColor(color[0], color[1], color[2], color[3]);
 	i::Surface->DrawOutlinedRect(left, top, right, bot);
@@ -134,7 +134,7 @@ void visual::BoxEsp(int left, int top, int right, int bot, Color color) {
 	i::Surface->DrawOutlinedRect(left - 1, top - 1, right + 1, bot + 1);
 }
 
-void visual::HealthEsp(int left, int top, int right, int bot, int width, int height, int health, Color startColor, Color endColor, int iEntIndex) {
+void visual::HealthEsp(int& left, float& top, int& right, float& bot, float& width, float& height, int& health, Color startColor, Color endColor, int& iEntIndex) {
 
 	if (iHealth[iEntIndex] <= 0)
 		iHealth[iEntIndex] = health;
@@ -142,34 +142,23 @@ void visual::HealthEsp(int left, int top, int right, int bot, int width, int hei
 	if (iHealth[iEntIndex] > health)
 		iHealth[iEntIndex] -= (iHealth[iEntIndex] - health < 3 ? 1 : 3);
 
-	float fDistance = abs((float)(bot - top));
-	const float flFactor = static_cast<float>(min(iHealth[iEntIndex], 100)) / static_cast<float>(100.f);
-	float colorChange = 255.0f / fDistance;
-
-	// Calculate the color change per step of the gradient
-	float rStep = static_cast<float>(endColor[0] - startColor[0]) / fDistance;
-	float gStep = static_cast<float>(endColor[1] - startColor[1]) / fDistance;
-	float bStep = static_cast<float>(endColor[2] - startColor[2]) / fDistance;
-	float aStep = static_cast<float>(endColor[3] - startColor[3]) / fDistance;
+	float fDistance = bot - top;
+	const float flFactor = min(iHealth[iEntIndex], 100) / 100.f;
 
 	i::Surface->DrawSetColor(0.f, 0.f, 0.f, (startColor[3] + endColor[3]) / 2);
 	i::Surface->DrawOutlinedRect(left - 8, top, left - 4, bot + 1);
-	for (size_t i = 0; i < fDistance; i++)
-	{
-		// Interpolate the color for the current step of the gradient
-		int red = startColor[0] + (rStep * i);
-		int green = startColor[1] + (gStep * i);
-		int blue = startColor[2] + (bStep * i);
-		int alpha = startColor[3] + (aStep * i);
 
-		i::Surface->DrawSetColor(red, green, blue, alpha);
-		i::Surface->DrawFilledRect(left - 7, bot - (i * flFactor), left - 5, bot - (i * flFactor) + 1);
-		if (i + 1 == fDistance)
-			i::Surface->DrawT(left - 7, bot - (i * flFactor) - 3, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
-	}
+	i::Surface->DrawSetColor(startColor);
+	i::Surface->DrawFilledRectFade(left - 7, bot - (fDistance * flFactor) - 5, left - 5, bot, startColor[3], 0, false);
+
+	i::Surface->DrawSetColor(endColor);
+	i::Surface->DrawFilledRectFade(left - 7, bot - (fDistance * flFactor) - 5, left - 5, bot, 0, endColor[3], false);
+
+
+	i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 8, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
 }
 
-void visual::NameEsp(int left, int top, int right, int bot, int width, int height, CBaseEntity* pEnt, Color color) {
+void visual::NameEsp(int& left, float& top, int& right, float& bot, float& width, float& height, CBaseEntity* pEnt, Color color) {
 
 	PlayerInfo_t info = { };
 
@@ -179,12 +168,12 @@ void visual::NameEsp(int left, int top, int right, int bot, int width, int heigh
 	i::Surface->DrawT(left, top - 13, Color{ color[0], color[1], color[2], color[3] }, g::fonts::FlagESP, false, info.szName);
 }
 
-void visual::KevlarEsp(int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
+void visual::KevlarEsp(int& left, float& top, int& right, float& bot, CBaseEntity* pEnt, Color color) {
 
 
 }
 
-void visual::AmmoEsp(int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
+void visual::AmmoEsp(int& left, float& top, int& right, float& bot, CBaseEntity* pEnt, Color color) {
 
 	int iEntIndex = pEnt->EntIndex();
 
@@ -210,7 +199,7 @@ void visual::AmmoEsp(int left, int top, int right, int bot, CBaseEntity* pEnt, C
 	i::Surface->DrawT(left + (flDifference * flFactor), bot + 6, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(pWeapon->GetAmmo()).c_str());
 }
 
-void visual::BreakLCESP(int left, int top, int right, int bot, CBaseEntity* pEnt ) 
+void visual::BreakLCESP(int& left, float& top, int& right, float& bot, CBaseEntity* pEnt )
 {
 	//if ( !lagcomp.IsBreakingLagcompensation( pEnt ) )
 	//	return;
@@ -218,7 +207,7 @@ void visual::BreakLCESP(int left, int top, int right, int bot, CBaseEntity* pEnt
 	i::Surface->DrawT( left, bot, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, false, "Breaking Lagcomp" );
 }
 
-void visual::WeaponEsp(int left, int top, int right, int bot, CBaseEntity* pEnt, Color color) {
+void visual::WeaponEsp(int& left, float& top, int& right, float& bot, CBaseEntity* pEnt, Color color) {
 
 	if (!pEnt->GetWeapon())
 		return;
@@ -237,72 +226,67 @@ void visual::WeaponEsp(int left, int top, int right, int bot, CBaseEntity* pEnt,
 	i::Surface->DrawT(left, bot, Color(color), g::fonts::FlagESP, false, text.c_str());
 }
 
-void visual::Flags(int top, int right, CBaseEntity* pEnt, int iIndex, bool* bFlags, float flFlagsColor[5][4]) {
+void visual::Flags(float& top, int& right, CBaseEntity* pEnt, int& iIndex, bool* bFlags, float flFlagsColor[5][4]) {
 
-	if (g::bNewTick[iIndex])
-		flagsData[iIndex].StoreData(pEnt);
-	
+	static std::string flagStrings[FLAGMAX] = {""};
+
 	int spacing = -2;
 	if (bFlags[NAME]) {
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[NAME], g::fonts::FlagESP, false, flagsData[iIndex].szName);
-		spacing += 10;
+		static PlayerInfo_t info = { };
+		if (i::EngineClient->GetPlayerInfo(pEnt->EntIndex(), &info)) {
+
+			i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[NAME], g::fonts::FlagESP, false, info.szName);
+			spacing += 10;
+		}
 	}
 
 	if (bFlags[HEALTH]) {
 
-		const float percentage = flagsData[iIndex].iHealth / 100.f;
-		std::string text = "Health: [";
-		text += std::to_string(flagsData[iIndex].iHealth);
-		text += "]";
+		int iHealth = pEnt->GetHealth();
+		const float percentage = iHealth / 100.f;
 
-		i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::FlagESP, false, text.c_str());
+		/*flagStrings[HEALTH] = std::format("Health: [{}]", iHealth);*/
+		flagStrings[HEALTH] = "Health: ["; flagStrings[HEALTH] += std::to_string(iHealth); flagStrings[HEALTH] += "]";
+		i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::FlagESP, false, flagStrings[HEALTH].c_str());
 
 		spacing += 10;
 	}
 
 	if (bFlags[ARMOR]) {
 
-		std::string text = "Kevlar: [";
-		text += std::to_string(flagsData[iIndex].iArmor);
-		text += "]";
-
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[ARMOR], g::fonts::FlagESP, false, text.c_str());
+		//flagStrings[ARMOR] = std::format("Kevlar [{}]", pEnt->GetArmor());
+		flagStrings[ARMOR] = "Kevlar: ["; flagStrings[ARMOR] += std::to_string(pEnt->GetArmor()); flagStrings[ARMOR] += "]";
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[ARMOR], g::fonts::FlagESP, false, flagStrings[ARMOR].c_str());
 
 		spacing += 10;
 	}
 
-	if (bFlags[AMMO]) {
+	CBaseCombatWeapon* pWeapon = pEnt->GetWeapon();
+	if (pWeapon && bFlags[AMMO]) {
 
-		if (!pEnt->GetWeapon()) {
-			std::string text = "[ ";
+		//flagStrings[AMMO] = std::format("[{}/{}]", pWeapon->GetAmmo(), pWeapon->GetAmmoReserve());
 
-			text += std::to_string(flagsData[iIndex].iAmmo);
-			text += "/";
-			text += std::to_string(flagsData[iIndex].iAmmoReserve);
-			text += " ]";
+		flagStrings[AMMO] = "["; flagStrings[AMMO] += std::to_string(pWeapon->GetAmmo()); flagStrings[AMMO] += "/"; flagStrings[AMMO] += std::to_string(pWeapon->GetAmmoReserve());
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, flagStrings[AMMO].c_str());
 
-			i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, text.c_str());
+		spacing += 10;
+	}
+	if (pWeapon && bFlags[WEAPON]) {
 
-			spacing += 10;
-		}
+		flagStrings[WEAPON] = pWeapon->GetCSWpnData()->szWeaponName;
+		flagStrings[WEAPON].erase(0, 7);
+
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, flagStrings[WEAPON].c_str());
+		spacing += 10;
 	}
 
 	if (bFlags[MONEY]) {
 
-		std::string text = "$";
-		text += std::to_string(flagsData[iIndex].iMoney) + "\n";
+		//flagStrings[MONEY] = std::format("${}", pEnt->GetMoney());
+		flagStrings[MONEY] = "$"; flagStrings[MONEY] += std::to_string(pEnt->GetMoney());
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[MONEY], g::fonts::FlagESP, false, flagStrings[MONEY].c_str());
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[MONEY], g::fonts::FlagESP, false, text.c_str());
-
-		spacing += 10;
-	}
-
-	if (bFlags[WEAPON]) {
-
-		std::string text = flagsData[iIndex].szWeaponName;
-		text.erase(0, 7);
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
 		spacing += 10;
 	}
 

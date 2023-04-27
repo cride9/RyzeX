@@ -68,17 +68,20 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 	static CConVar* recoilScale = i::ConVar->FindVar( "weapon_recoil_scale" );
 	if ( !pLocal || !cfg::rage::enable ) {
 		exploits::bCanCharge = true;
+		rageBotData.pAimbotTarget = nullptr;
 		return;
 	}
 
 	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon( );
 	if (!pWeapon || !pWeapon->GetCSWpnData()) {
 		exploits::bCanCharge = true;
+		rageBotData.pAimbotTarget = nullptr;
 		return;
 	}
 
 	if (pWeapon->IsKnife() || pWeapon->IsGrenade()) {
 		exploits::bCanCharge = true;
+		rageBotData.pAimbotTarget = nullptr;
 		return;
 	}
 
@@ -118,6 +121,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 	}
 	else {
 
+		rageBotData.pAimbotTarget = nullptr;
 		exploits::bCanCharge = true;
 	}
 }
@@ -169,10 +173,12 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 				continue;
 
 			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
-			std::array<Vector, 3> multiPointed;
+			std::array<Vector, 3> multiPointed = {Vector(0, 0, 0)};
 
 			if (vecSelectedMultipoint[iHitbox])
 				multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
+			else
+				multiPointed[0] = vecHitboxPosition;
 
 			for (Vector& vecPoint : multiPointed) {
 
@@ -181,7 +187,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 				if (vecSelectedSafePoints[iHitbox]) {
 
-					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius))
+					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius, iHitbox))
 						bSafePoint = true;
 					
 					if (bForceSafe && !bSafePoint)
@@ -196,7 +202,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			}
 		}
 
-		if (!cfg::rage::m_bEnableBacktrack)
+		if (!cfg::rage::m_bEnableBacktrack || (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && cfg::antiaim::defensive))
 			continue;
 
 		const unsigned int iLastValid = min(pLog->iLastValid, pLog->pRecord.size() - 1);
@@ -216,10 +222,12 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 				continue;
 
 			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
-			std::array<Vector, 3> multiPointed;
+			std::array<Vector, 3> multiPointed = { Vector(0, 0, 0) };;
 
 			if (vecSelectedMultipoint[iHitbox])
 				multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
+			else
+				multiPointed[0] = vecHitboxPosition;
 
 			for (Vector& vecPoint : multiPointed) {
 
@@ -228,7 +236,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 				if (vecSelectedSafePoints[iHitbox]) {
 
-					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius))
+					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius, iHitbox))
 						bSafePoint = true;
 
 					if (bForceSafe && !bSafePoint)
@@ -969,10 +977,10 @@ bool CRageBot::CheckShootingCondition( CUserCmd * pCmd, CBaseEntity * pLocal ) {
 
 std::array<Vector, 3> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity * pLocal, CBaseCombatWeapon * pWeapon, Vector vecAngle, float flRadius, int iHitbox) {
 
-	static std::array<Vector, 3> output;
+	std::array<Vector, 3> output = {Vector(0, 0, 0)};
 
 	if ( flRadius <= 0 )
-		return { vecAngle, Vector(0, 0, 0), Vector(0, 0, 0) };
+		return output = { vecAngle, Vector(0, 0, 0), Vector(0, 0, 0) };
 
 	std::pair<int, int> multiPoints = ConfigMultipoint(pWeapon);
 
@@ -1020,29 +1028,28 @@ std::array<Vector, 3> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity
 	return output;
 }
 
-bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, Vector vecMins, Vector vecMaxs, float flRadius) {
+bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, Vector vecMins, Vector vecMaxs, float flRadius, int iHitbox) {
 
 	if (pRecord->pRightMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pLeftMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pCenterMatrix->GetOrigin() == Vector(0, 0, 0))
 		return false;
 
-	RayTracer::Ray rebuiltRay(vecEyePosition, vecShootposition);
-	RayTracer::Hitbox rebuiltHitbox(vecMins, vecMaxs, flRadius);
-	RayTracer::Trace output;
+	Ray_t traceRay(vecEyePosition, vecShootposition);
+	Trace_t traceOutput;
 
 	bool hitLeft = false, hitRight = false, hitCenter = false;
 
 	pRecord->pEntity->SetBoneCache( pRecord->pRightMatrix );
-	if (RayTracer::TraceHitbox(rebuiltRay, rebuiltHitbox, output); output.m_hit)
+	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT_HULL | CONTENTS_HITBOX, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity && traceOutput.iHitbox == iHitbox)
 		hitRight = true;
 
 	pRecord->pEntity->SetBoneCache( pRecord->pLeftMatrix );
-	if (RayTracer::TraceHitbox(rebuiltRay, rebuiltHitbox, output); output.m_hit)
+	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT_HULL | CONTENTS_HITBOX, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity && traceOutput.iHitbox == iHitbox)
 		hitLeft = true;
 
 	pRecord->pEntity->SetBoneCache( pRecord->pCenterMatrix );
-	if (RayTracer::TraceHitbox(rebuiltRay, rebuiltHitbox, output); output.m_hit)
+	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT_HULL | CONTENTS_HITBOX, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity && traceOutput.iHitbox == iHitbox)
 		hitCenter = true;
 
 	pRecord->pEntity->SetBoneCache(pRecord->pMatrix);

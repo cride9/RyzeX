@@ -21,7 +21,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		desyncValue = 0.f;
 		return;
 	}
-	int inverter = GetKeyState(cfg::antiaim::iInverterBind) ? 1 : -1;
+	int inverter = GetKeyState(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
 
 	if (ragebot.rageBotData.iTickCount + 3 >= i::GlobalVars->iTickCount) {
 
@@ -478,7 +478,7 @@ int antiaim::ClosestToLocal() {
 void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 
 	Vector vecBestEntity = Vector(0, 0, 0);
-	float flBestFov = 180.f;
+	float flBestFov = 480.f;
 	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
 	{
 		CBaseEntity* pEnt = (CBaseEntity*)i::EntityList->GetClientEntity(i);
@@ -490,7 +490,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 		auto vecHitboxPosition = pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST, pEnt->GetCachedBoneData().Base());
 
 		M::VectorAngles(vecHitboxPosition - g::pLocal->GetEyePosition(), vecCalcAngle);
-		Vector vecDistanceBetween = (g::vecOriginalViewAngle - vecCalcAngle);
+		Vector vecDistanceBetween = (g::vecOriginalViewAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
 
 		if (abs(vecDistanceBetween.Length2D()) < flBestFov) {
 
@@ -596,17 +596,6 @@ void antiaim::InvertOnShoot(CUserCmd* pCmd) {
 	/* Invert on shoot */
 	if (pCmd->iButtons & IN_ATTACK && cfg::antiaim::bInvertOnShoot) {
 
-		// Set up a generic keyboard event.
-		INPUT inputs[2] = {};
-		ZeroMemory(inputs, sizeof(inputs));
-
-		inputs[0].type = INPUT_KEYBOARD;
-		inputs[0].ki.wVk = cfg::antiaim::iInverterBind;
-
-		inputs[1].type = INPUT_KEYBOARD;
-		inputs[1].ki.wVk = cfg::antiaim::iInverterBind;
-		inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-
-		SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+		antiaim::shotInvert = !antiaim::shotInvert;
 	}
 }

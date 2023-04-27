@@ -56,7 +56,7 @@ public:
 
 		int apple = 0;
 		/* set up buffer */
-		char Buffer[2048] = { '\0' };
+		char Buffer[256] = { '\0' };
 
 		/* set up varargs*/
 		va_list Args;

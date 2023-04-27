@@ -179,7 +179,7 @@ float Animations::GetLocalCycleIncrement( CBaseEntity* pEntity, float flPlayback
 
 void Animations::UpdateSafePointMatrixes(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
 
-	if (!pRecord->bSetupMatrixes)
+	if (pRecord->bSetupMatrixes)
 		return;
 	
 	CAnimState pBackupState;
