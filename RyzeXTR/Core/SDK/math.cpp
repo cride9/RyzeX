@@ -27,6 +27,58 @@ bool M::Setup()
 	return true;
 }
 
+void M::VectorTransform(const Vector& in, const matrix3x4_t& matrix, Vector& out) {
+
+	Vector diff;
+	diff = {
+		in.x - matrix[0][3],
+		in.y - matrix[1][3],
+		in.z - matrix[2][3]
+	};
+
+	out = {
+		diff.x * matrix[0][0] + diff.y * matrix[1][0] + diff.z * matrix[2][0],
+		diff.x * matrix[0][1] + diff.y * matrix[1][1] + diff.z * matrix[2][1],
+		diff.x * matrix[0][2] + diff.y * matrix[1][2] + diff.z * matrix[2][2]
+	};
+}
+
+void MatrixCopy(const matrix3x4_t& in, matrix3x4_t& out) {
+	std::memcpy(out.Base(), in.Base(), sizeof(matrix3x4_t));
+}
+
+void M::ConcatTransforms(const matrix3x4_t& in1, const matrix3x4_t& in2, matrix3x4_t& out) {
+
+	if (&in1 == &out) {
+		matrix3x4_t in1b;
+		MatrixCopy(in1, in1b);
+		ConcatTransforms(in1b, in2, out);
+		return;
+	}
+
+	if (&in2 == &out) {
+		matrix3x4_t in2b;
+		MatrixCopy(in2, in2b);
+		ConcatTransforms(in1, in2b, out);
+		return;
+	}
+
+	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] + in1[0][2] * in2[2][0];
+	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] + in1[0][2] * in2[2][1];
+	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] + in1[0][2] * in2[2][2];
+	out[0][3] = in1[0][0] * in2[0][3] + in1[0][1] * in2[1][3] + in1[0][2] * in2[2][3] + in1[0][3];
+
+	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] + in1[1][2] * in2[2][0];
+	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] + in1[1][2] * in2[2][1];
+	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] + in1[1][2] * in2[2][2];
+	out[1][3] = in1[1][0] * in2[0][3] + in1[1][1] * in2[1][3] + in1[1][2] * in2[2][3] + in1[1][3];
+
+	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] + in1[2][2] * in2[2][0];
+	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] + in1[2][2] * in2[2][1];
+	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] + in1[2][2] * in2[2][2];
+	out[2][3] = in1[2][0] * in2[0][3] + in1[2][1] * in2[1][3] + in1[2][2] * in2[2][3] + in1[2][3];
+}
+
 void M::VectorAngles(const Vector& vecForward, Vector& angView)
 {
 	float flPitch, flYaw;

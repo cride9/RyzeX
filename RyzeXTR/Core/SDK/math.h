@@ -58,6 +58,10 @@ namespace M
 	/* rotates given center point and outputs to given outpoint by given angle */
 	void	RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutPoint);
 
+	void ConcatTransforms(const matrix3x4_t&, const matrix3x4_t&, matrix3x4_t&);
+
+	void VectorTransform(const Vector&, const matrix3x4_t&, Vector&);
+
 	float Bias(float x, float biasAmt);
 
 	float	GenerateRandom(float, float);

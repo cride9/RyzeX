@@ -13,16 +13,13 @@ bool LowestFov( std::tuple<CBaseEntity*, Lagcompensation::LagRecord_t*> pEnt1, s
 	const Vector vecEyePosition = g::pLocal->GetEyePosition( );
 	Vector vecCalcAngle;
 
-	auto pEnt1Hitbox = std::get<0>( pEnt1 )->GetHitboxPosition( HITBOX_UPPER_CHEST );
-	auto pEnt2Hitbox = std::get<0>( pEnt2 )->GetHitboxPosition( HITBOX_UPPER_CHEST );
+	auto pEnt1Hitbox = std::get<0>( pEnt1 )->GetHitboxPosition( HITBOX_UPPER_CHEST, std::get<1>(pEnt1)->pMatrix );
+	auto pEnt2Hitbox = std::get<0>( pEnt2 )->GetHitboxPosition( HITBOX_UPPER_CHEST, std::get<1>(pEnt2)->pMatrix);
 
-	if ( !pEnt1Hitbox.has_value( ) || !pEnt2Hitbox.has_value( ) )
-		return true;
-
-	M::VectorAngles( pEnt1Hitbox.value( ) - vecEyePosition, vecCalcAngle );
+	M::VectorAngles( pEnt1Hitbox - vecEyePosition, vecCalcAngle );
 	Vector vecDistanceBetween1 = ( g::vecOriginalViewAngle - vecCalcAngle.NormalizeAngle( ) );
 
-	M::VectorAngles( pEnt2Hitbox.value( ) - vecEyePosition, vecCalcAngle );
+	M::VectorAngles( pEnt2Hitbox - vecEyePosition, vecCalcAngle );
 	Vector vecDistanceBetween2 = ( g::vecOriginalViewAngle - vecCalcAngle.NormalizeAngle( ) );
 
 	float flFirstFov = abs( vecDistanceBetween1.Length2D( ) );
@@ -163,8 +160,8 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			pCurrentApplied = &pLog->pRecord.front();
 
 		bool bSafePoint = false;
-		pEntity->SetBoneCache(pCurrentApplied->pMatrix);
 
+		int iBone = -1;
 		float flRadius = -1.f, flDamage = -1.f;
 		Vector vecMins, vecMaxs;
 		for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
@@ -173,80 +170,89 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 				continue;
 
 			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
-			std::array<Vector, 3> multiPointed = {Vector(0, 0, 0)};
 
-			if (vecSelectedMultipoint[iHitbox])
-				multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
-			else
-				multiPointed[0] = vecHitboxPosition;
+			Vector output;
+			M::VectorAngles(vecHitboxPosition - vecEyePosition, output);
+			Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.NormalizeAngle());
 
-			for (Vector& vecPoint : multiPointed) {
-
-				if (vecPoint == Vector(0, 0, 0))
-					continue;
-
-				if (vecSelectedSafePoints[iHitbox]) {
-
-					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius, iHitbox))
-						bSafePoint = true;
-					
-					if (bForceSafe && !bSafePoint)
-						continue;
-				}
-
-				if (flDamage = autowall.GetDamage(pLocal, vecPoint); flDamage > iMinimumDamage) {
-
-					rageBotData.SetTarget(pCurrentApplied, iHitbox);
-					return vecPoint;
-				}
-			}
-		}
-
-		if (!cfg::rage::m_bEnableBacktrack || (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && cfg::antiaim::defensive))
-			continue;
-
-		const unsigned int iLastValid = min(pLog->iLastValid, pLog->pRecord.size() - 1);
-
-		if ((pCurrentApplied->vecOrigin - pLog->pRecord.at(iLastValid).vecOrigin).Length2D() < 25.f && !pLog->pRecord.at(iLastValid).bDidShot)
-			continue;
-
-		pCurrentApplied = &pLog->pRecord.at(iLastValid);
-		pEntity->SetBoneCache(pCurrentApplied->pMatrix);
-
-		if (!pCurrentApplied->bValid)
-			continue;
-
-		for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
-
-			if (!vecSelectedHitboxes[iHitbox])
+			if (abs((vecDistanceBetween).NormalizeAngle().Length2D()) > cfg::rage::iAimbotFov)
 				continue;
 
-			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
-			std::array<Vector, 3> multiPointed = { Vector(0, 0, 0) };;
+			{ // I did separate them because of variable redefinition, this way the compiler can handle multiple declerations
+				std::array<Vector, 3> multiPointed = { Vector(0, 0, 0) };
 
-			if (vecSelectedMultipoint[iHitbox])
-				multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
-			else
-				multiPointed[0] = vecHitboxPosition;
+				if (vecSelectedMultipoint[iHitbox])
+					multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
+				else
+					multiPointed[0] = vecHitboxPosition;
 
-			for (Vector& vecPoint : multiPointed) {
+				for (Vector& vecPoint : multiPointed) {
 
-				if (vecPoint == Vector(0, 0, 0))
-					continue;
-
-				if (vecSelectedSafePoints[iHitbox]) {
-
-					if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, vecMins, vecMaxs, flRadius, iHitbox))
-						bSafePoint = true;
-
-					if (bForceSafe && !bSafePoint)
+					if (vecPoint == Vector(0, 0, 0))
 						continue;
+
+					if (vecSelectedSafePoints[iHitbox]) {
+
+						if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, iHitbox))
+							bSafePoint = true;
+
+						if (bForceSafe && !bSafePoint)
+							continue;
+					}
+
+					if (flDamage = autowall.GetDamage(pLocal, vecPoint); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
+
+						rageBotData.SetTarget(pCurrentApplied, iHitbox);
+						return vecPoint;
+					}
 				}
 
-				if (flDamage = autowall.GetDamage(pLocal, vecPoint); flDamage > iMinimumDamage) {
+			}
+			
+			if (!cfg::rage::m_bEnableBacktrack || (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && cfg::antiaim::defensive))
+				continue;
 
-					rageBotData.SetTarget(pCurrentApplied, iHitbox);
-					return vecPoint;
+			const unsigned int iLastValid = pLog->iLastValid;
+			if (iLastValid >= pLog->pRecord.size())
+				continue;
+
+			if ((pCurrentApplied->vecOrigin - pLog->pRecord.at(iLastValid).vecOrigin).Length2D() < 5.f && !pLog->pRecord.at(iLastValid).bDidShot)
+				continue;
+
+			{
+				pCurrentApplied = &pLog->pRecord.at(iLastValid);
+				pEntity->SetBoneCache(pCurrentApplied->pMatrix);
+
+				if (!pCurrentApplied->bValid)
+					continue;
+
+				Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
+				std::array<Vector, 3> multiPointed = { Vector(0, 0, 0) };
+
+				if (vecSelectedMultipoint[iHitbox])
+					multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
+				else
+					multiPointed[0] = vecHitboxPosition;
+
+				for (Vector& vecPoint : multiPointed) {
+
+					if (vecPoint == Vector(0, 0, 0))
+						continue;
+
+					if (vecSelectedSafePoints[iHitbox]) {
+
+						if (SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, iHitbox))
+							bSafePoint = true;
+
+						if (bForceSafe && !bSafePoint)
+							continue;
+					}
+
+					if (flDamage = autowall.GetDamage(pLocal, vecPoint); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
+
+						rageBotData.SetTarget(pCurrentApplied, iHitbox);
+						return vecPoint;
+					}
 				}
 			}
 		}
@@ -1028,34 +1034,46 @@ std::array<Vector, 3> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity
 	return output;
 }
 
-bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, Vector vecMins, Vector vecMaxs, float flRadius, int iHitbox) {
+bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector & vecShootposition, int iHitbox) {
 
 	if (pRecord->pRightMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pLeftMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pCenterMatrix->GetOrigin() == Vector(0, 0, 0))
 		return false;
 
-	Ray_t traceRay(vecEyePosition, vecShootposition);
+	/* Just decleare a static enum so we can make it look cleaner */
+	static enum SIDE {
+		RIGHT,
+		LEFT,
+		CENTER
+	};
+
+	/* Make arrays to store informations */
+	bool bHit[3] = { false };
+
+	/* Prepare tracing output */
 	Trace_t traceOutput;
+	Ray_t traceRay(vecEyePosition, vecShootposition);
 
-	bool hitLeft = false, hitRight = false, hitCenter = false;
+	/* We need to set bonecache for every trace so csgo will think the enemy is there (so it can return if we hit it) */
+	pRecord->pEntity->SetBoneCache(pRecord->pRightMatrix);
+	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity)
+		bHit[RIGHT] = true;
 
-	pRecord->pEntity->SetBoneCache( pRecord->pRightMatrix );
-	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT_HULL | CONTENTS_HITBOX, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity && traceOutput.iHitbox == iHitbox)
-		hitRight = true;
+	pRecord->pEntity->SetBoneCache(pRecord->pLeftMatrix);
+	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity)
+		bHit[LEFT] = true;
 
-	pRecord->pEntity->SetBoneCache( pRecord->pLeftMatrix );
-	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT_HULL | CONTENTS_HITBOX, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity && traceOutput.iHitbox == iHitbox)
-		hitLeft = true;
+	pRecord->pEntity->SetBoneCache(pRecord->pCenterMatrix);
+	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity)
+		bHit[CENTER] = true;
 
-	pRecord->pEntity->SetBoneCache( pRecord->pCenterMatrix );
-	if (i::EngineTrace->ClipRayToEntity(traceRay, MASK_SHOT_HULL | CONTENTS_HITBOX, pRecord->pEntity, &traceOutput); traceOutput.pHitEntity == pRecord->pEntity && traceOutput.iHitbox == iHitbox)
-		hitCenter = true;
-
+	/* Set back matrix to not mess up any ragebot calculations */
 	pRecord->pEntity->SetBoneCache(pRecord->pMatrix);
-	if ( hitLeft && hitRight && hitCenter ) 
+
+	if (bHit[RIGHT] && bHit[LEFT] && bHit[CENTER])
 		return true;
-	
+
 	return false;
 }
 
@@ -1100,4 +1118,195 @@ bool CRageBot::ShouldSendPacket(bool& bSendPacket) {
 
 	rageBotData.iTickCount = i::GlobalVars->iTickCount;
 	return true;
+}
+
+std::array<Vector, 6> CRageBot::HitboxPoints(Lagcompensation::LagRecord_t* pRecord, CBaseCombatWeapon* pWeapon, Vector& vecShootPosition, int iHitbox) {
+
+	std::array<Vector, 6> arrPoints = { Vector(0, 0, 0) };
+
+	const Model_t* model = pRecord->pEntity->GetModel();
+	if (!model)
+		return arrPoints;
+
+	studiohdr_t* studioHdr = i::ModelInfo->GetStudioModel(model);
+	if (!studioHdr)
+		return arrPoints;
+
+	mstudiobbox_t* studioBox = studioHdr->GetHitboxSet(0)->GetHitbox(iHitbox);
+	if (!studioBox)
+		return arrPoints;
+
+	std::pair<int, int> multiPoints = ConfigMultipoint(pWeapon);
+
+	int* pHeadPoints = &multiPoints.first;
+	int* pBodyPoints = &multiPoints.second;
+	float flHitboxDistance = ((iHitbox == HITBOX_HEAD ? *pHeadPoints : *pBodyPoints) * 0.01f);
+
+	if (!(pRecord->fFlags & FL_ONGROUND))
+		*pHeadPoints = 0.7f; // This will allow the aimbot to shoot head between legs when jumping
+
+	Vector vecTransformedCenter = (studioBox->vecBBMin + studioBox->vecBBMax) * 0.5f;
+	M::VectorTransform(vecTransformedCenter, pRecord->pMatrix[studioBox->iBone], vecTransformedCenter);
+
+	float flDistance = vecTransformedCenter.DistTo(vecShootPosition);
+	float flRadiusTransformed = max(studioBox->flRadius - flDistance, 0.f);
+
+	if (studioBox->flRadius <= 0.f) {
+
+		matrix3x4_t matRotationMatrix;
+		M::AngleMatrix(studioBox->angOffsetOrientation, matRotationMatrix);
+
+		matrix3x4_t matAppliedMatrix;
+		M::ConcatTransforms(pRecord->pMatrix[studioBox->iBone], matRotationMatrix, matAppliedMatrix);
+
+		Vector vecOrigin = matAppliedMatrix.GetOrigin();
+		Vector vecCenter = (studioBox->vecBBMin + studioBox->vecBBMax) * 0.5f;
+
+		if (iHitbox == HITBOX_RIGHT_FOOT || iHitbox == HITBOX_LEFT_FOOT) {
+
+			float flFeetPoint = (studioBox->vecBBMin.z - vecCenter.z) * 0.875f;
+
+			if (iHitbox == HITBOX_LEFT_FOOT)
+				flFeetPoint *= -1;
+
+			arrPoints[0] = Vector(vecCenter.x, vecCenter.y, vecCenter.z + flFeetPoint);
+			
+			flFeetPoint = (studioBox->vecBBMin.x - vecCenter.x) * flHitboxDistance;
+			arrPoints[1] = Vector(vecCenter.x + flFeetPoint, vecCenter.y, vecCenter.z);
+
+			flFeetPoint = (studioBox->vecBBMax.x - vecCenter.x) * flHitboxDistance;
+			arrPoints[2] = Vector(vecCenter.x + flFeetPoint, vecCenter.y, vecCenter.z);
+		}
+		// max could be only 3
+		for (size_t i = 0; i < 3; i++) {
+
+			if (arrPoints[i] == Vector(0, 0, 0))
+				continue;
+
+			arrPoints[i] = Vector(arrPoints[i].DotProduct(matAppliedMatrix[0]), arrPoints[i].DotProduct(matAppliedMatrix[1]), arrPoints[i].DotProduct(matAppliedMatrix[2]));
+			arrPoints[i] += vecOrigin;
+		}
+	}
+	else {
+
+		Vector vecCenter = (studioBox->vecBBMin + studioBox->vecBBMax) * 0.5f;
+
+		if (iHitbox == HITBOX_HEAD) {
+
+			arrPoints[0] = vecCenter;
+
+			// rotation matrix 45 degrees.
+			constexpr float rotation = 0.70710678f;
+
+			// top/back 45 deg.
+			// this is the best spot to shoot at.
+			arrPoints[1] = Vector(
+				studioBox->vecBBMax.x + (rotation * flHitboxDistance),
+				studioBox->vecBBMax.y + (-rotation * flHitboxDistance),
+				studioBox->vecBBMax.z
+			);
+
+			// right side
+			arrPoints[2] = Vector(
+				studioBox->vecBBMax.x, 
+				studioBox->vecBBMax.y, 
+				studioBox->vecBBMax.z + flHitboxDistance
+			);
+
+			// left side
+			arrPoints[3] = Vector(
+				studioBox->vecBBMax.x,
+				studioBox->vecBBMax.y,
+				studioBox->vecBBMax.z - flHitboxDistance
+			);
+
+			// back side
+			arrPoints[4] = Vector(
+				studioBox->vecBBMax.x,
+				studioBox->vecBBMax.y - flHitboxDistance,
+				studioBox->vecBBMax.z
+			);
+
+			if (auto pAnimState = pRecord->pEntity->AnimState();
+				pAnimState != nullptr &&
+				pRecord->vecVelocity.Length() <= 0.1f &&
+				pRecord->vecEyeAngles.x <= pAnimState->flEyePitch) {
+
+				// bottom side
+				arrPoints[5] = Vector(
+					studioBox->vecBBMax.x - flHitboxDistance,
+					studioBox->vecBBMax.y,
+					studioBox->vecBBMax.z
+				);
+			}
+		}
+		else if (iHitbox == HITBOX_STOMACH) {
+
+			arrPoints[0] = vecCenter;
+
+			// back side
+			arrPoints[1] = Vector(
+				vecCenter.x,
+				studioBox->vecBBMax.y - flHitboxDistance,
+				vecCenter.z
+			);
+		}
+		else if (iHitbox == HITBOX_PELVIS) {
+
+			// back side
+			arrPoints[0] = Vector(
+				vecCenter.x,
+				studioBox->vecBBMax.y - flHitboxDistance,
+				vecCenter.z
+			);
+		}
+		else if (iHitbox == HITBOX_UPPER_CHEST) {
+
+			// back side
+			arrPoints[0] = Vector(
+				vecCenter.x,
+				studioBox->vecBBMax.y - flHitboxDistance,
+				vecCenter.z
+			);
+		}
+		else if (iHitbox == HITBOX_THORAX || iHitbox == HITBOX_CHEST) {
+
+			arrPoints[0] = vecCenter;
+
+			// back side
+			arrPoints[1] = Vector(
+				vecCenter.x,
+				studioBox->vecBBMax.y - flHitboxDistance,
+				vecCenter.z
+			);
+		}
+		else if (iHitbox == HITBOX_RIGHT_CALF || iHitbox == HITBOX_LEFT_CALF) {
+
+			arrPoints[0] = vecCenter;
+
+			// back side
+			arrPoints[1] = Vector(
+				studioBox->vecBBMax.x - (studioBox->flRadius * 0.5f),
+				studioBox->vecBBMax.y,
+				studioBox->vecBBMax.z
+			);
+		}
+		else if (iHitbox == HITBOX_RIGHT_THIGH || iHitbox == HITBOX_LEFT_THIGH) {
+
+			arrPoints[0] = vecCenter;
+		}
+		else if (iHitbox == HITBOX_RIGHT_UPPER_ARM || iHitbox == HITBOX_LEFT_UPPER_ARM) {
+
+			arrPoints[0] = vecCenter;
+		}
+
+		for (size_t i = 0; i < 5; i++) {
+
+			if (arrPoints[i] == Vector(0, 0, 0))
+				continue;
+
+			M::VectorTransform(arrPoints[i], pRecord->pMatrix[studioBox->iBone], arrPoints[i]);
+		}
+	}
+	return arrPoints;
 }

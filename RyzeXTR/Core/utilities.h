@@ -15,7 +15,9 @@ namespace util {
 
 	inline void Print(const char* csText) {
 		// YES endl is slower than just a \n BUT IT ALSO CLEARS THE BUFFER (learn C ty)
+#if _DEBUG
 		std::cout << csText << std::endl;
+#endif
 	}
 
 	inline void Print(const char* csText1, const char* csText2) {

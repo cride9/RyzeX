@@ -29,4 +29,11 @@ namespace visual {
 	void WorldCrosshair();
 	inline Vector vecWorldCrosshair[5];
 	inline float flWorldCrosshairLength[5];
+
+	inline constexpr static std::format_string<int&> healthPrefix("Health: [{}]");
+	inline constexpr static std::format_string<int&> kevlarPrefix("Kevlar [{}]");
+	inline constexpr static std::format_string<int&, int&> ammoPrefix("[{}/{}]");
+	inline constexpr static std::format_string<int&> moneyPrefix("${}");
+
+	inline Vector traceEnds[3] = {Vector(0, 0, 0)};
 }

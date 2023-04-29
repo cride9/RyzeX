@@ -94,7 +94,8 @@ void menu::Ragetab() noexcept {
     {
         ImGui::Checkbox("Enable", &enable);
 		ImGui::Combo("Target selection", &aimbotTargetSelection, aimbotTargetSelectionList, IM_ARRAYSIZE(aimbotTargetSelectionList));
-        
+		ImGui::SliderInt("Aimbot fov", &iAimbotFov, 1.f, 180.f);
+
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
         ImGui::Checkbox("Doubletap", &doubletap);
         ImGui::PopStyleColor();
@@ -835,6 +836,21 @@ void menu::HandleLogoDrawing() noexcept {
 
     ImGui::PopFont();
     ImGui::PopStyleColor();
+
+	ImGui::PushFont(xtrFont);
+#if ALPHA
+	ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("Alpha").x);
+	ImGui::Text("Alpha");
+#endif
+#if _DEBUG
+	ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("Developer").x);
+	ImGui::Text("Developer");
+#endif
+#if NDEBUG
+	ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("User").x);
+	ImGui::Text("User");
+#endif
+	ImGui::PopFont();
 }
 
 void menu::HandleVisualTypeGeneration(

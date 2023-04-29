@@ -59,9 +59,11 @@ void h::SetupHooks() {
 
 	menu::DestroyDirectX();
 
-	util::LogConsole("Hooks Initialized!\n", Color(255, 255, 255));
+	//util::Print("Hooks initialized!");
 
-	util::Print("Hooks initialized!");
+	//i::EngineClient->ExecuteClientCmd("toggleconsole");
+	//i::EngineClient->ExecuteClientCmd("clear");
+	//util::LogConsole("Hooks Initialized!\n", Color(255, 255, 255));
 }
 
 void h::HookNetChannel(INetChannel* pNetChannel) {
@@ -93,6 +95,10 @@ void h::HookClientState() {
 
 	if (clientStateHookable != nullptr)
 	{
+		oldpacketStart = util::GetVFunc(clientStateHookable, table::packetStart);
+		oldpacketEnd = util::GetVFunc(clientStateHookable, table::packetEnd);
+		oldtemptEntities = util::GetVFunc(clientStateHookable, table::temptEntities);
+
 		// PacketStart Detour
 		if (!detour::packetStart.IsHooked())
 			h::HookTable(detour::packetStart, clientStateHookable, table::packetStart, &h::hkPacketStart);
@@ -101,8 +107,33 @@ void h::HookClientState() {
 		if (!detour::packetEnd.IsHooked())
 			h::HookTable(detour::packetEnd, clientStateHookable, table::packetEnd, &h::hkPacketEnd);
 
-		if (!detour::temptEntities.IsHooked())
-			h::HookTable(detour::temptEntities, clientStateHookable, table::temptEntities, &h::hkTemptEntities);
+		//if (!detour::temptEntities.IsHooked())
+		//	h::HookTable(detour::temptEntities, clientStateHookable, table::temptEntities, &h::hkTemptEntities);
+	}
+}
+
+void h::UnHookClientState() {
+
+	static const auto clientStateHookable = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(i::ClientState) + 0x8);
+
+	if (clientStateHookable != nullptr)
+	{
+		// PacketStart Detour
+		if (detour::packetStart.IsHooked()) {
+			MH_DisableHook(oldpacketStart);
+			MH_RemoveHook(oldpacketStart);
+		}
+			
+		// PacketEnd Detour
+		if (detour::packetEnd.IsHooked()) {
+			MH_DisableHook(oldpacketEnd);
+			MH_RemoveHook(oldpacketEnd);
+		}
+
+		if (detour::temptEntities.IsHooked()) {
+			MH_DisableHook(oldtemptEntities);
+			MH_RemoveHook(oldtemptEntities);
+		}
 	}
 }
 

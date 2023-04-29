@@ -297,7 +297,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		}
 		else {
 
-#if NO
+#if _DEBUG
 			if (lagcomp.GetLog(pEnt->EntIndex()).pEntity) {
 
 				if (lagcomp.GetLog(pEnt->EntIndex()).pRecord.size() >= 2) {

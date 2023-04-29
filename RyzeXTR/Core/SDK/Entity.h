@@ -637,6 +637,20 @@ public:
 		memcpy(this->GetAnimationOverlays(), pAnimlayer, 13 * sizeof(CAnimationLayer));
 	}
 
+	struct LayerData_t
+	{
+		int nSequence;
+		float flPlaybackRate;
+		float flCycle;
+		float flWeight;
+		float flWeightWithAirSmooth;
+		float flFeetWeight;
+
+		float flMovementSide;
+		Vector angMoveYaw;
+		Vector vecDirection;
+	};
+
 	void GetPoseParameters(float* flPoseParameter) {
 
 		memcpy(flPoseParameter, &this->GetPoseParameter(), 24 * sizeof(float));
@@ -719,7 +733,7 @@ public:
 	ADD_NETVAR(GetFlashDuration, float, "CCSPlayer->m_flFlashDuration");
 
 	// pointer netvars
-	ADD_PNETVAR(GetFlashMaxAlpha, float, "CCSPlayer->m_flFlashMaxAlpha");
+	ADD_NETVAR(GetFlashMaxAlpha, float, "CCSPlayer->m_flFlashMaxAlpha");
 
 	// offset variables
 	ADD_NETVAROFFSET(GetFlashAlpha, float, "CCSPlayer->m_flFlashMaxAlpha", -0x8);

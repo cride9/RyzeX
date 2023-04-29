@@ -227,7 +227,7 @@ void misc::NightMode() {
 
 	// sky_lunacy
 
-	if (!i::EngineClient->IsConnected() || !i::EngineClient->IsInGame() || i::ClientState->iDeltaTick < 0 || !cfg::misc::nightmode) {
+	if (i::ClientState->iDeltaTick < 0 || !cfg::misc::nightmode) {
 		bResetNightMode = true;
 		return;
 	}
@@ -259,12 +259,13 @@ void misc::NightMode() {
 					pMat->ColorModulate(cfg::misc::nightmodeColor[0], cfg::misc::nightmodeColor[1], cfg::misc::nightmodeColor[2]);
 				else
 					pMat->ColorModulate((cfg::misc::nightmodeColor[0] * 255.f) / 561.f, (cfg::misc::nightmodeColor[1] * 255.f) / 561.f, (cfg::misc::nightmodeColor[2] * 255.f) / 561.f);
-
 			}
 		}
 
 		bResetNightMode = false;
-		backupR = cfg::misc::nightmodeColor[0], backupG = cfg::misc::nightmodeColor[1], backupB = cfg::misc::nightmodeColor[3];
+		backupR = cfg::misc::nightmodeColor[0];
+		backupG = cfg::misc::nightmodeColor[1];
+		backupB = cfg::misc::nightmodeColor[3];
 	}
 }
 
@@ -281,14 +282,7 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) 
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return;
 
-	auto& ClientImpactList = *( CUtlVector<ClientHitVerify_t>* )( ( uintptr_t )g::pLocal + 0x11C50 );
-
-	if (!cfg::misc::bulletImpact) {
-		ClientImpactList.RemoveAll();
-		return;
-	}
-
-	if (pEvent != nullptr && bFrameStage == false ) {
+	if (pEvent != nullptr && bFrameStage == false && cfg::misc::bulletImpact) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 
@@ -312,11 +306,22 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) 
 
 	if ( curStage == FRAME_RENDER_START && bFrameStage == true ) {
 
+		CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
+		//CUtlVector<ClientHitVerify_t>* pImpactList = reinterpret_cast<CUtlVector<ClientHitVerify_t>*>(g::pLocal + 0x11C50);
+
+		if (!&pImpactList) 
+			return;
+
+		if (!cfg::misc::bulletImpact) {
+			pImpactList.RemoveAll();
+			return;
+		}
+
 		static int iLastCount = 0;
-		for (int i = ClientImpactList.Count(); i > iLastCount; --i) {
+		for (int i = pImpactList.Count(); i > iLastCount; --i) {
 
 			i::DebugOverlay->AddBoxOverlay(
-				Vector(ClientImpactList[i - 1].pos),
+				Vector(pImpactList[i - 1].pos),
 				Vector(-2.0f, -2.0f, -2.0f),
 				Vector(2.0f, 2.0f, 2.0f),
 				Vector(0.0f, 0.0f, 0.0f),
@@ -328,8 +333,8 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) 
 			);
 		}
 
-		if (ClientImpactList.Count() != iLastCount)
-			iLastCount = ClientImpactList.Count();
+		if (pImpactList.Count() != iLastCount)
+			iLastCount = pImpactList.Count();
 	}
 }
 

@@ -100,10 +100,7 @@ void CNetworking::RestoreNetvarData( int nCommand )
 
 void CNetworking::OnPacketEnd( CClientState* ClientState )
 {
-	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
-		return;
-
-	if ( *( int* )( ( DWORD )( ClientState )+0x16C ) != *( int* )( ( DWORD )( ClientState )+0x164 ) )
+	if ( ClientState->clockDriftMgr.iCurClockOffset != ClientState->clockDriftMgr.flClockOffsets[15] )
 		return;
 
 	prediction.AdjustViewmodelData( g::pLocal );

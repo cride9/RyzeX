@@ -173,8 +173,14 @@ namespace h {
 	//int					hkInterpolationList();
 	static LRESULT __stdcall	WndProc(HWND, UINT, WPARAM, LPARAM);
 
+	inline LPVOID oldpacketStart;
+	inline LPVOID oldpacketEnd;
+	inline LPVOID oldtemptEntities;
+
 	void HookNetChannel(INetChannel*);
+	void UnHookNetChannel();
 	void HookClientState();
+	void UnHookClientState();
 
 	inline WNDPROC pOriginalWNDProc; // Original CSGO window proc
 }

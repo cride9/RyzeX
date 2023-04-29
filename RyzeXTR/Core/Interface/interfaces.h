@@ -26,6 +26,7 @@
 #include "Interfaces/IViewRenderBeams.h"
 #include "Interfaces/IInputSystem.h"
 #include "Interfaces/IMdlCache.h"
+#include "Interfaces/CLocalize.h"
 
 // Classes aka that I can't find as interface in the source kbxdbdxjk
 #include "Classes/CClientState.h"
@@ -64,6 +65,7 @@ namespace i {
 	inline IViewRenderBeams* RenderBeam;
 	inline IInputSystem* InputSystem;
 	inline IMDLCache* MDLCache;
+	inline ILocalize* Localize;
 
 	inline IDirect3DDevice9* DirectDevice;
 	inline IMoveHelper* MoveHelper;			// Runcommand parameter 

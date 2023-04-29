@@ -23,6 +23,7 @@ void i::SetupInterfaces() {
 	EngineSoundClient = GetInterface<IEngineSoundClient>("engine.dll", "IEngineSoundClient003");
 	InputSystem =	GetInterface<IInputSystem>( "inputsystem.dll", "InputSystemVersion001" );
 	MDLCache =		GetInterface<IMDLCache>("datacache.dll", "MDLCache004");
+	Localize =		GetInterface<ILocalize>("localize.dll", "Localize_001");
 
 	ClientState = **reinterpret_cast<CClientState***>(util::FindSignature("engine.dll", "A1 ? ? ? ? 8B 88 ? ? ? ? 85 C9 75 07") + 0x1);
 	if (ClientState == nullptr)

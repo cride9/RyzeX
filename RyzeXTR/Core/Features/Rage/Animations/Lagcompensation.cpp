@@ -260,7 +260,7 @@ void Lagcompensation::FilterRecords( )
 				continue;
 			}
 
-			if ( pCurrentRecord.bValid = lagcomp.IsValidRecord( pCurrentRecord.flSimulationTime ) )
+			if ( pCurrentRecord.bValid = lagcomp.IsValidRecord( pCurrentRecord.flSimulationTime ) && j < 12)
 				pPlayerLogs[ i ].iLastValid = j;
 		}
 	}
@@ -313,7 +313,7 @@ bool Lagcompensation::IsBreakingLagcompensation( Lagcompensation::LagRecord_t* p
 		Vector delta = pRecord.vecOrigin - previousOrigin;
 		if ( delta.LengthSqr( ) > LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR )
 		{
-			//ExtrapolatePlayer( pRecord.pEntity, &pRecord, pPrevious );
+			ExtrapolatePlayer( pRecord.pEntity, &pRecord, pPrevious );
 
 			//Vector m_vecAbsOrigin = pRecord.pEntity->GetAbsOrigin( );
 			//L::PushConsoleColor( FOREGROUND_RED );
@@ -415,7 +415,7 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 		}
 
 		m_pCurrentRecord->vecOrigin = simulationData.vecOrigin;
-		//m_pCurrentRecord->vecAbsOrigin = simulationData.vecOrigin;
+		m_pCurrentRecord->vecAbsOrigin = simulationData.vecOrigin;
 	}
 }
 

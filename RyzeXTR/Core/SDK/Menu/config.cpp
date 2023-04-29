@@ -28,6 +28,7 @@ void CConfig::Setup() {
 		SetupValue(forceBaim, false, "rage", "forceBaim");
 		SetupValue(forceBaimKey, 0, "rage", "forceBaimKey");
 		SetupValue(aimbotTargetSelection, 0, "rage", "aimbotTargetSelection");
+		SetupValue(iAimbotFov, 180, "rage", "aimbotfov");
 
 		SetupValue( autostop[ 0 ], false, "rage", "autostop1" );
 		SetupValue( autostop[ 1 ], false, "rage", "autostop2" );

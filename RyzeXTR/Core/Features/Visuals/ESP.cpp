@@ -4,26 +4,43 @@
 #include "../Rage/Animations/EnemyAnimations.h"
 #include "../Rage/ragebot.h"
 #include "../../SDK/Menu/gui.h"
+#include "../../SDK/RayTracer rebuilt/CRayTrace.h"
 
-void AIPoints() {
+void SafepointDebug(CBaseEntity* pEnt) {
 
-	for (auto& point : misc::AIVizualization) {
+	Vector vecMins, vecMaxs;
+	float flRadius;
+
+	if (!g::pLocal)
+		return;
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		Vector currentPoint = visual::traceEnds[0];
 
 		Vector AISpot;
-		if (i::DebugOverlay->ScreenPosition(point, AISpot))
-			continue;
-
-		if (!g::pLocal)
+		if (i::DebugOverlay->ScreenPosition(currentPoint, AISpot))
 			return;
 
 		Vector LocalEyePos;
-		if (i::DebugOverlay->ScreenPosition(g::pLocal->GetAbsOrigin(), LocalEyePos))
-			continue;
+		if (i::DebugOverlay->ScreenPosition(g::pLocal->GetEyePosition(), LocalEyePos))
+			return;
 
-		i::Surface->DrawSetColor(255.f, 255.f, 255.f, 255.f);
-		i::Surface->DrawLine(LocalEyePos.x, LocalEyePos.y, AISpot.x, AISpot.y);
-		//i::Surface->DrawFilledRect(points.x - 10, points.y - 10, points.x + 10, points.y + 10);
+		switch (i)
+		{
+		case 0:
+			i::Surface->DrawSetColor(255.f, 0.f, 0.f, 255.f);
+			break;
+		case 1:
+			i::Surface->DrawSetColor(0.f, 255.f, 0.f, 255.f);
+			break;
+		case 2:
+			i::Surface->DrawSetColor(0.f, 0.f, 255.f, 255.f);
+			break;
+		}
+		i::Surface->DrawLine(LocalEyePos.x, LocalEyePos.y + i, AISpot.x, AISpot.y);
 	}
+	//i::Surface->DrawFilledRect(points.x - 10, points.y - 10, points.x + 10, points.y + 10);
 }
 
 void HitboxVisualization() {
@@ -41,8 +58,6 @@ void visual::VisualRender() {
 
 	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
-		AIPoints();
-
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!pEnt || !g::pLocal) {
@@ -58,6 +73,7 @@ void visual::VisualRender() {
 		if (!pEnt->GetHealth())
 			continue;
 
+		//SafepointDebug(pEnt);
 		WorldCrosshair();
 		//HitboxVisualization();
 
@@ -143,9 +159,9 @@ void visual::HealthEsp(int& left, float& top, int& right, float& bot, float& wid
 		iHealth[iEntIndex] -= (iHealth[iEntIndex] - health < 3 ? 1 : 3);
 
 	float fDistance = bot - top;
-	const float flFactor = min(iHealth[iEntIndex], 100) / 100.f;
+	const float flFactor = min(iHealth[iEntIndex], 100) * 0.01f;
 
-	i::Surface->DrawSetColor(0.f, 0.f, 0.f, (startColor[3] + endColor[3]) / 2);
+	i::Surface->DrawSetColor(0.f, 0.f, 0.f, (startColor[3] + endColor[3]) * 0.5);
 	i::Surface->DrawOutlinedRect(left - 8, top, left - 4, bot + 1);
 
 	i::Surface->DrawSetColor(startColor);
@@ -153,7 +169,6 @@ void visual::HealthEsp(int& left, float& top, int& right, float& bot, float& wid
 
 	i::Surface->DrawSetColor(endColor);
 	i::Surface->DrawFilledRectFade(left - 7, bot - (fDistance * flFactor) - 5, left - 5, bot, 0, endColor[3], false);
-
 
 	i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 8, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
 }
@@ -181,8 +196,6 @@ void visual::AmmoEsp(int& left, float& top, int& right, float& bot, CBaseEntity*
 		return;
 
 	bAmmoEnabled[iEntIndex] = true;
-
-	static CBaseCombatWeapon* oldWeapon = pEnt->GetWeapon();
 
 	CBaseCombatWeapon* pWeapon = pEnt->GetWeapon();
 	CCSWeaponInfo* pWeaponInfo = pWeapon->GetCSWpnData();
@@ -228,8 +241,6 @@ void visual::WeaponEsp(int& left, float& top, int& right, float& bot, CBaseEntit
 
 void visual::Flags(float& top, int& right, CBaseEntity* pEnt, int& iIndex, bool* bFlags, float flFlagsColor[5][4]) {
 
-	static std::string flagStrings[FLAGMAX] = {""};
-
 	int spacing = -2;
 	if (bFlags[NAME]) {
 
@@ -246,51 +257,39 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, int& iIndex, bool*
 		int iHealth = pEnt->GetHealth();
 		const float percentage = iHealth / 100.f;
 
-		/*flagStrings[HEALTH] = std::format("Health: [{}]", iHealth);*/
-		flagStrings[HEALTH] = "Health: ["; flagStrings[HEALTH] += std::to_string(iHealth); flagStrings[HEALTH] += "]";
-		i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::FlagESP, false, flagStrings[HEALTH].c_str());
-
+		i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::FlagESP, false, std::format(healthPrefix, iHealth).c_str());
 		spacing += 10;
 	}
 
 	if (bFlags[ARMOR]) {
 
-		//flagStrings[ARMOR] = std::format("Kevlar [{}]", pEnt->GetArmor());
-		flagStrings[ARMOR] = "Kevlar: ["; flagStrings[ARMOR] += std::to_string(pEnt->GetArmor()); flagStrings[ARMOR] += "]";
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[ARMOR], g::fonts::FlagESP, false, flagStrings[ARMOR].c_str());
-
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[ARMOR], g::fonts::FlagESP, false, std::format(kevlarPrefix, pEnt->GetArmor()).c_str());
 		spacing += 10;
 	}
 
 	CBaseCombatWeapon* pWeapon = pEnt->GetWeapon();
 	if (pWeapon && bFlags[AMMO]) {
 
-		//flagStrings[AMMO] = std::format("[{}/{}]", pWeapon->GetAmmo(), pWeapon->GetAmmoReserve());
-
-		flagStrings[AMMO] = "["; flagStrings[AMMO] += std::to_string(pWeapon->GetAmmo()); flagStrings[AMMO] += "/"; flagStrings[AMMO] += std::to_string(pWeapon->GetAmmoReserve());
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, flagStrings[AMMO].c_str());
-
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, std::format(ammoPrefix, pWeapon->GetAmmo(), pWeapon->GetAmmoReserve()).c_str());
 		spacing += 10;
 	}
 	if (pWeapon && bFlags[WEAPON]) {
 
-		flagStrings[WEAPON] = pWeapon->GetCSWpnData()->szWeaponName;
-		flagStrings[WEAPON].erase(0, 7);
+		std::string text = pWeapon->GetCSWpnData()->szWeaponName;
+		text.erase(0, 7);
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, flagStrings[WEAPON].c_str());
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
 		spacing += 10;
 	}
 
 	if (bFlags[MONEY]) {
 
-		//flagStrings[MONEY] = std::format("${}", pEnt->GetMoney());
-		flagStrings[MONEY] = "$"; flagStrings[MONEY] += std::to_string(pEnt->GetMoney());
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[MONEY], g::fonts::FlagESP, false, flagStrings[MONEY].c_str());
+		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[MONEY], g::fonts::FlagESP, false, std::format(moneyPrefix, pEnt->GetMoney()).c_str());
 
 		spacing += 10;
 	}
 
-#if no
+#if _DEBUG
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
 		using enum Lagcompensation::EResolverMode;

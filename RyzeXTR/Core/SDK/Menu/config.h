@@ -23,6 +23,7 @@ namespace cfg {
 		inline int	aimbotTargetSelection;
 		inline bool autoscope[] = { false, false, false };
 		inline bool forceSafePoint[] = { false, false, false, false ,false, false };
+		inline int iAimbotFov = 180.f;
 
 		inline bool doubletap;
 		inline int  doubletapkey;

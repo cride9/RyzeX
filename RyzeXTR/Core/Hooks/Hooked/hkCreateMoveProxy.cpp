@@ -85,7 +85,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	else
 		lagcomp.ClearIncomingSequences( );
 
-	//h::HookClientState();
+	h::HookClientState();
 
 	static auto maxusercmd = i::ConVar->FindVar("sv_maxusrcmdprocessticks");
 	if (i::ClientState->nChokedCommands >= maxusercmd->GetInt() - 1)

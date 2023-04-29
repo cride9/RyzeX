@@ -110,9 +110,6 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 
 	if (!strcmp(pEvent->GetName(), "round_start")) {
 
-		for (int i = 0; i < 65; i++)
-			missedShots[i] = 0;
-
 		ragebot.rageBotData.pAimbotTarget = nullptr;
 		ragebot.rageBotData.pTargetMatrix = nullptr;
 		bulletImpact = Vector(0, 0, 0);
@@ -239,8 +236,8 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 	}
 
 	{
-		// left.
-		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw - 58.f);
+		// right.
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw + 58.f);
 
 		// update player animation.
 		UpdateClientSideAnimations(pEntity, pRecord);
@@ -251,8 +248,8 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 	}
 
 	{
-		// right.
-		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw + 58.f);
+		// left.
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw - 58.f);
 
 		// update player animation.
 		UpdateClientSideAnimations(pEntity, pRecord);
@@ -274,6 +271,7 @@ void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecor
 		return;
 
 	ResolverLogic();
+	UpdateSafePointMatrixes(pEntity, pRecord);
 
 	pData.iMissedShots = missedShots[pEntity->EntIndex()];
 
@@ -300,35 +298,18 @@ void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecor
 	}
 	// the angle.
 	flGuessedYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y - pEntity->AnimState( )->flGoalFeetYaw );
-	UpdateSafePointMatrixes(pEntity, pRecord);
-	//if ( IPT::HandleInput( C::Get<int>( Vars.iRageResolverOverrideKey ) ) )
-	//{
-	//	// overriding.
-	//	pData.iAntiAimType = Animations::OVERRIDE;
 
-	//	Vector vecPosEnemy;
-	//	if ( !I::DebugOverlay->WorldToScreen( pRecord->vecOrigin, vecPosEnemy ) )
-	//		return;
-
-	//	POINT pMouse;
-	//	GetCursorPos( &pMouse );
-	//	float flDelta = pMouse.x - vecPosEnemy.x;
-
-	//	// set yaw.
-	//	flGuessedYaw = std::clamp( flDelta, -58.f, 58.f );
-
-	//	// desync side info.
-	//	pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
-
-	//	// fix legit anti-aim.
-	//	if ( pRecord->flDeltaAngle <= 90.f )
-	//		flGuessedYaw *= -1.f;
-
-	//	// apply the resolver.
-	//	pEntity->GetAnimationState( )->flGoalFeetYaw = M::NormalizeYaw( pRecord->angEyeAngles.y ) - flGuessedYaw;
-	//	return;
-	//}
-
+	//bool bBreakingLby = false;
+	///* Loop through */
+	//for (size_t i = 0; i < 13; i++) 
+	//	/* Check current sequence */
+	//	if (pEntity->GetSequenceActivity(pRecord->pLayers[i].nSequence) == ACT_CSGO_IDLE_TURN_BALANCEADJUST) 
+	//		/* Check last tick sequence */
+	//		if (pEntity->GetSequenceActivity(pPrevious->pLayers[i].nSequence) == ACT_CSGO_IDLE_TURN_BALANCEADJUST) 
+	//			/* Make sure it's really a new layer data not the same because of fakelag */
+	//			if ((pPrevious->pLayers[i].flCycle != pRecord->pLayers[i].flCycle) || pRecord->pLayers[i].flWeight == 1.f) 
+	//				bBreakingLby = true;
+ 
 	// breaking the lowerbody.
 	if ( fabsf( M::NormalizeYaw( pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget ) ) > 35.f)
 	{
@@ -920,10 +901,10 @@ void Animations::UpdateEnemyAnimations( CBaseEntity* pEntity, Lagcompensation::L
 		iLastGuessedYaw = std::clamp( flGuessedYaw, -flMaxDesyncDelta, flMaxDesyncDelta );
 
 		// fix feet spin.
-		pEntity->AnimState( )->flFeetCycle = pRecord->pLayers[ 6 ].flCycle;
+		pEntity->AnimState( )->flFeetCycle = pRecord->LayerData[0].flCycle;
 
 		// just get the feet weight.
-		pEntity->AnimState( )->flMoveWeight = pRecord->pLayers[ 6 ].flWeight / pEntity->AnimState( )->flInAirSmoothValue;
+		pEntity->AnimState( )->flMoveWeight = pRecord->LayerData[0].flWeight / pEntity->AnimState( )->flInAirSmoothValue;
 
 		// update animations.
 		UpdateClientSideAnimations( pEntity, pRecord );
@@ -997,16 +978,16 @@ void Animations::UpdateEnemyAnimations( CBaseEntity* pEntity, Lagcompensation::L
 
 		// update resolver.
 		FakePitchResolver( pEntity, pRecord );
-		SetGoalFeetYaw( pEntity, pRecord, pPrevious, flServerVelocityXY, flServerPlaybackrate );
+		SetGoalFeetYaw(pEntity, pRecord, nullptr, flServerVelocityXY, flServerPlaybackrate);
 
 		// save for info.
 		iLastGuessedYaw = std::clamp( flGuessedYaw, -flMaxDesyncDelta, flMaxDesyncDelta );
 
 		// fix feet spin.
-		pEntity->AnimState( )->flFeetCycle = pRecord->pLayers[ 6 ].flCycle;
+		pEntity->AnimState( )->flFeetCycle = pRecord->LayerData[0].flCycle/*pRecord->pLayers[ 6 ].flCycle*/;
 
 		// just get the feet weight.
-		pEntity->AnimState( )->flMoveWeight = pRecord->pLayers[ 6 ].flWeight / pEntity->AnimState( )->flInAirSmoothValue;
+		pEntity->AnimState( )->flMoveWeight =/* pRecord->pLayers[ 6 ]*/pRecord->LayerData[0].flWeight / pEntity->AnimState( )->flInAirSmoothValue;
 
 		// update animations.
 		UpdateClientSideAnimations( pEntity, pRecord );
@@ -1160,16 +1141,16 @@ void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 	// https://github.com/click4dylan/CSGO_AnimationCode_Reversed/blob/master/CCSGOPlayerAnimState_New.cpp#L2323
 	// TODO: make code look good
 
-	auto m_pState = pEntity->AnimState();
+	CAnimState* m_pState = pEntity->AnimState();
 
 	static const float CS_PLAYER_SPEED_RUN = 260.0f;
 
 	// TODO: Find these members in the actual animstate struct
-	auto m_flLastUpdateIncrement = m_pState->flLastUpdateIncrement;
-	auto m_flFootYaw = m_pState->flGoalFeetYaw;
-	auto m_flMoveYaw = m_pState->flMoveYaw;
-	auto m_vecVelocityNormalizedNonZero = m_pState->vecVelocityNormalizedNonZero;//*(Vector*)((DWORD)m_pState + 0xE0);
-	auto m_flInAirSmoothValue = m_pState->flDurationInAir;
+	float m_flLastUpdateIncrement = *(float*)((DWORD)m_pState + 0x74);
+	float m_flFootYaw = m_pState->flGoalFeetYaw;
+	float m_flMoveYaw = m_pState->flMoveYaw;
+	Vector m_vecVelocityNormalizedNonZero = *(Vector*)((DWORD)m_pState + 0xE0);
+	float m_flInAirSmoothValue = *(float*)((DWORD)m_pState + 0x124);
 	AnimationData_t& m_AnimationData = pAnimationData[pEntity->EntIndex()];
 
 	char m_szDestination[64];
@@ -1183,12 +1164,12 @@ void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 
 	// NOTE: 
 	// pEntity->get<int>( 0x3984 ) is m_iMoveState 
-	if (pEntity->GetMoveState() != m_AnimationData.iMoveState)
+	if (pEntity->GetOffset<int>(0x3984) != m_AnimationData.iMoveState)
 		m_AnimationData.flMovePlaybackRate += 10.0f;
 
-	m_AnimationData.iMoveState = pEntity->GetMoveState();
+	m_AnimationData.iMoveState = pEntity->GetOffset<int>(0x3984);
 
-	float m_flMovementTimeDelta = m_pState->flLastUpdateIncrement * 40.0f;
+	float m_flMovementTimeDelta = *(float*)((DWORD)m_pState + 0x74) * 40.0f;
 
 	if (-m_AnimationData.flMovePlaybackRate <= m_flMovementTimeDelta)
 	{
@@ -1204,15 +1185,15 @@ void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 
 	m_AnimationData.flMovePlaybackRate = std::clamp(m_AnimationData.flMovePlaybackRate, 0.0f, 100.0f);
 
-	float m_flDuckSpeedClamped = std::clamp(m_pState->flDuckingSpeed, 0.0f, 1.0f);
-	float m_flRunSpeedClamped = std::clamp(m_pState->flRunningSpeed, 0.0f, 1.0f);
+	float m_flDuckSpeedClamped = std::clamp(*(float*)((DWORD)m_pState + 0xFC), 0.0f, 1.0f);
+	float m_flRunSpeedClamped = std::clamp(*(float*)((DWORD)m_pState + 0xF8), 0.0f, 1.0f);
 
 	float m_flSpeedWeight = ((m_flDuckSpeedClamped - m_flRunSpeedClamped) * m_pState->flDuckAmount) + m_flRunSpeedClamped;
 
 	if (m_flSpeedWeight < pLayer->flFeetWeight)
 	{
 		float v34 = std::clamp(m_AnimationData.flMovePlaybackRate * 0.01f, 0.0f, 1.0f);
-		float m_flFeetWeightElapsed = ((v34 * 18.0f) + 2.0f) * m_pState->flLastUpdateIncrement;
+		float m_flFeetWeightElapsed = ((v34 * 18.0f) + 2.0f) * *(float*)((DWORD)m_pState + 0x74);
 		if (m_flSpeedWeight - pLayer->flFeetWeight <= m_flFeetWeightElapsed)
 			pLayer->flFeetWeight = -m_flFeetWeightElapsed <= (m_flSpeedWeight - pLayer->flFeetWeight) ? m_flSpeedWeight : pLayer->flFeetWeight - m_flFeetWeightElapsed;
 		else
@@ -1260,7 +1241,7 @@ void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 		m_flFeetCycleRate = (1.0f - (m_pState->flWalkToRunTransition * 0.15f)) * (m_flSpeedMultiplier * m_flSequenceCycleRate);
 	}
 
-	float m_flFeetCyclePlaybackRate = (m_pState->flLastUpdateIncrement * m_flFeetCycleRate);
+	float m_flFeetCyclePlaybackRate = (*(float*)((DWORD)m_pState + 0x74) * m_flFeetCycleRate);
 	m_AnimationData.flPrimaryCycle = m_flFeetCyclePlaybackRate + m_AnimationData.flPrimaryCycle;
 
 	// store possible information for resolving.

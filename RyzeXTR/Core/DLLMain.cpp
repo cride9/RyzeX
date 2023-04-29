@@ -56,7 +56,7 @@ void SetupFonts() {
 
 	i::Surface->SetFontGlyphSet(g::fonts::NameESP, "Verdana", 12, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 	i::Surface->SetFontGlyphSet(g::fonts::HealthESP, "Verdana", 10, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
-	i::Surface->SetFontGlyphSet(g::fonts::FlagESP, "Small Fonts", 10, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
+	i::Surface->SetFontGlyphSet(g::fonts::FlagESP, "Small Fonts", 11, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 }
 
 DWORD WINAPI CheatThread(PVOID hinstDLL) {
@@ -79,6 +79,17 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	M::Setup();
 	h::SetupHooks();
 	g::entityListener.Setup();
+
+#if NDEBUG
+	//util::LogConsole("[RELEASE] Built date: " __DATE__ " at " __TIME__ "\n");
+#endif
+#if _DEBUG
+	//util::LogConsole("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
+#endif
+#if ALPHA
+	//util::LogConsole("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
+#endif
+
 #if _DEBUG
 
 	while (!GetAsyncKeyState(VK_DELETE))
@@ -92,7 +103,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 
 #endif
 
-#if NDEBUG
+#if NDEBUG || ALPHA
 
 	while (true)
 		Sleep(5000);
