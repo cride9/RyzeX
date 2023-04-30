@@ -33,6 +33,7 @@ void h::SetupHooks() {
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
 	HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
+	HookTable(detour::drawModelMdl, i::ModelRender, table::drawModelMdl, &hkDrawModelMDL);
 	//HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
 	
 	// Signature hooks
@@ -75,8 +76,8 @@ void h::HookNetChannel(INetChannel* pNetChannel) {
 	// @note: doesnt need rehook cuz detours here
 	if (pNetChannel != nullptr)
 	{
-		//if (!detour::processPacket.IsHooked())
-		//	h::HookTable(detour::processPacket, pNetChannel, table::processPacket, &h::hkProcessPacket);
+		if (!detour::processPacket.IsHooked())
+			h::HookTable(detour::processPacket, pNetChannel, table::processPacket, &h::hkProcessPacket);
 
 		if (!detour::sendNetMsg.IsHooked())
 			h::HookTable(detour::sendNetMsg, pNetChannel, table::sendNetMsg, &h::hkSendNetMsg);
@@ -107,8 +108,8 @@ void h::HookClientState() {
 		if (!detour::packetEnd.IsHooked())
 			h::HookTable(detour::packetEnd, clientStateHookable, table::packetEnd, &h::hkPacketEnd);
 
-		//if (!detour::temptEntities.IsHooked())
-		//	h::HookTable(detour::temptEntities, clientStateHookable, table::temptEntities, &h::hkTemptEntities);
+		if (!detour::temptEntities.IsHooked())
+			h::HookTable(detour::temptEntities, clientStateHookable, table::temptEntities, &h::hkTemptEntities);
 	}
 }
 

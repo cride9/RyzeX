@@ -82,7 +82,7 @@ void misc::ServerHitboxes() {
 	if ( g::pLocal == nullptr )
 		return;
 
-	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
+	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
 		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || !pEntity->IsPlayer( ) || !pEntity->EntIndex( ) )
@@ -1348,7 +1348,7 @@ void misc::BlockBot(CUserCmd* pCmd) {
 
 		// allowed difference before we fall down cuz head has a bigger surface (idk why)
 		// so if player is going in small circles, we won't fall (or doing small changes that could kill most blockbots)
-		if ((vecExtrapolatedLocalPos - pBlockedPlayer->GetVecOrigin()).Length2D() > 3.29217472f) {
+		if ((vecExtrapolatedLocalPos - pBlockedPlayer->GetVecOrigin()).Length2D() > 1.29217472f) {
 
 			Vector vecAngle;
 			M::VectorAngles(pBlockedPlayer->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
@@ -1363,7 +1363,7 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		float flBestDistance = 250.f;
 		CBaseEntity* pTarget = nullptr;
 
-		for (int i = 1; i < i::GlobalVars->nMaxClients; i++)
+		for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++)
 		{
 			CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 

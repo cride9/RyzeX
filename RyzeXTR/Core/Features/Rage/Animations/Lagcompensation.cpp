@@ -100,7 +100,7 @@ void Lagcompensation::FrameStageNotify() {
 	if (!g::pLocal)
 		return;
 
-	for ( int i = 1; i <= i::GlobalVars->nMaxClients; i++ )
+	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++ )
 	{
 		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>( i::EntityList->GetClientEntity( i ) );
 		Lagcompensation::AnimationInfo_t* pCurrentLog = &pPlayerLogs[i];
@@ -230,7 +230,7 @@ Lagcompensation::AnimationInfo_t& Lagcompensation::GetLog( const int iEntIndex )
 
 void Lagcompensation::FilterRecords( )
 {
-	for ( int i = 1; i <= i::GlobalVars->nMaxClients; i++ )
+	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++ )
 	{
 		if ( pPlayerLogs[ i ].pRecord.empty( ) )
 			continue;
@@ -513,7 +513,7 @@ void Lagcompensation::AddLatencyToNetChannel( INetChannel* pNetChannel, float fl
 
 void Lagcompensation::RemoveInterpolation() {
 
-	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++) {
+	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 

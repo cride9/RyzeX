@@ -85,6 +85,7 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkClampBonesInBBox.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Setupbones.cpp" />
     <ClCompile Include="Core\Features\Changers\parser.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkDrawModelMDL.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />

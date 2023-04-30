@@ -256,6 +256,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkDoExtraBoneProcessing.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModel.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkDrawModelMDL.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFireGameEvent.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFrameStageNotify.cpp" />

@@ -6,15 +6,6 @@
 #include "../Rage/Animations/Lagcompensation.h"
 #include "../Rage/ragebot.h"
 
-enum EMATERIAL : int {
-
-	DEFAULT,
-	FLAT,
-	GLOW,
-	THINGLOW,
-	ANIMATED
-};
-
 constexpr std::string_view szScrollProxies = R"#(
 	"texturescroll"
     {
@@ -431,5 +422,31 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 	}
+	//else if ((szModelName.find("weapons") != std::string_view::npos)) {
+
+	//	if ((pBoneToWorld->GetOrigin() - g::pLocal->GetCachedBoneData().Base()->GetOrigin()).Length2D() < 20.f) {
+
+	//		if (weapon) {
+	//			BeginChams(materials[weaponType], weaponColor, false, weaponXhair);
+	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		}
+	//		else {
+	//			EndChams();
+	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		}
+	//		if (weaponOverlay) {
+	//			BeginChams(materials[GLOW], weaponOverlayColor, false, weaponOverlayXhair);
+	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		}
+	//		if (weaponThinOverlay) {
+	//			BeginChams(materials[THINGLOW], weaponThinOverlayColor, false, weaponThinOverlayXhair);
+	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		}
+	//		if (weaponAnimOverlay) {
+	//			BeginChams(materials[ANIMATED], weaponAnimOverlayColor, false, weaponAnimOverlayXhair);
+	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		}
+	//	}
+	//}
 	return false;
 }

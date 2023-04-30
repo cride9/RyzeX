@@ -15,7 +15,7 @@ namespace visual {
 	void VisualRender();
 
 	void BoxEsp(int&, float&, int&, float&, Color);
-	void HealthEsp(int&, float&, int&, float&, float&, float&, int&, Color, Color, int&);
+	void HealthEsp(int&, float&, int&, float&, float&, float&, int&, Color, Color, size_t&);
 	void NameEsp(int&, float&, int&, float&, float&, float&, CBaseEntity*, Color);
 	void KevlarEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void AmmoEsp(int&, float&, int&, float&, CBaseEntity*, Color);
@@ -24,7 +24,7 @@ namespace visual {
 	void MoneyEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
 
-	void Flags(float&, int&, CBaseEntity*, int&, bool*, float[5][4]);
+	void Flags(float&, int&, CBaseEntity*, size_t&, bool*, float[5][4]);
 
 	void WorldCrosshair();
 	inline Vector vecWorldCrosshair[5];

@@ -73,6 +73,17 @@ R"#("VertexLitGeneric"
 		 "$reflectivity" "[1 1 1]"
 		} )#";
 
+
+enum EMATERIAL : int {
+
+	DEFAULT,
+	FLAT,
+	GLOW,
+	THINGLOW,
+	ANIMATED,
+	MATERIAL_MAX
+};
+
 namespace chams {
 
 	IMaterial* CreateMaterial(std::string_view szName, std::string_view szShader, std::string_view szBaseTexture = "vgui/white", std::string_view szEnvMap = "", bool bIgnorez = false, bool bWireframe = false, std::string_view szProxies = "");

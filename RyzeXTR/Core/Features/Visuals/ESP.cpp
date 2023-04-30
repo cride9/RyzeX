@@ -56,7 +56,7 @@ using namespace cfg::visual;
 
 void visual::VisualRender() {
 
-	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
+	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
@@ -150,7 +150,7 @@ void visual::BoxEsp(int& left, float& top, int& right, float& bot, Color color) 
 	i::Surface->DrawOutlinedRect(left - 1, top - 1, right + 1, bot + 1);
 }
 
-void visual::HealthEsp(int& left, float& top, int& right, float& bot, float& width, float& height, int& health, Color startColor, Color endColor, int& iEntIndex) {
+void visual::HealthEsp(int& left, float& top, int& right, float& bot, float& width, float& height, int& health, Color startColor, Color endColor, size_t& iEntIndex) {
 
 	if (iHealth[iEntIndex] <= 0)
 		iHealth[iEntIndex] = health;
@@ -239,7 +239,7 @@ void visual::WeaponEsp(int& left, float& top, int& right, float& bot, CBaseEntit
 	i::Surface->DrawT(left, bot, Color(color), g::fonts::FlagESP, false, text.c_str());
 }
 
-void visual::Flags(float& top, int& right, CBaseEntity* pEnt, int& iIndex, bool* bFlags, float flFlagsColor[5][4]) {
+void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bool* bFlags, float flFlagsColor[5][4]) {
 
 	int spacing = -2;
 	if (bFlags[NAME]) {

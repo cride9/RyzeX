@@ -78,7 +78,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	INetChannel* pNetChannel = i::ClientState->pNetChannel;
 
-	//h::HookNetChannel(pNetChannel);
+	h::HookNetChannel(pNetChannel);
 
 	if ( cfg::misc::fakePing && pNetChannel)
 		lagcomp.UpdateIncomingSequences( pNetChannel );

@@ -450,7 +450,7 @@ int antiaim::ClosestToLocal() {
 	Vector angles;
 	i::EngineClient->GetViewAngles(angles);
 
-	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
+	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++)
 	{
 		auto entity = (CBaseEntity*)i::EntityList->GetClientEntity(i);
 
@@ -479,7 +479,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 
 	Vector vecBestEntity = Vector(0, 0, 0);
 	float flBestFov = 480.f;
-	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
+	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++)
 	{
 		CBaseEntity* pEnt = (CBaseEntity*)i::EntityList->GetClientEntity(i);
 
@@ -514,7 +514,7 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 	bool bSide1 = false;
 	bool bSide2 = false;
 	bool autowalld = false;
-	for (int i = 0; i <= i::GlobalVars->nMaxClients; ++i) {
+	for (size_t i = 0; i <= i::GlobalVars->nMaxClients; ++i) {
 
 		CBaseEntity* pPlayerEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
