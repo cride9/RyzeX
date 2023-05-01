@@ -86,7 +86,8 @@ public:
 		DrawSetTextPos(X - (Width / 2), Y);
 		DrawPrintText(WideBuffer, wcslen(WideBuffer));
 
-		delete WideBuffer, Size;
+		//delete WideBuffer, Size;
+		delete[] WideBuffer;
 
 		return;
 	}

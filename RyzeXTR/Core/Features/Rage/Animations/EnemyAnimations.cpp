@@ -225,14 +225,15 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 	memcpy( &pBackupState, pEntity->AnimState( ), sizeof( CAnimState ) );
 	{
 		// center.
-		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw);
+		//pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw);
 
 		// update player animation.
 		UpdateClientSideAnimations(pEntity, pRecord);
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		RebuiltLayer6(pEntity, &pRecord->LayerData[0]);
+		LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[0]);
+		//RebuiltLayer6(pEntity, &pRecord->LayerData[0]);
 	}
 
 	{
@@ -244,7 +245,8 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		RebuiltLayer6(pEntity, &pRecord->LayerData[1]);
+		LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[1]);
+		//RebuiltLayer6(pEntity, &pRecord->LayerData[1]);
 	}
 
 	{
@@ -256,7 +258,8 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		RebuiltLayer6(pEntity, &pRecord->LayerData[2]);
+		LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[2]);
+		//RebuiltLayer6(pEntity, &pRecord->LayerData[2]);
 	}
 }
 
@@ -901,10 +904,10 @@ void Animations::UpdateEnemyAnimations( CBaseEntity* pEntity, Lagcompensation::L
 		iLastGuessedYaw = std::clamp( flGuessedYaw, -flMaxDesyncDelta, flMaxDesyncDelta );
 
 		// fix feet spin.
-		pEntity->AnimState( )->flFeetCycle = pRecord->LayerData[0].flCycle;
+		pEntity->AnimState( )->flFeetCycle = pRecord->pLayers[6].flCycle;
 
 		// just get the feet weight.
-		pEntity->AnimState( )->flMoveWeight = pRecord->LayerData[0].flWeight / pEntity->AnimState( )->flInAirSmoothValue;
+		pEntity->AnimState( )->flMoveWeight = pRecord->pLayers[6].flWeight / pEntity->AnimState( )->flInAirSmoothValue;
 
 		// update animations.
 		UpdateClientSideAnimations( pEntity, pRecord );
@@ -984,10 +987,10 @@ void Animations::UpdateEnemyAnimations( CBaseEntity* pEntity, Lagcompensation::L
 		iLastGuessedYaw = std::clamp( flGuessedYaw, -flMaxDesyncDelta, flMaxDesyncDelta );
 
 		// fix feet spin.
-		pEntity->AnimState( )->flFeetCycle = pRecord->LayerData[0].flCycle/*pRecord->pLayers[ 6 ].flCycle*/;
+		pEntity->AnimState( )->flFeetCycle = pRecord->pLayers[6].flCycle/*pRecord->pLayers[ 6 ].flCycle*/;
 
 		// just get the feet weight.
-		pEntity->AnimState( )->flMoveWeight =/* pRecord->pLayers[ 6 ]*/pRecord->LayerData[0].flWeight / pEntity->AnimState( )->flInAirSmoothValue;
+		pEntity->AnimState( )->flMoveWeight = pRecord->pLayers[6].flWeight / pEntity->AnimState( )->flInAirSmoothValue;
 
 		// update animations.
 		UpdateClientSideAnimations( pEntity, pRecord );
@@ -1104,33 +1107,6 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	std::memcpy(pMatrix, pLog->pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
 
 	return true;
-}
-
-std::pair<CAnimationLayer*, float*> Animations::BuildSideLayerAndPose(CBaseEntity* pEnt, float sideAngle) {
-
-	// original is backed up before calling this function
-	
-	// make sure the new data that we set is applied by forcing client to render this player again
-	if (pEnt->AnimState()->iLastUpdateFrame == i::GlobalVars->iFrameCount)
-		pEnt->AnimState()->iLastUpdateFrame--;
-
-	// make sure the new data that we set is applied by forcing client to render this player again
-	if (pEnt->AnimState()->flLastUpdateTime == i::GlobalVars->flCurrentTime)
-		pEnt->AnimState()->flLastUpdateTime -= i::GlobalVars->flIntervalPerTick;
-
-	pEnt->AnimState()->flGoalFeetYaw = pEnt->GetEyePosition().y + sideAngle;
-
-	pEnt->IsClientSideAnimation() = g::bAllowAnimations[pEnt->EntIndex()] = true;
-	pEnt->UpdateClientSideAnimations();
-	pEnt->IsClientSideAnimation() = g::bAllowAnimations[pEnt->EntIndex()] = false;
-
-	CAnimationLayer tempLayers[13];
-	float tempPoses[24];
-
-	pEnt->GetPoseParameters(tempPoses);
-	pEnt->GetAnimationLayers(tempLayers);
-
-	return std::make_pair(tempLayers, tempPoses);
 }
 
 void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer) {
@@ -1255,4 +1231,154 @@ void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 	pLayer->flPlaybackRate = m_flFeetCyclePlaybackRate;
 	pLayer->flCycle = m_AnimationData.flPrimaryCycle;
 	pLayer->flFeetWeight = std::clamp(m_flNewFeetWeightLayerWeight, 0.0f, 1.0f);
+}
+
+#define ANIM_TRANSITION_WALK_TO_RUN 0
+#define ANIM_TRANSITION_RUN_TO_WALK 1
+#define CSGO_ANIM_WALK_TO_RUN_TRANSITION_SPEED 2.0f
+#define CSGO_ANIM_ONGROUND_FUZZY_APPROACH 8.0f
+#define CSGO_ANIM_ONGROUND_FUZZY_APPROACH_CROUCH 16.0f
+#define CSGO_ANIM_LADDER_CLIMB_COVERAGE 100.0f
+#define CSGO_ANIM_RUN_ANIM_PLAYBACK_MULTIPLIER 0.85f
+
+#define CS_PLAYER_SPEED_RUN 260.0f
+#define CS_PLAYER_SPEED_VIP 227.0f
+#define CS_PLAYER_SPEED_SHIELD 160.0f
+#define CS_PLAYER_SPEED_HAS_HOSTAGE 200.0f
+#define CS_PLAYER_SPEED_STOPPED 1.0f
+#define CS_PLAYER_SPEED_OBSERVER 900.0f
+
+#define CS_PLAYER_SPEED_DUCK_MODIFIER 0.34f
+#define CS_PLAYER_SPEED_WALK_MODIFIER 0.52f
+#define CS_PLAYER_SPEED_CLIMB_MODIFIER 0.34f
+#define CS_PLAYER_HEAVYARMOR_FLINCH_MODIFIER 0.5f
+
+#define CS_PLAYER_DUCK_SPEED_IDEAL 8.0f
+
+float ClampCycle(float flCycleIn)
+{
+	flCycleIn -= int(flCycleIn);
+
+	if (flCycleIn < 0)
+	{
+		flCycleIn += 1;
+	}
+	else if (flCycleIn > 1)
+	{
+		flCycleIn -= 1;
+	}
+
+	return flCycleIn;
+}
+
+void Animations::LayerSetUpMovementRebuild(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer) {
+
+	if (!pEntity || !pLayer)
+		return;
+
+	CAnimState pState;
+	std::memcpy(&pState, pEntity->AnimState(), sizeof(CAnimState));
+
+	if (pState.flWalkToRunTransition > 0 && pState.flWalkToRunTransition < 1) {
+
+		if (pState.bWalkToRunTransitionState == ANIM_TRANSITION_WALK_TO_RUN) {
+
+			pState.flWalkToRunTransition += pState.flLastUpdateIncrement * CSGO_ANIM_WALK_TO_RUN_TRANSITION_SPEED;
+		}
+		else {
+
+			pState.flWalkToRunTransition -= pState.flLastUpdateIncrement * CSGO_ANIM_WALK_TO_RUN_TRANSITION_SPEED;
+		}
+
+		pState.flWalkToRunTransition = std::clamp(pState.flWalkToRunTransition, 0.f, 1.f);
+	}
+
+	if (pState.flVelocityLenght2D > (CS_PLAYER_SPEED_RUN * CS_PLAYER_SPEED_WALK_MODIFIER) && pState.bWalkToRunTransitionState == ANIM_TRANSITION_RUN_TO_WALK) {
+
+		//crossed the walk to run threshold
+		pState.bWalkToRunTransitionState = ANIM_TRANSITION_WALK_TO_RUN;
+		pState.flWalkToRunTransition = max(0.01f, pState.flWalkToRunTransition);
+	}
+	else if (pState.flVelocityLenght2D < (CS_PLAYER_SPEED_RUN * CS_PLAYER_SPEED_WALK_MODIFIER) && pState.bWalkToRunTransitionState == ANIM_TRANSITION_WALK_TO_RUN)
+	{
+		//crossed the run to walk threshold
+		pState.bWalkToRunTransitionState = ANIM_TRANSITION_RUN_TO_WALK;
+		pState.flWalkToRunTransition = max(0.99f, pState.flWalkToRunTransition);
+	}
+	
+	// not needed for layer 6 calculations
+	//if (pState.iAnimsetVersion < 2) {
+
+	//	pEntity->GetPoseParameter()[PLAYER_POSE_PARAM_RUN] = pState.flWalkToRunTransition;
+	//}
+	//else {
+
+	//	pEntity->GetPoseParameter()[PLAYER_POSE_PARAM_MOVE_BLEND_WALK] = (1.0f - pState.flWalkToRunTransition) * (1.0f - pState.flDuckAmount);
+	//	pEntity->GetPoseParameter()[PLAYER_POSE_PARAM_MOVE_BLEND_RUN] = (pState.flWalkToRunTransition) * (1.0f - pState.flDuckAmount);
+	//	pEntity->GetPoseParameter()[PLAYER_POSE_PARAM_MOVE_BLEND_CROUCH_WALK] = pState.flDuckAmount;
+	//}
+
+	char szWeaponMoveSeq[64];
+	sprintf_s(szWeaponMoveSeq, "move_%s", pState.GetWeaponPrefix());
+
+	int nWeaponMoveSeq = pEntity->LookupSequence(szWeaponMoveSeq);
+	if (nWeaponMoveSeq == -1)
+	{
+		nWeaponMoveSeq = pEntity->LookupSequence("move");
+	}
+
+	if (pEntity->GetMoveState() != pState.nPreviousMoveState)
+	{
+		pState.flStutterStep += 10;
+	}
+	pState.nPreviousMoveState = pEntity->GetMoveState();
+	pState.flStutterStep = std::clamp(M::Approach(0, pState.flStutterStep, pState.flLastUpdateIncrement * 40), 0.f, 100.f);
+
+	float flTargetMoveWeight = M::Lerp(pState.flDuckAmount, std::clamp(pState.flRunningSpeed, 0.f, 1.f), std::clamp(pState.flDuckingSpeed, 0.f, 1.f));
+
+	if (pState.flMoveWeight <= flTargetMoveWeight)
+	{
+		pState.flMoveWeight = flTargetMoveWeight;
+	}
+	else
+	{
+		pState.flMoveWeight = M::Approach(flTargetMoveWeight, pState.flMoveWeight, pState.flLastUpdateIncrement * M::RemapValClamped(pState.flStutterStep, 0.0f, 100.0f, 2, 20));
+	}
+
+	Vector vecMoveYawDir;
+	M::AngleVectors(Vector(0, M::NormalizeAngle(pState.flGoalFeetYaw + pState.flMoveYaw + 180), 0), &vecMoveYawDir);
+	float flYawDeltaAbsDot = abs(M::DotProduct(pState.vecVelocityNormalizedNonZero, vecMoveYawDir));
+	pState.flMoveWeight *= M::Bias(flYawDeltaAbsDot, 0.2);
+
+	float flMoveWeightWithAirSmooth = pState.flMoveWeight * pState.flInAirSmoothValue;
+
+	// dampen move weight for landings
+	flMoveWeightWithAirSmooth *= max((1.0f - pEntity->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB].flWeight), 0.55f);
+
+	float flMoveCycleRate = 0;
+	if (pState.flVelocityLenght2D > 0)
+	{
+		flMoveCycleRate = pEntity->GetSequenceCycleRate(pEntity->GetStudioHdr(), nWeaponMoveSeq);
+		float flSequenceGroundSpeed = max(pEntity->GetSequenceMoveDist(pEntity->GetStudioHdr(), nWeaponMoveSeq) / (1.0f / flMoveCycleRate), 0.001f);
+		flMoveCycleRate *= pState.flVelocityLenght2D / flSequenceGroundSpeed;
+
+		flMoveCycleRate *= M::Lerp(pState.flWalkToRunTransition, 1.0f, CSGO_ANIM_RUN_ANIM_PLAYBACK_MULTIPLIER);
+	}
+
+	float flLocalCycleIncrement = (flMoveCycleRate * pState.flLastUpdateIncrement);
+	pState.flFeetCycle = ClampCycle(pState.flFeetCycle + flLocalCycleIncrement);
+
+	flMoveWeightWithAirSmooth = std::clamp(flMoveWeightWithAirSmooth, 0.f, 1.f);
+	UpdateAnimLayer(pEntity, pLayer, nWeaponMoveSeq, flLocalCycleIncrement, flMoveWeightWithAirSmooth, pState.flFeetCycle);
+}
+
+void Animations::UpdateAnimLayer(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, int nSequence, float flPlaybackRate, float flWeight, float flCycle) {
+
+	if (nSequence > 1)
+	{
+		pLayer->nSequence = nSequence;
+		pLayer->flPlaybackRate = (flPlaybackRate);
+		pLayer->flCycle = (std::clamp(flCycle, 0.f, 1.f));
+		pLayer->flWeight = (std::clamp(flWeight, 0.f, 1.f));
+	}
 }

@@ -21,7 +21,9 @@ IMaterial* RyzeCreateMaterial(std::string_view szName, std::string_view szShader
 	CKeyValues* pKeyValues = new CKeyValues(szShader.data());
 	pKeyValues->LoadFromBuffer(szName.data(), szMaterial);
 
-	return i::MaterialSystem->CreateMaterial(szName.data(), pKeyValues);
+	IMaterial* pReturnValue = i::MaterialSystem->CreateMaterial(szName.data(), pKeyValues);
+
+	return pReturnValue;
 }
 
 IMaterial* chams::CreateMaterial(std::string_view szName, std::string_view szShader, std::string_view szBaseTexture, std::string_view szEnvMap, bool bIgnorez, bool bWireframe, std::string_view szProxies)
@@ -61,7 +63,9 @@ IMaterial* chams::CreateMaterial(std::string_view szName, std::string_view szSha
 	pKeyValues->LoadFromBuffer(szName.data(), szMaterial.c_str());
 
 	// create from buffer
-	return i::MaterialSystem->CreateMaterial(szName.data(), pKeyValues);
+	IMaterial* pReturn = i::MaterialSystem->CreateMaterial(szName.data(), pKeyValues);
+
+	return pReturn;
 }
 
 void MatrixSetOrigin( Vector pos, matrix3x4_t& matrix )
@@ -133,7 +137,7 @@ static void BeginChams( IMaterial* pMaterial, float const* flColor, bool bIgnore
 
 static void EndChams( ) {
 
-	float reset[ 3 ] = { 1, 1, 1 };
+	static float reset[ 3 ] = { 1, 1, 1 };
 
 	i::StudioRender->SetColorModulation( reset );
 	i::StudioRender->SetAlphaModulation( 1.f );
@@ -288,7 +292,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		}
 		else {
 
-#if _DEBUG
+#if NO
 			if (lagcomp.GetLog(pEnt->EntIndex()).pEntity) {
 
 				if (lagcomp.GetLog(pEnt->EntIndex()).pRecord.size() >= 2) {
@@ -406,8 +410,13 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		else {
-			EndChams();
-			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			if (i::StudioRender->IsForcedMaterialOverride()) {
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			else {
+				EndChams();
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
 		}
 		if (weaponOverlay) {
 			BeginChams(materials[GLOW], weaponOverlayColor, false, weaponOverlayXhair);
@@ -421,32 +430,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			BeginChams(materials[ANIMATED], weaponAnimOverlayColor, false, weaponAnimOverlayXhair);
 			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
+		return true;
 	}
-	//else if ((szModelName.find("weapons") != std::string_view::npos)) {
-
-	//	if ((pBoneToWorld->GetOrigin() - g::pLocal->GetCachedBoneData().Base()->GetOrigin()).Length2D() < 20.f) {
-
-	//		if (weapon) {
-	//			BeginChams(materials[weaponType], weaponColor, false, weaponXhair);
-	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		}
-	//		else {
-	//			EndChams();
-	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		}
-	//		if (weaponOverlay) {
-	//			BeginChams(materials[GLOW], weaponOverlayColor, false, weaponOverlayXhair);
-	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		}
-	//		if (weaponThinOverlay) {
-	//			BeginChams(materials[THINGLOW], weaponThinOverlayColor, false, weaponThinOverlayXhair);
-	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		}
-	//		if (weaponAnimOverlay) {
-	//			BeginChams(materials[ANIMATED], weaponAnimOverlayColor, false, weaponAnimOverlayXhair);
-	//			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		}
-	//	}
-	//}
 	return false;
 }

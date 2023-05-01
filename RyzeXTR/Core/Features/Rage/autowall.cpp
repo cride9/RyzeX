@@ -1,16 +1,14 @@
 #include "autowall.h"
 #include "../../globals.h"
 
-float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecPoint, FireBulletData_t* pDataOut )
+float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, FireBulletData_t* pDataOut, CBaseEntity* pTarget)
 {
-	const Vector vecPosition = pLocal->GetEyePosition( );
-
 	// setup data
 	FireBulletData_t data = { };
-	data.vecPosition = vecPosition;
-	data.vecDirection = ( vecPoint - vecPosition ).Normalized( );
+	data.vecPosition = vecEyePosition;
+	data.vecDirection = ( vecPoint - vecEyePosition).Normalized( );
 
-	if ( CBaseCombatWeapon* pWeapon = pLocal->GetWeapon( ); pWeapon == nullptr || !SimulateFireBullet( pLocal, pWeapon, data ) )
+	if (!SimulateFireBullet( pLocal, pWeapon, data ) )
 		return -1.0f;
 
 	if ( pDataOut != nullptr )
@@ -82,7 +80,7 @@ void CAutoWall::ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const fl
 }
 
 // @credits: https://github.com/perilouswithadollarsign/cstrike15_src/blob/master/game/shared/util_shared.cpp#L757
-void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, ITraceFilter* pFilter, Trace_t* pTrace, const float flMinRange )
+void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, ITraceFilter* pFilter, Trace_t* pTrace, const float flMinRange, CBaseEntity* pTarget)
 {
 	// @ida util_cliptracetoplayers: client.dll @ E8 ? ? ? ? 0F 28 84 24 68 02 00 00
 
@@ -93,9 +91,12 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 
 	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++ )
 	{
-		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>( i::EntityList->GetClientEntity( i ) );
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if ( pEntity == nullptr || !pEntity->IsAlive( ) || pEntity->IsDormant( ) )
+		if ( pEntity == nullptr || !pEntity->IsAlive( ) || pEntity->IsDormant( ))
+			continue;
+
+		if (pTarget != nullptr && pTarget != pEntity)
 			continue;
 
 		if ( pFilter != nullptr && !pFilter->ShouldHitEntity( pEntity, fMask ) )
@@ -323,7 +324,7 @@ bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInf
 	return true;
 }
 
-bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data )
+bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data, CBaseEntity* pTarget)
 {
 	// @ida firebullet: client.dll @ 55 8B EC 83 E4 F0 81 EC ? ? ? ? F3 0F 7E
 
@@ -354,7 +355,7 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 		i::EngineTrace->TraceRay( ray, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &data.enterTrace );
 
 		// check for player hitboxes extending outside their collision bounds
-		ClipTraceToPlayers( data.vecPosition, vecEnd + data.vecDirection * 40.0f, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &data.enterTrace );
+		ClipTraceToPlayers( data.vecPosition, vecEnd + data.vecDirection * 40.0f, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &data.enterTrace, 0.f, pTarget);
 
 		const surfacedata_t* pEnterSurfaceData = i::PhysicsProps->GetSurfaceData( data.enterTrace.surface.nSurfaceProps );
 		const float flEnterPenetrationModifier = pEnterSurfaceData->game.flPenetrationModifier;

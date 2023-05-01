@@ -11,16 +11,15 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 	if (!g::pCmd)
 		return original(ecx, edx, pEnt, pCmd, pMovehelper);
 
-	if (!i::MoveHelper && pMovehelper)
-		i::MoveHelper = pMovehelper;
+	i::MoveHelper = pMovehelper;
 
-	if (pCmd->iTickCount >= (g::pCmd->iTickCount + int(1 / i::GlobalVars->flIntervalPerTick) + 8)) {
+	//if (pCmd->iTickCount >= (g::pCmd->iTickCount + int(1 / i::GlobalVars->flIntervalPerTick) + 8)) {
 
-		pCmd->bHasBeenPredicted = true;
-		pEnt->SetAbsOrigin(pEnt->GetVecOrigin());
-		pEnt->GetTickBase()++;
-		return;
-	}
+	//	pCmd->bHasBeenPredicted = true;
+	//	pEnt->SetAbsOrigin(pEnt->GetVecOrigin());
+	//	pEnt->GetTickBase()++;
+	//	return;
+	//}
 
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
 }

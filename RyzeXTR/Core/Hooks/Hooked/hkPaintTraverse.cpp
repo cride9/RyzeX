@@ -13,7 +13,8 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		return;
 
 	/* If we're not connected to a server clear every pointer to not crash */
-	if (i::ClientState->iSignonState != SIGNONSTATE_FULL) {
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL && g::pLocal) {
+
 		for (size_t index = 0; index < 65; index++) {
 			if (auto pCurrent = &lagcomp.GetLog(index); !pCurrent->pRecord.empty() || pCurrent->pEntity) {
 				pCurrent->pRecord.clear();
@@ -25,6 +26,8 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		prediction.pLastCmd = nullptr;
 		g::pLocal = nullptr;
 		ragebot.rageBotData.pAimbotTarget = nullptr;
+		ragebot.rageBotData.pTargetMatrix = nullptr;
+		ragebot.rageBotData.iCommand = 0;
 	}
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {

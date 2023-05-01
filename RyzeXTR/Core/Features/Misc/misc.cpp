@@ -82,9 +82,9 @@ void misc::ServerHitboxes() {
 	if ( g::pLocal == nullptr )
 		return;
 
-	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 
-		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || !pEntity->IsPlayer( ) || !pEntity->EntIndex( ) )
 			continue;
 
@@ -1365,7 +1365,7 @@ void misc::BlockBot(CUserCmd* pCmd) {
 
 		for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++)
 		{
-			CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+			CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 			if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity == g::pLocal)
 				continue;

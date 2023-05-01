@@ -66,8 +66,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		misc::AutoPistol(pCmd, pLocal);
 		if (pCmd->iButtons & IN_ATTACK)
 			misc::vecEyePosition = pLocal->GetEyePosition();
-		if (ragebot.rageBotData.iTickCount + 3 >= i::GlobalVars->iTickCount)
-			bSendPacket = true;
 		antiaim::InvertOnShoot(pCmd);
 	}
 	prediction.End(pCmd, pLocal);

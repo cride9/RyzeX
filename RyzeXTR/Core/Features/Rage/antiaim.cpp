@@ -23,12 +23,6 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	}
 	int inverter = GetKeyState(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
 
-	if (ragebot.rageBotData.iTickCount + 3 >= i::GlobalVars->iTickCount) {
-
-		desyncValue = 0.f;
-		bSendPacket = true;
-	}
-
 	// shooting checks
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
 
@@ -39,19 +33,24 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	}
 
 	// E, ladder, noclip check
-	if (g::pCmd->iButtons & IN_USE || g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP) {
+	if (pCmd->iButtons & IN_USE || g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP) {
 
 		desyncValue = 0.f;
 
 		return;
 	}
 
+	// this fixes event delays cuz 1 command is shooting next command is registering
+	// thats how this shit game works, it is what it is
+	if (abs(pCmd->iCommandNumber - ragebot.rageBotData.iCommand) < 3)
+		bSendPacket = true;
+
 	// Update lower body yaw
 	Update( pCmd );
 
 	// uneven, even fakelag jitter stuff
 	evenInvert = !evenInvert;
-	if (bSendPacket)
+	if (i::GlobalVars->iTickCount % 2 == 1)
 		unevenInvert = !unevenInvert;
 
 	// pitch
@@ -452,7 +451,7 @@ int antiaim::ClosestToLocal() {
 
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++)
 	{
-		auto entity = (CBaseEntity*)i::EntityList->GetClientEntity(i);
+		auto entity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!entity || !entity->IsAlive() || entity->GetTeam() == local_player->GetTeam() || entity->IsDormant() || entity == local_player)
 			continue;
@@ -481,7 +480,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 	float flBestFov = 480.f;
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++)
 	{
-		CBaseEntity* pEnt = (CBaseEntity*)i::EntityList->GetClientEntity(i);
+		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || pEnt->IsDormant() || pEnt == g::pLocal)
 			continue;
@@ -514,9 +513,9 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 	bool bSide1 = false;
 	bool bSide2 = false;
 	bool autowalld = false;
-	for (size_t i = 0; i <= i::GlobalVars->nMaxClients; ++i) {
+	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; ++i) {
 
-		CBaseEntity* pPlayerEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+		CBaseEntity* pPlayerEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!pPlayerEntity
 			|| !pPlayerEntity->IsAlive()

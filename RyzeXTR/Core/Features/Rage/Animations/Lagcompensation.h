@@ -145,6 +145,7 @@ public:
 	{
 		CBaseEntity* pEntity;
 		int iLastValid;
+		int iFirstValid = 32;
 		float flSpawntime;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
 

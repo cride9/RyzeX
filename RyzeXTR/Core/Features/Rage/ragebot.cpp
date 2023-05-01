@@ -105,6 +105,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 				pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 				pCmd->iButtons |= IN_ATTACK;
 				pCmd->iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
+				rageBotData.iCommand = pCmd->iCommandNumber;
 
 				ShouldSendPacket(bSendPacket);
 			}
@@ -125,11 +126,18 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 
 Lagcompensation::LagRecord_t* CRageBot::CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog) {
 
-	for (size_t i = 0; i < pLog->iLastValid; i++) 
-		if (pLog->pRecord.at(i).bDidShot)
+	for (size_t i = 0; i < min(pLog->iLastValid, pLog->pRecord.size()); i++) 
+		if (pLog->pRecord.at(i).bDidShot && pLog->pRecord.at(i).bValid)
 			return &pLog->pRecord.at(i);
 	
 	return nullptr;
+}
+
+bool CRageBot::CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon) {
+
+	//autowall.SimulateFireBullet(pLocal, pWeapon, data);
+	float flDamage = autowall.GetDamage(pLocal, vecEyePosition, pLog->pEntity->GetHitboxPosition(HITBOX_STOMACH, pLog->pMatrix), pWeapon, nullptr, pLog->pEntity);
+	return flDamage > pLog->pEntity->GetHealth() + 10;
 }
 
 Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
@@ -140,7 +148,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	int iMinimumDamage = ConfigMinimumDamage(pWeapon);
 	bool bForceSafe = ConfigForceSafe(pWeapon);
 
-	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 		
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
@@ -157,7 +165,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		Lagcompensation::LagRecord_t* pCurrentApplied = CheckOnShotRecord(pLog);
 
 		if (!pCurrentApplied) 
-			pCurrentApplied = &pLog->pRecord.front();
+			pCurrentApplied = &pLog->pRecord.at(pLog->iFirstValid);
 
 		bool bSafePoint = false;
 
@@ -168,6 +176,9 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 			if (!vecSelectedHitboxes[iHitbox])
 				continue;
+
+			if (CheckBaimRecord(pLocal, pCurrentApplied, vecEyePosition, pWeapon))
+				iHitbox = HITBOX_STOMACH;
 
 			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
 
@@ -200,7 +211,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 							continue;
 					}
 
-					if (flDamage = autowall.GetDamage(pLocal, vecPoint); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
+					if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, nullptr, pCurrentApplied->pEntity); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
 
 						rageBotData.SetTarget(pCurrentApplied, iHitbox);
 						return vecPoint;
@@ -248,7 +259,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 							continue;
 					}
 
-					if (flDamage = autowall.GetDamage(pLocal, vecPoint); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
+					if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, nullptr, pCurrentApplied->pEntity); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
 
 						rageBotData.SetTarget(pCurrentApplied, iHitbox);
 						return vecPoint;
@@ -1112,11 +1123,9 @@ bool CRageBot::ShouldSendPacket(bool& bSendPacket) {
 		return false;
 
 	if (g::bWaiting) {
-		rageBotData.iTickCount = i::GlobalVars->iTickCount;
 		return true;
 	}
 
-	rageBotData.iTickCount = i::GlobalVars->iTickCount;
 	return true;
 }
 

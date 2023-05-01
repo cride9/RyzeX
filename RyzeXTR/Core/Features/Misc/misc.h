@@ -64,7 +64,6 @@ namespace misc {
 	void BlockBot(CUserCmd*);
 
 	void CustomBombText(const char*);
-
 	void CheatLog(IGameEvent*);
 
 	inline bool bResetNightMode = true;

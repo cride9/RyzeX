@@ -42,6 +42,10 @@ public:
 	void RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
 	void UpdateSafePointMatrixes(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 
+	//https://github.com/perilouswithadollarsign/cstrike15_src/blob/29e4c1fda9698d5cebcdaf1a0de4b829fa149bf8/game/shared/cstrike15/csgo_playeranimstate.cpp#L1978
+	void UpdateAnimLayer(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, int nSequence, float flPlaybackRate, float flWeight, float flCycle);
+	// https://github.com/perilouswithadollarsign/cstrike15_src/blob/29e4c1fda9698d5cebcdaf1a0de4b829fa149bf8/game/shared/cstrike15/csgo_playeranimstate.cpp#L1351
+	void LayerSetUpMovementRebuild(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
 	/* enemy anims */
 
 	/* resolver */

@@ -87,4 +87,7 @@ public:
 		util::CallVFunc<void>(this, 33, pMaterial, nOverrideType, nOverrides);
 	}
 
+	bool IsForcedMaterialOverride() {
+		return util::CallVFunc<bool>(this, 34);
+	}
 };

@@ -56,7 +56,7 @@ using namespace cfg::visual;
 
 void visual::VisualRender() {
 
-	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
@@ -328,7 +328,12 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[0].flPlaybackRate * 10000000).c_str());
 		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[1].flPlaybackRate * 10000000).c_str());
 		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[2].flPlaybackRate * 10000000).c_str());
-		something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[6].flPlaybackRate * 10000000).c_str());
+		something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate * 10000000).c_str());
+		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[0].flPlaybackRate)).c_str());
+		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[1].flPlaybackRate)).c_str());
+		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[2].flPlaybackRate)).c_str());
+		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().pLayers[6].flPlaybackRate)).c_str());
+
 	}
 #endif
 }

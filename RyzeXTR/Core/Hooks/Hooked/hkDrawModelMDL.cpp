@@ -29,6 +29,8 @@ void __fastcall h::hkDrawModelMDL(void* ecx, int edx, IMatRenderContext* ctx, co
 
 	static auto original = detour::drawModelMdl.GetOriginal<decltype(&h::hkDrawModelMDL)>();
 
+	const std::string_view& szModelName = info.pModel->szName;
+
 	if (i::ModelRender->IsForcedMaterialOverride())
 		return original(ecx, edx, ctx, state, info, bonetoworld);
 
@@ -36,10 +38,11 @@ void __fastcall h::hkDrawModelMDL(void* ecx, int edx, IMatRenderContext* ctx, co
 		if (!chams::materials[i])
 			return original(ecx, edx, ctx, state, info, bonetoworld);
 
-	const std::string_view& szModelName = info.pModel->szName;
+	if (!g::pLocal || !g::pLocal->IsAlive())
+		return original(ecx, edx, ctx, state, info, bonetoworld);
 
 	// attachment chams on local LMDLMDXL
-	if ((szModelName.find("weapons") != std::string_view::npos) && (info.vecOrigin - g::pLocal->GetVecOrigin()).Length2D() < 20.f) {
+	if ((szModelName.find("weapons/w_") != std::string_view::npos) && (info.vecOrigin - g::pLocal->GetVecOrigin()).Length2D() < 20.f) {
 
 		if (weapon) {
 			BeginChams(chams::materials[weaponType], weaponColor, false, weaponXhair);

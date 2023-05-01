@@ -21,7 +21,7 @@ public:
 		float							flTargetSimulation;
 		bool							bCanShoot;
 		int								iTargetedHitbox;
-		int								iTickCount;
+		int								iCommand;
 
 		void SetTarget(Lagcompensation::LagRecord_t* pRecord, int iTargetHitbox) {
 
@@ -47,6 +47,7 @@ private:
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
 	Lagcompensation::LagRecord_t* CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog);
+	bool CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon);
 	bool				ShouldSendPacket(bool&);
 
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);

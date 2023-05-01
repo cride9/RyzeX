@@ -6,7 +6,7 @@
 #include "../../SDK/Menu/config.h"
 #include <format>
 
-const auto GlowChams =
+constexpr static const char* GlowChams =
 
 R"#("VertexLitGeneric"
 			{ 
@@ -19,7 +19,7 @@ R"#("VertexLitGeneric"
 			}
 		)#";
 
-const auto AnimatedChams =
+constexpr static const char* AnimatedChams =
 
 R"#("VertexLitGeneric"
 			{ 
@@ -39,7 +39,7 @@ R"#("VertexLitGeneric"
 			}
 		)#";
 
-const auto FlatChams =
+constexpr static const char* FlatChams =
 
 R"#("UnlitGeneric"
 		{
@@ -56,7 +56,7 @@ R"#("UnlitGeneric"
 		 "$flat"         "0"
 		} )#";
 
-const auto MaterialChams =
+constexpr static const char* MaterialChams =
 
 R"#("VertexLitGeneric"
 		{
@@ -72,7 +72,6 @@ R"#("VertexLitGeneric"
 		 "$flat"         "1"
 		 "$reflectivity" "[1 1 1]"
 		} )#";
-
 
 enum EMATERIAL : int {
 

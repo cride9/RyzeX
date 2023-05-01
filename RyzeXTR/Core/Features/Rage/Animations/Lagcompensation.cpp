@@ -102,7 +102,7 @@ void Lagcompensation::FrameStageNotify() {
 
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++ )
 	{
-		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>( i::EntityList->GetClientEntity( i ) );
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 		Lagcompensation::AnimationInfo_t* pCurrentLog = &pPlayerLogs[i];
 
 		// check if nullptr.
@@ -262,6 +262,9 @@ void Lagcompensation::FilterRecords( )
 
 			if ( pCurrentRecord.bValid = lagcomp.IsValidRecord( pCurrentRecord.flSimulationTime ) && j < 12)
 				pPlayerLogs[ i ].iLastValid = j;
+
+			if (pCurrentRecord.bValid && pPlayerLogs[i].iFirstValid >= j)
+				pPlayerLogs[i].iFirstValid = j;
 		}
 	}
 }
@@ -515,12 +518,13 @@ void Lagcompensation::RemoveInterpolation() {
 
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++) {
 
-		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity())
 			continue;
 
 		if (pEntity == g::pLocal) {
+			continue;
 			if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && cfg::antiaim::defensive)
 				SetInterpolationFlags(pEntity);
 		}
