@@ -73,6 +73,7 @@ namespace detour {
 	inline CDetourHook drawViewmodel;
 	inline CDetourHook playerMove;
 	inline CDetourHook clampBonesInBBox;
+	inline CDetourHook getColorModulation;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -143,6 +144,7 @@ namespace h {
 	bool __fastcall		hkShouldDrawViewmodel(void*, void*);
 	void __fastcall		hkPlayerMove(void*, void*);
 	void __fastcall		hkClampBonesInBBox(void*, void*, matrix3x4_t*, int);
+	void __fastcall		hkGetColorModulation(void*, void*, float*, float*, float*);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

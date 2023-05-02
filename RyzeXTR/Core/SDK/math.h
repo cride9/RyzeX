@@ -18,6 +18,7 @@
 #define M_FOOT2METRE( x )	( ( x ) / 3.28f )
 #define M_RAD2DEG( x )		DirectX::XMConvertToDegrees( x )
 #define M_DEG2RAD( x )		DirectX::XMConvertToRadians( x )
+#define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 #pragma endregion
 
 extern "C" using RandomSeedFn = int(__cdecl*)(int iSeed);
@@ -71,6 +72,8 @@ namespace M
 	float NormalizeYaw(float);
 
 	float NormalizeAngle(float flAngle);
+
+	float GetVelocityDegree(float flVelocity);
 
 	template< class T >
 	void Normalize3(T& vec);

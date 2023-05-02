@@ -110,4 +110,27 @@ namespace util {
 
 		return pb;
 	}
+
+	inline DWORD FindHudElement(const char* name) {
+
+		static auto pThis = *reinterpret_cast<DWORD**>(util::FindSignature("client.dll", "B9 ? ? ? ? E8 ? ? ? ? 8B 5D 08") + 1);
+
+		static auto find_hud_element = reinterpret_cast<DWORD(__thiscall*)(void*, const char*)>(util::FindSignature("client.dll", "55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28"));
+
+		return find_hud_element(pThis, name);
+	}
+
+	inline void SetClan(const char* csTag) {
+
+		static auto pSetClantag = reinterpret_cast<void(__fastcall*)(const char*, const char*)>(util::FindSignature("engine.dll", "53 56 57 8B DA 8B F9 FF"));
+		pSetClantag(csTag, csTag);
+	}
+
+	inline void SetSkybox(const char* szSkybox) {
+
+		static auto LoadNamedSky = reinterpret_cast<void(__fastcall*)(const char*)>(util::FindSignature("engine.dll", "55 8B EC 81 EC ? ? ? ? 56 57 8B F9 C7 45"));
+		
+		if (LoadNamedSky != nullptr)
+			LoadNamedSky(szSkybox);
+	}
 }

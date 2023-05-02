@@ -937,6 +937,7 @@ public:
 
 	static CBaseEntity*		GetLocalPlayer();
 	int						GetSequenceActivity(int iSequence);
+	void					SetUpMovement();
 	bool					IsGrenade(CBaseCombatWeapon* weapon);
 	CBaseCombatWeapon*		GetWeapon();
 	int						GetMaxHealth();

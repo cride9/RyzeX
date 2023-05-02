@@ -2,6 +2,7 @@
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/Entity.h"
 #include "Animations/Lagcompensation.h"
+#define HITBOX_ARRAY std::array<bool, HITBOX_MAX>
 
 struct aimbotData_t {
 
@@ -53,12 +54,18 @@ private:
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);
 	int					ConfigOverrideDamage(CBaseCombatWeapon*);
 	int					ConfigHitChance(CBaseCombatWeapon*);
-	bool				ConfigAutoScope( CBaseCombatWeapon* pWeapon );
-	bool				ConfigForceSafe(CBaseCombatWeapon* pWeapon);
-	bool				ConfigAutoStop( CBaseCombatWeapon* pWeapon );
-	std::array<bool, HITBOX_MAX>	ConfigHitboxes(CBaseCombatWeapon*);
+	bool				ConfigAutoScope( CBaseCombatWeapon*);
+	bool				ConfigForceSafe(CBaseCombatWeapon*);
+	bool				ConfigAutoStop( CBaseCombatWeapon*);
+	bool				ConfigAutoStopInAir(CBaseCombatWeapon*);
+	bool				ConfigAutoStopBetweenShots(CBaseCombatWeapon*);
+	bool				ConfigAutoStopAggressiveness(CBaseCombatWeapon*);
+	HITBOX_ARRAY		ConfigHitboxes(CBaseCombatWeapon*);
 	std::pair<int, int> ConfigMultipoint(CBaseCombatWeapon*);
-	std::array<bool, HITBOX_MAX> ConfigMultiHitboxes(CBaseCombatWeapon*);
-	std::array<bool, HITBOX_MAX> ConfigSafeHitboxes(CBaseCombatWeapon*);
+	HITBOX_ARRAY		ConfigMultiHitboxes(CBaseCombatWeapon*);
+	HITBOX_ARRAY		ConfigSafeHitboxes(CBaseCombatWeapon*);
+
+	void				AddHitbox(int index, HITBOX_ARRAY& vecHitboxList);
+
 };
 inline CRageBot ragebot;

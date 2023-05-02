@@ -63,7 +63,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
 		exploits::HandleBreakLagcomp(pCmd);
 		misc::IdealTick(pCmd);
-		misc::AutoPistol(pCmd, pLocal);
 		if (pCmd->iButtons & IN_ATTACK)
 			misc::vecEyePosition = pLocal->GetEyePosition();
 		antiaim::InvertOnShoot(pCmd);
@@ -72,6 +71,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
+	misc::AutoPistol(pCmd, pLocal);
 	misc::MovementFix(pCmd, g::vecOriginalViewAngle);
 
 	INetChannel* pNetChannel = i::ClientState->pNetChannel;

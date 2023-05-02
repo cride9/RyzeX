@@ -330,6 +330,8 @@ namespace cfg {
 		inline bool nightmode = false;
 		inline float nightmodeColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
+		inline int iSkybox = 0;
+
 		inline bool aspectRatio = false;
 		inline int aspectRatioValue = 0;
 		inline bool preserveKillfeed = false;

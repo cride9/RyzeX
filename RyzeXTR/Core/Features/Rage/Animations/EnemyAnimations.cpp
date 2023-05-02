@@ -2,6 +2,7 @@
 #include "../ragebot.h"
 #include "../../../SDK/Menu/config.h"
 #include "../../../Hooks/hooks.h"
+#include "../autowall.h"
 
 float flOldLowerbodyYaw[ 65 ];
 float flOldPlaybackrateYaw[ 65 ];
@@ -103,18 +104,19 @@ void Animations::ResolverLogic( ) {
 	return;
 }
 
+using namespace cachedEvents;
 void Animations::ResolverHandler( IGameEvent* pEvent ) {
 
 	if ( !ragebot.rageBotData.pAimbotTarget || !g::pLocal || !g::pLocal->IsAlive() )
 		return;
 
-	if (!strcmp(pEvent->GetName(), "round_start")) {
+	if (!strcmp(pEvent->GetName(), roundStart)) {
 
 		ragebot.rageBotData.pAimbotTarget = nullptr;
 		ragebot.rageBotData.pTargetMatrix = nullptr;
 		bulletImpact = Vector(0, 0, 0);
 	}
-	if ( !strcmp( pEvent->GetName( ), "weapon_fire" ) ) {
+	if ( !strcmp( pEvent->GetName( ), weaponFire) ) {
 
 		if (!ragebot.rageBotData.pAimbotTarget)
 			return;
@@ -124,7 +126,7 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 		if (iUser == i::EngineClient->GetLocalPlayer())
 			missedShots[ragebot.rageBotData.pAimbotTarget->EntIndex()]++;
 	}
-	if ( !strcmp( pEvent->GetName( ), "player_hurt" ) ) {
+	if ( !strcmp( pEvent->GetName( ), playerHurt) ) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) );
 		auto iAttacker = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "attacker" ) );
@@ -135,7 +137,7 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 			didHurt == true;
 		}
 	}
-	if ( !strcmp( pEvent->GetName( ), "bullet_impact" ) ) {
+	if ( !strcmp( pEvent->GetName( ), cachedEvents::bulletImpact) ) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) );
 
@@ -144,7 +146,7 @@ void Animations::ResolverHandler( IGameEvent* pEvent ) {
 
 		bulletImpact = Vector( pEvent->GetFloat( "x" ), pEvent->GetFloat( "y" ), pEvent->GetFloat( "z" ) );
 	}
-	if (!strcmp(pEvent->GetName(), "player_death")) {
+	if (!strcmp(pEvent->GetName(), playerDeath)) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
@@ -223,6 +225,9 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 {
 	CAnimState pBackupState;
 	memcpy( &pBackupState, pEntity->AnimState( ), sizeof( CAnimState ) );
+
+	CAnimationLayer pBackupLayer[13];
+	pEntity->GetAnimationLayers(pBackupLayer);
 	{
 		// center.
 		//pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw);
@@ -232,7 +237,11 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[0]);
+		pEntity->SetUpMovement();
+		CAnimationLayer& pUpdatedLayer = pEntity->GetAnimationOverlays()[6];
+		UpdateAnimLayer(pEntity, &pRecord->LayerData[0], pUpdatedLayer.nSequence, pUpdatedLayer.flPlaybackRate, pUpdatedLayer.flWeight, pUpdatedLayer.flCycle);
+		pEntity->SetAnimationLayers(pBackupLayer);
+		//LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[0]);
 		//RebuiltLayer6(pEntity, &pRecord->LayerData[0]);
 	}
 
@@ -245,7 +254,11 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[1]);
+		pEntity->SetUpMovement();
+		CAnimationLayer& pUpdatedLayer = pEntity->GetAnimationOverlays()[6];
+		UpdateAnimLayer(pEntity, &pRecord->LayerData[1], pUpdatedLayer.nSequence, pUpdatedLayer.flPlaybackRate, pUpdatedLayer.flWeight, pUpdatedLayer.flCycle);
+		pEntity->SetAnimationLayers(pBackupLayer);
+		//LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[1]);
 		//RebuiltLayer6(pEntity, &pRecord->LayerData[1]);
 	}
 
@@ -258,8 +271,135 @@ void Animations::UpdateOnFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagReco
 
 		// update.
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-		LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[2]);
+		pEntity->SetUpMovement();
+		CAnimationLayer& pUpdatedLayer = pEntity->GetAnimationOverlays()[6];
+		UpdateAnimLayer(pEntity, &pRecord->LayerData[2], pUpdatedLayer.nSequence, pUpdatedLayer.flPlaybackRate, pUpdatedLayer.flWeight, pUpdatedLayer.flCycle);
+		pEntity->SetAnimationLayers(pBackupLayer);
+		//LayerSetUpMovementRebuild(pEntity, &pRecord->LayerData[2]);
 		//RebuiltLayer6(pEntity, &pRecord->LayerData[2]);
+	}
+}
+
+void Resolverlmao(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
+
+	static float flLayerDetect = 0.f;
+	float flGuessedSide = 0.f;
+	static float flLastGuessedSide = 0.f;
+
+	if (anims.missedShots[pEntity->EntIndex()] >= 3)
+		anims.missedShots[pEntity->EntIndex()] = 0;
+
+	if (!pRecord || !pPrevious || !g::pLocal || !pEntity || !cfg::rage::resolver)
+		return;
+
+	anims.UpdateOnFeetYaw(pEntity, pRecord);
+	// animlayer resolving sucks when enemy is very very fakelagging so let's do it only when they're not LMAO
+	// fucking shitass shit shit shit
+	if (pRecord->bDidShot)
+		return;
+
+	if (pRecord->bBreakingLagcompensation || pRecord->iChoked <= 2 && pRecord->vecVelocity.Length2D() > 2.f && pRecord->vecVelocity.Length2D() < 135.2f) {
+
+			const float fDifferences[] = {
+			fabs(pRecord->pLayers[6].flPlaybackRate - pRecord->LayerData[0].flPlaybackRate),
+			fabs(pRecord->pLayers[6].flPlaybackRate - pRecord->LayerData[1].flPlaybackRate),
+			fabs(pRecord->pLayers[6].flPlaybackRate - pRecord->LayerData[2].flPlaybackRate)
+			};
+
+			float minDifference = fDifferences[0];
+			size_t minIndex = 0;
+
+			// Loop through the remaining elements of the array, checking for a lower value
+			for (size_t i = 1; i < 3; i++) {
+				if (fDifferences[i] < minDifference) {
+					minDifference = fDifferences[i];
+					minIndex = i;
+				}
+			}
+
+			// XDDDD
+			switch (minIndex)
+			{
+			case 0: flLayerDetect = 0.f;
+				break;
+
+			case 1: flLayerDetect = pEntity->AnimState()->GetMaxDesync();
+				break;
+
+			case 2: flLayerDetect = -pEntity->AnimState()->GetMaxDesync();
+				break;
+			}
+	}
+	// HAHAHAHXDHXHDXHDHXHDX AHAHA YOU KNOW BCS THATS GUD XCDDXXDXD
+	else if (!pPrevious->bBreakingLagcompensation && !pRecord->bBreakingLagcompensation) {
+
+		// reset layer detection cuz we lost prediction
+		flLayerDetect = 0.f;
+
+		// fuck Ya'll lets freaking anti freestand the shit out of peopleXDDD
+		Vector vecEyePosition = g::pLocal->GetEyePosition();
+
+		Vector vecRightHeadPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pRightMatrix);
+		Vector vecLeftHeadPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pLeftMatrix);
+
+		Trace_t traceRight, traceLeft;
+		CTraceFilter filter(g::pLocal);
+
+		pEntity->SetBoneCache(pRecord->pRightMatrix);
+		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecRightHeadPosition), MASK_SHOT, &filter, &traceRight);
+		pEntity->SetBoneCache(pRecord->pLeftMatrix);
+		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecLeftHeadPosition), MASK_SHOT, &filter, &traceLeft);
+
+		pEntity->SetBoneCache(pRecord->pMatrix);
+		if (traceRight.pHitEntity == pEntity && traceLeft.pHitEntity != pEntity)
+			flGuessedSide = -pEntity->AnimState()->GetMaxDesync();
+
+		// shit we hit both D:	
+		else if (traceRight.pHitEntity == pEntity && traceLeft.pHitEntity == pEntity) 
+			flGuessedSide = 0.f;//XDDDD
+		
+		// omg omg shit shit
+		else if (traceRight.pHitEntity != pEntity && traceLeft.pHitEntity == pEntity) 
+			flGuessedSide = pEntity->AnimState()->GetMaxDesync();
+
+		// oh here we fucking go
+		else if (traceRight.pHitEntity != pEntity && traceLeft.pHitEntity != pEntity) {
+			
+			// STANDING HAHAHA
+			if (pRecord->vecVelocity.Length2D() < 2.f) {
+				float XDDDD = pEntity->AnimState()->flEyeYaw - pEntity->AnimState()->flGoalFeetYaw;
+				flGuessedSide = M::NormalizeYaw(XDDDD) > 30.f ? pEntity->AnimState()->GetMaxDesync() : -pEntity->AnimState()->GetMaxDesync();
+			}
+
+			// NOT STANDING HAHAH (fuck)
+			if (lagcomp.GetLog(pEntity->EntIndex()).pRecord.size() >= 3) {
+
+				auto thirdrecordwtf = &lagcomp.GetLog(pEntity->EntIndex()).pRecord.at(2);
+
+				// fucking small difference between current and 2ticks before = JITTERING YOU FUCKING ASSHOLE
+				if (abs(M::NormalizeYaw(thirdrecordwtf->vecEyeAngles.y - pRecord->vecEyeAngles.y)) < 5.f && abs(M::NormalizeYaw(thirdrecordwtf->vecEyeAngles.y - pPrevious->vecEyeAngles.y)) > 15.f) {
+
+					// JITTER HAHASUFRASDGHTOFA
+					flGuessedSide = (flLastGuessedSide * -1);
+				}
+			}
+		}
+	}
+
+	if (flLayerDetect != 0.f) {
+
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y) - flLayerDetect;
+	}
+	else {
+
+		switch (anims.missedShots[pEntity->EntIndex()])
+		{
+			case 1: flGuessedSide *= -1.f; break;
+			case 2: flGuessedSide *= 0.f; break;
+		}
+
+		flLastGuessedSide = flGuessedSide;
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y) + flGuessedSide;
 	}
 }
 
@@ -275,6 +415,9 @@ void Animations::SetGoalFeetYaw( CBaseEntity* pEntity, Lagcompensation::LagRecor
 
 	ResolverLogic();
 	UpdateSafePointMatrixes(pEntity, pRecord);
+
+	Resolverlmao(pEntity, pRecord, pPrevious);
+	return;
 
 	pData.iMissedShots = missedShots[pEntity->EntIndex()];
 

@@ -260,6 +260,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFireGameEvent.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFrameStageNotify.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkGetColorModulation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetViewModelFov.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkINetchannelHandler.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkListLeavesInBox.cpp" />

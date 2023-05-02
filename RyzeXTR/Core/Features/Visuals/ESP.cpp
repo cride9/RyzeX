@@ -289,7 +289,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		spacing += 10;
 	}
 
-#if _DEBUG
+#if NO
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
 		using enum Lagcompensation::EResolverMode;
@@ -329,6 +329,8 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[1].flPlaybackRate * 10000000).c_str());
 		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[2].flPlaybackRate * 10000000).c_str());
 		something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate * 10000000).c_str());
+		something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_ADJUST].flPlaybackRate * 10000000).c_str());
+
 		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[0].flPlaybackRate)).c_str());
 		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[1].flPlaybackRate)).c_str());
 		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[2].flPlaybackRate)).c_str());

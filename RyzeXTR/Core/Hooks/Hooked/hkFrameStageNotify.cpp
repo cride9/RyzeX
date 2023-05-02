@@ -24,9 +24,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 		if (cfg::misc::removals[1])
 			g::pLocal->GetFlashMaxAlpha() = 0.f;
 		
-		misc::NightMode();
 		misc::BulletImpact(nullptr, curStage, true);
-
 		break;
 
 	case FRAME_NET_UPDATE_END:

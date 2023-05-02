@@ -43,7 +43,7 @@ namespace antiaim {
 	inline float NextLBYUpdateTime = -1.f;
 	inline float m_flNextLBYUpdate = -1.f, m_flLastLBYChange = -1.f;
 	// update count
-	inline int iCountUpdates{};
+	inline int iCountUpdates = 0;
 	bool NextLBYUpdate( CUserCmd* cmd );
 	void ForceResync( CUserCmd* m_pCmd, int m_iLbyChange );
 	void Update( CUserCmd* m_pCmd );

@@ -22,6 +22,19 @@ int CBaseEntity::GetSequenceActivity(int iSequence)
 	return oGetSequenceActivity(this, pStudioHdr, iSequence);
 }
 
+void CBaseEntity::SetUpMovement() {
+
+	if (!this->AnimState())
+		return;
+
+	using SetUpMovementFn = void(__thiscall*)(CAnimState*);
+	static auto oSetUpMovement = reinterpret_cast<SetUpMovementFn>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B ? ? ? ? ? 8B F1"));
+
+	assert(oSetUpMovement != nullptr);
+
+	oSetUpMovement(this->AnimState());
+}
+
 CBaseCombatWeapon* CBaseEntity::GetWeapon()
 {
 	return (CBaseCombatWeapon*)i::EntityList->GetClientEntityFromHandle(this->GetActiveWeaponHandle());

@@ -86,6 +86,7 @@
     <ClCompile Include="Core\Features\Rage\Animations\Setupbones.cpp" />
     <ClCompile Include="Core\Features\Changers\parser.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModelMDL.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkGetColorModulation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />

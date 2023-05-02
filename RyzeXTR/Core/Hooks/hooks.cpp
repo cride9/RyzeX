@@ -31,7 +31,7 @@ void h::SetupHooks() {
 	HookTable(detour::getViewmodelFov, i::ClientMode, table::getViewmodelFov, &hkGetViewModelFov);
 	//HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
-	HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
+	//HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
 	HookTable(detour::drawModelMdl, i::ModelRender, table::drawModelMdl, &hkDrawModelMDL);
 	//HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
@@ -57,6 +57,7 @@ void h::SetupHooks() {
 	HookSignature(detour::isFollowingEntity, "client.dll", "F6 ? ? ? ? ? ? 74 31 80", &hkIsFollowingEntity);
 	HookSignature(detour::playerMove, "client.dll", "55 8B EC 83 EC 08 56 8B F1 8B 8E 54 0E 00 00 E8", &hkPlayerMove);
 	HookSignature(detour::clampBonesInBBox, "client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38", &hkClampBonesInBBox);
+	HookSignature(detour::getColorModulation, "materialsystem.dll", "55 8B EC 83 EC ? 56 8B F1 8A 46", &hkGetColorModulation);
 
 	menu::DestroyDirectX();
 

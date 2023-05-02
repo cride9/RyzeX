@@ -177,9 +177,6 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			if (!vecSelectedHitboxes[iHitbox])
 				continue;
 
-			if (CheckBaimRecord(pLocal, pCurrentApplied, vecEyePosition, pWeapon))
-				iHitbox = HITBOX_STOMACH;
-
 			Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
 
 			Vector output;
@@ -188,6 +185,9 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 			if (abs((vecDistanceBetween).NormalizeAngle().Length2D()) > cfg::rage::iAimbotFov)
 				continue;
+
+			//if (CheckBaimRecord(pLocal, pCurrentApplied, vecEyePosition, pWeapon))
+			//	iHitbox = HITBOX_STOMACH;
 
 			{ // I did separate them because of variable redefinition, this way the compiler can handle multiple declerations
 				std::array<Vector, 3> multiPointed = { Vector(0, 0, 0) };
@@ -372,90 +372,17 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 
 	// Credit to @Monthyx
 	// Fast stop source from obelus
-
-	static auto m_bStopinAir = []( CBaseCombatWeapon* pWeapon ) -> bool {
-		
-		auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
-
-		if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
-			return cfg::rage::m_bAutoStopInAir[ 0 ];
-		}
-		else if ( iDefinitionIndex == WEAPON_SSG08 ) {
-			return cfg::rage::m_bAutoStopInAir[ 1 ];
-		}
-		else if ( iDefinitionIndex == WEAPON_AWP ) {
-			return cfg::rage::m_bAutoStopInAir[ 2 ];
-		}
-		else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
-			return cfg::rage::m_bAutoStopInAir[ 4 ];
-		}
-		else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
-			return cfg::rage::m_bAutoStopInAir[ 3 ];
-		}
-		else {
-			return cfg::rage::m_bAutoStopInAir[ 5 ];
-		}
-	};
-
-	static auto m_bBetweenShots = []( CBaseCombatWeapon* pWeapon ) -> bool {
-		
-		auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
-
-		if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
-			return cfg::rage::betweenshots[ 0 ];
-		}
-		else if ( iDefinitionIndex == WEAPON_SSG08 ) {
-			return cfg::rage::betweenshots[ 1 ];
-		}
-		else if ( iDefinitionIndex == WEAPON_AWP ) {
-			return cfg::rage::betweenshots[ 2 ];
-		}
-		else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
-			return cfg::rage::betweenshots[ 4 ];
-		}
-		else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
-			return cfg::rage::betweenshots[ 3 ];
-		}
-		else {
-			return cfg::rage::betweenshots[ 5 ];
-		}
-	};
-
-	static auto m_iAggressiveness = [](CBaseCombatWeapon* pWeapon) -> int {
-
-		auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
-
-		if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
-			return cfg::rage::autostopAggressiveness[0];
-		}
-		else if (iDefinitionIndex == WEAPON_SSG08) {
-			return cfg::rage::autostopAggressiveness[1];
-		}
-		else if (iDefinitionIndex == WEAPON_AWP) {
-			return cfg::rage::autostopAggressiveness[2];
-		}
-		else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
-			return cfg::rage::autostopAggressiveness[4];
-		}
-		else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
-			return cfg::rage::autostopAggressiveness[3];
-		}
-		else {
-			return cfg::rage::autostopAggressiveness[5];
-		}
-	};
-
 	if ( !ConfigAutoStop( pWeapon ) )
 		return;
 
-	if ( !( g::pLocal->GetFlags( ) & FL_ONGROUND ) && !m_bStopinAir( pWeapon ) )
+	if ( !( g::pLocal->GetFlags( ) & FL_ONGROUND ) && !ConfigAutoStopInAir( pWeapon ) )
 		return;
 
 	// server is currently in nospread, no need to autostop
 	if ( i::ConVar->FindVar( "weapon_accuracy_nospread" )->GetInt( ) >= 1 )
 		return;
 
-	if ( !m_bBetweenShots(pWeapon) && !CheckShootingCondition( pCmd, pLocal ) )
+	if (!ConfigAutoStopBetweenShots(pWeapon) && !CheckShootingCondition( pCmd, pLocal ) )
 			return;
 
 	if ( rageBotData.bCanShoot )
@@ -467,7 +394,7 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	float flIdealSpeed = ( 0.28f ) * ( g::pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
 
 	/*int predictTick = 0;
-	switch (m_iAggressiveness(pWeapon))
+	switch (ConfigAutoStopAggressiveness(pWeapon))
 	{
 	case 1:
 		predictTick = 2; break;
@@ -690,53 +617,52 @@ bool CRageBot::ConfigAutoStop( CBaseCombatWeapon* pWeapon ) {
 	}
 }
 
+void CRageBot::AddHitbox(int index, std::array<bool, HITBOX_MAX>& vecHitboxList) {
+
+	// server only allows headshots, so let's only push_back head and return!
+	if (i::ConVar->FindVar("mp_damage_headshot_only")->GetBool()) {
+		vecHitboxList[HITBOX_HEAD] = true;
+		return;
+	}
+	switch (index)
+	{
+	case 0:
+		vecHitboxList[HITBOX_HEAD] = true;
+		break;
+
+	case 1:
+		vecHitboxList[HITBOX_UPPER_CHEST] = true;
+		break;
+
+	case 2:
+		vecHitboxList[HITBOX_CHEST] = true;;
+		break;
+
+	case 3:
+		vecHitboxList[HITBOX_STOMACH] = true;
+		break;
+
+	case 4:
+		vecHitboxList[HITBOX_RIGHT_FOREARM] = true;
+		vecHitboxList[HITBOX_LEFT_FOREARM] = true;
+
+		vecHitboxList[HITBOX_LEFT_UPPER_ARM] = true;
+		vecHitboxList[HITBOX_RIGHT_UPPER_ARM] = true;
+		break;
+
+	case 5:
+		vecHitboxList[HITBOX_RIGHT_FOOT] = true;
+		vecHitboxList[HITBOX_LEFT_FOOT] = true;
+		break;
+	}
+};
+
 std::array<bool, HITBOX_MAX> CRageBot::ConfigHitboxes( CBaseCombatWeapon * pWeapon ) {
 
 	// "head", "upper chest", "lower chest", "stomach", "arms", "legs"
 
 	std::array<bool, HITBOX_MAX> vecHitboxes = {};
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
-
-	static auto AddHitbox = []( int index, std::array<bool, HITBOX_MAX>& vecHitboxList ) {
-
-		// server only allows headshots, so let's only push_back head and return!
-		if ( i::ConVar->FindVar( "mp_damage_headshot_only" )->GetBool( ) ) {
-			vecHitboxList[HITBOX_HEAD] = true;
-			return;
-		}
-		switch (index)
-		{
-		case 0:
-			vecHitboxList[HITBOX_HEAD] = true;
-			break;
-
-		case 1:
-			vecHitboxList[HITBOX_UPPER_CHEST] = true;
-			break;
-
-		case 2:
-			vecHitboxList[HITBOX_CHEST] = true;;
-			break;
-
-		case 3:
-			vecHitboxList[HITBOX_STOMACH] = true;
-			break;
-			
-		case 4:
-			vecHitboxList[HITBOX_RIGHT_FOREARM] = true;
-			vecHitboxList[HITBOX_LEFT_FOREARM] = true;
-
-			vecHitboxList[HITBOX_LEFT_UPPER_ARM] = true;
-			vecHitboxList[HITBOX_RIGHT_UPPER_ARM] = true;
-			break;
-
-		case 5:
-			vecHitboxList[HITBOX_RIGHT_FOOT] = true;
-			vecHitboxList[HITBOX_LEFT_FOOT] = true;
-			break;
-		}
-	};
-
 
 	if (cfg::rage::forceBaim && GetKeyState(cfg::rage::forceBaimKey)) {
 		AddHitbox(2, vecHitboxes);
@@ -793,46 +719,6 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes( CBaseCombatWeapon * 
 	std::array<bool, HITBOX_MAX> arrHitboxes = {};
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
-	static auto AddHitbox = [](int index, std::array<bool, HITBOX_MAX>& vecHitboxList) {
-
-		// server only allows headshots, so let's only push_back head and return!
-		if (i::ConVar->FindVar("mp_damage_headshot_only")->GetBool()) {
-			vecHitboxList[HITBOX_HEAD] = true;
-			return;
-		}
-		switch (index)
-		{
-		case 0:
-			vecHitboxList[HITBOX_HEAD] = true;
-			break;
-
-		case 1:
-			vecHitboxList[HITBOX_UPPER_CHEST] = true;
-			break;
-
-		case 2:
-			vecHitboxList[HITBOX_CHEST] = true;;
-			break;
-
-		case 3:
-			vecHitboxList[HITBOX_STOMACH] = true;
-			break;
-
-		case 4:
-			vecHitboxList[HITBOX_RIGHT_FOREARM] = true;
-			vecHitboxList[HITBOX_LEFT_FOREARM] = true;
-
-			vecHitboxList[HITBOX_LEFT_UPPER_ARM] = true;
-			vecHitboxList[HITBOX_RIGHT_UPPER_ARM] = true;
-			break;
-
-		case 5:
-			vecHitboxList[HITBOX_RIGHT_FOOT] = true;
-			vecHitboxList[HITBOX_LEFT_FOOT] = true;
-			break;
-		}
-	};
-
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
 		for ( int i = 0; i < 6; i++ ) {
 			if ( cfg::rage::autoMultiHitboxes[ i ] )
@@ -881,46 +767,6 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigSafeHitboxes( CBaseCombatWeapon * p
 
 	std::array<bool, HITBOX_MAX> arrHitboxes = {};
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
-
-	static auto AddHitbox = [](int index, std::array<bool, HITBOX_MAX>& vecHitboxList) {
-
-		// server only allows headshots, so let's only push_back head and return!
-		if (i::ConVar->FindVar("mp_damage_headshot_only")->GetBool()) {
-			vecHitboxList[HITBOX_HEAD] = true;
-			return;
-		}
-		switch (index)
-		{
-		case 0:
-			vecHitboxList[HITBOX_HEAD] = true;
-			break;
-
-		case 1:
-			vecHitboxList[HITBOX_UPPER_CHEST] = true;
-			break;
-
-		case 2:
-			vecHitboxList[HITBOX_CHEST] = true;;
-			break;
-
-		case 3:
-			vecHitboxList[HITBOX_STOMACH] = true;
-			break;
-
-		case 4:
-			vecHitboxList[HITBOX_RIGHT_FOREARM] = true;
-			vecHitboxList[HITBOX_LEFT_FOREARM] = true;
-
-			vecHitboxList[HITBOX_LEFT_UPPER_ARM] = true;
-			vecHitboxList[HITBOX_RIGHT_UPPER_ARM] = true;
-			break;
-
-		case 5:
-			vecHitboxList[HITBOX_RIGHT_FOOT] = true;
-			vecHitboxList[HITBOX_LEFT_FOOT] = true;
-			break;
-		}
-	};
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
 		for ( int i = 0; i < 6; i++ ) {
@@ -1041,6 +887,9 @@ std::array<Vector, 3> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity
 	if (!bGenerateMore)
 		output[2] = Vector(0, 0, 0);
 	iMultiOptimization[iHitbox]++;
+
+	if (iMultiOptimization[iHitbox] >= 5)
+		iMultiOptimization[iHitbox] = 0;
 
 	return output;
 }
@@ -1318,4 +1167,76 @@ std::array<Vector, 6> CRageBot::HitboxPoints(Lagcompensation::LagRecord_t* pReco
 		}
 	}
 	return arrPoints;
+}
+
+bool CRageBot::ConfigAutoStopInAir(CBaseCombatWeapon* pWeapon) {
+
+	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
+
+	if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
+		return cfg::rage::m_bAutoStopInAir[0];
+	}
+	else if (iDefinitionIndex == WEAPON_SSG08) {
+		return cfg::rage::m_bAutoStopInAir[1];
+	}
+	else if (iDefinitionIndex == WEAPON_AWP) {
+		return cfg::rage::m_bAutoStopInAir[2];
+	}
+	else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
+		return cfg::rage::m_bAutoStopInAir[4];
+	}
+	else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
+		return cfg::rage::m_bAutoStopInAir[3];
+	}
+	else {
+		return cfg::rage::m_bAutoStopInAir[5];
+	}
+}
+
+bool CRageBot::ConfigAutoStopBetweenShots(CBaseCombatWeapon* pWeapon) {
+
+	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
+
+	if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
+		return cfg::rage::betweenshots[0];
+	}
+	else if (iDefinitionIndex == WEAPON_SSG08) {
+		return cfg::rage::betweenshots[1];
+	}
+	else if (iDefinitionIndex == WEAPON_AWP) {
+		return cfg::rage::betweenshots[2];
+	}
+	else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
+		return cfg::rage::betweenshots[4];
+	}
+	else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
+		return cfg::rage::betweenshots[3];
+	}
+	else {
+		return cfg::rage::betweenshots[5];
+	}
+}
+
+bool CRageBot::ConfigAutoStopAggressiveness(CBaseCombatWeapon* pWeapon) {
+
+	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
+
+	if (iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1) {
+		return cfg::rage::autostopAggressiveness[0];
+	}
+	else if (iDefinitionIndex == WEAPON_SSG08) {
+		return cfg::rage::autostopAggressiveness[1];
+	}
+	else if (iDefinitionIndex == WEAPON_AWP) {
+		return cfg::rage::autostopAggressiveness[2];
+	}
+	else if (iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE) {
+		return cfg::rage::autostopAggressiveness[4];
+	}
+	else if (iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9) {
+		return cfg::rage::autostopAggressiveness[3];
+	}
+	else {
+		return cfg::rage::autostopAggressiveness[5];
+	}
 }

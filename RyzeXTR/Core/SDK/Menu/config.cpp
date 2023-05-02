@@ -760,6 +760,8 @@ void CConfig::Setup() {
 		SetupValue(nightmodeColor[2], 1.f, "visual", "nightmodeColorB");
 		SetupValue(nightmodeColor[3], 1.f, "visual", "nightmodeColorA");
 
+		SetupValue(iSkybox, 0, "misc", "skyboxchanger");
+
 		SetupValue(aspectRatio, false, "misc", "aspectRatio");
 		SetupValue(aspectRatioValue, 0, "misc", "aspectRatioValue");
 

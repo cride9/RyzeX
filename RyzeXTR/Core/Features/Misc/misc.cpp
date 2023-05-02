@@ -9,7 +9,6 @@
 #include "../Rage/autowall.h"
 #include "../Visuals/ESP.h"
 #pragma comment(lib, "winmm.lib")
-#define CheckIfNonValidNumber(x) (fpclassify(x) == FP_INFINITE || fpclassify(x) == FP_NAN || fpclassify(x) == FP_SUBNORMAL)
 
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
@@ -24,7 +23,6 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	OnlyCheatLogs();
 	RemovePostProcessing();
 	FixScopeSens();
-	WalkBot(pCmd);
 	BlockBot(pCmd);
 	ClanTag();
 #if NDEBUG
@@ -33,30 +31,77 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	//ViewModel();
 }
 
+void misc::SkyboxChanger(const char* szOldSkybox) {
+
+	static std::string szSkyboxes[] = {
+	"cs_baggage_skybox_",
+	"cs_tibet",
+	"vietnam",
+	"sky_lunacy",
+	"embassy",
+	"italy",
+	"jungle",
+	"office",
+	"sky_cs15_daylight01_hdr",
+	"sky_cs15_daylight02_hdr",
+	"sky_cs15_daylight03_hdr",
+	"sky_cs15_daylight04_hdr",
+	"sky_day02_05",
+	"nukeblank",
+	"dustblank",
+	"sky_venice",
+	"sky_csgo_cloudy01",
+	"sky_csgo_night02",
+	"sky_csgo_night02b",
+	"vertigo",
+	"vertigoblue_hdr",
+	"sky_dust",
+	"sky_hr_aztec"
+	};
+
+	static bool bRefreshNewGame = false;
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal) {
+		bRefreshNewGame = true;
+		return;
+	}
+
+	if (szSkyboxes[0] == "None")
+		szSkyboxes[0] = szOldSkybox;
+
+	static std::string szBackup;
+	if (szBackup.c_str() != szSkyboxes[cfg::misc::iSkybox] || bRefreshNewGame) {
+
+		util::SetSkybox(szSkyboxes[cfg::misc::iSkybox].c_str());
+		szBackup = szSkyboxes[cfg::misc::iSkybox];
+		bRefreshNewGame = false;
+	}
+}
+
+using namespace cachedEvents;
 void misc::EventHandler(IGameEvent* pEvent) {
 
 	//CheatLog(pEvent);
 	PreserveKillfeed(pEvent);
-	if (!strcmp(pEvent->GetName(), "player_hurt")) {
+	if (!strcmp(pEvent->GetName(), playerHurt)) {
 		HandlePlayerHitEffects(pEvent);
 		CapsuleHandler(pEvent, 0);
 	}
-	if (!strcmp(pEvent->GetName(), "player_death")) {
+	if (!strcmp(pEvent->GetName(), playerDeath)) {
 		CapsuleHandler(pEvent, 1);
 	}
-	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+	if (!strcmp(pEvent->GetName(), bulletImpact)) {
 		WorldCrosshairHandler(pEvent);
 		BulletImpact(pEvent, FRAME_UNDEFINED, false);
 		BulletTracer(pEvent);
 	}
-	if (!strcmp(pEvent->GetName(), "weapon_fire")) {
+	if (!strcmp(pEvent->GetName(), weaponFire)) {
 
 	}
-	if (!strcmp(pEvent->GetName(), "round_start")) {
+	if (!strcmp(pEvent->GetName(), roundStart)) {
 		BuyBot(pEvent);
 		WalkBotHandler(pEvent);
 	}
-	if (!strcmp(pEvent->GetName(), "item_purchase")) {
+	if (!strcmp(pEvent->GetName(), itemPurchase)) {
 
 	}
 }
@@ -223,52 +268,6 @@ void misc::OnlyCheatLogs() {
 	}
 }
 
-void misc::NightMode() {
-
-	// sky_lunacy
-
-	if (i::ClientState->iDeltaTick < 0 || !cfg::misc::nightmode) {
-		bResetNightMode = true;
-		return;
-	}
-
-	static float backupR = cfg::misc::nightmodeColor[0], backupG = cfg::misc::nightmodeColor[1], backupB = cfg::misc::nightmodeColor[3];
-
-	if (bResetNightMode || backupR != cfg::misc::nightmodeColor[0] || backupG != cfg::misc::nightmodeColor[1] || backupB != cfg::misc::nightmodeColor[3]) {
-
-		static CConVar* r_DrawSpecificStaticProp = i::ConVar->FindVar("r_DrawSpecificStaticProp");
-		r_DrawSpecificStaticProp->SetValue(0);
-
-		for (MaterialHandle_t i = i::MaterialSystem->FirstMaterial(); i != i::MaterialSystem->InvalidMaterial(); i = i::MaterialSystem->NextMaterial(i)) {
-
-			IMaterial* pMat = i::MaterialSystem->GetMaterial(i);
-
-			if (!pMat)
-				return;
-
-			auto groupName = pMat->GetTextureGroupName();
-
-			if (strstr(groupName, "World") || strstr(groupName, "StaticProp")) {
-
-				static auto LoadNamedSky = reinterpret_cast<void(__fastcall*)(const char*)>(util::FindSignature("engine.dll", "55 8B EC 81 EC ? ? ? ? 56 57 8B F9 C7 45"));
-
-				if (LoadNamedSky != nullptr)
-					LoadNamedSky("sky_lunacy");
-
-				if (strstr(groupName, "StaticProp"))
-					pMat->ColorModulate(cfg::misc::nightmodeColor[0], cfg::misc::nightmodeColor[1], cfg::misc::nightmodeColor[2]);
-				else
-					pMat->ColorModulate((cfg::misc::nightmodeColor[0] * 255.f) / 561.f, (cfg::misc::nightmodeColor[1] * 255.f) / 561.f, (cfg::misc::nightmodeColor[2] * 255.f) / 561.f);
-			}
-		}
-
-		bResetNightMode = false;
-		backupR = cfg::misc::nightmodeColor[0];
-		backupG = cfg::misc::nightmodeColor[1];
-		backupB = cfg::misc::nightmodeColor[3];
-	}
-}
-
 void misc::SlideFix() {
 
 	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->GetMoveType() == MOVETYPE_LADDER || cfg::antiaim::bSlideWalk)
@@ -309,7 +308,7 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) 
 		CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
 		//CUtlVector<ClientHitVerify_t>* pImpactList = reinterpret_cast<CUtlVector<ClientHitVerify_t>*>(g::pLocal + 0x11C50);
 
-		if (!&pImpactList) 
+		if (!&pImpactList || pImpactList.Size() == 0)
 			return;
 
 		if (!cfg::misc::bulletImpact) {
@@ -462,18 +461,10 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 	}
 }
 
+using namespace cachedEvents;
 void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 
-	static auto FindHudElement = [](const char* name) {
-
-		static auto pThis = *reinterpret_cast<DWORD**>(util::FindSignature("client.dll", "B9 ? ? ? ? E8 ? ? ? ? 8B 5D 08") + 1);
-
-		static auto find_hud_element = reinterpret_cast<DWORD(__thiscall*)(void*, const char*)>(util::FindSignature("client.dll", "55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28"));
-
-		return find_hud_element(pThis, name);
-	};
-
-	if (!strcmp(event->GetName(), "player_death")) {
+	if (!strcmp(event->GetName(), playerDeath)) {
 
 		auto pAttacker = i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(event->GetInt("attacker")));
 
@@ -488,7 +479,7 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 		static DWORD* _death_notice;
 
 		if (i::EngineClient->IsConnected() && i::EngineClient->IsInGame())
-			_death_notice = (DWORD*)FindHudElement("CCSGO_HudDeathNotice");
+			_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
 
 		static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))util::FindSignature("client.dll", "55 8B EC 83 EC 0C 53 56 8B 71 58");
 
@@ -498,15 +489,15 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 		if (_death_notice)
 			*(float*)((DWORD)_death_notice + 0x50) = cfg::misc::preserveKillfeed ? FLT_MAX : 1.5; // need menu element
 	}
-	else if (!strcmp(event->GetName(), "round_start")) {
+	else if (!strcmp(event->GetName(), roundStart)) {
 
 		g_LocalAnimations->ResetData();
 
-		static DWORD* _death_notice = (DWORD*)FindHudElement("CCSGO_HudDeathNotice");
+		static DWORD* _death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
 		static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))util::FindSignature("client.dll", "55 8B EC 83 EC 0C 53 56 8B 71 58");
 
 		if (_death_notice)
-			_death_notice = (DWORD*)FindHudElement("CCSGO_HudDeathNotice");
+			_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
 		if (_clear_notices)
 			_clear_notices(((DWORD)_death_notice - 20));
 	}
@@ -643,19 +634,6 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 
 	auto m_pcmd = pCmd;
 
-	auto get_velocity_degree = [](float velocity)
-	{
-		auto tmp = M_RAD2DEG(atan(30.0f / velocity));
-
-		if (CheckIfNonValidNumber(tmp) || tmp > 90.0f)
-			return 90.0f;
-
-		else if (tmp < 0.0f)
-			return 0.0f;
-		else
-			return tmp;
-	};
-
 	auto velocity = g::pLocal->GetVelocity();
 	//velocity.z = 0.0f;
 
@@ -706,7 +684,7 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 		temp.y = M::NormalizeYaw(temp.y);
 
 		auto velocityangle_yawdelta = temp.y;
-		auto velocity_degree = get_velocity_degree(velocity.Length2D());
+		auto velocity_degree = M::GetVelocityDegree(velocity.Length2D());
 
 		if (velocityangle_yawdelta <= velocity_degree || velocity.Length2D() <= 15.0f)
 		{
@@ -840,6 +818,7 @@ void misc::ThirdPerson() {
 	if (!cfg::misc::thirdperson || !g::pLocal)
 		return;
 
+	static std::string tpfix = "cam_idealpitch 0;" "cam_idealyaw 0;" "cam_idealdist 140;" "thirdperson;";
 	static bool didSetThirdPerson = false;
 	static CConVar* svcheats = i::ConVar->FindVar("sv_cheats");
 
@@ -849,11 +828,6 @@ void misc::ThirdPerson() {
 
 			*(int*)((DWORD)&svcheats->fnChangeCallbacks + 0xC) = 0; // ew
 			svcheats->SetValue(1);
-
-			static std::string tpfix = "cam_idealpitch 0;";
-			tpfix += "cam_idealyaw 0;";
-			tpfix += "cam_idealdist 140;";
-			tpfix += "thirdperson;";
 
 			i::EngineClient->ExecuteClientCmd(tpfix.c_str());
 			didSetThirdPerson = true;
@@ -1039,7 +1013,7 @@ void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		pLocal->GetWeapon()->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_REVOLVER)
 		return;
 
-		if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() >= TICKS_TO_TIME(pLocal->GetTickBase())))
+	if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() >= TICKS_TO_TIME(pLocal->GetTickBase())))
 		pCmd->iButtons &= ~IN_ATTACK;
 }
 
@@ -1082,212 +1056,212 @@ void misc::RemoveSmoke() {
 
 void misc::WalkBotHandler(IGameEvent* pEvent) {
 
-	if (!strcmp(pEvent->GetName(), "round_start"))
+	if (!strcmp(pEvent->GetName(), roundStart))
 		bNewRound = true;
 }
 
 void TraceRayBot(CUserCmd* pCmd);
-void misc::WalkBot(CUserCmd* pCmd) {
-
-	static int positionID = 0;
-	static int randomLmao = 0;
-	static std::vector<Vector> moveHere;
-	static Vector vecLastAngle = g::vecOriginalViewAngle;
-
-	if (!g::pLocal)
-		return;
-
-	if (!cfg::debugSwitch2 || !g::pLocal->IsAlive() || bNewRound) {
-		AIVizualization.clear();
-		moveHere.clear();
-		positionID = 0;
-		randomLmao = M::RandomInt(0, 6);
-		bNewRound = false;
-
-		int iLocalTeam = g::pLocal->GetTeam();
-		switch (randomLmao)
-		{
-		case 1: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTB : walkbotPositions::MirageTBRush;
-			break;
-		case 2: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTNinja : walkbotPositions::MirageTMidRush;
-			break;
-		case 3: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTNinja : walkbotPositions::MirageTPallaceRush;
-			break;
-		case 4: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTStairs : walkbotPositions::MirageTStairs;
-			break;
-		case 5: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTSpawnBox : walkbotPositions::MirageTUnderGroundRush;
-			break;
-
-		default: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTSpawnBox : walkbotPositions::MirageTUnderGroundRush;
-			break;
-		}
-
-		return;
-	}
-
-	if (moveHere.empty())
-		return;
-
-	//int iClosestIndex = antiaim::ClosestToLocal();
-	//CBaseEntity* pClosestTarget = nullptr;
-
-	//if (iClosestIndex != -1)
-	//	pClosestTarget = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iClosestIndex));
-
-	//if (pClosestTarget != nullptr) {
-
-	//	Vector vecInterpolatedEyePosition = ragebot.InterpolateLocalEyePosition(g::pLocal->GetEyePosition(), 3);
-
-	//	FireBulletData_t data = { };
-	//	data.vecPosition = vecInterpolatedEyePosition;
-	//	data.vecDirection = (pClosestTarget->GetHitboxPosition(HITBOX_UPPER_CHEST).value() - vecInterpolatedEyePosition).Normalized();
-
-	//	Vector vecCalcAngle;
-	//	M::VectorAngles(pClosestTarget->GetHitboxPosition(HITBOX_STOMACH).value() - g::pLocal->GetEyePosition(), vecCalcAngle);
-	//	Vector vecDistanceBetween = (vecLastAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
-
-	//	float flFinalFov = vecDistanceBetween.y;
-
-	//	vecLastAngle.y += std::clamp(flFinalFov, -30.f, 30.f);
-
-	//	if (flFinalFov < 35)
-	//		vecLastAngle.y = vecCalcAngle.y;
-
-	//	M::NormalizeAngle(vecLastAngle.y);
-	//	i::EngineClient->SetViewAngles(vecLastAngle);
-
-	//	if (autowall.SimulateFireBullet(g::pLocal, g::pLocal->GetWeapon(), data))
-	//		return;
-	//}
-
-	if (moveHere.size() > positionID) {
-
-		MoveToPosition(moveHere.at(positionID));
-		AIVizualization.push_front(moveHere.at(positionID));
-
-		if ((moveHere.at(positionID) - g::pLocal->GetAbsOrigin()).Length2D() < 10.f) {
-			positionID++;
-		}
-
-		while (AIVizualization.size() >= 32)
-			AIVizualization.pop_back();
-	}
-	//else {
-	//	TraceRayBot(pCmd);
-	//}
-}
-
-void TraceRayBot(CUserCmd* pCmd) // wip
-{
-	using namespace misc;
-
-	auto GRD_TO_BOG = [&](float GRD) -> float {
-		return (M_PI / 180) * GRD;
-	};
-	auto ProjectPoint = [&](Vector vecOrigin, float flYaw, float flDistance) -> Vector {
-		return (vecOrigin + Vector((flDistance * sin(GRD_TO_BOG(flYaw))), -(flDistance * cos(GRD_TO_BOG(flYaw))), 0));
-	};
-
-	float flBestDistance = 0.f;
-	float flBestAngle = -9999999.f;
-
-	pCmd->flForwardMove = 450.f;
-
-	CTraceFilter filter1(g::pLocal);
-	Vector vecOrigin = g::pLocal->GetVecOrigin() + Vector(0, 0, 10);
-
-	Vector vecEyeAngle;
-	i::EngineClient->GetViewAngles(vecEyeAngle);
-
-	Trace_t TraceFront;
-	Vector vecProjectFirstPoint = ProjectPoint(vecOrigin, M::NormalizeYaw((vecEyeAngle.y + 90)), 40);
-	i::EngineTrace->TraceRay(Ray_t(vecOrigin, vecProjectFirstPoint), MASK_SOLID, &filter1, &TraceFront);
-	AIVizualization.push_front(TraceFront.vecEnd);
-
-	static bool bJumped = false;
-
-	if (!(g::pLocal->GetFlags() & FL_ONGROUND))
-		pCmd->iButtons |= IN_DUCK;
-	else
-		bJumped = false;
-
-	if (TraceFront.flFraction != 1.0f && (g::pLocal->GetFlags() & FL_ONGROUND) && !bJumped) {
-		pCmd->iButtons |= IN_JUMP;
-		bJumped = true;
-	}
-
-	static bool bRandomDirect = true;
-	bRandomDirect = false;
-	srand(time(NULL));
-	int iRandomStart = rand() % 36;
-	int i = iRandomStart;
-	bool bDoubleStart = false;
-	bool bLoop = true;
-	while (bLoop) {
-
-		i += bRandomDirect ? 1 : -1;
-
-		if (bRandomDirect && i > 36) {
-			i = 0;
-			bDoubleStart = true;
-		}
-		else if (!bRandomDirect && i < 0) {
-			i = 36;
-			bDoubleStart = true;
-		}
-
-		if (bRandomDirect && i >= iRandomStart && bDoubleStart) {
-			bLoop = false;
-			break;
-		}
-		else if (!bRandomDirect && i <= iRandomStart && bDoubleStart) {
-			bLoop = false;
-			break;
-		}
-
-		Trace_t TraceInit;
-		Vector vecProjectSecondPoint = ProjectPoint(vecOrigin, M::NormalizeYaw(i * 10), 300) + Vector(0, 0, 90);
-		i::EngineTrace->TraceRay(Ray_t(vecOrigin, vecProjectSecondPoint), MASK_SOLID, &filter1, &TraceInit);
-		AIVizualization.push_front(TraceInit.vecEnd);
-
-		if (TraceInit.flFraction > flBestDistance) {
-			flBestAngle = M::NormalizeYaw(i * 10);
-			flBestDistance = TraceInit.flFraction;
-		}
-	}
-
-	flBestAngle = M::NormalizeYaw(flBestAngle - 90);
-
-	float flDelta = M::NormalizeYaw(flBestAngle - vecEyeAngle.y);
-
-	if (flDelta >= 0)
-		vecEyeAngle.y = M::NormalizeYaw(vecEyeAngle.y + ((abs(flDelta) <= 5) ? abs(flDelta) : 5));
-	else
-		vecEyeAngle.y = M::NormalizeYaw(vecEyeAngle.y - ((abs(flDelta) <= 5) ? abs(flDelta) : 5));
-
-	Trace_t TraceLeft;
-	Vector vecProjectThirdPoint = ProjectPoint(vecOrigin, M::NormalizeYaw((vecEyeAngle.y - 90) - 45), 300);
-	i::EngineTrace->TraceRay(Ray_t(vecOrigin, vecProjectThirdPoint), MASK_SOLID, &filter1, &TraceLeft);
-	AIVizualization.push_front(TraceLeft.vecEnd);
-
-	Trace_t TraceRight;
-	Vector vecProjectFourthPoint = ProjectPoint(vecOrigin, M::NormalizeYaw((vecEyeAngle.y - 90) + 45), 300);
-	i::EngineTrace->TraceRay(Ray_t(vecOrigin, vecProjectFourthPoint), MASK_SOLID, &filter1, &TraceRight);
-	AIVizualization.push_front(TraceRight.vecEnd);
-
-
-	if (TraceLeft.flFraction > TraceRight.flFraction)
-		pCmd->flSideMove = -100.f;
-	else
-		pCmd->flSideMove = 100.f;
-
-	vecEyeAngle.x = 0.f;
-
-	i::EngineClient->SetViewAngles(vecEyeAngle);
-
-	while (AIVizualization.size() >= 32)
-		AIVizualization.pop_back();
-}
+//void misc::WalkBot(CUserCmd* pCmd) {
+//
+//	static int positionID = 0;
+//	static int randomLmao = 0;
+//	static std::vector<Vector> moveHere;
+//	static Vector vecLastAngle = g::vecOriginalViewAngle;
+//
+//	if (!g::pLocal)
+//		return;
+//
+//	if (!cfg::debugSwitch2 || !g::pLocal->IsAlive() || bNewRound) {
+//		AIVizualization.clear();
+//		moveHere.clear();
+//		positionID = 0;
+//		randomLmao = M::RandomInt(0, 6);
+//		bNewRound = false;
+//
+//		int iLocalTeam = g::pLocal->GetTeam();
+//		switch (randomLmao)
+//		{
+//		case 1: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTB : walkbotPositions::MirageTBRush;
+//			break;
+//		case 2: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTNinja : walkbotPositions::MirageTMidRush;
+//			break;
+//		case 3: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTNinja : walkbotPositions::MirageTPallaceRush;
+//			break;
+//		case 4: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTStairs : walkbotPositions::MirageTStairs;
+//			break;
+//		case 5: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTSpawnBox : walkbotPositions::MirageTUnderGroundRush;
+//			break;
+//
+//		default: moveHere = iLocalTeam == TEAM_CT ? walkbotPositions::MirageCTSpawnBox : walkbotPositions::MirageTUnderGroundRush;
+//			break;
+//		}
+//
+//		return;
+//	}
+//
+//	if (moveHere.empty())
+//		return;
+//
+//	//int iClosestIndex = antiaim::ClosestToLocal();
+//	//CBaseEntity* pClosestTarget = nullptr;
+//
+//	//if (iClosestIndex != -1)
+//	//	pClosestTarget = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iClosestIndex));
+//
+//	//if (pClosestTarget != nullptr) {
+//
+//	//	Vector vecInterpolatedEyePosition = ragebot.InterpolateLocalEyePosition(g::pLocal->GetEyePosition(), 3);
+//
+//	//	FireBulletData_t data = { };
+//	//	data.vecPosition = vecInterpolatedEyePosition;
+//	//	data.vecDirection = (pClosestTarget->GetHitboxPosition(HITBOX_UPPER_CHEST).value() - vecInterpolatedEyePosition).Normalized();
+//
+//	//	Vector vecCalcAngle;
+//	//	M::VectorAngles(pClosestTarget->GetHitboxPosition(HITBOX_STOMACH).value() - g::pLocal->GetEyePosition(), vecCalcAngle);
+//	//	Vector vecDistanceBetween = (vecLastAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+//
+//	//	float flFinalFov = vecDistanceBetween.y;
+//
+//	//	vecLastAngle.y += std::clamp(flFinalFov, -30.f, 30.f);
+//
+//	//	if (flFinalFov < 35)
+//	//		vecLastAngle.y = vecCalcAngle.y;
+//
+//	//	M::NormalizeAngle(vecLastAngle.y);
+//	//	i::EngineClient->SetViewAngles(vecLastAngle);
+//
+//	//	if (autowall.SimulateFireBullet(g::pLocal, g::pLocal->GetWeapon(), data))
+//	//		return;
+//	//}
+//
+//	if (moveHere.size() > positionID) {
+//
+//		MoveToPosition(moveHere.at(positionID));
+//		AIVizualization.push_front(moveHere.at(positionID));
+//
+//		if ((moveHere.at(positionID) - g::pLocal->GetAbsOrigin()).Length2D() < 10.f) {
+//			positionID++;
+//		}
+//
+//		while (AIVizualization.size() >= 32)
+//			AIVizualization.pop_back();
+//	}
+//	//else {
+//	//	TraceRayBot(pCmd);
+//	//}
+//}
+//
+//void TraceRayBot(CUserCmd* pCmd) // wip
+//{
+//	using namespace misc;
+//
+//	auto GRD_TO_BOG = [&](float GRD) -> float {
+//		return (M_PI / 180) * GRD;
+//	};
+//	auto ProjectPoint = [&](Vector vecOrigin, float flYaw, float flDistance) -> Vector {
+//		return (vecOrigin + Vector((flDistance * sin(GRD_TO_BOG(flYaw))), -(flDistance * cos(GRD_TO_BOG(flYaw))), 0));
+//	};
+//
+//	float flBestDistance = 0.f;
+//	float flBestAngle = -9999999.f;
+//
+//	pCmd->flForwardMove = 450.f;
+//
+//	CTraceFilter filter1(g::pLocal);
+//	Vector vecOrigin = g::pLocal->GetVecOrigin() + Vector(0, 0, 10);
+//
+//	Vector vecEyeAngle;
+//	i::EngineClient->GetViewAngles(vecEyeAngle);
+//
+//	Trace_t TraceFront;
+//	Vector vecProjectFirstPoint = ProjectPoint(vecOrigin, M::NormalizeYaw((vecEyeAngle.y + 90)), 40);
+//	i::EngineTrace->TraceRay(Ray_t(vecOrigin, vecProjectFirstPoint), MASK_SOLID, &filter1, &TraceFront);
+//	AIVizualization.push_front(TraceFront.vecEnd);
+//
+//	static bool bJumped = false;
+//
+//	if (!(g::pLocal->GetFlags() & FL_ONGROUND))
+//		pCmd->iButtons |= IN_DUCK;
+//	else
+//		bJumped = false;
+//
+//	if (TraceFront.flFraction != 1.0f && (g::pLocal->GetFlags() & FL_ONGROUND) && !bJumped) {
+//		pCmd->iButtons |= IN_JUMP;
+//		bJumped = true;
+//	}
+//
+//	static bool bRandomDirect = true;
+//	bRandomDirect = false;
+//	srand(time(NULL));
+//	int iRandomStart = rand() % 36;
+//	int i = iRandomStart;
+//	bool bDoubleStart = false;
+//	bool bLoop = true;
+//	while (bLoop) {
+//
+//		i += bRandomDirect ? 1 : -1;
+//
+//		if (bRandomDirect && i > 36) {
+//			i = 0;
+//			bDoubleStart = true;
+//		}
+//		else if (!bRandomDirect && i < 0) {
+//			i = 36;
+//			bDoubleStart = true;
+//		}
+//
+//		if (bRandomDirect && i >= iRandomStart && bDoubleStart) {
+//			bLoop = false;
+//			break;
+//		}
+//		else if (!bRandomDirect && i <= iRandomStart && bDoubleStart) {
+//			bLoop = false;
+//			break;
+//		}
+//
+//		Trace_t TraceInit;
+//		Vector vecProjectSecondPoint = ProjectPoint(vecOrigin, M::NormalizeYaw(i * 10), 300) + Vector(0, 0, 90);
+//		i::EngineTrace->TraceRay(Ray_t(vecOrigin, vecProjectSecondPoint), MASK_SOLID, &filter1, &TraceInit);
+//		AIVizualization.push_front(TraceInit.vecEnd);
+//
+//		if (TraceInit.flFraction > flBestDistance) {
+//			flBestAngle = M::NormalizeYaw(i * 10);
+//			flBestDistance = TraceInit.flFraction;
+//		}
+//	}
+//
+//	flBestAngle = M::NormalizeYaw(flBestAngle - 90);
+//
+//	float flDelta = M::NormalizeYaw(flBestAngle - vecEyeAngle.y);
+//
+//	if (flDelta >= 0)
+//		vecEyeAngle.y = M::NormalizeYaw(vecEyeAngle.y + ((abs(flDelta) <= 5) ? abs(flDelta) : 5));
+//	else
+//		vecEyeAngle.y = M::NormalizeYaw(vecEyeAngle.y - ((abs(flDelta) <= 5) ? abs(flDelta) : 5));
+//
+//	Trace_t TraceLeft;
+//	Vector vecProjectThirdPoint = ProjectPoint(vecOrigin, M::NormalizeYaw((vecEyeAngle.y - 90) - 45), 300);
+//	i::EngineTrace->TraceRay(Ray_t(vecOrigin, vecProjectThirdPoint), MASK_SOLID, &filter1, &TraceLeft);
+//	AIVizualization.push_front(TraceLeft.vecEnd);
+//
+//	Trace_t TraceRight;
+//	Vector vecProjectFourthPoint = ProjectPoint(vecOrigin, M::NormalizeYaw((vecEyeAngle.y - 90) + 45), 300);
+//	i::EngineTrace->TraceRay(Ray_t(vecOrigin, vecProjectFourthPoint), MASK_SOLID, &filter1, &TraceRight);
+//	AIVizualization.push_front(TraceRight.vecEnd);
+//
+//
+//	if (TraceLeft.flFraction > TraceRight.flFraction)
+//		pCmd->flSideMove = -100.f;
+//	else
+//		pCmd->flSideMove = 100.f;
+//
+//	vecEyeAngle.x = 0.f;
+//
+//	i::EngineClient->SetViewAngles(vecEyeAngle);
+//
+//	while (AIVizualization.size() >= 32)
+//		AIVizualization.pop_back();
+//}
 
 void misc::MoveToPosition(Vector& vecPosition) {
 
@@ -1399,12 +1373,6 @@ void misc::BlockBot(CUserCmd* pCmd) {
 
 void misc::ClanTag() {
 
-	static auto SetClan = [](const char* csTag, const char* name) {
-
-		static auto pSetClantag = reinterpret_cast<void(__fastcall*)(const char*, const char*)>(util::FindSignature("engine.dll", "53 56 57 8B DA 8B F9 FF"));
-		pSetClantag(csTag, name);
-	};
-
 	static bool bShouldPrint = true;
 	INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
 
@@ -1425,29 +1393,29 @@ void misc::ClanTag() {
 			bShouldPrint = true;
 			switch (iMainTime) {
 
-			case 0: SetClan("R", "R"); break;
-			case 1: SetClan("TR", "TR"); break;
-			case 2: SetClan("XTR", "XTR"); break;
-			case 3: SetClan("eXTR", "eXTR"); break;
-			case 4: SetClan("zeXTR", "zeXTR"); break;
-			case 5: SetClan("yzeXTR", "yzeXTR"); break;
-			case 6: SetClan("RyzeXTR", "RyzeXTR"); break;
-			case 7: SetClan("RyzeXTR", "RyzeXTR"); break;
-			case 8: SetClan("RyzeXTR", "RyzeXTR"); break;
-			case 9: SetClan("RyzeXTR", "RyzeXTR"); break;
-			case 10: SetClan("RyzeXT", "RyzeXT"); break;
-			case 11: SetClan("RyzeX", "RyzeX"); break;
-			case 12: SetClan("Ryze", "Ryze"); break;
-			case 13: SetClan("Ryz", "Ryz"); break;
-			case 14: SetClan("Ry", "Ry"); break;
-			case 15: SetClan("R", "R"); break;
-			case 16: SetClan("", ""); break;
-			case 17: SetClan("", ""); break;
+			case 0: util::SetClan("R"); break;
+			case 1: util::SetClan("TR"); break;
+			case 2: util::SetClan("XTR"); break;
+			case 3: util::SetClan("eXTR"); break;
+			case 4: util::SetClan("zeXTR"); break;
+			case 5: util::SetClan("yzeXTR"); break;
+			case 6: util::SetClan("RyzeXTR"); break;
+			case 7: util::SetClan("RyzeXTR"); break;
+			case 8: util::SetClan("RyzeXTR"); break;
+			case 9: util::SetClan("RyzeXTR"); break;
+			case 10: util::SetClan("RyzeXT"); break;
+			case 11: util::SetClan("RyzeX"); break;
+			case 12: util::SetClan("Ryze"); break;
+			case 13: util::SetClan("Ryz"); break;
+			case 14: util::SetClan("Ry"); break;
+			case 15: util::SetClan("R"); break;
+			case 16: util::SetClan(""); break;
+			case 17: util::SetClan(""); break;
 			}
 		}
 		else {
 			bShouldPrint = false;
-			SetClan(" ", " ");
+			util::SetClan(" ");
 		}
 	}
 	flTime = iMainTime;
@@ -1556,7 +1524,7 @@ void misc::CheatLog(IGameEvent* pEvent) {
 	//		util::LogConsole(szOutput.c_str());
 	//	}
 	//}
-	if (!strcmp(pEvent->GetName(), "player_hurt")) {
+	if (!strcmp(pEvent->GetName(), playerHurt)) {
 
 		int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 		int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));

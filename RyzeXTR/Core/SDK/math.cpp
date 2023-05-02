@@ -43,6 +43,19 @@ void M::VectorTransform(const Vector& in, const matrix3x4_t& matrix, Vector& out
 	};
 }
 
+float M::GetVelocityDegree(float flVelocity) {
+
+	float tmp = M_RAD2DEG(atan(30.0f / flVelocity));
+
+	if (CheckIfNonValidNumber(tmp) || tmp > 90.0f)
+		return 90.0f;
+
+	else if (tmp < 0.0f)
+		return 0.0f;
+	else
+		return tmp;
+}
+
 void MatrixCopy(const matrix3x4_t& in, matrix3x4_t& out) {
 	std::memcpy(out.Base(), in.Base(), sizeof(matrix3x4_t));
 }

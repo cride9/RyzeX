@@ -370,6 +370,34 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Nightmode", &nightmode);
             ImGui::ColorEdit4("nightmodecolor", nightmodeColor);
 
+			static const char* szSkyboxes[] = {
+				"Baggage", 
+				"Tibet",
+				"Vietnam", 
+				"Lunacy",
+				"Embassy",
+				"Italy", 
+				"Jungle",
+				"Office", 
+				"Daylight1", 
+				"Daylight2", 
+				"Daylight3",
+				"Daylight4", 
+				"Day", 
+				"Nuke",
+				"Dust",
+				"Venice",
+				"Cloudy",
+				"Night1", 
+				"Night2", 
+				"Vertigo",
+				"VertigoHdr",
+				"SkyDust", 
+				"Aztec"
+			};
+
+			ImGui::Combo("Skybox", &cfg::misc::iSkybox, szSkyboxes, IM_ARRAYSIZE(szSkyboxes));
+
             ImGui::Checkbox("Preserve killfeed", &preserveKillfeed);
 
             ImGui::Checkbox("Aspect ratio", &aspectRatio);

@@ -2,6 +2,8 @@
 #define EVENT_DEBUG_ID_INIT 42
 #define EVENT_DEBUG_ID_SHUTDOWN 13
 
+
+
 class IGameEvent
 {
 public:
@@ -40,6 +42,16 @@ public:
 		return 42;
 	}
 };
+
+namespace cachedEvents {
+
+	inline constexpr static const char* playerHurt = "player_hurt";
+	inline constexpr static const char* playerDeath = "player_death";
+	inline constexpr static const char* bulletImpact = "bullet_impact";
+	inline constexpr static const char* weaponFire = "weapon_fire";
+	inline constexpr static const char* roundStart = "round_start";
+	inline constexpr static const char* itemPurchase = "item_purchase";
+}
 
 class IGameEventManager
 {
