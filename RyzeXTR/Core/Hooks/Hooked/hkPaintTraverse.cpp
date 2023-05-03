@@ -4,6 +4,7 @@
 #include "../../Features/Rage/ragebot.h"
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Misc/misc.h"
+#include "../../Features/Misc/serversounds.h"
 
 void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vguiPanel, bool forceRepaint, bool allowForce) {
 
@@ -32,7 +33,9 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
+		serversound.Start();
 		visual::VisualRender();
+		serversound.Finish();
 
 		if (g::pLocal) {
 

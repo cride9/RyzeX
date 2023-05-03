@@ -147,7 +147,41 @@ struct SoundInfo_t
 	bool		m_bFromServer;
 };
 
-class CSfxTable;
+class CAudioSource;
+class CSfxTable
+{
+public:
+	CSfxTable();
+
+	// gets sound name, possible decorated with prefixes
+	virtual const char* getname(char* pBuf, size_t bufLen);
+	// gets the filename, the part after the optional prefixes
+	virtual const char* GetFileName(char* pBuf, size_t bufLen);
+	virtual FileNameHandle_t	GetFileNameHandle();
+
+	virtual void				SetNamePoolIndex(int index);
+	virtual bool				IsPrecachedSound();
+	virtual void				OnNameChanged(const char* pName);
+
+	int					m_namePoolIndex;
+	CAudioSource*		pSource;
+
+	bool				m_bUseErrorFilename : 1;
+	bool				m_bIsUISound : 1;
+	bool				m_bIsLateLoad : 1;
+	bool				m_bMixGroupsCached : 1;
+	bool				m_bIsMusic : 1;
+	bool				m_bIsCreatedByQueuedLoader : 1;
+
+	byte				m_mixGroupCount;
+	// UNDONE: Use a fixed bit vec here?
+	byte				m_mixGroupList[8];
+
+private:
+	// Only set in debug mode so you can see the name.
+	const char* m_pDebugName;
+};
+
 struct StartSoundParams_t
 {
 	bool			m_bStaticSound;
@@ -169,6 +203,7 @@ struct StartSoundParams_t
 	int				m_iInitialStreamPosition;
 };
 
+#define HSOUNDSCRIPTHASH unsigned int
 class IRecipientFilter
 {
 public:

@@ -492,6 +492,9 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 	else if (!strcmp(event->GetName(), roundStart)) {
 
 		g_LocalAnimations->ResetData();
+		for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+			visual::vecDormatPosition[i] = Vector(0, 0, 0);
+		}
 
 		static DWORD* _death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
 		static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))util::FindSignature("client.dll", "55 8B EC 83 EC 0C 53 56 8B 71 58");

@@ -133,13 +133,6 @@ Lagcompensation::LagRecord_t* CRageBot::CheckOnShotRecord(Lagcompensation::Anima
 	return nullptr;
 }
 
-bool CRageBot::CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon) {
-
-	//autowall.SimulateFireBullet(pLocal, pWeapon, data);
-	float flDamage = autowall.GetDamage(pLocal, vecEyePosition, pLog->pEntity->GetHitboxPosition(HITBOX_STOMACH, pLog->pMatrix), pWeapon, nullptr, pLog->pEntity);
-	return flDamage > pLog->pEntity->GetHealth() + 10;
-}
-
 Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
 
 	std::array<bool, HITBOX_MAX> vecSelectedHitboxes = ConfigHitboxes(pWeapon);
@@ -185,9 +178,6 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 			if (abs((vecDistanceBetween).NormalizeAngle().Length2D()) > cfg::rage::iAimbotFov)
 				continue;
-
-			//if (CheckBaimRecord(pLocal, pCurrentApplied, vecEyePosition, pWeapon))
-			//	iHitbox = HITBOX_STOMACH;
 
 			{ // I did separate them because of variable redefinition, this way the compiler can handle multiple declerations
 				std::array<Vector, 3> multiPointed = { Vector(0, 0, 0) };

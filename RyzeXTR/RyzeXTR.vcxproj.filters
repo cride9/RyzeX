@@ -87,6 +87,8 @@
     <ClCompile Include="Core\Features\Changers\parser.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModelMDL.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetColorModulation.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkStartSound.cpp" />
+    <ClCompile Include="Core\Features\Misc\serversounds.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -185,5 +187,6 @@
     <ClInclude Include="Core\Features\Rage\Animations\Setupbones.h" />
     <ClInclude Include="Core\Features\Changers\parser.h" />
     <ClInclude Include="Core\Interface\Interfaces\CLocalize.h" />
+    <ClInclude Include="Core\Features\Misc\serversounds.h" />
   </ItemGroup>
 </Project>

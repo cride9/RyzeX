@@ -74,6 +74,7 @@ namespace detour {
 	inline CDetourHook playerMove;
 	inline CDetourHook clampBonesInBBox;
 	inline CDetourHook getColorModulation;
+	inline CDetourHook startSound;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -140,11 +141,12 @@ namespace h {
 	bool __fastcall		hkWriteUserCmdDeltaToBuffer(void*, void*, int, bf_write*, int, int, bool);
 	bool __fastcall		hkFireEvent( void*, void*, IGameEvent* );
 	int __fastcall		hkDoPostScreenEffect(void*, int, CViewSetup*);
-	void __fastcall		hkEmitSound(void*, int, void*, int, int, const char*, unsigned int, const char*, float, int, float, int, int, const Vector*, const Vector*, void*, bool, float, int, int);
+	void __fastcall		hkEmitSound(void*, int, IRecipientFilter&, int, int, const char*, HSOUNDSCRIPTHASH, const char*, float, int, float, int, int, const Vector*, const Vector*, CUtlVector<Vector>*, bool, float, int, int);
 	bool __fastcall		hkShouldDrawViewmodel(void*, void*);
 	void __fastcall		hkPlayerMove(void*, void*);
 	void __fastcall		hkClampBonesInBBox(void*, void*, matrix3x4_t*, int);
 	void __fastcall		hkGetColorModulation(void*, void*, float*, float*, float*);
+	int	__cdecl			hkStartSound(void*);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

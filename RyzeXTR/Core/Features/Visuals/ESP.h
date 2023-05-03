@@ -11,6 +11,8 @@ namespace visual {
 	inline int iHealth[65];
 	inline bool bAmmoEnabled[65];
 	inline Vector safePoint;
+	inline static float vecDormantColor[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
+	inline std::array<Vector, 65> vecDormatPosition{};
 
 	void VisualRender();
 
@@ -24,7 +26,7 @@ namespace visual {
 	void MoneyEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
 
-	void Flags(float&, int&, CBaseEntity*, size_t&, bool*, float[5][4]);
+	void Flags(float&, int&, CBaseEntity*, size_t&, bool*, float[5][4], bool bDormant = false);
 
 	void WorldCrosshair();
 	inline Vector vecWorldCrosshair[5];

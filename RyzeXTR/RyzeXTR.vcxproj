@@ -222,6 +222,7 @@
     <ClCompile Include="Core\Features\Changers\skinchanger.cpp" />
     <ClCompile Include="Core\Features\Misc\enginepred.cpp" />
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
+    <ClCompile Include="Core\Features\Misc\serversounds.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\EnemyAnimations.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
@@ -272,6 +273,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkPlayerMove.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRunCommand.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkStartSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkWriteUserCmdDeltaToBuffer.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\ImGui\ImGuiHooks.cpp" />
     <ClCompile Include="Core\Hooks\hooks.cpp" />
@@ -309,6 +311,7 @@
     <ClInclude Include="Core\Features\Changers\skinchanger.h" />
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
     <ClInclude Include="Core\Features\Misc\misc.h" />
+    <ClInclude Include="Core\Features\Misc\serversounds.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
     <ClInclude Include="Core\Features\Rage\Animations\EnemyAnimations.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />

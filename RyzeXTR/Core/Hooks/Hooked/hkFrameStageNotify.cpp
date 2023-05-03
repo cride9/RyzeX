@@ -19,12 +19,12 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 
-		misc::ServerHitboxes();
+		//misc::ServerHitboxes();
 
-		if (cfg::misc::removals[1])
-			g::pLocal->GetFlashMaxAlpha() = 0.f;
-		
-		misc::BulletImpact(nullptr, curStage, true);
+		//if (cfg::misc::removals[1])
+		//	g::pLocal->GetFlashMaxAlpha() = 0.f;
+		//
+		//misc::BulletImpact(nullptr, curStage, true);
 		break;
 
 	case FRAME_NET_UPDATE_END:

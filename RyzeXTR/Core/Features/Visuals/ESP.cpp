@@ -59,14 +59,17 @@ void visual::VisualRender() {
 	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
 
 		if (!pEnt || !g::pLocal) {
 			iHealth[i] = -1;
+			vecDormatPosition[i] = Vector(0, 0, 0);
 			continue;
 		}
 
-		if (!pEnt->IsAlive() || pEnt->IsDormant()) {
+		if (!pEnt->IsAlive()) {
 			iHealth[i] = -1;
+			vecDormatPosition[i] = Vector(0, 0, 0);
 			continue;
 		}
 
@@ -77,15 +80,27 @@ void visual::VisualRender() {
 		WorldCrosshair();
 		//HitboxVisualization();
 
+		Vector vecAbsOrigin = Vector(0, 0, 0);
+		if (pEnt->IsDormant())
+			vecAbsOrigin = vecDormatPosition[i].IsZero() ? Vector(0, 0, 0) : vecDormatPosition[i];
+
+		if (vecAbsOrigin.IsZero() && pEnt->IsDormant())
+			return;
+		
+		if (!pEnt->IsDormant()) {
+			vecAbsOrigin = pEnt->GetAbsOrigin();
+			vecDormatPosition[i] = vecAbsOrigin;
+		}
+
 		Vector bot;
-		if (i::DebugOverlay->ScreenPosition(pEnt->GetAbsOrigin() - Vector{ 0.f, 0.f, 9.f }, bot))
+		if (i::DebugOverlay->ScreenPosition(vecAbsOrigin - Vector{ 0.f, 0.f, 9.f }, bot))
 			continue;
 
 		Vector vecMin, vecMax;
 		pEnt->GetRenderBounds(vecMin, vecMax);
 
 		Vector top;
-		if (i::DebugOverlay->ScreenPosition(pEnt->GetAbsOrigin() + Vector(0, 0, vecMax.z + 5), top))
+		if (i::DebugOverlay->ScreenPosition(vecAbsOrigin + Vector(0, 0, pEnt->vecMaxs().z + 5), top))
 			continue;
 
 		float h = bot.y - top.y;
@@ -100,13 +115,13 @@ void visual::VisualRender() {
 			if (!bEnable[ENEMY])
 				continue;
 
-			if (bName[ENEMY]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[ENEMY]));
-			if (bBox[ENEMY]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[ENEMY]));
-			if (bHealth[ENEMY]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[ENEMY]), Color(flHealthColorEnd[ENEMY]), i);
-			if (bArmor[ENEMY]) KevlarEsp(left, top.y, right, bot.y, pEnt, Color(flArmorColor[ENEMY]));
-			if (bAmmo[ENEMY]) AmmoEsp(left, top.y, right, bot.y, pEnt, Color(flAmmoColor[ENEMY]));
-			if (bWeapon[ENEMY]) WeaponEsp(left, top.y, right, bot.y, pEnt, Color(flWeaponColor[ENEMY]));
-			Flags(top.y, right, pEnt, i, bFlags[ENEMY], flFlagsColor[ENEMY]);
+			if (bName[ENEMY]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, pEnt->IsDormant() ? vecDormantColor : Color(flNameColor[ENEMY]));
+			if (bBox[ENEMY]) BoxEsp(left, top.y, right, bot.y, pEnt->IsDormant() ? vecDormantColor : Color(flBoxColor[ENEMY]));
+			if (bHealth[ENEMY]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), pEnt->IsDormant() ? vecDormantColor : Color(flHealthColorStart[ENEMY]), pEnt->IsDormant() ? vecDormantColor : Color(flHealthColorEnd[ENEMY]), i);
+			if (bArmor[ENEMY]) KevlarEsp(left, top.y, right, bot.y, pEnt, pEnt->IsDormant() ? vecDormantColor : Color(flArmorColor[ENEMY]));
+			if (bAmmo[ENEMY]) AmmoEsp(left, top.y, right, bot.y, pEnt, pEnt->IsDormant() ? vecDormantColor : Color(flAmmoColor[ENEMY]));
+			if (bWeapon[ENEMY]) WeaponEsp(left, top.y, right, bot.y, pEnt, pEnt->IsDormant() ? vecDormantColor : Color(flWeaponColor[ENEMY]));
+			Flags(top.y, right, pEnt, i, bFlags[ENEMY], flFlagsColor[ENEMY], pEnt->IsDormant());
 		}
 		else {
 
@@ -239,7 +254,7 @@ void visual::WeaponEsp(int& left, float& top, int& right, float& bot, CBaseEntit
 	i::Surface->DrawT(left, bot, Color(color), g::fonts::FlagESP, false, text.c_str());
 }
 
-void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bool* bFlags, float flFlagsColor[5][4]) {
+void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bool* bFlags, float flFlagsColor[5][4], bool bDormant) {
 
 	int spacing = -2;
 	if (bFlags[NAME]) {
@@ -247,7 +262,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		static PlayerInfo_t info = { };
 		if (i::EngineClient->GetPlayerInfo(pEnt->EntIndex(), &info)) {
 
-			i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[NAME], g::fonts::FlagESP, false, info.szName);
+			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[NAME], g::fonts::FlagESP, false, info.szName);
 			spacing += 10;
 		}
 	}
@@ -257,20 +272,20 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		int iHealth = pEnt->GetHealth();
 		const float percentage = iHealth / 100.f;
 
-		i::Surface->DrawT(right + 2, top + spacing, Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::FlagESP, false, std::format(healthPrefix, iHealth).c_str());
+		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : Color((1.f - percentage) * 1.f, 1.f * percentage, 0.f), g::fonts::FlagESP, false, std::format(healthPrefix, iHealth).c_str());
 		spacing += 10;
 	}
 
 	if (bFlags[ARMOR]) {
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[ARMOR], g::fonts::FlagESP, false, std::format(kevlarPrefix, pEnt->GetArmor()).c_str());
+		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[ARMOR], g::fonts::FlagESP, false, std::format(kevlarPrefix, pEnt->GetArmor()).c_str());
 		spacing += 10;
 	}
 
 	CBaseCombatWeapon* pWeapon = pEnt->GetWeapon();
 	if (pWeapon && bFlags[AMMO]) {
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[AMMO], g::fonts::FlagESP, false, std::format(ammoPrefix, pWeapon->GetAmmo(), pWeapon->GetAmmoReserve()).c_str());
+		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[AMMO], g::fonts::FlagESP, false, std::format(ammoPrefix, pWeapon->GetAmmo(), pWeapon->GetAmmoReserve()).c_str());
 		spacing += 10;
 	}
 	if (pWeapon && bFlags[WEAPON]) {
@@ -278,13 +293,13 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		std::string text = pWeapon->GetCSWpnData()->szWeaponName;
 		text.erase(0, 7);
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
+		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
 		spacing += 10;
 	}
 
 	if (bFlags[MONEY]) {
 
-		i::Surface->DrawT(right + 2, top + spacing, flFlagsColor[MONEY], g::fonts::FlagESP, false, std::format(moneyPrefix, pEnt->GetMoney()).c_str());
+		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[MONEY], g::fonts::FlagESP, false, std::format(moneyPrefix, pEnt->GetMoney()).c_str());
 
 		spacing += 10;
 	}
