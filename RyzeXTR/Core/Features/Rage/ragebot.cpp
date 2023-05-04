@@ -8,6 +8,8 @@
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
 #include "Animations/EnemyAnimations.h"
 
+#include "../../SDK/InputSystem.h"
+
 bool LowestFov( std::tuple<CBaseEntity*, Lagcompensation::LagRecord_t*> pEnt1, std::tuple<CBaseEntity*, Lagcompensation::LagRecord_t*> pEnt2 ) {
 
 	const Vector vecEyePosition = g::pLocal->GetEyePosition( );
@@ -210,7 +212,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 			}
 			
-			if (!cfg::rage::m_bEnableBacktrack || (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && cfg::antiaim::defensive))
+			if (!cfg::rage::m_bEnableBacktrack || (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && cfg::antiaim::defensive))
 				continue;
 
 			const unsigned int iLastValid = pLog->iLastValid;
@@ -270,7 +272,7 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 	if ( !pWeaponInfo )
 		return false;
 
-	if ( exploits::bIsShiftingTicks || ( cfg::rage::doubletap && GetKeyState( cfg::rage::doubletapkey ) && i::GlobalVars->flCurrentTime - pWeapon->GetLastShotTime( ) <= TICKS_TO_TIME( 15 ) ) )
+	if ( exploits::bIsShiftingTicks || ( cfg::rage::doubletap && IPT::HandleInput( cfg::rage::doubletapkey ) && i::GlobalVars->flCurrentTime - pWeapon->GetLastShotTime( ) <= TICKS_TO_TIME( 15 ) ) )
 		return true;
 
 	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar( "weapon_accuracy_nospread" );
@@ -958,7 +960,7 @@ bool CRageBot::ShouldSendPacket(bool& bSendPacket) {
 	if (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind))
 		return bSendPacket;
 
-	if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && !g::bWaiting)
+	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && !g::bWaiting)
 		return false;
 
 	if (g::bWaiting) {

@@ -10,6 +10,8 @@
 #include "../Visuals/ESP.h"
 #pragma comment(lib, "winmm.lib")
 
+#include "../../SDK/InputSystem.h"
+
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
 	BunnyHop(pCmd);
@@ -856,12 +858,12 @@ void misc::FakeLag(bool& bSendPacket) {
 		return;
 	}
 
-	if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+	if ( IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
 		bSendPacket = i::ClientState->nChokedCommands >= 14;
 		return;
 	}
 
-	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey))
+	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey))
 		return;
 
 	static int iCurrentChoke = 0;
@@ -876,7 +878,7 @@ void misc::FakeLag(bool& bSendPacket) {
 
 	if (cfg::antiaim::fakelag) {
 
-		if (!g::bWaiting && cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && !exploits::bIsShiftingTicks) {
+		if (!g::bWaiting && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && !exploits::bIsShiftingTicks) {
 			iCurrentChoke = min(2, iCurrentChoke);
 		}
 		else {
@@ -912,7 +914,7 @@ void misc::FakeLag(bool& bSendPacket) {
 		iCurrentChoke = cfg::antiaim::fakelag;
 
 
-	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
+	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
 }
 
 void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {

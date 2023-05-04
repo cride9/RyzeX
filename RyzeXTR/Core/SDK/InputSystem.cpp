@@ -6,9 +6,12 @@
 // used: menu open state
 #include "../SDK/Menu/gui.h"
 
+#include <chrono>
+using namespace std::chrono_literals;
+
 bool IPT::Setup( )
 {
-	/*D3DDEVICE_CREATION_PARAMETERS creationParameters = { };
+	D3DDEVICE_CREATION_PARAMETERS creationParameters = { };
 	while ( FAILED( i::DirectDevice->GetCreationParameters( &creationParameters ) ) )
 		std::this_thread::sleep_for( 200ms );
 
@@ -20,7 +23,7 @@ bool IPT::Setup( )
 	pOldWndProc = reinterpret_cast< WNDPROC >( SetWindowLongPtrW( hWindow, GWLP_WNDPROC, reinterpret_cast< LONG_PTR >( h::hkWndProc ) ) );
 
 	if ( pOldWndProc == nullptr )
-		return false;*/
+		return false;
 
 	return true;
 }
@@ -40,8 +43,8 @@ void IPT::Restore( )
 bool IPT::Process( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
 	// prevent process when e.g. binding something in-menu
-	/*if ( W::bMainOpened && wParam != C::Get<int>( Vars.iMenuKey ) && wParam != C::Get<int>( Vars.iPanicKey ) )
-		return false;*/
+	if ( menu::open && wParam != VK_INSERT && wParam != VK_DELETE )
+		return false;
 
 	// current active key
 	int nKey = 0;

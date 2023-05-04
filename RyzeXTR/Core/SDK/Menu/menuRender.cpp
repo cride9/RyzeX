@@ -4,6 +4,8 @@
 #include "../../globals.h"
 #pragma comment(lib, "winmm.lib")
 
+#include "../../SDK/InputSystem.h"
+
 ETabs selectedTab = RAGE_TAB;
 EEntity selectedEsp = ENEMY;
 void menu::HandleMenuElements() noexcept {
@@ -1060,7 +1062,7 @@ void menu::KeyBindList() noexcept {
 
         ImGui::BeginChild("##binds", ImGui::GetContentRegionAvail(), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
         {
-            if (GetKeyState(cfg::misc::thirdpersonbind)) {
+            if ( IPT::HandleInput(cfg::misc::thirdpersonbind)) {
                 ImGui::Text("Thirdperson [ON]");
                 height += 20;
             }
@@ -1068,7 +1070,7 @@ void menu::KeyBindList() noexcept {
                 ImGui::Text("Thirdperson [OFF]");
                 height += 20;
             }
-            if (GetKeyState(cfg::antiaim::iInverterBind)) {
+            if ( IPT::HandleInput(cfg::antiaim::iInverterBind)) {
 
                 ImGui::Text("Invert [ON]");
                 height += 20;
@@ -1077,27 +1079,27 @@ void menu::KeyBindList() noexcept {
                 ImGui::Text("Invert [OFF]");
                 height += 20;
             }
-            if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+            if ( IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
                 ImGui::Text("Fakeduck [ON]");
                 height += 20;
             }
-            if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) {
+            if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) {
                 ImGui::Text("Doubletap [ON]");
                 height += 20;
             }
-            if (GetAsyncKeyState(cfg::rage::overrideBind)) {
+            if ( IPT::HandleInput(cfg::rage::overrideBind)) {
                 ImGui::Text("Override [ON]");
                 height += 20;
             }
-            if (GetAsyncKeyState(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick) {
+            if ( IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick) {
                 ImGui::Text("Autopeek [ON]");
                 height += 20;
             }
-            if (GetAsyncKeyState(cfg::antiaim::fakewalkKey) && cfg::antiaim::fakewalkenable) {
+            if ( IPT::HandleInput(cfg::antiaim::fakewalkKey) && cfg::antiaim::fakewalkenable) {
                 ImGui::Text("Slow motion [ON]");
                 height += 20;
             }
-            if (GetKeyState(cfg::rage::forceBaimKey) && cfg::rage::forceBaim) {
+            if ( IPT::HandleInput(cfg::rage::forceBaimKey) && cfg::rage::forceBaim) {
                 ImGui::Text("Force baim [ON]");
                 height += 20;
             }

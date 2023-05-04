@@ -13,6 +13,8 @@ namespace cfg {
 	inline int debugSlider = 1;
 	inline bool debugSwitch2 = false;
 
+	inline int m_iKeyStates[ 256 ] = { };
+
 	namespace rage {
 
 		inline bool enable;

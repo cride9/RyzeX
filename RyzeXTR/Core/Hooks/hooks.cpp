@@ -148,28 +148,3 @@ void h::DestroyHooks() {
 	MH_RemoveHook(MH_ALL_HOOKS);
 	MH_Uninit();
 }
-
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-LRESULT __stdcall h::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	// for now as a lambda, to be transfered somewhere
-	// Thanks uc/WasserEsser for pointing out my mistake!
-	// Working when you HOLD th button, not when you press it.
-	const auto getButtonHeld = [uMsg, wParam](bool& bButton, int vKey)
-	{
-		if (wParam != vKey) return;
-
-		if (uMsg == WM_KEYDOWN)
-			bButton = true;
-		else if (uMsg == WM_KEYUP)
-			bButton = false;
-	};
-
-	// our wndproc capture fn
-	if (menu::open && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
-		return 1L;
-	}
-
-	// Call original wndproc to make game use input again
-	return CallWindowProcW(h::pOriginalWNDProc, hWnd, uMsg, wParam, lParam);
-}

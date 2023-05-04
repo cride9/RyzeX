@@ -13,6 +13,8 @@
 #include "SDK/Menu/config.h"
 #include <mmsystem.h>
 #include "memeSounds.h"
+#include "SDK/InputSystem.h"
+
 DWORD WINAPI CheatThread(PVOID);
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
@@ -80,6 +82,8 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	h::SetupHooks();
 	g::entityListener.Setup();
 
+	IPT::Setup();
+
 #if NDEBUG
 	//util::LogConsole("[RELEASE] Built date: " __DATE__ " at " __TIME__ "\n");
 #endif
@@ -100,6 +104,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	h::DestroyHooks();
 	menu::Destroy();
 	i::EngineClient->ClientCmdUnrestricted("cl_fullupdate");
+	IPT::Restore( );
 
 #endif
 

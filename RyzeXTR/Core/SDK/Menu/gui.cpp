@@ -6,25 +6,7 @@
 #include "../../memeSounds.h"
 #include "../../SDK/math.h"
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-LRESULT CALLBACK WindowProcess(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-
-	if (GetAsyncKeyState(VK_INSERT) & 1) {
-
-		menu::open = !menu::open;
-		//if (menu::open)
-		//	PlaySound(reinterpret_cast<LPCSTR>(M::RandomInt(0, 1) == 0 ? memeSound::BUWAWA : memeSound::MISERY), NULL, SND_MEMORY | SND_ASYNC);
-	}
-		
-
-	if (menu::open && ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) {
-
-		return 1L;
-	}
-
-	return CallWindowProc(menu::originalWindowProcess, hWnd, msg, wParam, lParam);
-}
+#include "../InputSystem.h"
 
 void Style() {
 
@@ -223,8 +205,6 @@ void menu::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept {
 
 	window = parameters.hFocusWindow;
 
-	originalWindowProcess = reinterpret_cast<WNDPROC>(SetWindowLongPtr(window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WindowProcess)));
-
 	ImGui::CreateContext();
 
 	Style();
@@ -241,7 +221,7 @@ void menu::Destroy() noexcept {
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	SetWindowLongPtr(window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(originalWindowProcess));
+	SetWindowLongPtr(window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>( IPT::pOldWndProc ));
 
 	DestroyDirectX();
 }

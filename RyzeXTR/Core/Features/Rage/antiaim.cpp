@@ -6,6 +6,8 @@
 #include "ragebot.h"
 #include "autowall.h"
 
+#include "../../SDK/InputSystem.h"
+
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
 
 static bool evenInvert = false;
@@ -27,7 +29,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
 
 		desyncValue = 0.f;
-		bSendPacket = (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
+		bSendPacket = (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
 
 		return;
 	}

@@ -887,8 +887,6 @@ public:
 	[[nodiscard]] Vector GetEyePosition(bool bShouldCorrect = true) {
 		Vector vecPosition = { };
 
-		// vecPosition = GetVecOrigin() + GetViewOffset();
-
 		// get eye position this shit crashes for no reason kys
 		util::CallVFunc<void>(this, 169, std::ref(vecPosition));
 

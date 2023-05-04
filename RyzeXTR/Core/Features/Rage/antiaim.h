@@ -19,7 +19,7 @@ enum EYAW : int {
 
 enum EDESYNC : int {
 
-	NONE,
+	DISABLED,
 	STATIC,
 	EXTENDED,
 	JITTER,

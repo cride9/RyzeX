@@ -41,6 +41,9 @@ Index of this file:
 #include "imgui_internal.h"
 #include "../../Core/SDK/Menu/gui.h"
 
+
+#include "../../Core/SDK/InputSystem.h"
+
 // System includes
 #if defined(_MSC_VER) && _MSC_VER <= 1500 // MSVC 2008 or earlier
 #include <stddef.h>     // intptr_t
@@ -3559,47 +3562,26 @@ bool ImGui::Keybind(const char* str_id, int* current_key, int* key_style) {
         else
             *current_key = key;
     }
-    //else {
-    //	if (key_style) {
-    //		bool popup_open = IsPopupOpen(id);
 
-    //		if (style_requested && !popup_open)
-    //			OpenPopupEx(id);
+    const bool bLeftClicked = hovered && io->MouseClicked[ 1 ];
+    if ( bLeftClicked && !( g.ActiveId == id ) && *current_key != 0 )
+    {
+        OpenPopup( str_id );
+    }
 
-    //		if (popup_open) {
-    //			SetNextWindowSize(ImVec2(100, CalcMaxPopupHeightFromItemCount(4)));
+    auto       buttonLabel1 = std::to_string( *str_id ) + "btnHold";
+    auto       buttonLabel2 = std::to_string( *str_id ) + "btnToggle";
+    auto       buttonLabel3 = std::to_string( *str_id ) + "btnAlwayson";
+    static int mode = 0;
 
-    //			char name[16];
-    //			ImFormatString(name, IM_ARRAYSIZE(name), "##Combo_%02d", g.BeginPopupStack.Size); // Recycle windows based on depth
+    if ( ImGui::BeginPopup( str_id ) )
+    {
+        if ( ImGui::Button( "Hold", ImVec2( 70, 15 ), cfg::m_iKeyStates[ *current_key ] == EKeyInputType::HOLD ) ) cfg::m_iKeyStates[ *current_key ] = EKeyInputType::HOLD;
+        if ( ImGui::Button( "Toggle", ImVec2( 70, 15 ), cfg::m_iKeyStates[ *current_key ] == EKeyInputType::TOGGLE ) ) cfg::m_iKeyStates[ *current_key ] = EKeyInputType::TOGGLE;
+        if ( ImGui::Button( "Always-on", ImVec2( 70, 15 ), cfg::m_iKeyStates[ *current_key ] == EKeyInputType::ALWAYS_ON ) ) cfg::m_iKeyStates[ *current_key ] = EKeyInputType::ALWAYS_ON;
 
-    //			// Peak into expected window size so we can position it
-    //			if (ImGuiWindow* popup_window = FindWindowByName(name))
-    //				if (popup_window->WasActive)
-    //				{
-    //					ImVec2 size_expected = CalcWindowExpectedSize(popup_window);
-    //					ImRect r_outer = GetWindowAllowedExtentRect(popup_window);
-    //					ImVec2 pos = FindBestWindowPosForPopupEx(frame_bb.GetBL(), size_expected, &popup_window->AutoPosLastDirection, r_outer, frame_bb, ImGuiPopupPositionPolicy_ComboBox);
-    //					SetNextWindowPos(pos);
-    //				}
-
-    //			// Horizontally align ourselves with the framed text
-    //			ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_Popup | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
-    //			bool ret = Begin(name, NULL, window_flags);
-
-    //			if (Selectable("always on", *key_style == 0))
-    //				*key_style = 0;
-
-    //			if (Selectable("on hotkey", *key_style == 1))
-    //				*key_style = 1;
-
-    //			if (Selectable("toggle", *key_style == 2))
-    //				*key_style = 2;
-
-    //			if (Selectable("off hotkey", *key_style == 3))
-    //				*key_style = 3;
-    //		}
-    //	}
-    //}
+        ImGui::EndPopup( );
+    }
 
     char buf_display[64] = "[-]";
     std::string active = "[";

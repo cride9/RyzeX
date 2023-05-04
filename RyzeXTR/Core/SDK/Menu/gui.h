@@ -66,7 +66,6 @@ namespace menu {
 
 	inline HWND window = nullptr;
 	inline WNDCLASSEX windowClass = {};
-	inline WNDPROC originalWindowProcess = nullptr;
 
 	inline LPDIRECT3DDEVICE9 device = nullptr;
 	inline LPDIRECT3D9 d3d9 = nullptr;

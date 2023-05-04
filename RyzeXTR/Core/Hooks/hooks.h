@@ -178,7 +178,7 @@ namespace h {
 	bool __fastcall		hkIsFollowingEntity(void*, void*);
 	void __fastcall		hkEstimateAbsVelocity(CBaseEntity*, void*, Vector&);
 	//int					hkInterpolationList();
-	static LRESULT __stdcall	WndProc(HWND, UINT, WPARAM, LPARAM);
+	long CALLBACK        hkWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 	inline LPVOID oldpacketStart;
 	inline LPVOID oldpacketEnd;

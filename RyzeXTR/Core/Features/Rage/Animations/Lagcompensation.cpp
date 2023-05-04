@@ -4,6 +4,8 @@
 #include "../../Networking/networking.h"
 #include "Setupbones.h"
 
+#include "../../../SDK/InputSystem.h"
+
 void Lagcompensation::SetupPlayerBones(CBaseEntity* pPlayer, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* Matrix, int nFlags) {
 
 	g::bSettingUpBones[pPlayer->EntIndex()] = std::make_tuple(true, nFlags);
@@ -525,7 +527,7 @@ void Lagcompensation::RemoveInterpolation() {
 
 		if (pEntity == g::pLocal) {
 			continue;
-			if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey) && cfg::antiaim::defensive)
+			if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && cfg::antiaim::defensive)
 				SetInterpolationFlags(pEntity);
 		}
 		else
