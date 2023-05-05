@@ -70,9 +70,6 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	OpenConsole();
 #endif
 
-	Config2->CreateMainDirectory();
-	Config2->RefreshSounds();
-	Config2->RefreshConfigs();
 	i::SetupInterfaces();
 	SetupFonts();
 	n::SetupNetvars();
@@ -105,6 +102,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	menu::Destroy();
 	i::EngineClient->ClientCmdUnrestricted("cl_fullupdate");
 	IPT::Restore( );
+	delete Config2;
 
 #endif
 

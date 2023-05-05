@@ -59,7 +59,6 @@ void visual::VisualRender() {
 	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
 
 		if (!pEnt || !g::pLocal) {
 			iHealth[i] = -1;
@@ -185,7 +184,10 @@ void visual::HealthEsp(int& left, float& top, int& right, float& bot, float& wid
 	i::Surface->DrawSetColor(endColor);
 	i::Surface->DrawFilledRectFade(left - 7, bot - (fDistance * flFactor) - 5, left - 5, bot, 0, endColor[3], false);
 
-	i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 8, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
+	if (startColor != Color( 0.5f, 0.5f, 0.5f, 0.5f ))
+		i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 8, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
+	else
+		i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 8, startColor, g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
 }
 
 void visual::NameEsp(int& left, float& top, int& right, float& bot, float& width, float& height, CBaseEntity* pEnt, Color color) {
@@ -222,17 +224,14 @@ void visual::AmmoEsp(int& left, float& top, int& right, float& bot, CBaseEntity*
 	i::Surface->DrawOutlinedRect(left, bot + 4, right, bot + 8);
 
 	i::Surface->DrawSetColor(color[0], color[1], color[2], color[3]);
-	i::Surface->DrawOutlinedRect(left, bot + 5, left + (flDifference * flFactor), bot + 7);
+	i::Surface->DrawOutlinedRect(left + 1, bot + 5, left + (flDifference * flFactor) - 1, bot + 7);
 
-	i::Surface->DrawT(left + (flDifference * flFactor), bot + 6, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(pWeapon->GetAmmo()).c_str());
+	i::Surface->DrawT(left + (flDifference * flFactor), bot + 6, pEnt->IsDormant() ? vecDormantColor : Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(pWeapon->GetAmmo()).c_str());
 }
 
 void visual::BreakLCESP(int& left, float& top, int& right, float& bot, CBaseEntity* pEnt )
 {
-	//if ( !lagcomp.IsBreakingLagcompensation( pEnt ) )
-	//	return;
-
-	i::Surface->DrawT( left, bot, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, false, "Breaking Lagcomp" );
+	
 }
 
 void visual::WeaponEsp(int& left, float& top, int& right, float& bot, CBaseEntity* pEnt, Color color) {
@@ -304,47 +303,47 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		spacing += 10;
 	}
 
-#if NO
+	/*if (true) {
+
+		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex());
+
+		if (pLog->pEntity && pLog->pRecord.size() >= 2) {
+			if (lagcomp.IsBreakingLagcompensation(&pLog->pRecord.front())) {
+			
+				i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[MONEY], g::fonts::FlagESP, false, "LC");
+				spacing += 10;
+			}
+		}
+	}*/
+
+#if _DEBUG
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
-		using enum Lagcompensation::EResolverMode;
-
-		std::string text = "";
-		switch (pLog->iAntiAimType) {
-		case LEGIT:
-			text = "LEGIT"; break;
-		case DESYNC:
-			text = "DESYNC"; break;
-		case OPPOSITE:
-			text = "OPPOSITE"; break;
-		case SWAY:
-			text = "SWAY"; break;
-		case FAKE:
-			text = "FAKE"; break;
-		case OVERRIDE:
-			text = "OVERRIDE"; break;
-		case ONSHOT:
-			text = "ONSHOT"; break;
-		case JITTER:
-			text = "JITTER"; break;
-		case ANIMATION:
-			text = "ANIMATION"; break;
-		}
-
-		i::Surface->DrawT(right + 2, top + spacing, Color(184, 203, 131, 255), g::fonts::FlagESP, false, text.c_str());
-		spacing += 10;
-
+	
 		static auto something = [](int right, int top, int& spacing, const char* print) {
 
 			i::Surface->DrawT(right + 2, top + spacing, Color(184, 203, 131, 255), g::fonts::FlagESP, false, print);
 			spacing += 10;
 		};
 
-		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[0].flPlaybackRate * 10000000).c_str());
-		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[1].flPlaybackRate * 10000000).c_str());
-		something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[2].flPlaybackRate * 10000000).c_str());
-		something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate * 10000000).c_str());
-		something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_ADJUST].flPlaybackRate * 10000000).c_str());
+		const unsigned int iLastValid = pLog->iLastValid;
+		if (iLastValid >= pLog->pRecord.size())
+			return;
+
+		static int difference = 0;
+		static int simtime = pLog->pRecord.at(iLastValid).flSimulationTime;
+		if (simtime != pLog->pRecord.at(iLastValid).flSimulationTime) {
+			difference = g::pCmd->iTickCount - lagcomp.FixTickCount(pLog->pRecord.at(iLastValid).flSimulationTime);
+			simtime = lagcomp.FixTickCount(pLog->pRecord.at(iLastValid).flSimulationTime);
+		}
+
+		something(right, top, spacing, std::to_string(pLog->iLastValid).c_str());
+		something(right, top, spacing, std::format("{}", difference).c_str());
+		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[0].flPlaybackRate * 10000000).c_str());
+		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[1].flPlaybackRate * 10000000).c_str());
+		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[2].flPlaybackRate * 10000000).c_str());
+		//something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate * 10000000).c_str());
+		//something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_ADJUST].flPlaybackRate * 10000000).c_str());
 
 		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[0].flPlaybackRate)).c_str());
 		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[1].flPlaybackRate)).c_str());

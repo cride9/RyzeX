@@ -34,12 +34,8 @@ void __fastcall h::hkEmitSound(
 			
 		if (!pSoundEntity || !g::pLocal)
 			return;
-
-		if (pSoundEntity->GetTeam() != g::pLocal->GetTeam()) {
-
-			if (pOrigin != nullptr) {
-				visual::vecDormatPosition[iEntIndex] = (*pOrigin) - Vector(0.f, 0.f, ((*pOrigin).z - pSoundEntity->vecMins().z));
-			}
+		if (pOrigin != nullptr) {
+			visual::vecDormatPosition[iEntIndex] = (*pOrigin) - Vector(0.f, 0.f, ((*pOrigin).z - pSoundEntity->vecMins().z));
 		}
 	}
 }

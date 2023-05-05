@@ -1248,6 +1248,7 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 
 	pEnt->GetBoneAccessor()->matBones = pLog->pRecord.front().pMatrix;
 	std::memcpy(pMatrix, pLog->pRecord.front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
+	pEnt->SetupBones_AttachmentHelper();
 
 	return true;
 }

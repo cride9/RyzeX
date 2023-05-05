@@ -2,6 +2,9 @@
 #include "config.h"
 #include "../Entity.h"
 #include "../../globals.h"
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 #pragma comment(lib, "winmm.lib")
 
 #include "../../SDK/InputSystem.h"
@@ -844,7 +847,7 @@ void menu::Skintab() noexcept {
             ImGui::SetTooltip("test tooltip");
 
 		ImGui::Checkbox("Gather AI information ##itsnot", &cfg::debugSwitch2);
-		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 24);
+		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 16);
     }
     ImGui::EndChild();
 #endif
@@ -1103,6 +1106,10 @@ void menu::KeyBindList() noexcept {
                 ImGui::Text("Force baim [ON]");
                 height += 20;
             }
+			if (IPT::HandleInput(cfg::misc::blockbotKey) && cfg::misc::blockbot) {
+				ImGui::Text("Blockbot [ON]");
+				height += 20;
+			}
         }
         ImGui::EndChild();
     }
@@ -1126,7 +1133,7 @@ void menu::SaveWarning(bool& saved, bool type) noexcept {
             static ImVec2 buttonSize = ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2);
             if (ImGui::Button("Yes", buttonSize)) {
                 saved = false;
-                type ? Config2->Save(Config2->vecConfigs[cfg::configID]) : Config2->Load(Config2->vecConfigs[cfg::configID]);
+				type ? Config2->Save(Config2->vecConfigs[cfg::configID]) : Config2->Load(Config2->vecConfigs[cfg::configID]);
             }
             ImGui::SameLine();
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2);

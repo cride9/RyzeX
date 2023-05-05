@@ -14,9 +14,14 @@
 #include <shlwapi.h>
 #include <iomanip>
 #include <ctime>
+#include <thread>
 #include "gui.h"
 
 void CConfig::Setup() {
+
+	CreateMainDirectory();
+	RefreshSounds();
+	RefreshConfigs();
 
 	// ragebot
 	{
@@ -818,6 +823,7 @@ void CConfig::Setup() {
 		SetupValue( m_iHitSound, 0, "misc", "hitsoundtype" );
 		SetupValue( m_flHitSoundVolume, 100.f, "misc", "hitsoundvolume" );
 		SetupValue( m_szWavPath, "", "misc", "hitsoundpath" );
+		SetupValue(cfg::m_iKeyStates, 256, 0, "misc", "keystates");
 	}
 }
 
@@ -827,10 +833,42 @@ void CConfig::SetupValue(int& value, int def, std::string category, std::string 
 	ints.push_back(new ConfigValue< int >(category, name, &value));
 }
 
+void CConfig::SetupValue(int* value, int length, int def, std::string category, std::string name)
+{
+	for (size_t i = 0; i < length; i++)
+	{
+		// do not save every keybind
+		//if (length == 256) 
+		//	if (value[i] == 0)
+		//		continue;
+		
+		value[i] = def;
+		ints.push_back(new ConfigValue< int >(category, std::format("{}-{}", name, i), &value[i]));
+	}
+}
+
 void CConfig::SetupValue(float& value, float def, std::string category, std::string name)
 {
 	value = def;
 	floats.push_back(new ConfigValue< float >(category, name, &value));
+}
+
+void CConfig::SetupValue(float* value, int length, float def, std::string category, std::string name)
+{
+	for (size_t i = 0; i < length; i++)
+	{
+		value[i] = def;
+		floats.push_back(new ConfigValue< float >(category, std::format("{}-{}", name, i), &value[i]));
+	}
+}
+
+void CConfig::SetupValue(float* value, int length, float* def, std::string category, std::string name)
+{
+	for (size_t i = 0; i < length; i++)
+	{
+		value[i] = def[i];
+		floats.push_back(new ConfigValue< float >(category, std::format("{}-{}", name, i), &value[i]));
+	}
 }
 
 void CConfig::SetupValue(bool& value, bool def, std::string category, std::string name)
@@ -874,6 +912,8 @@ void CConfig::CreateMainDirectory( )
 
 void CConfig::Save(std::string ConfigName)
 {
+	bSaving = true;
+
 	static TCHAR path[MAX_PATH];
 	std::string folder, file;
 
@@ -896,10 +936,14 @@ void CConfig::Save(std::string ConfigName)
 
 	for ( auto value : strings )
 		WritePrivateProfileString( value->category.c_str( ), value->name.c_str( ), reinterpret_cast< std::string* >( value->value )->c_str( ), file.c_str( ) );
+
+	bSaving = false;
 }
 
 void CConfig::Load(std::string ConfigName)
 {
+	bSaving = true;
+
 	static TCHAR path[MAX_PATH];
 	std::string folder, file;
 
@@ -937,6 +981,8 @@ void CConfig::Load(std::string ConfigName)
 		GetPrivateProfileString( value->category.c_str( ), value->name.c_str( ), "", value_string, 256, file.c_str( ) );
 		*value->value = value_string;
 	}
+
+	bSaving = false;
 }
 
 void CConfig::RefreshSounds( )
@@ -1011,6 +1057,4 @@ void CConfig::DeleteConfig(std::string ConfigName) {
 		}
 	}
 }
-
-
 CConfig* Config2 = new CConfig();

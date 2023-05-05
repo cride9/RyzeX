@@ -225,6 +225,7 @@
     <ClCompile Include="Core\Features\Misc\serversounds.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\EnemyAnimations.cpp" />
+    <ClCompile Include="Core\Features\Rage\Animations\Lagcomp.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\LocalAnimation.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Setupbones.cpp" />
@@ -314,6 +315,7 @@
     <ClInclude Include="Core\Features\Misc\serversounds.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
     <ClInclude Include="Core\Features\Rage\Animations\EnemyAnimations.h" />
+    <ClInclude Include="Core\Features\Rage\Animations\Lagcomp.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\LocalAnimation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Setupbones.h" />

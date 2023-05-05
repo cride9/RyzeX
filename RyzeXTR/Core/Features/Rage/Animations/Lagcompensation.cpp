@@ -262,8 +262,9 @@ void Lagcompensation::FilterRecords( )
 				continue;
 			}
 
-			if ( pCurrentRecord.bValid = lagcomp.IsValidRecord( pCurrentRecord.flSimulationTime ) && j < 12)
-				pPlayerLogs[ i ].iLastValid = j;
+			if (pCurrentRecord.bValid = lagcomp.IsValidRecord(pCurrentRecord.flSimulationTime, TICKS_TO_TIME(6))) {
+				pPlayerLogs[i].iLastValid = j;
+			}
 
 			if (pCurrentRecord.bValid && pPlayerLogs[i].iFirstValid >= j)
 				pPlayerLogs[i].iFirstValid = j;
@@ -358,6 +359,7 @@ bool Lagcompensation::IsBreakingLagcompensation( Lagcompensation::LagRecord_t* p
 		//L::PopConsoleColor( );
 		return false;
 	}
+	return false;
 }
 
 void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious ) const
@@ -465,7 +467,7 @@ bool Lagcompensation::IsValidRecord( float mflSimulationTime, float flRange )
 	//auto iExtraTick = !pTickbase.pShiftData.bInRechargeCycle && pTickbase.pShiftData.bRecharged && pTickbase.pShiftData.iShiftGettingUsed && !pTickbase.pShiftData.bDidShot ? pTickbase.pShiftData.iShiftGettingUsed : 0.f;
 	auto iExtraTick = !exploits::bIsRecharging /*&& pTickbase.pShiftData.bRecharged */ && exploits::iShiftAmount && !exploits::bIsShiftingTicks ? exploits::iShiftAmount : 0.f;
 
-	return std::fabsf( m_flCorrect - ( i::GlobalVars->flCurrentTime - mflSimulationTime ) ) <= flRange + TICKS_TO_TIME( iExtraTick / 2 );
+	return std::fabsf( m_flCorrect - ( i::GlobalVars->flCurrentTime - mflSimulationTime ) ) < flRange /*+ TICKS_TO_TIME( iExtraTick / 2 )*/;
 }
 
 int Lagcompensation::FixTickCount( const float& flSimulationTime )

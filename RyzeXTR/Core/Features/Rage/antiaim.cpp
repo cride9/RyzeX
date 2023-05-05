@@ -23,7 +23,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		desyncValue = 0.f;
 		return;
 	}
-	int inverter = GetKeyState(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
+	int inverter = IPT::HandleInput(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
 
 	// shooting checks
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
@@ -44,7 +44,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	// this fixes event delays cuz 1 command is shooting next command is registering
 	// thats how this shit game works, it is what it is
-	if (abs(pCmd->iCommandNumber - ragebot.rageBotData.iCommand) < 3)
+	if (abs(pCmd->iCommandNumber - ragebot.rageBotData.iCommand) < 4)
 		bSendPacket = true;
 
 	// Update lower body yaw
@@ -153,7 +153,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			if (NextLBYUpdate(pCmd)) {
 
 				static int bDoFlick = 0;
-				if (cfg::rage::doubletap && GetKeyState(cfg::rage::doubletapkey))
+				if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey))
 					max(cfg::antiaim::flickAngleSwitch, 2);
 
 				if (bSendPacket)

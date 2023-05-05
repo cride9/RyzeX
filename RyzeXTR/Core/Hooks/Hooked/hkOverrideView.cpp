@@ -1,6 +1,7 @@
 #include "../hooks.h"
 #include "../../Features/Misc/misc.h"
 #include "../../SDK/Menu/config.h"
+#include "../../SDK/InputSystem.h"
 
 void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 
@@ -26,7 +27,7 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 		pSetup->angView[2] -= (vecViewPunch[2] + (vecAimPunch[2] * 2 * 0.4499999f));
 	}
 
-	if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+	if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
 
 		pSetup->vecOrigin.z = g::pLocal->GetAbsOrigin().z + 64.f;
 	}

@@ -22,6 +22,7 @@ inline bool IsFloatValid( float flOriginal, float flCurrent )
 
 void CNetworking::SaveNetvarData( int nCommand )
 {
+	iLastCommandNumber = nCommand;
 	pCompressData[ nCommand % 150 ].nTickbase = g::pLocal->GetTickBase( );
 	pCompressData[ nCommand % 150 ].flDuckAmount = g::pLocal->GetDuckAmount( );
 	pCompressData[ nCommand % 150 ].flDuckSpeed = g::pLocal->GetDuckSpeed( );
@@ -134,4 +135,9 @@ int CNetworking::GetServerTick() {
 		return i::GlobalVars->iTickCount + TIME_TO_TICKS(m_NetChannel->GetLatency(FLOW_OUTGOING) + m_NetChannel->GetLatency(FLOW_INCOMING));
 	}
 	return i::GlobalVars->iTickCount;
+}
+
+int CNetworking::GetCorrectedTickbase() {
+
+	return pCompressData[iLastCommandNumber % 150].nTickbase;
 }

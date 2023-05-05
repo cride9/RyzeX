@@ -94,7 +94,7 @@ void ServerSounds::AdjustPlayerFinish()
 		player->GetFlags() = RestorePlayer.iFlags;
 		player->GetVecOrigin() = RestorePlayer.vecOrigin;
 		player->SetAbsOrigin(RestorePlayer.vecAbsOrigin);
-		*(bool*)((DWORD)player + 0xED) = RestorePlayer.bDormant; // dormant check
+		//*(bool*)((DWORD)player + 0xED) = RestorePlayer.bDormant; // dormant check
 	}
 	vecRestorePlayers.clear();
 }
@@ -119,8 +119,8 @@ void ServerSounds::AdjustPlayerBegin(CBaseEntity* player)
 	current_player.vecAbsOrigin = player->GetAbsOrigin();
 	vecRestorePlayers.emplace_back(current_player);
 
-	if (!sound_expired)
-		*(bool*)((DWORD)player + 0xED) = false; // dormant check
+	//if (!sound_expired)
+	//	*(bool*)((DWORD)player + 0xED) = false; // dormant check
 	player->GetFlags() = sound_player.iFlags;
 	player->GetVecOrigin() = sound_player.vecOrigin;
 	player->SetAbsOrigin(sound_player.vecOrigin);

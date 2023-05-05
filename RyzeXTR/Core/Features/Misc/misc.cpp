@@ -102,6 +102,9 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	if (!strcmp(pEvent->GetName(), roundStart)) {
 		BuyBot(pEvent);
 		WalkBotHandler(pEvent);
+		for (size_t i = 0; i < 65; i++)
+			visual::iHealth[i] = -1;
+		
 	}
 	if (!strcmp(pEvent->GetName(), itemPurchase)) {
 
@@ -191,7 +194,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 
 	static Vector vecOriginDelta;
 
-	if (GetAsyncKeyState(cfg::antiaim::idealTickBind)) {
+	if (IPT::HandleInput(cfg::antiaim::idealTickBind)) {
 
 		if (!bPositionSet) {
 
@@ -211,7 +214,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 		vecRecord = vecOrigin;
 	}
 
-	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && GetAsyncKeyState(cfg::antiaim::idealTickBind) && bRetreat) {
+	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && IPT::HandleInput(cfg::antiaim::idealTickBind) && bRetreat) {
 
 		if ((vecOrigin - g::pLocal->GetVecOrigin()).Length2D() > 3.29217472f) {
 
@@ -510,7 +513,7 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 
 void misc::FakeDuck(CUserCmd* pCmd) {
 
-	if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+	if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
 
 		auto iChoke = i::ClientState->nChokedCommands;
 
@@ -579,7 +582,7 @@ void misc::Slowwalk(CUserCmd* pCmd, float flSpeed) {
 	if (flSpeed <= 0.f)
 		return;
 
-	if (!GetAsyncKeyState(cfg::antiaim::fakewalkKey))
+	if (!IPT::HandleInput(cfg::antiaim::fakewalkKey))
 		return;
 
 	float flMinSpeed = (float)(sqrt((pCmd->flForwardMove * pCmd->flForwardMove) + (pCmd->flSideMove * pCmd->flSideMove) + (pCmd->flUpMove * pCmd->flUpMove)));
@@ -827,7 +830,7 @@ void misc::ThirdPerson() {
 	static bool didSetThirdPerson = false;
 	static CConVar* svcheats = i::ConVar->FindVar("sv_cheats");
 
-	if (GetKeyState(cfg::misc::thirdpersonbind) && g::pLocal->IsAlive()) {
+	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && g::pLocal->IsAlive()) {
 
 		if (!didSetThirdPerson) {
 
@@ -852,6 +855,9 @@ void misc::FakeLag(bool& bSendPacket) {
 		ADAPTIVE,
 		JITTER
 	};
+
+	if (i::EngineClient->IsVoiceRecording())
+		return;
 
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::fakelag || !cfg::antiaim::enableFakelag) {
 		bSendPacket = true;
@@ -1316,7 +1322,7 @@ void Friction(float flFriction, Vector* vecVelocity)
 
 void misc::BlockBot(CUserCmd* pCmd) {
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::blockbot || !GetAsyncKeyState(cfg::misc::blockbotKey))
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::blockbot || !IPT::HandleInput(cfg::misc::blockbotKey))
 		return;
 
 	if (CBaseEntity* pBlockedPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetGroundEntity())); 

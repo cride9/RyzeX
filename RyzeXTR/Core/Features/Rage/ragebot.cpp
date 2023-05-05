@@ -106,7 +106,10 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 
 				pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 				pCmd->iButtons |= IN_ATTACK;
+
+				int backuplmao = pCmd->iTickCount;
 				pCmd->iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
+				util::LogConsole(std::format("Before: {} | After: {}\n", backuplmao, pCmd->iTickCount).c_str());
 				rageBotData.iCommand = pCmd->iCommandNumber;
 
 				ShouldSendPacket(bSendPacket);
@@ -160,7 +163,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		Lagcompensation::LagRecord_t* pCurrentApplied = CheckOnShotRecord(pLog);
 
 		if (!pCurrentApplied) 
-			pCurrentApplied = &pLog->pRecord.at(pLog->iFirstValid);
+			pCurrentApplied = &pLog->pRecord.at(min(pLog->iFirstValid, pLog->pRecord.size() - 1));
 
 		bool bSafePoint = false;
 
@@ -232,9 +235,9 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 				Vector vecHitboxPosition = pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatrix, vecMins, vecMaxs, flRadius);
 				std::array<Vector, 3> multiPointed = { Vector(0, 0, 0) };
 
-				if (vecSelectedMultipoint[iHitbox])
+				/*if (vecSelectedMultipoint[iHitbox])
 					multiPointed = CreatePoints(pCurrentApplied->pEntity, pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox);
-				else
+				else*/
 					multiPointed[0] = vecHitboxPosition;
 
 				for (Vector& vecPoint : multiPointed) {
@@ -380,7 +383,7 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	if ( rageBotData.bCanShoot )
 		return;
 
-	if (misc::bRetreat && GetAsyncKeyState(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick)
+	if (misc::bRetreat && IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick)
 		return;
 
 	float flIdealSpeed = ( 0.28f ) * ( g::pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
@@ -656,7 +659,7 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigHitboxes( CBaseCombatWeapon * pWeap
 	std::array<bool, HITBOX_MAX> vecHitboxes = {};
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
-	if (cfg::rage::forceBaim && GetKeyState(cfg::rage::forceBaimKey)) {
+	if (cfg::rage::forceBaim && IPT::HandleInput(cfg::rage::forceBaimKey)) {
 		AddHitbox(2, vecHitboxes);
 		AddHitbox(3, vecHitboxes);
 		return vecHitboxes;
@@ -957,7 +960,7 @@ int CRageBot::CalculateTickCount( float flSimulationTime ) {
 
 bool CRageBot::ShouldSendPacket(bool& bSendPacket) {
 
-	if (cfg::antiaim::fakeduck && GetAsyncKeyState(cfg::antiaim::fakeduckbind))
+	if (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind))
 		return bSendPacket;
 
 	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && !g::bWaiting)

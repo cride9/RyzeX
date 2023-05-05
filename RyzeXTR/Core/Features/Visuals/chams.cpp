@@ -5,6 +5,7 @@
 #include "../Misc/misc.h"
 #include "../Rage/Animations/Lagcompensation.h"
 #include "../Rage/ragebot.h"
+#include "../../SDK/InputSystem.h"
 
 constexpr std::string_view szScrollProxies = R"#(
 	"texturescroll"
@@ -192,7 +193,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				BeginChams(materials[localDesyncType], localDesyncColor, false, localDesyncXhair);
 				original(i::StudioRender, 0, pResults, info, desyncMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (cfg::antiaim::idealTick && GetAsyncKeyState(cfg::antiaim::idealTickBind)) {
+			if (cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind)) {
 
 				if (!local) {
 					EndChams();

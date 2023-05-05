@@ -13,8 +13,11 @@ public:
 	void RestoreNetvarData( int iCommand );
 
 	int GetServerTick();
+	int GetCorrectedTickbase();
+
 private:
 	std::array < CNetvarData, 150 > pCompressData = { };
+	int iLastCommandNumber;
 };
 inline CNetworking networking;
 

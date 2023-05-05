@@ -3,6 +3,7 @@
 #include "../../../SDK/math.h"
 #include "../../../SDK/Menu/config.h"
 #include "../../Networking/networking.h"
+#include "../../../SDK/InputSystem.h"
 
 void localanimation::SetSequence(CAnimationLayer* pLayer, int iSequence) {
 
@@ -542,7 +543,7 @@ void C_LocalAnimations::SetupShootPosition()
 			bModifyEyePosition = true;
 
 		/* modify eye pos on FD */
-		if (GetAsyncKeyState(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck)
+		if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck)
 			bModifyEyePosition = true;
 
 		/* modify LocalPlayer's EyePosition */

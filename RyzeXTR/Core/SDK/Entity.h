@@ -1359,21 +1359,27 @@ public:
 
 class C4 : public CWeaponCSBase {
 
-private:
-	virtual void unused1();
-	virtual void unused2();
-	virtual void unused3();
-	virtual void unused4();
-	virtual void unused5();
-	virtual void unused6();
-	virtual void unused7();
-	virtual void unused8();
-	virtual void unused9();
-	virtual void unused10();
-	virtual void unused11();
-	virtual void unused12();
-	virtual void unused13();
-
 public:
-	virtual bool OnFireEvent(CBaseViewModel* pViewModel, const Vector& vecOrigin, const Vector& vecAngles, int iEvent, const char* szOptions);
+	virtual void Spawn();
+	virtual void WeaponReset();
+	virtual void PrimaryAttack();
+	virtual void WeaponIdle();
+	virtual void UpdateShieldState();
+	virtual float GetMaxSpeed() const;
+	virtual EItemDefinitionIndex GetCSWeaponID(void) const;
+	virtual bool Deploy(void);
+	virtual bool Holster(CBaseCombatWeapon* pSwitchingTo = NULL);
+	virtual void OnDataChanged(void* type);
+	virtual bool OnFireEvent(CBaseViewModel* pViewModel, const Vector& origin, const Vector& angles, int event, const char* options);
+	virtual Vector GetGlowColor(void);
+	virtual void Precache();
+	virtual int UpdateTransmitState();
+	virtual int ShouldTransmit(const void* pInfo);
+	virtual void GetControlPanelInfo(int nPanelIndex, const char*& pPanelName);
+	virtual unsigned int PhysicsSolidMaskForEntity(void) const;
+	virtual bool ShouldRemoveOnRoundRestart();
+	virtual void PhysicsTouchTriggers(const Vector* pPrevAbsOrigin = NULL);
+	virtual void	OnPickedUp(void* pNewOwner);
+	virtual void	Drop(const Vector& vecVelocity);
+	virtual bool IsRemoveable(void);
 };

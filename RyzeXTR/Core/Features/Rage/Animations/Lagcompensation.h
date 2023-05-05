@@ -189,7 +189,7 @@ private:
 	// extrapolate players breaking lagcomp
 	void ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious ) const;
 	// check if record is valid
-	static bool IsValidRecord( float m_flSimulationTime, float m_flRange = 0.2f );
+	bool IsValidRecord( float m_flSimulationTime, float m_flRange = 0.2f );
 	// fuck interpolation
 	void SetInterpolationFlags(CBaseEntity* pEnemy);
 

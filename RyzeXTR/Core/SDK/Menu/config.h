@@ -13,7 +13,7 @@ namespace cfg {
 	inline int debugSlider = 1;
 	inline bool debugSwitch2 = false;
 
-	inline int m_iKeyStates[ 256 ] = { };
+	inline int m_iKeyStates[ 256 ] = { 0 };
 
 	namespace rage {
 
@@ -422,6 +422,10 @@ private:
 	void SetupValue(bool* value, bool def, int size, std::string category, std::string name);
 	void SetupValue( std::string& value, std::string def, std::string category, std::string name );
 	void SetupValue(float&, float, std::string, std::string);
+	void SetupValue(int* value, int length, int def, std::string category, std::string name);
+	void SetupValue(float* value, int length, float def, std::string category, std::string name);
+	void SetupValue(float* value, int length, float* def, std::string category, std::string name);
+
 public:
 	CConfig()
 	{
@@ -442,6 +446,8 @@ public:
 	std::vector<std::string> vecSoundFileNames = { };
 	std::string SoundPath = { };
 	void RefreshSounds( );
+
+	bool bSaving = false;
 };
 
 extern CConfig* Config2;
