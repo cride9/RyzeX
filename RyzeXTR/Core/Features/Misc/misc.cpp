@@ -884,7 +884,7 @@ void misc::FakeLag(bool& bSendPacket) {
 
 	if (cfg::antiaim::fakelag) {
 
-		if (!g::bWaiting && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && !exploits::bIsShiftingTicks) {
+		if (/*!g::bWaiting &&*/ cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ) {
 			iCurrentChoke = min(2, iCurrentChoke);
 		}
 		else {
