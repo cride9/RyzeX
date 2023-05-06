@@ -58,8 +58,32 @@ void __fastcall h::hkSetChoked( void* ecx, void* edx )
 {
 	static auto original = detour::setChoked.GetOriginal<decltype( &hkSetChoked )>( );
 
-	INetChannel* pNetChannelInfo = reinterpret_cast< INetChannel* >( ecx );
+	INetChannel* pNetChannel = reinterpret_cast< INetChannel* >( ecx );
 
+	if (!i::ClientState || i::ClientState->iSignonState < SIGNONSTATE_FULL)
+		return;
+
+	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->HasImmunity())
+		return;
+
+	/* run network fix */
+	{
+		/* store netchannel */
+		//int nSequenceNr = pNetChannel->iOutSequenceNr;
+		int nChokedCommands = pNetChannel->iChokedPackets;
+
+		/* fix net channel */
+		pNetChannel->iChokedPackets = 0;
+
+		/* send datagram */	
+		pNetChannel->SendDatagram(nullptr);
+
+		/* restore netchannel */
+		pNetChannel->iOutSequenceNr--;
+		pNetChannel->iChokedPackets = nChokedCommands;
+	}
+
+	return original(ecx, edx);
 	/*
 	void CNetChan::SetChoked( void )
 	{
@@ -68,18 +92,18 @@ void __fastcall h::hkSetChoked( void* ecx, void* edx )
 	}
 	*/
 
-	// sanity checks so i dont blow my brains out
-	if ( !g::pLocal || !i::EngineClient->IsInGame( ) || pNetChannelInfo == nullptr || i::EngineClient->IsVoiceRecording())
-		return original( ecx, edx );
-	
-	const int iChockedPackets = pNetChannelInfo->iChokedPackets;
+	//// sanity checks so i dont blow my brains out
+	//if ( !g::pLocal || !i::EngineClient->IsInGame( ) || pNetChannelInfo == nullptr || i::EngineClient->IsVoiceRecording())
+	//	return original( ecx, edx );
+	//
+	//const int iChockedPackets = pNetChannelInfo->iChokedPackets;
 
-	pNetChannelInfo->iChokedPackets = 0;
-	pNetChannelInfo->SendDatagram(NULL); // send datagram does: "return iOutSequenceNr = -1" if choked commands is 0
-	--pNetChannelInfo->iOutSequenceNr;
-	pNetChannelInfo->iChokedPackets = iChockedPackets;
+	//pNetChannelInfo->iChokedPackets = 0;
+	//pNetChannelInfo->SendDatagram(NULL); // send datagram does: "return iOutSequenceNr = -1" if choked commands is 0
+	//--pNetChannelInfo->iOutSequenceNr;
+	//pNetChannelInfo->iChokedPackets = iChockedPackets;
 
-	return original(ecx, edx);
+	//return original(ecx, edx);
 }
 
 int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pDatagram )
@@ -97,7 +121,7 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 
 	// calculate max available fake latency with our real ping to keep it w/o real lags or delays
 	const float flMaxLatency = std::fmax( 0.f, std::clamp( cfg::misc::fakePingFactor / 1000.f, 0.f, sv_maxunlag->GetFloat( ) ) - pNetChannelInfo->GetLatency( FLOW_OUTGOING ) );
-	lagcomp.AddLatencyToNetChannel( thisptr, flMaxLatency );
+	//lagcomp.AddLatencyToNetChannel( thisptr, flMaxLatency );
 
 	const int iReturn = original( thisptr, edx, pDatagram );
 

@@ -8,6 +8,7 @@
 #include "../../SDK/WavParser.h"
 #include "../Rage/autowall.h"
 #include "../Visuals/ESP.h"
+#include "../Networking/networking.h"
 #pragma comment(lib, "winmm.lib")
 
 #include "../../SDK/InputSystem.h"
@@ -201,7 +202,7 @@ void misc::IdealTick(CUserCmd* pCmd) {
 			bPositionSet = true;
 			vecOrigin = g::pLocal->GetVecOrigin();
 			vecRecord = vecOrigin;
-			g::pLocal->SetupBones(matrixRecord, 128, 0, i::GlobalVars->flCurrentTime);
+			g::pLocal->SetupBones(matrixRecord, 256, 0, i::GlobalVars->flCurrentTime);
 		}
 
 		if (pCmd->iButtons & IN_ATTACK)
@@ -300,10 +301,10 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) 
 			Vector(-2.0f, -2.0f, -2.0f),
 			Vector(2.0f, 2.0f, 2.0f),
 			Vector(0.0f, 0.0f, 0.0f),
-			0.f,
-			0.f,
-			255.f,
-			127.f,
+			cfg::misc::impactColor[0][0] * 255, // b
+			cfg::misc::impactColor[0][1] * 255, // g
+			cfg::misc::impactColor[0][2] * 255, // g
+			cfg::misc::impactColor[0][3] * 255, // a
 			4.f
 		);
 	}
@@ -329,10 +330,10 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) 
 				Vector(-2.0f, -2.0f, -2.0f),
 				Vector(2.0f, 2.0f, 2.0f),
 				Vector(0.0f, 0.0f, 0.0f),
-				255.f,
-				0.f,
-				0.f,
-				127.f,
+				cfg::misc::impactColor[1][0] * 255, // b
+				cfg::misc::impactColor[1][1] * 255, // g
+				cfg::misc::impactColor[1][2] * 255, // g
+				cfg::misc::impactColor[1][3] * 255, // a
 				4.f
 			);
 		}
@@ -919,8 +920,8 @@ void misc::FakeLag(bool& bSendPacket) {
 	else
 		iCurrentChoke = cfg::antiaim::fakelag;
 
-
-	bSendPacket = i::ClientState->nChokedCommands >= min(iMax, max(cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
+	networking.LagcompensatedTicks = min(iMax, max(cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
+	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;
 }
 
 void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
@@ -1450,7 +1451,7 @@ void misc::CapsuleHandler(IGameEvent* pEvent, int iCall) {
 
 void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDuration) {
 
-	if (pEntity >= 64 || pEntity < 1)
+	/*if (pEntity >= 64 || pEntity < 1)
 		return;
 
 	auto pLog = &lagcomp.GetLog(pEntity);
@@ -1481,7 +1482,7 @@ void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDura
 			else
 				i::DebugOverlay->AddCapsuleOverlay(vMin, vMax, pHitbox->flRadius, arrColor, flDuration);
 		}
-	}
+	}*/
 }
 
 std::string GetHitgroupName(int iHitgroup) {

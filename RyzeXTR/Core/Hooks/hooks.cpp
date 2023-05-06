@@ -35,7 +35,8 @@ void h::SetupHooks() {
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
 	HookTable(detour::drawModelMdl, i::ModelRender, table::drawModelMdl, &hkDrawModelMDL);
 	HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
-	
+	//HookTable(detour::installStringTableCallback, i::ClientDll, table::installStringTableCallback, &hkInstallStringTableCallback);
+
 	// Signature hooks
 	HookSignature(detour::clMove, "engine.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8A F9", &hkClMove);
 	HookSignature(detour::buildTransform, "client.dll", "55 8B EC 83 E4 F0 81 ? ? ? ? ? 56 57 8B F9 8B ? ? ? ? ? 89 7C 24 28", &hkBuildTransformation);
@@ -69,6 +70,12 @@ void h::SetupHooks() {
 	//util::LogConsole("Hooks Initialized!\n", Color(255, 255, 255));
 }
 
+
+void __fastcall h::hkInstallStringTableCallback(const char* tableName) {
+
+	return;
+}
+
 void h::HookNetChannel(INetChannel* pNetChannel) {
 
 	// netchannel pointer
@@ -84,8 +91,8 @@ void h::HookNetChannel(INetChannel* pNetChannel) {
 		if (!detour::sendNetMsg.IsHooked())
 			h::HookTable(detour::sendNetMsg, pNetChannel, table::sendNetMsg, &h::hkSendNetMsg);
 
-		//if ( !detour::setChoked.IsHooked( ) )
-			//h::HookTable(detour::setChoked, pNetChannel, table::setChoked, &h::hkSetChoked);
+		if ( !detour::setChoked.IsHooked( ) )
+			h::HookTable(detour::setChoked, pNetChannel, table::setChoked, &h::hkSetChoked);
 
 		if (!detour::sendDatagram.IsHooked())
 			h::HookTable(detour::sendDatagram, pNetChannel, table::sendDatagram, &h::hkSendDatagram);

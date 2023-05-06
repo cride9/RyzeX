@@ -1202,9 +1202,9 @@ void Animations::InterpolateMatricies() {
 		std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->front().pMatrix, sizeof(matrix3x4_t) * nBoneCount);
 
 		// build attachments
-		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
+		pPlayer->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
 		pPlayer->SetupBones_AttachmentHelper();
-		g::pLocal->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
+		pPlayer->GetBoneAccessor()->matBones = pPlayerData->front().pMatrix;
 	}
 }
 

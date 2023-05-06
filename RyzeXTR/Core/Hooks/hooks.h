@@ -43,6 +43,7 @@ namespace table {
 	inline constexpr auto doPostScreenEffects = 44;		// fixing keyvalues error while fakelaging
 
 	inline constexpr auto emitSound = 5;
+	inline constexpr auto installStringTableCallback = 36;
 }
 
 namespace detour {
@@ -75,6 +76,7 @@ namespace detour {
 	inline CDetourHook clampBonesInBBox;
 	inline CDetourHook getColorModulation;
 	inline CDetourHook startSound;
+	inline CDetourHook installStringTableCallback;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -147,6 +149,7 @@ namespace h {
 	void __fastcall		hkClampBonesInBBox(void*, void*, matrix3x4_t*, int);
 	void __fastcall		hkGetColorModulation(void*, void*, float*, float*, float*);
 	int	__cdecl			hkStartSound(void*);
+	void __fastcall     hkInstallStringTableCallback(const char* tableName);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

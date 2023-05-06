@@ -168,6 +168,24 @@ namespace cfg {
 
 	namespace model {
 
+		inline int attachmentChamsMaterial[3];
+
+		inline bool attachmentChams[3]{ false };
+		inline bool attachmentChamsXhair[3];
+		inline float attachmentChamsColor[3][4];
+
+		inline bool attachmentOverlay[3]{ false };
+		inline bool attachmentOverlayXhair[3]{ false };
+		inline float attachmentOverlayColor[3][4];
+
+		inline bool attachmentThinOverlay[3]{ false };
+		inline bool attachmentThinOverlayXhair[3]{ false };
+		inline float attachmentThinOverlayColor[3][4];
+
+		inline bool attachmentAnimatedOverlay[3]{ false };
+		inline bool attachmentAnimatedOverlayXhair[3]{ false };
+		inline float attachmentAnimatedOverlayColor[3][4];
+
 		inline int enemyBTType = 0;
 		inline float enemyBTColor[4] = { 1.f, 1.f, 1.f, 1.f};
 		inline bool enemyBTXhair = false;
@@ -339,6 +357,8 @@ namespace cfg {
 		inline bool preserveKillfeed = false;
 		inline bool thirdperson = false;
 		inline bool bulletImpact = false;
+		inline float impactColor[2][4];
+
 		inline bool onlyCheatLogs = false;
 		inline int thirdpersonbind = 0;
 

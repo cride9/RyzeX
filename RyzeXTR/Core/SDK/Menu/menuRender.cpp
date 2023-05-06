@@ -430,6 +430,8 @@ void menu::Visualtab() noexcept {
         ImGui::BeginChild("right", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
         {
             ImGui::Checkbox("Show impact", &bulletImpact);
+			ImGui::ColorEdit4("##impactColor1", impactColor[0], true);
+			ImGui::ColorEdit4("##impactColor2", impactColor[1]);
             ImGui::Checkbox( "Bullet tracer", &bulletTracer );
 			ImGui::ColorEdit4("##tracerColor", bulletTracerColor);
 			ImGui::Checkbox("Draw capsule", &bDrawCapsule);
@@ -566,168 +568,341 @@ void menu::Visualtab() noexcept {
     {
         using namespace cfg::model;
 
-        static int selectedTeam = 0;
-        static int selectedEnemy = 0;
-        static int selectedLocal = 0;
+		static int selectedModelType = 0;
+		static int selectedOverlayType = 0;
 
         switch (selectedEsp)
         {
         case ENEMY:
 
-            ImGui::Combo("Model", &enemyType, chamsType, IM_ARRAYSIZE(chamsType));
+			if (ImGui::Button("Model", ImVec2(ImGui::GetContentRegionAvail().x / 3, 15.f), selectedModelType == 0)) 
+				selectedModelType = 0;
+			ImGui::SameLine();
+			if (ImGui::Button("Overlays", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedModelType == 1))
+				selectedModelType = 1;
+			ImGui::SameLine();
+			if (ImGui::Button("Attachments", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedModelType == 2))
+				selectedModelType = 2;
 
-            ImGui::Checkbox("Player", &enemy);
-            ImGui::ColorEdit4("##enemycolor", enemyColor);
-            ImGui::Checkbox("Wireframe", &enemyXhair);
+			if (selectedModelType == 0) {
 
-            ImGui::Checkbox("Player behind wall", &enemyXQZ);
-            ImGui::ColorEdit4("##enemycolorXQZ", enemyXQZColor);
-            ImGui::Checkbox("Wireframe behind wall", &enemyXQZXhair);
+				ImGui::Combo("Model##1", &enemyType, chamsType, IM_ARRAYSIZE(chamsType));
 
-            ImGui::Combo("Overlay type", &selectedEnemy, enemyTypes, IM_ARRAYSIZE(enemyTypes));
+				ImGui::Checkbox("Player", &enemy);
+				ImGui::ColorEdit4("##enemycolor", enemyColor);
+				ImGui::Checkbox("Wireframe", &enemyXhair);
 
-            switch (selectedEnemy)
-            {
-            case 0:
-                ImGui::Checkbox("Enabled", &enemyOverlay);
-                ImGui::ColorEdit4("##enemyOverlayColor", enemyOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &enemyOverlayXhair);
+				ImGui::Checkbox("Player behind wall", &enemyXQZ);
+				ImGui::ColorEdit4("##enemycolorXQZ", enemyXQZColor);
+				ImGui::Checkbox("Wireframe behind wall", &enemyXQZXhair);
 
-                ImGui::Checkbox("Behind wall", &enemyOverlayXQZ);
-                ImGui::ColorEdit4("##enemyOverlayXQZColor", enemyOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &enemyOverlayXQZXhair);
-                break;
+				ImGui::Checkbox("Lagcompensation", &enemyBTEnable);
+				ImGui::ColorEdit4("##enemyBTColor", enemyBTColor);
+				ImGui::Combo("Material", &enemyBTType, allType, IM_ARRAYSIZE(allType));
+				ImGui::Checkbox("Wireframe ##2", &enemyBTXhair);
+			}
+			else if (selectedModelType == 1) {
 
-            case 1:
-                ImGui::Checkbox("Enabled", &enemyThinOverlay);
-                ImGui::ColorEdit4("##enemyThinOverlayColor", enemyThinOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &enemyThinOverlayXhair);
+				if (ImGui::Button("Overlay", ImVec2(ImGui::GetContentRegionAvail().x / 3.f, 15.f), selectedOverlayType == 0))
+					selectedOverlayType = 0;
 
-                ImGui::Checkbox("Behind wall", &enemyThinOverlayXQZ);
-                ImGui::ColorEdit4("##enemyThinOverlayXQZColor", enemyThinOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &enemyThinOverlayXQZXhair);
-                break;
+				ImGui::SameLine();
+				if (ImGui::Button("Outline", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedOverlayType == 1))
+					selectedOverlayType = 1;
 
-            case 2:
-                ImGui::Checkbox("Enabled", &enemyAnimOverlay);
-                ImGui::ColorEdit4("##enemyThinOverlayColor", enemyAnimOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &enemyAnimOverlayXhair);
+				ImGui::SameLine();
+				if (ImGui::Button("Animated", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedOverlayType == 2))
+					selectedOverlayType = 2;
 
-                ImGui::Checkbox("Behind wall", &enemyAnimOverlayXQZ);
-                ImGui::ColorEdit4("##enemyThinOverlayXQZColor", enemyAnimOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &enemyAnimOverlayXQZXhair);
-                break;
+				switch (selectedOverlayType) {
+				case 0:
+					ImGui::Checkbox("Enabled", &enemyOverlay);
+					ImGui::ColorEdit4("##enemyOverlayColor", enemyOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &enemyOverlayXhair);
 
-            case 3:
-                ImGui::Checkbox("Enabled", &enemyBTEnable);
-                ImGui::ColorEdit4("##enemyBTColor", enemyBTColor);
-                ImGui::Combo("Backtrack type", &enemyBTType, allType, IM_ARRAYSIZE(allType));
-                ImGui::Checkbox("Wireframe ##2", &enemyBTXhair);
-                break;
-            }
+					ImGui::Checkbox("Behind wall", &enemyOverlayXQZ);
+					ImGui::ColorEdit4("##enemyOverlayXQZColor", enemyOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &enemyOverlayXQZXhair);
+					break;
+
+				case 1:
+					ImGui::Checkbox("Enabled", &enemyThinOverlay);
+					ImGui::ColorEdit4("##enemyThinOverlayColor", enemyThinOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &enemyThinOverlayXhair);
+
+					ImGui::Checkbox("Behind wall", &enemyThinOverlayXQZ);
+					ImGui::ColorEdit4("##enemyThinOverlayXQZColor", enemyThinOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &enemyThinOverlayXQZXhair);
+					break;
+
+				case 2:
+					ImGui::Checkbox("Enabled", &enemyAnimOverlay);
+					ImGui::ColorEdit4("##enemyThinOverlayColor", enemyAnimOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &enemyAnimOverlayXhair);
+
+					ImGui::Checkbox("Behind wall", &enemyAnimOverlayXQZ);
+					ImGui::ColorEdit4("##enemyThinOverlayXQZColor", enemyAnimOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &enemyAnimOverlayXQZXhair);
+					break;
+				}
+			}
+			else {
+
+				ImGui::Combo("Model##3", &attachmentChamsMaterial[ENEMY], chamsType, IM_ARRAYSIZE(chamsType));
+				ImGui::Checkbox("Enabled", &attachmentChams[ENEMY]);
+				ImGui::ColorEdit4("##attachmentColor", attachmentChamsColor[ENEMY]);
+				ImGui::Checkbox("Wireframe##3", &attachmentChamsXhair[ENEMY]);
+
+				if (ImGui::Button("Overlay", ImVec2(ImGui::GetContentRegionAvail().x / 3.f, 15.f), selectedOverlayType == 0))
+					selectedOverlayType = 0;
+
+				ImGui::SameLine();
+				if (ImGui::Button("Outline", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedOverlayType == 1))
+					selectedOverlayType = 1;
+
+				ImGui::SameLine();
+				if (ImGui::Button("Animated", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedOverlayType == 2))
+					selectedOverlayType = 2;
+
+				switch (selectedOverlayType) {
+				case 0:
+					ImGui::Checkbox("Enabled##2", &attachmentOverlay[ENEMY]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentOverlayColor[ENEMY]);
+					ImGui::Checkbox("Wireframe##4", &attachmentOverlayXhair[ENEMY]);
+					break;
+
+				case 1:
+					ImGui::Checkbox("Enabled##2", &attachmentThinOverlay[ENEMY]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentThinOverlayColor[ENEMY]);
+					ImGui::Checkbox("Wireframe##4", &attachmentThinOverlayXhair[ENEMY]);
+					break;
+
+				case 2:
+					ImGui::Checkbox("Enabled##2", &attachmentAnimatedOverlay[ENEMY]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentAnimatedOverlayColor[ENEMY]);
+					ImGui::Checkbox("Wireframe##4", &attachmentAnimatedOverlayXhair[ENEMY]);
+					break;
+				}
+			}
 
             break;
         case TEAM:
-            ImGui::Combo("Model", &teamType, chamsType, IM_ARRAYSIZE(chamsType));
+			if (ImGui::Button("Model", ImVec2(ImGui::GetContentRegionAvail().x / 3, 15.f), selectedModelType == 0))
+				selectedModelType = 0;
+			ImGui::SameLine();
+			if (ImGui::Button("Overlays", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedModelType == 1))
+				selectedModelType = 1;
+			ImGui::SameLine();
+			if (ImGui::Button("Attachments", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedModelType == 2))
+				selectedModelType = 2;
 
-            ImGui::Checkbox("Player", &team);
-            ImGui::ColorEdit4("##teamcolor", teamColor);
-            ImGui::Checkbox("Wireframe", &teamXhair);
+			if (selectedModelType == 0) {
 
-            ImGui::Checkbox("Player behind wall", &teamXQZ);
-            ImGui::ColorEdit4("##teamcolorXQZ", teamXQZColor);
-            ImGui::Checkbox("Wireframe behind wall", &teamXQZXhair);
+				ImGui::Combo("Model##2", &teamType, chamsType, IM_ARRAYSIZE(chamsType));
 
-            ImGui::Combo("Overlay type", &selectedTeam, glowType, IM_ARRAYSIZE(glowType));
+				ImGui::Checkbox("Player", &team);
+				ImGui::ColorEdit4("##teamcolor", teamColor);
+				ImGui::Checkbox("Wireframe", &teamXhair);
 
-            switch (selectedTeam)
-            {
-            case 0:
-                ImGui::Checkbox("Enabled", &teamOverlay);
-                ImGui::ColorEdit4("##teamOverlayColor", teamOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &teamOverlayXhair);
+				ImGui::Checkbox("Player behind wall", &teamXQZ);
+				ImGui::ColorEdit4("##teamcolorXQZ", teamXQZColor);
+				ImGui::Checkbox("Wireframe behind wall", &teamXQZXhair);
+			}
+			else if (selectedModelType == 1) {
 
-                ImGui::Checkbox("Behind wall", &teamOverlayXQZ);
-                ImGui::ColorEdit4("##teamOverlayXQZColor", teamOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &teamOverlayXQZXhair);
-                break;
+				if (ImGui::Button("Overlay", ImVec2(ImGui::GetContentRegionAvail().x / 3.f, 15.f), selectedOverlayType == 0))
+					selectedOverlayType = 0;
 
-            case 1:
-                ImGui::Checkbox("Enabled", &teamThinOverlay);
-                ImGui::ColorEdit4("##teamThinOverlayColor", teamThinOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &teamThinOverlayXhair);
+				ImGui::SameLine();
+				if (ImGui::Button("Outline", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedOverlayType == 1))
+					selectedOverlayType = 1;
 
-                ImGui::Checkbox("Behind wall", &teamThinOverlayXQZ);
-                ImGui::ColorEdit4("##teamThinOverlayXQZColor", teamThinOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &teamThinOverlayXQZXhair);
-                break;
+				ImGui::SameLine();
+				if (ImGui::Button("Animated", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedOverlayType == 2))
+					selectedOverlayType = 2;
 
-            case 2:
-                ImGui::Checkbox("Enabled", &teamAnimOverlay);
-                ImGui::ColorEdit4("##teamThinOverlayColor", teamAnimOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &teamAnimOverlayXhair);
+				switch (selectedOverlayType) {
+				case 0:
+					ImGui::Checkbox("Enabled", &teamOverlay);
+					ImGui::ColorEdit4("##teamOverlayColor", teamOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &teamOverlayXhair);
 
-                ImGui::Checkbox("Behind wall", &teamAnimOverlayXQZ);
-                ImGui::ColorEdit4("##teamThinOverlayXQZColor", teamAnimOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &teamAnimOverlayXQZXhair);
-                break;
-            }
+					ImGui::Checkbox("Behind wall", &teamOverlayXQZ);
+					ImGui::ColorEdit4("##teamOverlayXQZColor", teamOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &teamOverlayXQZXhair);
+					break;
+
+				case 1:
+					ImGui::Checkbox("Enabled", &teamThinOverlay);
+					ImGui::ColorEdit4("##teamThinOverlayColor", teamThinOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &teamThinOverlayXhair);
+
+					ImGui::Checkbox("Behind wall", &teamThinOverlayXQZ);
+					ImGui::ColorEdit4("##teamThinOverlayXQZColor", teamThinOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &teamThinOverlayXQZXhair);
+					break;
+
+				case 2:
+					ImGui::Checkbox("Enabled", &teamAnimOverlay);
+					ImGui::ColorEdit4("##teamThinOverlayColor", teamAnimOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &teamAnimOverlayXhair);
+
+					ImGui::Checkbox("Behind wall", &teamAnimOverlayXQZ);
+					ImGui::ColorEdit4("##teamThinOverlayXQZColor", teamAnimOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &teamAnimOverlayXQZXhair);
+					break;
+				}
+			}
+			else {
+
+				ImGui::Combo("Model##3", &attachmentChamsMaterial[TEAM], chamsType, IM_ARRAYSIZE(chamsType));
+				ImGui::Checkbox("Enabled", &attachmentChams[TEAM]);
+				ImGui::ColorEdit4("##attachmentColor", attachmentChamsColor[TEAM]);
+				ImGui::Checkbox("Wireframe##3", &attachmentChamsXhair[TEAM]);
+
+				if (ImGui::Button("Overlay", ImVec2(ImGui::GetContentRegionAvail().x / 3.f, 15.f), selectedOverlayType == 0))
+					selectedOverlayType = 0;
+
+				ImGui::SameLine();
+				if (ImGui::Button("Outline", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedOverlayType == 1))
+					selectedOverlayType = 1;
+
+				ImGui::SameLine();
+				if (ImGui::Button("Animated", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedOverlayType == 2))
+					selectedOverlayType = 2;
+
+				switch (selectedOverlayType) {
+				case 0:
+					ImGui::Checkbox("Enabled##2", &attachmentOverlay[TEAM]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentOverlayColor[TEAM]);
+					ImGui::Checkbox("Wireframe##4", &attachmentOverlayXhair[TEAM]);
+					break;
+
+				case 1:
+					ImGui::Checkbox("Enabled##2", &attachmentThinOverlay[TEAM]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentThinOverlayColor[TEAM]);
+					ImGui::Checkbox("Wireframe##4", &attachmentThinOverlayXhair[TEAM]);
+					break;
+
+				case 2:
+					ImGui::Checkbox("Enabled##2", &attachmentAnimatedOverlay[TEAM]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentAnimatedOverlayColor[TEAM]);
+					ImGui::Checkbox("Wireframe##4", &attachmentAnimatedOverlayXhair[TEAM]);
+					break;
+				}
+			}
             break;
         case LOCAL:
 
-            ImGui::Combo("Model", &localType, chamsType, IM_ARRAYSIZE(chamsType));
+			if (ImGui::Button("Model", ImVec2(ImGui::GetContentRegionAvail().x / 3, 15.f), selectedModelType == 0))
+				selectedModelType = 0;
+			ImGui::SameLine();
+			if (ImGui::Button("Overlays", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedModelType == 1))
+				selectedModelType = 1;
+			ImGui::SameLine();
+			if (ImGui::Button("Attachments", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedModelType == 2))
+				selectedModelType = 2;
 
-            ImGui::Checkbox("Player", &local);
-            ImGui::ColorEdit4("##localcolor", localColor);
-            ImGui::Checkbox("Wireframe", &localXhair);
+			if (selectedModelType == 0) {
 
-            ImGui::Checkbox("Player behind wall", &localXQZ);
-            ImGui::ColorEdit4("##localcolorXQZ", localXQZColor);
-            ImGui::Checkbox("Wireframe behind wall", &localXQZXhair);
+				ImGui::Combo("Model##3", &localType, chamsType, IM_ARRAYSIZE(chamsType));
 
-            ImGui::Combo("Overlay type", &selectedLocal, localTypes, IM_ARRAYSIZE(localTypes));
+				ImGui::Checkbox("Player", &local);
+				ImGui::ColorEdit4("##localcolor", localColor);
+				ImGui::Checkbox("Wireframe", &localXhair);
 
-            switch (selectedLocal)
-            {
-            case 0:
-                ImGui::Checkbox("Enabled", &localOverlay);
-                ImGui::ColorEdit4("##localOverlayColor", localOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &localOverlayXhair);
+				ImGui::Checkbox("Player behind wall", &localXQZ);
+				ImGui::ColorEdit4("##localcolorXQZ", localXQZColor);
+				ImGui::Checkbox("Wireframe behind wall", &localXQZXhair);
 
-                ImGui::Checkbox("Behind wall", &localOverlayXQZ);
-                ImGui::ColorEdit4("##localOverlayXQZColor", localOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &localOverlayXQZXhair);
-                break;
+				ImGui::Checkbox("Desync", &localDesync);
+				ImGui::ColorEdit4("##localDesync", localDesyncColor);
+				ImGui::Combo("Material", &localDesyncType, allType, IM_ARRAYSIZE(allType));
+				ImGui::Checkbox("Wireframe ##2", &localDesyncXhair);
+			}
+			else if (selectedModelType == 1) {
 
-            case 1:
-                ImGui::Checkbox("Enabled", &localThinOverlay);
-                ImGui::ColorEdit4("##localThinOverlayColor", localThinOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &localThinOverlayXhair);
+				if (ImGui::Button("Overlay", ImVec2(ImGui::GetContentRegionAvail().x / 3.f, 15.f), selectedOverlayType == 0))
+					selectedOverlayType = 0;
 
-                ImGui::Checkbox("Behind wall", &localThinOverlayXQZ);
-                ImGui::ColorEdit4("##localThinOverlayXQZColor", localThinOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &localThinOverlayXQZXhair);
-                break;
+				ImGui::SameLine();
+				if (ImGui::Button("Outline", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedOverlayType == 1))
+					selectedOverlayType = 1;
 
-            case 2:
-                ImGui::Checkbox("Enabled", &localAnimOverlay);
-                ImGui::ColorEdit4("##localThinOverlayColor", localAnimOverlayColor);
-                ImGui::Checkbox("Wireframe ##2", &localAnimOverlayXhair);
+				ImGui::SameLine();
+				if (ImGui::Button("Animated", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedOverlayType == 2))
+					selectedOverlayType = 2;
 
-                ImGui::Checkbox("Behind wall", &localAnimOverlayXQZ);
-                ImGui::ColorEdit4("##localThinOverlayXQZColor", localAnimOverlayXQZColor);
-                ImGui::Checkbox("Wireframe behind wall ##2", &localAnimOverlayXQZXhair);
-                break;
+				switch (selectedOverlayType) {
+				case 0:
+					ImGui::Checkbox("Enabled", &localOverlay);
+					ImGui::ColorEdit4("##localOverlayColor", localOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &localOverlayXhair);
 
-            case 3:
+					ImGui::Checkbox("Behind wall", &localOverlayXQZ);
+					ImGui::ColorEdit4("##localOverlayXQZColor", localOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &localOverlayXQZXhair);
+					break;
 
-                ImGui::Checkbox("Enabled", &localDesync);
-                ImGui::ColorEdit4("##localDesyncColor", localDesyncColor);
+				case 1:
+					ImGui::Checkbox("Enabled", &localThinOverlay);
+					ImGui::ColorEdit4("##localThinOverlayColor", localThinOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &localThinOverlayXhair);
 
-                ImGui::Combo("Desync type", &localDesyncType, allType, IM_ARRAYSIZE(allType));
-                ImGui::Checkbox("Wireframe ##2", &localDesyncXhair);
-                break;
-            }
+					ImGui::Checkbox("Behind wall", &localThinOverlayXQZ);
+					ImGui::ColorEdit4("##localThinOverlayXQZColor", localThinOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &localThinOverlayXQZXhair);
+					break;
+
+				case 2:
+					ImGui::Checkbox("Enabled", &localAnimOverlay);
+					ImGui::ColorEdit4("##localThinOverlayColor", localAnimOverlayColor);
+					ImGui::Checkbox("Wireframe ##2", &localAnimOverlayXhair);
+
+					ImGui::Checkbox("Behind wall", &localAnimOverlayXQZ);
+					ImGui::ColorEdit4("##localThinOverlayXQZColor", localAnimOverlayXQZColor);
+					ImGui::Checkbox("Wireframe behind wall ##2", &localAnimOverlayXQZXhair);
+					break;
+				}
+			}
+			else {
+
+				ImGui::Combo("Model##3", &attachmentChamsMaterial[LOCAL], chamsType, IM_ARRAYSIZE(chamsType));
+				ImGui::Checkbox("Enabled", &attachmentChams[LOCAL]);
+				ImGui::ColorEdit4("##attachmentColor", attachmentChamsColor[LOCAL]);
+				ImGui::Checkbox("Wireframe##3", &attachmentChamsXhair[LOCAL]);
+
+				if (ImGui::Button("Overlay", ImVec2(ImGui::GetContentRegionAvail().x / 3.f, 15.f), selectedOverlayType == 0))
+					selectedOverlayType = 0;
+
+				ImGui::SameLine();
+				if (ImGui::Button("Outline", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedOverlayType == 1))
+					selectedOverlayType = 1;
+
+				ImGui::SameLine();
+				if (ImGui::Button("Animated", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedOverlayType == 2))
+					selectedOverlayType = 2;
+
+				switch (selectedOverlayType) {
+				case 0:
+					ImGui::Checkbox("Enabled##2", &attachmentOverlay[LOCAL]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentOverlayColor[LOCAL]);
+					ImGui::Checkbox("Wireframe##4", &attachmentOverlayXhair[LOCAL]);
+					break;
+
+				case 1:
+					ImGui::Checkbox("Enabled##2", &attachmentThinOverlay[LOCAL]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentThinOverlayColor[LOCAL]);
+					ImGui::Checkbox("Wireframe##4", &attachmentThinOverlayXhair[LOCAL]);
+					break;
+
+				case 2:
+					ImGui::Checkbox("Enabled##2", &attachmentAnimatedOverlay[LOCAL]);
+					ImGui::ColorEdit4("##attachmentOverlayColor", attachmentAnimatedOverlayColor[LOCAL]);
+					ImGui::Checkbox("Wireframe##4", &attachmentAnimatedOverlayXhair[LOCAL]);
+					break;
+				}
+			}
             break;
         case VIEWMODEL:
 

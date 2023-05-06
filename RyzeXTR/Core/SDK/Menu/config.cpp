@@ -448,6 +448,32 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::model;
 
+		SetupValue(attachmentChamsMaterial, 3, 0, "model", "attachmentChamsMaterial");
+		SetupValue(attachmentChams, false, 3, "model", "attachmentChams");
+		SetupValue(attachmentChamsXhair, false, 3, "model", "attachmentChamsXhair");
+		SetupValue(attachmentOverlay, false, 3, "model", "attachmentOverlay");
+		SetupValue(attachmentOverlayXhair, false, 3, "model", "attachmentOverlayXhair");
+		SetupValue(attachmentThinOverlay, false, 3, "model", "attachmentThinOverlay");
+		SetupValue(attachmentThinOverlayXhair, false, 3, "model", "attachmentThinOverlayXhair");
+		SetupValue(attachmentAnimatedOverlay, false, 3, "model", "attachmentAnimatedOverlay");
+		SetupValue(attachmentAnimatedOverlayXhair, false, 3, "model", "attachmentAnimatedOverlayXhair");
+		
+		SetupValue(attachmentChamsColor[ENEMY], 4, 1.f, "model", "attachmentChamsColorENEMY");
+		SetupValue(attachmentChamsColor[TEAM], 4, 1.f, "model", "attachmentChamsColorTEAM");
+		SetupValue(attachmentChamsColor[LOCAL], 4, 1.f, "model", "attachmentChamsColorLOCAL");
+
+		SetupValue(attachmentOverlayColor[ENEMY], 4, 1.f, "model", "attachmentOverlayColorENEMY");
+		SetupValue(attachmentOverlayColor[TEAM], 4, 1.f, "model", "attachmentOverlayColorTEAM");
+		SetupValue(attachmentOverlayColor[LOCAL], 4, 1.f, "model", "attachmentOverlayColorLOCAL");
+
+		SetupValue(attachmentThinOverlayColor[ENEMY], 4, 1.f, "model", "attachmentThinOverlayColorENEMY");
+		SetupValue(attachmentThinOverlayColor[TEAM], 4, 1.f, "model", "attachmentThinOverlayColorTEAM");
+		SetupValue(attachmentThinOverlayColor[LOCAL], 4, 1.f, "model", "attachmentThinOverlayColorLOCAL");
+
+		SetupValue(attachmentAnimatedOverlayColor[ENEMY], 4, 1.f, "model", "attachmentAnimatedOverlayColorENEMY");
+		SetupValue(attachmentAnimatedOverlayColor[TEAM], 4, 1.f, "model", "attachmentAnimatedOverlayColorTEAM");
+		SetupValue(attachmentAnimatedOverlayColor[LOCAL], 4, 1.f, "model", "attachmentAnimatedOverlayColorLOCAL");
+
 		SetupValue(enemyType, 0, "model", "enemyType");
 
 		SetupValue(enemyBTEnable, 0, "model", "enemyBTEnable");
@@ -772,6 +798,9 @@ void CConfig::Setup() {
 
 		SetupValue(preserveKillfeed, false, "misc", "preserveKillfeed");
 		SetupValue(bulletImpact, false, "misc", "bulletImpact");
+		SetupValue(impactColor[0], 4, 1.f, "misc", "impactColorS");
+		SetupValue(impactColor[1], 4, 1.f, "misc", "impactColorC");
+
 		SetupValue(onlyCheatLogs, true, "misc", "onlyCheatLogs");
 
 		SetupValue(bulletTracer, false, "misc", "bulletTracer");

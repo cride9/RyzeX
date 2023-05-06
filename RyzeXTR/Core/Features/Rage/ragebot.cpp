@@ -109,7 +109,6 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 
 				int backuplmao = pCmd->iTickCount;
 				pCmd->iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
-				util::LogConsole(std::format("Before: {} | After: {}\n", backuplmao, pCmd->iTickCount).c_str());
 				rageBotData.iCommand = pCmd->iCommandNumber;
 
 				ShouldSendPacket(bSendPacket);
@@ -656,7 +655,7 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigHitboxes( CBaseCombatWeapon * pWeap
 
 	// "head", "upper chest", "lower chest", "stomach", "arms", "legs"
 
-	std::array<bool, HITBOX_MAX> vecHitboxes = {};
+	std::array<bool, HITBOX_MAX> vecHitboxes = { false };
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
 	if (cfg::rage::forceBaim && IPT::HandleInput(cfg::rage::forceBaimKey)) {
@@ -711,7 +710,7 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigHitboxes( CBaseCombatWeapon * pWeap
 
 std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes( CBaseCombatWeapon * pWeapon ) {
 
-	std::array<bool, HITBOX_MAX> arrHitboxes = {};
+	std::array<bool, HITBOX_MAX> arrHitboxes = { false };
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
@@ -760,7 +759,7 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes( CBaseCombatWeapon * 
 
 std::array<bool, HITBOX_MAX> CRageBot::ConfigSafeHitboxes( CBaseCombatWeapon * pWeapon ) {
 
-	std::array<bool, HITBOX_MAX> arrHitboxes = {};
+	std::array<bool, HITBOX_MAX> arrHitboxes = { false };
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {

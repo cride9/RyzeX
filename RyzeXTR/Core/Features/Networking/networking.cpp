@@ -141,3 +141,54 @@ int CNetworking::GetCorrectedTickbase() {
 
 	return pCompressData[iLastCommandNumber % 150].nTickbase;
 }
+
+void CNetworking::StartNetworking() {
+
+	data.iTickRate = (int)(1.0f / i::GlobalVars->flIntervalPerTick);
+	data.iMaxChoke = 14;
+	data.bSkipDataGram = true;
+
+	INetChannelInfo* pNetChannel = (i::EngineClient->GetNetChannelInfo());
+	if (pNetChannel) {
+
+		data.flLatency = pNetChannel->GetLatency(FLOW_OUTGOING) + pNetChannel->GetLatency(FLOW_INCOMING);
+		data.iSequence = reinterpret_cast<INetChannel*>(pNetChannel)->iOutSequenceNr;
+	}
+
+	data.iServerTick = i::GlobalVars->iTickCount + TIME_TO_TICKS(data.flLatency);
+	data.iCompensatedServerTick = data.iServerTick;
+}
+
+void CNetworking::FinishNetworking() {
+
+	if (!i::ClientState || i::ClientState->iSignonState < SIGNONSTATE_FULL)
+		return;
+
+	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->HasImmunity())
+		return;
+
+	INetChannel* pNetChannel = reinterpret_cast<INetChannel*>(i::EngineClient->GetNetChannelInfo());
+	if (!pNetChannel)
+		return;
+
+	if (pNetChannel->iChokedPackets % 4 || data.bSkipDataGram)
+		return;
+
+	/* run network fix */
+	{
+		/* store netchannel */
+		int nSequenceNr = pNetChannel->iOutSequenceNr;
+		int nChokedCommands = pNetChannel->iChokedPackets;
+
+		/* fix net channel */
+		pNetChannel->iChokedPackets = 0;
+		pNetChannel->iOutSequenceNr = data.iSequence;
+
+		/* send datagram */
+		pNetChannel->SendDatagram(nullptr);
+
+		/* restore netchannel */
+		pNetChannel->iOutSequenceNr = nSequenceNr;
+		pNetChannel->iChokedPackets = nChokedCommands;
+	}
+}

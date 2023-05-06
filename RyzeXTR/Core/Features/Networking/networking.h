@@ -5,6 +5,19 @@
 #include "../../globals.h"
 #include "../Misc/enginepred.h"
 
+struct networkData_t {
+
+	int iTickRate;
+	int iMaxChoke;
+	int iSequence;
+	int iServerTick;
+	int iCompensatedServerTick;
+
+	bool bSkipDataGram;
+
+	float flLatency;
+};
+
 class CNetworking
 {
 public:
@@ -15,8 +28,14 @@ public:
 	int GetServerTick();
 	int GetCorrectedTickbase();
 
+	void StartNetworking();
+	void FinishNetworking();
+
+	int LagcompensatedTicks;
+
 private:
 	std::array < CNetvarData, 150 > pCompressData = { };
+	networkData_t data;
 	int iLastCommandNumber;
 };
 inline CNetworking networking;

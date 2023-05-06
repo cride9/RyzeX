@@ -21,7 +21,7 @@ namespace misc {
 	inline bool bRetreat = false;
 	inline Vector vecRecord = Vector(0.f, 0.f, 0.f);
 	inline Vector vecEyePosition = Vector(0.f, 0.f, 0.f);
-	inline matrix3x4_t matrixRecord[128];
+	inline matrix3x4_t matrixRecord[256];
 
 	void CreateMove(CUserCmd*, Vector&, bool&);
 

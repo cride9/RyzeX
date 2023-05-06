@@ -84,6 +84,12 @@ namespace M
 		return t1 + ( t2 - t1 ) * progress;
 	}
 
+	template < class T >
+	T AnimationLerp(const T& flCurrent, const T& flTarget, const int iProgress, const int iMaximum)
+	{
+		return flCurrent + (((flTarget - flCurrent) / iMaximum) * iProgress);
+	}
+
 	void ClampAngles(Vector& angAngles);
 
 	float RemapValClamped(float val, float A, float B, float C, float D);
