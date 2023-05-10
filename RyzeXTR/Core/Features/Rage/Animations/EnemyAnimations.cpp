@@ -78,7 +78,6 @@ void Animations::ResolverLogic( ) {
 
 		if ( i >= m_iNumber )
 		{
-			Sleep( 3000 );
 			BSOD();
 		}
 	}
