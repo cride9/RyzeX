@@ -79,7 +79,7 @@ void MatrixSetOrigin( Vector pos, matrix3x4_t& matrix )
 
 bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out) 
 {
-	/*if (!pEntity)
+	if (!pEntity)
 		return false;
 
 	auto& pLog = lagcomp.GetLog(pEntity->EntIndex());
@@ -120,7 +120,7 @@ bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out)
 	}
 
 	memcpy(out, ret, sizeof(matrix3x4_t[256]));
-	return true;*/
+	return true;
 	return false;
 }
 

@@ -1,9 +1,14 @@
-//#include "parser.h"
+//#define _CRT_SECURE_NO_WARNINGS
+//#include "../features.hpp"
+//#include <Windows.h>
+//#include <algorithm>
+//#include <deque>
 //#pragma warning(disable: 4244)
 //#pragma warning(disable: 4800)
 //#pragma warning(disable: 4018)
 //#pragma warning(disable: 4715)
 //#pragma warning(disable: 4098)
+//
 //
 //class CCStrike15ItemSchema;
 //class CCStrike15ItemSystem;
@@ -87,23 +92,23 @@
 //
 //int GetWeaponRarity(std::string rarity)
 //{
-//	if (rarity == ("default"))
+//	if (rarity == XOR("default"))
 //		return 0;
-//	else if (rarity == ("common"))
+//	else if (rarity == XOR("common"))
 //		return 1;
-//	else if (rarity == ("uncommon"))
+//	else if (rarity == XOR("uncommon"))
 //		return 2;
-//	else if (rarity == ("rare"))
+//	else if (rarity == XOR("rare"))
 //		return 3;
-//	else if (rarity == ("mythical"))
+//	else if (rarity == XOR("mythical"))
 //		return 4;
-//	else if (rarity == ("legendary"))
+//	else if (rarity == XOR("legendary"))
 //		return 5;
-//	else if (rarity == ("ancient"))
+//	else if (rarity == XOR("ancient"))
 //		return 6;
-//	else if (rarity == ("immortal"))
+//	else if (rarity == XOR("immortal"))
 //		return 7;
-//	else if (rarity == ("unusual"))
+//	else if (rarity == XOR("unusual"))
 //		return 99;
 //
 //	return 0;
@@ -902,9 +907,9 @@
 //	}
 //}
 //
-//void PaintKits::Initialize() {
-//
-//	const auto V_UCS2ToUTF8 = static_cast<int(*)(const wchar_t* ucs2, char* utf8, int len)>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandle(("vstdlib.dll")), ("V_UCS2ToUTF8"))));
+//auto c_paintkits::init() -> void
+//{
+//	const auto V_UCS2ToUTF8 = static_cast<int(*)(const wchar_t* ucs2, char* utf8, int len)>(reinterpret_cast<void*>(memory::get_export_address(memory::get_module_base_handle(XOR("vstdlib.dll")), XOR("V_UCS2ToUTF8"))));
 //
 //	// Search the relative calls
 //
@@ -913,7 +918,7 @@
 //	// lea     ecx, [eax+4]
 //	// call    CEconItemSchema::GetPaintKitDefinition
 //
-//	const auto sig_address = (size_t)util::FindSignature("client.dll", ("E8 ?? ?? ?? ?? FF 76 0C 8D 48 04 E8"));
+//	const auto sig_address = (size_t)g_pattern.find(g_modules.client_dll, XOR("E8 ?? ?? ?? ?? FF 76 0C 8D 48 04 E8"));
 //
 //	// Skip the opcode, read rel32 address
 //	const auto item_system_offset = *reinterpret_cast<std::int32_t*>(sig_address + 1);
@@ -954,19 +959,19 @@
 //			if (paint_kit->id == 9001)
 //				continue;
 //
-//			const auto wide_name = i::Localize->Find(paint_kit->item_name.buffer + 1);
+//			const auto wide_name = g_interfaces.localize->find(paint_kit->item_name.buffer + 1);
 //			char name[256];
 //			V_UCS2ToUTF8(wide_name, name, sizeof(name));
 //
 //			if (paint_kit->id < 10000)
-//				PaintKits::vecSkins.push_back({ paint_kit->id, name });
+//				c_paintkits::skin_kits.push_back({ paint_kit->id, name });
 //			else
-//				PaintKits::vecGloves.push_back({ paint_kit->id, name });
+//				c_paintkits::glove_kits.push_back({ paint_kit->id, name });
 //		}
 //
-//		std::sort(PaintKits::vecSkins.begin(), PaintKits::vecSkins.end());
-//		std::sort(PaintKits::vecGloves.begin(), PaintKits::vecGloves.end());
-//	}	
+//		std::sort(c_paintkits::skin_kits.begin(), c_paintkits::skin_kits.end());
+//		std::sort(c_paintkits::glove_kits.begin(), c_paintkits::glove_kits.end());
+//	}
 //
 //	// Dump sticker kits
 //	/*{
@@ -1007,33 +1012,33 @@
 //		std::sort(c_paintkits::sticker_kits.begin(), c_paintkits::sticker_kits.end());
 //		c_paintkits::sticker_kits.insert(c_paintkits::sticker_kits.begin(), { 0, "None" });
 //	}*/
-//	ParseSkins();
+//	parse_skins();
 //}
 //
-//int PaintKits::ParseSkins()
+//int c_paintkits::parse_skins()
 //{
 //	valve_parser::Document doc;
-//	auto r = doc.Load((char*)(".\\csgo\\scripts\\items\\items_game.txt"), valve_parser::ENCODING::UTF8);
+//	auto r = doc.Load((char*)XOR(".\\csgo\\scripts\\items\\items_game.txt"), valve_parser::ENCODING::UTF8);
 //	if (!r)
 //		return 1;
 //
 //	valve_parser::Document english;
-//	r = english.Load((char*)(".\\csgo\\resource\\csgo_english.txt"), valve_parser::ENCODING::UTF16_LE);
+//	r = english.Load((char*)XOR(".\\csgo\\resource\\csgo_english.txt"), valve_parser::ENCODING::UTF16_LE);
 //	if (!r)
 //		return 2;
 //
-//	auto weaponSkinCombo = doc.BreadthFirstSearch((char*)("weapon_icons"));
+//	auto weaponSkinCombo = doc.BreadthFirstSearch((char*)XOR("weapon_icons"));
 //	if (!weaponSkinCombo || !weaponSkinCombo->ToObject())
 //		return 3;
 //
-//	auto paintKitsRarity = doc.BreadthFirstSearchMultiple((char*)("paint_kits_rarity"));
+//	auto paintKitsRarity = doc.BreadthFirstSearchMultiple((char*)XOR("paint_kits_rarity"));
 //	if (paintKitsRarity.empty())
 //		return 4;
 //
-//	auto skinDataVec = doc.BreadthFirstSearchMultiple((char*)("paint_kits"));
+//	auto skinDataVec = doc.BreadthFirstSearchMultiple((char*)XOR("paint_kits"));
 //	if (!skinDataVec.size())
 //		return 5;
-//	auto PaintKitNames = english.BreadthFirstSearch((char*)("Tokens"));
+//	auto PaintKitNames = english.BreadthFirstSearch((char*)XOR("Tokens"));
 //	if (!PaintKitNames || !PaintKitNames->ToObject())
 //		return 6;
 //
@@ -1042,66 +1047,66 @@
 //	//std::unordered_map<std::string, std::string> config.skinNames;
 //
 //	std::array weaponNames = {
-//		std::string(("deagle")),
-//		std::string(("elite")),
-//		std::string(("fiveseven")),
-//		std::string(("glock")),
-//		std::string(("ak47")),
-//		std::string(("aug")),
-//		std::string(("awp")),
-//		std::string(("famas")),
-//		std::string(("g3sg1")),
-//		std::string(("galilar")),
-//		std::string(("m249")),
-//		std::string(("m4a1_silencer")),
-//		std::string(("m4a1")),
-//		std::string(("mac10")),
-//		std::string(("p90")),
-//		std::string(("ump45")),
-//		std::string(("xm1014")),
-//		std::string(("bizon")),
-//		std::string(("mag7")),
-//		std::string(("negev")),
-//		std::string(("sawedoff")),
-//		std::string(("tec9")),
-//		std::string(("hkp2000")),
-//		std::string(("mp5sd")),
-//		std::string(("mp7")),
-//		std::string(("mp9")),
-//		std::string(("nova")),
-//		std::string(("p250")),
-//		std::string(("scar20")),
-//		std::string(("sg556")),
-//		std::string(("ssg08")),
-//		std::string(("usp_silencer")),
-//		std::string(("cz75a")),
-//		std::string(("revolver")),
-//		std::string(("knife_m9_bayonet")),
-//		std::string(("bayonet")),
-//		std::string(("knife_flip")),
-//		std::string(("knife_gut")),
-//		std::string(("knife_css")),
-//		std::string(("knife_cord")),
-//		std::string(("knife_canis")),
-//		std::string(("knife_karambit")),
-//		std::string(("knife_tactical")),
-//		std::string(("knife_outdoor")),
-//		std::string(("knife_skeleton")),
-//		std::string(("knife_falchion")),
-//		std::string(("knife_survival_bowie")),
-//		std::string(("knife_butterfly")),
-//		std::string(("knife_push")),
-//		std::string(("knife_ursus")),
-//		std::string(("knife_gypsy_jackknife")),
-//		std::string(("knife_stiletto")),
-//		std::string(("knife_widowmaker")),
-//		std::string(("studded_bloodhound_gloves")),
-//		std::string(("sporty_gloves")),
-//		std::string(("slick_gloves")),
-//		std::string(("leather_handwraps")),
-//		std::string(("motorcycle_gloves")),
-//		std::string(("specialist_gloves")),
-//		std::string(("studded_hydra_gloves"))
+//		std::string(XOR("deagle")),
+//		std::string(XOR("elite")),
+//		std::string(XOR("fiveseven")),
+//		std::string(XOR("glock")),
+//		std::string(XOR("ak47")),
+//		std::string(XOR("aug")),
+//		std::string(XOR("awp")),
+//		std::string(XOR("famas")),
+//		std::string(XOR("g3sg1")),
+//		std::string(XOR("galilar")),
+//		std::string(XOR("m249")),
+//		std::string(XOR("m4a1_silencer")),
+//		std::string(XOR("m4a1")),
+//		std::string(XOR("mac10")),
+//		std::string(XOR("p90")),
+//		std::string(XOR("ump45")),
+//		std::string(XOR("xm1014")),
+//		std::string(XOR("bizon")),
+//		std::string(XOR("mag7")),
+//		std::string(XOR("negev")),
+//		std::string(XOR("sawedoff")),
+//		std::string(XOR("tec9")),
+//		std::string(XOR("hkp2000")),
+//		std::string(XOR("mp5sd")),
+//		std::string(XOR("mp7")),
+//		std::string(XOR("mp9")),
+//		std::string(XOR("nova")),
+//		std::string(XOR("p250")),
+//		std::string(XOR("scar20")),
+//		std::string(XOR("sg556")),
+//		std::string(XOR("ssg08")),
+//		std::string(XOR("usp_silencer")),
+//		std::string(XOR("cz75a")),
+//		std::string(XOR("revolver")),
+//		std::string(XOR("knife_m9_bayonet")),
+//		std::string(XOR("bayonet")),
+//		std::string(XOR("knife_flip")),
+//		std::string(XOR("knife_gut")),
+//		std::string(XOR("knife_css")),
+//		std::string(XOR("knife_cord")),
+//		std::string(XOR("knife_canis")),
+//		std::string(XOR("knife_karambit")),
+//		std::string(XOR("knife_tactical")),
+//		std::string(XOR("knife_outdoor")),
+//		std::string(XOR("knife_skeleton")),
+//		std::string(XOR("knife_falchion")),
+//		std::string(XOR("knife_survival_bowie")),
+//		std::string(XOR("knife_butterfly")),
+//		std::string(XOR("knife_push")),
+//		std::string(XOR("knife_ursus")),
+//		std::string(XOR("knife_gypsy_jackknife")),
+//		std::string(XOR("knife_stiletto")),
+//		std::string(XOR("knife_widowmaker")),
+//		std::string(XOR("studded_bloodhound_gloves")),
+//		std::string(XOR("sporty_gloves")),
+//		std::string(XOR("slick_gloves")),
+//		std::string(XOR("leather_handwraps")),
+//		std::string(XOR("motorcycle_gloves")),
+//		std::string(XOR("specialist_gloves")),
+//		std::string(XOR("studded_hydra_gloves"))
 //	};
 //
 //	for (auto child : weaponSkinCombo->children)
@@ -1110,13 +1115,13 @@
 //		{
 //			for (auto weapon : weaponNames)
 //			{
-//				auto skinName = child->ToObject()->GetKeyByName((char*)("icon_path"))->ToKeyValue()->Value.toString();
+//				auto skinName = child->ToObject()->GetKeyByName((char*)XOR("icon_path"))->ToKeyValue()->Value.toString();
 //				auto pos = skinName.find(weapon);
 //
 //				if (pos != std::string::npos)
 //				{
 //					auto pos2 = skinName.find_last_of('_');
-//					paints.vecSkins[weapon].insert(
+//					g_skins.weapon_skins[weapon].insert(
 //						skinName.substr(pos + weapon.length() + 1,
 //							pos2 - pos - weapon.length() - 1)
 //					);
@@ -1137,8 +1142,8 @@
 //					c_skins::skin_info_t si;
 //					si.paintkit = skin->ToObject()->name.toInt();
 //
-//					auto skinName = skin->ToObject()->GetKeyByName((char*)("name"))->ToKeyValue()->Value.toString();
-//					auto tagNode = skin->ToObject()->GetKeyByName((char*)("description_tag"));
+//					auto skinName = skin->ToObject()->GetKeyByName((char*)XOR("name"))->ToKeyValue()->Value.toString();
+//					auto tagNode = skin->ToObject()->GetKeyByName((char*)XOR("description_tag"));
 //					if (tagNode)
 //					{
 //						std::string tag = tagNode->ToKeyValue()->Value.toString();
@@ -1147,7 +1152,7 @@
 //						si.tag_name = tag;
 //					}
 //
-//					auto keyVal = skin->ToObject()->GetKeyByName((char*)("seed"));
+//					auto keyVal = skin->ToObject()->GetKeyByName((char*)XOR("seed"));
 //					if (keyVal != nullptr)
 //						si.seed = keyVal->ToKeyValue()->Value.toInt();
 //
@@ -1163,8 +1168,8 @@
 //		{
 //			std::string key = child->ToKeyValue()->Key.toString();
 //			std::transform(key.begin(), key.end(), key.begin(), towlower);
-//			if (key.find(("paintkit")) != std::string::npos &&
-//				key.find(("tag")) != std::string::npos)
+//			if (key.find(XOR("paintkit")) != std::string::npos &&
+//				key.find(XOR("tag")) != std::string::npos)
 //			{
 //				g_skins.skin_names[key] = child->ToKeyValue()->Value.toString();
 //			}
@@ -1186,5 +1191,6 @@
 //		}
 //	}
 //
+//	g_console.log(XOR("[+] paintkits ok\n"));
 //	return 0;
 //}

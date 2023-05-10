@@ -39,6 +39,7 @@ public:
 
 private:
 
+	std::pair<CBaseEntity*, int>	SelectTargetIndex(CBaseCombatWeapon*, Vector&);
 	Vector				Hitscan(CBaseEntity*, CBaseCombatWeapon*, Vector&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector, int);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*, Vector);
@@ -47,7 +48,7 @@ private:
 	int					CalculateTickCount(float);
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
-	Lagcompensation::LagRecord_t* CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog);
+	Lagcompensation::LagRecord_t* CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog, int&);
 	bool CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon);
 	bool				ShouldSendPacket(bool&);
 

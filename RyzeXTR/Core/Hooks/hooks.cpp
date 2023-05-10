@@ -91,8 +91,8 @@ void h::HookNetChannel(INetChannel* pNetChannel) {
 		if (!detour::sendNetMsg.IsHooked())
 			h::HookTable(detour::sendNetMsg, pNetChannel, table::sendNetMsg, &h::hkSendNetMsg);
 
-		if ( !detour::setChoked.IsHooked( ) )
-			h::HookTable(detour::setChoked, pNetChannel, table::setChoked, &h::hkSetChoked);
+		//if ( !detour::setChoked.IsHooked( ) )
+		//	h::HookTable(detour::setChoked, pNetChannel, table::setChoked, &h::hkSetChoked);
 
 		if (!detour::sendDatagram.IsHooked())
 			h::HookTable(detour::sendDatagram, pNetChannel, table::sendDatagram, &h::hkSendDatagram);

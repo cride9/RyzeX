@@ -1,29 +1,27 @@
 //#pragma once
 //#include <vector>
 //#include <string>
-//#include <algorithm>
-//#include <deque>
-//#include <Windows.h>
-//#include "../../SDK/Entity.h"
 //
-//class PaintKits {
-//
+//class c_paintkits
+//{
 //public:
-//	struct PaintKit_t {
-//
+//	struct paint_kit
+//	{
 //		int id;
 //		std::string name;
 //
-//		auto operator < (const PaintKit_t& other) const -> bool {
+//		auto operator < (const paint_kit& other) const -> bool
+//		{
 //			return name < other.name;
 //		}
 //	};
 //
-//	std::vector<PaintKit_t> vecSkins;
-//	std::vector<PaintKit_t> vecGloves;
-//	std::vector<PaintKit_t> vecStickers;
+//	std::vector<paint_kit> skin_kits;
+//	std::vector<paint_kit> glove_kits;
+//	std::vector<paint_kit> sticker_kits;
 //
-//	void Initialize();
-//	int ParseSkins();
+//	auto init() -> void;
+//	int parse_skins();
 //};
-//inline PaintKits paints;
+//
+//inline c_paintkits g_paintkits;

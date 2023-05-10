@@ -95,9 +95,6 @@ void visual::VisualRender() {
 		if (i::DebugOverlay->ScreenPosition(vecAbsOrigin - Vector{ 0.f, 0.f, 9.f }, bot))
 			continue;
 
-		Vector vecMin, vecMax;
-		pEnt->GetRenderBounds(vecMin, vecMax);
-
 		Vector top;
 		if (i::DebugOverlay->ScreenPosition(vecAbsOrigin + Vector(0, 0, pEnt->vecMaxs().z + 5), top))
 			continue;
@@ -316,7 +313,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		}
 	}*/
 
-#if _DEBUG
+#if NO
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
 	
@@ -330,15 +327,6 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		if (iLastValid >= pLog->pRecord.size())
 			return;
 
-		static int difference = 0;
-		static int simtime = pLog->pRecord.at(iLastValid).flSimulationTime;
-		if (simtime != pLog->pRecord.at(iLastValid).flSimulationTime) {
-			difference = g::pCmd->iTickCount - lagcomp.FixTickCount(pLog->pRecord.at(iLastValid).flSimulationTime);
-			simtime = lagcomp.FixTickCount(pLog->pRecord.at(iLastValid).flSimulationTime);
-		}
-
-		something(right, top, spacing, std::to_string(pLog->iLastValid).c_str());
-		something(right, top, spacing, std::format("{}", difference).c_str());
 		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[0].flPlaybackRate * 10000000).c_str());
 		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[1].flPlaybackRate * 10000000).c_str());
 		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[2].flPlaybackRate * 10000000).c_str());

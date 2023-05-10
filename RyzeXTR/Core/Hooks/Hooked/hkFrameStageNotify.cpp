@@ -4,6 +4,7 @@
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../Features/Changers/skinchanger.h"
 
 void hkPreFrameStageNotify(EStage curStage) {
 
@@ -31,12 +32,10 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
-
 		lagcomp.RemoveInterpolation();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
-
 		break;
 	}
 }

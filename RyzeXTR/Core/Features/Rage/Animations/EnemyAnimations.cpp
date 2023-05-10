@@ -392,10 +392,11 @@ void Resolverlmao(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, L
 	}
 	else {
 
+
 		switch (anims.missedShots[pEntity->EntIndex()])
 		{
-			case 1: flGuessedSide *= -1.f; break;
-			case 2: flGuessedSide *= 0.f; break;
+		case 1: flGuessedSide = flGuessedSide == 0 ? pEntity->AnimState()->GetMaxDesync() : flGuessedSide * -1.f; break;
+		case 2: flGuessedSide = flGuessedSide == 0 ? -pEntity->AnimState()->GetMaxDesync() : flGuessedSide * 0.f; break;
 		}
 
 		flLastGuessedSide = flGuessedSide;

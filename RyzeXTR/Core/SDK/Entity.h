@@ -577,6 +577,11 @@ public:
 		return reinterpret_cast<T*>(uint32_t(this) + offset);
 	}
 
+	std::array<int, 64>& GetMyWeapons() {
+
+		return *(std::array<int, 64>*)((uint32_t(this) + 0x2E08));
+	}
+
 	CUtlVector <matrix3x4_t>& GetCachedBoneData() {
 
 		return *(CUtlVector <matrix3x4_t>*)(uintptr_t(this) + 0x2914);

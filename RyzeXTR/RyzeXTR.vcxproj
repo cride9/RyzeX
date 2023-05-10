@@ -349,6 +349,7 @@
     <ClInclude Include="Core\Interface\Interfaces\IGameEventManager.h" />
     <ClInclude Include="Core\Interface\Interfaces\IGlowObjectManager.h" />
     <ClInclude Include="Core\Interface\Interfaces\IInputSystem.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IItemSystem.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMaterial.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMaterialSystem.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMatRenderContext.h" />
@@ -384,6 +385,7 @@
     <ClInclude Include="Core\SDK\NetVar\datatable.h" />
     <ClInclude Include="Core\SDK\NetVar\fnv.h" />
     <ClInclude Include="Core\SDK\NetVar\Netvar.h" />
+    <ClInclude Include="Core\SDK\pe.h" />
     <ClInclude Include="Core\SDK\RayTracer rebuilt\CRayTrace.h" />
     <ClInclude Include="Core\SDK\WavParser.h" />
     <ClInclude Include="Core\utilities.h" />

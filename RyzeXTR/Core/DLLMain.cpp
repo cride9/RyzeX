@@ -14,6 +14,7 @@
 #include <mmsystem.h>
 #include "memeSounds.h"
 #include "SDK/InputSystem.h"
+#include "Features/Rage/Animations/LocalAnimation.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -103,6 +104,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	i::EngineClient->ClientCmdUnrestricted("cl_fullupdate");
 	IPT::Restore( );
 	delete Config2;
+	delete g_LocalAnimations;
 
 #endif
 

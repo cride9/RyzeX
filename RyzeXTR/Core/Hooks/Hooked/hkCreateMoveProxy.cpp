@@ -46,6 +46,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 
+	if (i::ClientState->iDeltaTick > 0)
+		i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
+
 	if ( exploits::bIsShiftingTicks )
 		bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
 

@@ -27,6 +27,7 @@
 #include "Interfaces/IInputSystem.h"
 #include "Interfaces/IMdlCache.h"
 #include "Interfaces/CLocalize.h"
+#include "Interfaces/IItemSystem.h"
 
 // Classes aka that I can't find as interface in the source kbxdbdxjk
 #include "Classes/CClientState.h"
@@ -75,6 +76,8 @@ namespace i {
 	inline CInput* Input;
 	inline CClientModeShared* ClientModeShared;
 	inline CGlobalVarsBase* GlobalVars;
+
+	inline std::add_pointer_t<IItemSystem* __cdecl()> ItemSystem;
 
 	template <typename T>
 	T* GetInterface(const char* szLib, const char* szName) {

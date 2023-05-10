@@ -1376,9 +1376,9 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		vecAngle.y -= g::pLocal->GetEyeAngles().y;
 		vecAngle.NormalizeAngle();
 
-		if (vecAngle.y < -1.0f)
+		if (vecAngle.y < -0.5f)
 			pCmd->flSideMove = 450.f;
-		else if (vecAngle.y > 1.0f)
+		else if (vecAngle.y > 0.5f)
 			pCmd->flSideMove = -450.f;
 	}
 }

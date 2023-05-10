@@ -18,7 +18,18 @@ void __fastcall h::hkPacketEnd( void* ecx, void* edx )
 	if (nCommandsAcknowledged <= 0)
 		return;
 
-	networking.OnPacketEnd( ( CClientState* )( ecx ) );
+	CClientState* ClientState = static_cast<CClientState*>(ecx);
+
+	if (ClientState->pNetChannel && !(ClientState->nChokedCommands % 4)) {
+
+		const auto current_choke = ClientState->pNetChannel->iChokedPackets;
+		ClientState->pNetChannel->iChokedPackets = 0;
+		ClientState->pNetChannel->SendDatagram(0);
+		--ClientState->pNetChannel->iOutSequenceNr;
+		ClientState->pNetChannel->iChokedPackets = current_choke;
+	}
+
+	networking.OnPacketEnd(ClientState);
 	return original( ecx, edx );
 }
 

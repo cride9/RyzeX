@@ -1,7 +1,4 @@
 //#pragma once
-//#include "../../SDK/Entity.h"
-//#include <set>
-//#include <map>
 //
 //struct weapon_name_t
 //{
@@ -78,7 +75,7 @@
 //	void update_skins();
 //	void menu();
 //	void check_update();
-//	void override_hud_icon(IGameEvent*);
+//	void override_hud_icon(i_game_event*);
 //	int remap_knife_animations(short index, const int sequence);
 //
 //	bool first_time_render;
@@ -235,66 +232,66 @@
 //
 //	const std::vector<weapon_name_t> knife_names =
 //	{
-//		{0, ("default")},
-//		{WEAPON_KNIFE_BAYONET, ("bayonet")},
-//		{WEAPON_KNIFE_CSS, ("classic knife")},
-//		{WEAPON_KNIFE_CORD, ("cord knife")},
-//		{WEAPON_KNIFE_CANIS, ("canis knife")},
-//		{WEAPON_KNIFE_OUTDOOR, ("outdoor knife")},
-//		{WEAPON_KNIFE_SKELETON, ("skeleton knife")},
-//		{WEAPON_KNIFE_FLIP, ("flip knife")},
-//		{WEAPON_KNIFE_GUT, ("gut knife")},
-//		{WEAPON_KNIFE_KARAMBIT, ("karambit")},
-//		{WEAPON_KNIFE_M9_BAYONET, ("m9 bayonet")},
-//		{WEAPON_KNIFE_TACTICAL, ("huntsman knife")},
-//		{WEAPON_KNIFE_FALCHION, ("falchion knife")},
-//		{WEAPON_KNIFE_SURVIVAL_BOWIE, ("bowie knife")},
-//		{WEAPON_KNIFE_BUTTERFLY, ("butterfly knife")},
-//		{WEAPON_KNIFE_PUSH, ("shadow daggers")},
-//		{WEAPON_KNIFE_URSUS, ("ursus knife")},
-//		{WEAPON_KNIFE_GYPSY_JACKKNIFE, ("navaja knife")},
-//		{WEAPON_KNIFE_STILETTO, ("stiletto knife")},
-//		{WEAPON_KNIFE_WIDOWMAKER, ("talon knife")}
+//		{0, XOR("default")},
+//		{weapon_bayonet, XOR("bayonet")},
+//		{weapon_knife_css, XOR("classic knife")},
+//		{weapon_knife_cord, XOR("cord knife")},
+//		{weapon_knife_canis, XOR("canis knife")},
+//		{weapon_knife_outdoor, XOR("outdoor knife")},
+//		{weapon_knife_skeleton, XOR("skeleton knife")},
+//		{weapon_knife_flip, XOR("flip knife")},
+//		{weapon_knife_gut, XOR("gut knife")},
+//		{weapon_knife_karambit, XOR("karambit")},
+//		{weapon_knife_m9_bayonet, XOR("m9 bayonet")},
+//		{weapon_knife_tactical, XOR("huntsman knife")},
+//		{weapon_knife_falchion, XOR("falchion knife")},
+//		{weapon_knife_survival_bowie, XOR("bowie knife")},
+//		{weapon_knife_butterfly, XOR("butterfly knife")},
+//		{weapon_knife_push, XOR("shadow daggers")},
+//		{weapon_knife_ursus, XOR("ursus knife")},
+//		{weapon_knife_gypsy_jackknife, XOR("navaja knife")},
+//		{weapon_knife_stiletto, XOR("stiletto knife")},
+//		{weapon_knife_widowmaker, XOR("talon knife")}
 //	};
 //
 //	std::vector< weapon_name_t> weapon_names_full =
 //	{
-//		{ WEAPON_KNIFE, ("Knife")},
-//		{ GLOVE_T, ("Glove")},
-//		{ WEAPON_AK47, ("AK-47") },
-//		{ WEAPON_AUG, ("AUG") },
-//		{ WEAPON_AWP, ("AWP") },
-//		{ WEAPON_CZ75A, ("CZ75 Auto") },
-//		{ WEAPON_DEAGLE, ("Desert Eagle") },
-//		{ WEAPON_ELITE, ("Dual Berettas") },
-//		{ WEAPON_FAMAS, ("FAMAS") },
-//		{ WEAPON_FIVESEVEN, ("Five-SeveN") },
-//		{ WEAPON_G3SG1, ("G3SG1") },
-//		{ WEAPON_GALILAR, ("Galil AR") },
-//		{ WEAPON_GLOCK, ("Glock-18") },
-//		{ WEAPON_M249, ("M249") },
-//		{ WEAPON_M4A1_SILENCER, ("M4A1-S") },
-//		{ WEAPON_M4A1, ("M4A4") },
-//		{ WEAPON_MAC10, ("MAC-10") },
-//		{ WEAPON_MAG7, ("MAG-7") },
-//		{ WEAPON_MP7, ("MP7") },
-//		{ WEAPON_MP5SD, ("MP5") },
-//		{ WEAPON_MP9, ("MP9") },
-//		{ WEAPON_NEGEV, ("Negev") },
-//		{ WEAPON_NOVA, ("Nova") },
-//		{ WEAPON_HKP2000, ("P2000") },
-//		{ WEAPON_P250, ("P250") },
-//		{ WEAPON_P90, ("P90") },
-//		{ WEAPON_BIZON, ("PP-Bizon") },
-//		{ WEAPON_REVOLVER, ("R8 Revolver") },
-//		{ WEAPON_SAWEDOFF, ("Sawed-Off") },
-//		{ WEAPON_SCAR20, ("SCAR-20") },
-//		{ WEAPON_SSG08, ("SSG 08") },
-//		{ WEAPON_SG556, ("SG 553") },
-//		{ WEAPON_TEC9, ("Tec-9") },
-//		{ WEAPON_UMP45, ("UMP-45") },
-//		{ WEAPON_USP_SILENCER, ("USP-S") },
-//		{ WEAPON_XM1014, ("XM1014") },
+//		{ weapon_knife, ("Knife")},
+//		{ glove_t_side, ("Glove")},
+//		{ weapon_ak47, ("AK-47") },
+//		{ weapon_aug, ("AUG") },
+//		{ weapon_awp, ("AWP") },
+//		{ weapon_cz75a, ("CZ75 Auto") },
+//		{ weapon_deagle, ("Desert Eagle") },
+//		{ weapon_elite, ("Dual Berettas") },
+//		{ weapon_famas, ("FAMAS") },
+//		{ weapon_fiveseven, ("Five-SeveN") },
+//		{ weapon_g3sg1, ("G3SG1") },
+//		{ weapon_galilar, ("Galil AR") },
+//		{ weapon_glock, ("Glock-18") },
+//		{ weapon_m249, ("M249") },
+//		{ weapon_m4a1_silencer, ("M4A1-S") },
+//		{ weapon_m4a1, ("M4A4") },
+//		{ weapon_mac10, ("MAC-10") },
+//		{ weapon_mag7, ("MAG-7") },
+//		{ weapon_mp7, ("MP7") },
+//		{ weapon_mp5sd, ("MP5") },
+//		{ weapon_mp9, ("MP9") },
+//		{ weapon_negev, ("Negev") },
+//		{ weapon_nova, ("Nova") },
+//		{ weapon_hkp2000, ("P2000") },
+//		{ weapon_p250, ("P250") },
+//		{ weapon_p90, ("P90") },
+//		{ weapon_bizon, ("PP-Bizon") },
+//		{ weapon_revolver, ("R8 Revolver") },
+//		{ weapon_sawedoff, ("Sawed-Off") },
+//		{ weapon_scar20, ("SCAR-20") },
+//		{ weapon_ssg08, ("SSG 08") },
+//		{ weapon_sg556, ("SG 553") },
+//		{ weapon_tec9, ("Tec-9") },
+//		{ weapon_ump45, ("UMP-45") },
+//		{ weapon_usp_silencer, ("USP-S") },
+//		{ weapon_xm1014, ("XM1014") },
 //	};
 //
 //	const char* glovemodels[9] = { "default","bloodhound","sport","driver","hand wraps","motorcycle","specialist","hydra", "broken fang" };
@@ -388,145 +385,145 @@
 //		switch (id)
 //		{
 //		case 1:
-//			return ("deagle");
+//			return XOR("deagle");
 //		case 2:
-//			return ("elite");
+//			return XOR("elite");
 //		case 3:
-//			return ("fiveseven");
+//			return XOR("fiveseven");
 //		case 4:
-//			return ("glock");
+//			return XOR("glock");
 //		case 7:
-//			return ("ak47");
+//			return XOR("ak47");
 //		case 8:
-//			return ("aug");
+//			return XOR("aug");
 //		case 9:
-//			return ("awp");
+//			return XOR("awp");
 //		case 10:
-//			return ("famas");
+//			return XOR("famas");
 //		case 11:
-//			return ("g3sg1");
+//			return XOR("g3sg1");
 //		case 13:
-//			return ("galilar");
+//			return XOR("galilar");
 //		case 14:
-//			return ("m249");
+//			return XOR("m249");
 //		case 60:
-//			return ("m4a1_silencer");
+//			return XOR("m4a1_silencer");
 //		case 16:
-//			return ("m4a1");
+//			return XOR("m4a1");
 //		case 17:
-//			return ("mac10");
+//			return XOR("mac10");
 //		case 19:
-//			return ("p90");
+//			return XOR("p90");
 //		case 23:
-//			return ("mp5sd");
+//			return XOR("mp5sd");
 //		case 24:
-//			return ("ump45");
+//			return XOR("ump45");
 //		case 25:
-//			return ("xm1014");
+//			return XOR("xm1014");
 //		case 26:
-//			return ("bizon");
+//			return XOR("bizon");
 //		case 27:
-//			return ("mag7");
+//			return XOR("mag7");
 //		case 28:
-//			return ("negev");
+//			return XOR("negev");
 //		case 29:
-//			return ("sawedoff");
+//			return XOR("sawedoff");
 //		case 30:
-//			return ("tec9");
+//			return XOR("tec9");
 //		case 32:
-//			return ("hkp2000");
+//			return XOR("hkp2000");
 //		case 33:
-//			return ("mp7");
+//			return XOR("mp7");
 //		case 34:
-//			return ("mp9");
+//			return XOR("mp9");
 //		case 35:
-//			return ("nova");
+//			return XOR("nova");
 //		case 36:
-//			return ("p250");
+//			return XOR("p250");
 //		case 38:
-//			return ("scar20");
+//			return XOR("scar20");
 //		case 39:
-//			return ("sg556");
+//			return XOR("sg556");
 //		case 40:
-//			return ("ssg08");
+//			return XOR("ssg08");
 //		case 61:
-//			return ("usp_silencer");
+//			return XOR("usp_silencer");
 //		case 63:
-//			return ("cz75a");
+//			return XOR("cz75a");
 //		case 64:
-//			return ("revolver");
+//			return XOR("revolver");
 //		case 508:
-//			return ("knife_m9_bayonet");
+//			return XOR("knife_m9_bayonet");
 //		case 500:
-//			return ("bayonet");
+//			return XOR("bayonet");
 //		case 505:
-//			return ("knife_flip");
+//			return XOR("knife_flip");
 //		case 506:
-//			return ("knife_gut");
+//			return XOR("knife_gut");
 //		case 507:
-//			return ("knife_karambit");
+//			return XOR("knife_karambit");
 //		case 509:
-//			return ("knife_tactical");
+//			return XOR("knife_tactical");
 //		case 512:
-//			return ("knife_falchion");
+//			return XOR("knife_falchion");
 //		case 514:
-//			return ("knife_survival_bowie");
+//			return XOR("knife_survival_bowie");
 //		case 515:
-//			return ("knife_butterfly");
+//			return XOR("knife_butterfly");
 //		case 516:
-//			return ("knife_push");
+//			return XOR("knife_push");
 //
 //		case 519:
-//			return ("knife_ursus");
+//			return XOR("knife_ursus");
 //		case 520:
-//			return ("knife_gypsy_jackknife");
+//			return XOR("knife_gypsy_jackknife");
 //		case 522:
-//			return ("knife_stiletto");
+//			return XOR("knife_stiletto");
 //		case 523:
-//			return ("knife_widowmaker");
+//			return XOR("knife_widowmaker");
 //
-//		case WEAPON_KNIFE_CSS:
-//			return ("knife_css");
+//		case weapon_knife_css:
+//			return XOR("knife_css");
 //
-//		case WEAPON_KNIFE_CORD:
-//			return ("knife_cord");
+//		case weapon_knife_cord:
+//			return XOR("knife_cord");
 //
-//		case WEAPON_KNIFE_CANIS:
-//			return ("knife_canis");
+//		case weapon_knife_canis:
+//			return XOR("knife_canis");
 //
-//		case WEAPON_KNIFE_OUTDOOR:
-//			return ("knife_outdoor");
+//		case weapon_knife_outdoor:
+//			return XOR("knife_outdoor");
 //
-//		case WEAPON_KNIFE_SKELETON:
-//			return ("knife_skeleton");
+//		case weapon_knife_skeleton:
+//			return XOR("knife_skeleton");
 //
 //		case 5027:
-//			return ("studded_bloodhound_gloves");
+//			return XOR("studded_bloodhound_gloves");
 //		case 5028:
-//			return ("t_gloves");
+//			return XOR("t_gloves");
 //		case 5029:
-//			return ("ct_gloves");
+//			return XOR("ct_gloves");
 //		case 5030:
-//			return ("sporty_gloves");
+//			return XOR("sporty_gloves");
 //		case 5031:
-//			return ("slick_gloves");
+//			return XOR("slick_gloves");
 //		case 5032:
-//			return ("leather_handwraps");
+//			return XOR("leather_handwraps");
 //		case 5033:
-//			return ("motorcycle_gloves");
+//			return XOR("motorcycle_gloves");
 //		case 5034:
-//			return ("specialist_gloves");
+//			return XOR("specialist_gloves");
 //		case 5035:
-//			return ("studded_hydra_gloves");
+//			return XOR("studded_hydra_gloves");
 //
 //		default:
-//			return ("");
+//			return XOR("");
 //		}
 //	}
 //
 //	__forceinline static auto is_knife(const int i) -> bool
 //	{
-//		return (i >= WEAPON_KNIFE_BAYONET && i < GLOVE_STUDDED_BLOODHOUND) || i == WEAPON_KNIFE_T || i == WEAPON_KNIFE;
+//		return (i >= weapon_bayonet && i < glove_studded_bloodhound) || i == weapon_knife_t || i == weapon_knife;
 //	}
 //
 //	template <typename T>
@@ -565,25 +562,25 @@
 //		}
 //	}
 //
-//	__forceinline static auto create_wearable() -> CreateClientClassFn
+//	__forceinline static auto create_wearable() -> createclientclass_t
 //	{
-//		auto client_class = i::ClientDll->GetAllClasses();
+//		auto client_class = g_interfaces.client->get_all_classes();
 //
-//		for (client_class = i::ClientDll->GetAllClasses(); client_class; client_class = client_class->pNext)
+//		for (client_class = g_interfaces.client->get_all_classes(); client_class; client_class = client_class->next)
 //		{
-//			if (client_class->nClassID == EClassIndex::CEconWearable)
-//				return client_class->pCreateFn;
+//			if (client_class->classid == econwearable)
+//				return client_class->create;
 //		}
 //	}
 //
-//	__forceinline static auto make_glove(int entry, int serial) -> CBaseCombatWeapon*
+//	__forceinline static auto make_glove(int entry, int serial) -> base_attributable_item_t*
 //	{
 //		static auto create_wearable_fn = create_wearable();
 //		create_wearable_fn(entry, serial);
 //
-//		const auto glove = reinterpret_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntity(entry));
+//		const auto glove = reinterpret_cast<base_attributable_item_t*>(g_interfaces.entitylist->get_client_entity(entry));
 //		assert(glove); {
-//			static auto set_abs_origin_addr = (size_t)util::FindSignature("client.dll", ("55 8B EC 83 E4 F8 51 53 56 57 8B F1 E8"));
+//			static auto set_abs_origin_addr = (size_t)g_pattern.find(g_modules.client_dll, XOR("55 8B EC 83 E4 F8 51 53 56 57 8B F1 E8"));
 //			const auto set_abs_origin_fn = reinterpret_cast<void(__thiscall*)(void*, const std::array<float, 3>&)>(set_abs_origin_addr);
 //			static constexpr std::array<float, 3> new_pos = { 10000.f, 10000.f, 10000.f };
 //			set_abs_origin_fn(glove, new_pos);
@@ -763,8 +760,8 @@
 //		return 0;
 //	}
 //
-//	bool apply_glove_model(CBaseCombatWeapon*, const char*);
-//	bool apply_glove_skin(CBaseCombatWeapon*, int, int, int, int, int, float);
+//	bool apply_glove_model(base_attributable_item_t*, const char*);
+//	bool apply_glove_skin(base_attributable_item_t*, int, int, int, int, int, float);
 //	void glove_changer();
 //
 //};
