@@ -15,6 +15,7 @@
 #include "memeSounds.h"
 #include "SDK/InputSystem.h"
 #include "Features/Rage/Animations/LocalAnimation.h"
+#include "Features/Changers/skinchanger.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -81,6 +82,8 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	g::entityListener.Setup();
 
 	IPT::Setup();
+
+	SkinChanger::Dump( );
 
 #if NDEBUG
 	//util::LogConsole("[RELEASE] Built date: " __DATE__ " at " __TIME__ "\n");
