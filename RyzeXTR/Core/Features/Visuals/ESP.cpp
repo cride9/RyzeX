@@ -75,6 +75,9 @@ void visual::VisualRender() {
 		if (!pEnt->GetHealth())
 			continue;
 
+		if (pEnt->GetHealth() > iHealth[i])
+			iHealth[i] = pEnt->GetHealth();
+
 		//SafepointDebug(pEnt);
 		WorldCrosshair();
 		//HitboxVisualization();
@@ -84,7 +87,7 @@ void visual::VisualRender() {
 			vecAbsOrigin = vecDormatPosition[i].IsZero() ? Vector(0, 0, 0) : vecDormatPosition[i];
 
 		if (vecAbsOrigin.IsZero() && pEnt->IsDormant())
-			return;
+			continue;
 		
 		if (!pEnt->IsDormant()) {
 			vecAbsOrigin = pEnt->GetAbsOrigin();
@@ -111,6 +114,7 @@ void visual::VisualRender() {
 			if (!bEnable[ENEMY])
 				continue;
 
+			if (bSkeleton[ENEMY]) SkeletonEsp(pEnt, flSkeletonColor[ENEMY]);
 			if (bName[ENEMY]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, pEnt->IsDormant() ? vecDormantColor : Color(flNameColor[ENEMY]));
 			if (bBox[ENEMY]) BoxEsp(left, top.y, right, bot.y, pEnt->IsDormant() ? vecDormantColor : Color(flBoxColor[ENEMY]));
 			if (bHealth[ENEMY]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), pEnt->IsDormant() ? vecDormantColor : Color(flHealthColorStart[ENEMY]), pEnt->IsDormant() ? vecDormantColor : Color(flHealthColorEnd[ENEMY]), i);
@@ -126,6 +130,7 @@ void visual::VisualRender() {
 				if (!bEnable[LOCAL])
 					continue;
 
+				if (bSkeleton[LOCAL]) SkeletonEsp(pEnt, flSkeletonColor[LOCAL]);
 				if (bName[LOCAL]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[LOCAL]));
 				if (bBox[LOCAL]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[LOCAL]));
 				if (bHealth[LOCAL]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[LOCAL]), Color(flHealthColorEnd[LOCAL]), i);
@@ -140,6 +145,7 @@ void visual::VisualRender() {
 				continue;
 
 			// Teammate
+			if (bSkeleton[TEAM]) SkeletonEsp(pEnt, flSkeletonColor[TEAM]);
 			if (bName[TEAM]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[TEAM]));
 			if (bBox[TEAM]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[TEAM]));
 			if (bHealth[TEAM]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[TEAM]), Color(flHealthColorEnd[TEAM]), i);
@@ -176,15 +182,17 @@ void visual::HealthEsp(int& left, float& top, int& right, float& bot, float& wid
 	i::Surface->DrawOutlinedRect(left - 8, top, left - 4, bot + 1);
 
 	i::Surface->DrawSetColor(startColor);
-	i::Surface->DrawFilledRectFade(left - 7, bot - (fDistance * flFactor) - 5, left - 5, bot, startColor[3], 0, false);
+	i::Surface->DrawFilledRectFade(left - 7, bot - (fDistance * flFactor), left - 5, bot, startColor[3], 0, false);
 
 	i::Surface->DrawSetColor(endColor);
-	i::Surface->DrawFilledRectFade(left - 7, bot - (fDistance * flFactor) - 5, left - 5, bot, 0, endColor[3], false);
+	i::Surface->DrawFilledRectFade(left - 7, bot - (fDistance * flFactor), left - 5, bot, 0, endColor[3], false);
 
-	if (startColor != Color( 0.5f, 0.5f, 0.5f, 0.5f ))
-		i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 8, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
-	else
-		i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 8, startColor, g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
+	if (health < 95) {
+		if (startColor != Color(0.5f, 0.5f, 0.5f, 0.5f))
+			i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 4, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
+		else
+			i::Surface->DrawT(left - 7, bot - (fDistance * flFactor) - 4, startColor, g::fonts::FlagESP, true, std::to_string(iHealth[iEntIndex]).c_str());
+	}
 }
 
 void visual::NameEsp(int& left, float& top, int& right, float& bot, float& width, float& height, CBaseEntity* pEnt, Color color) {
@@ -346,20 +354,20 @@ void visual::Glow(CBaseEntity* pLocal)
 {
 	for (int i = 0; i < i::GlowObjectManager->vecGlowObjectDefinitions.Count(); i++)
 	{
-		IGlowObjectManager::GlowObject_t& hGlowObject = i::GlowObjectManager->vecGlowObjectDefinitions[i];
+		IGlowObjectManager::GlowObject_t* hGlowObject = &i::GlowObjectManager->vecGlowObjectDefinitions[i];
 
 		// is current object not used
-		if (hGlowObject.IsEmpty())
+		if (hGlowObject->IsEmpty())
 			continue;
 
 		// get current entity from object handle
-		CBaseEntity* pEntity = hGlowObject.pEntity;
+		CBaseEntity* pEntity = hGlowObject->pEntity;
 
 		if (pEntity == nullptr)
 			continue;
 
 		// set bloom state
-		hGlowObject.bFullBloomRender = false;
+		hGlowObject->bFullBloomRender = false;
 
 		CBaseClient* pClientClass = pEntity->GetClientClass();
 
@@ -379,13 +387,13 @@ void visual::Glow(CBaseEntity* pLocal)
 				break;
 
 			if (pEntity->GetTeam() != pLocal->GetTeam() && cfg::visual::bGlow[ENEMY]) 
-				hGlowObject.Set(Color(cfg::visual::flGlowColor[ENEMY]));
+				hGlowObject->Set(Color(cfg::visual::flGlowColor[ENEMY]));
 
 			else if (pEntity->GetTeam() == pLocal->GetTeam() && pEntity != g::pLocal && cfg::visual::bGlow[TEAM])
-				hGlowObject.Set(Color(cfg::visual::flGlowColor[TEAM]));
+				hGlowObject->Set(Color(cfg::visual::flGlowColor[TEAM]));
 
 			else if (pEntity == pLocal && cfg::visual::bGlow[LOCAL])
-				hGlowObject.Set(Color(cfg::visual::flGlowColor[LOCAL]));
+				hGlowObject->Set(Color(cfg::visual::flGlowColor[LOCAL]));
 
 			break;
 		}
@@ -431,5 +439,150 @@ void visual::WorldCrosshair() {
 		i::Surface->DrawLine(vecScreenPoint.x - 2, vecScreenPoint.y - 2, vecScreenPoint.x - 8, vecScreenPoint.y - 8);
 		/* Bottom right*/
 		i::Surface->DrawLine(vecScreenPoint.x - 2, vecScreenPoint.y + 2, vecScreenPoint.x - 8, vecScreenPoint.y + 8);
+	}
+}
+
+void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
+
+	if (pEntity->IsDormant())
+		return;
+
+	const Model_t* model = pEntity->GetModel();
+	if (!model)
+		return;
+
+	studiohdr_t* pStudioHdr = i::ModelInfo->GetStudioModel(model);
+	if (!pStudioHdr)
+		return;
+
+	auto skeleton_position = [=](const size_t idx)
+	{
+		auto child = pEntity->GetCachedBoneData().Base()[idx].GetOrigin();
+		return child;
+	};
+	auto skeleton_position_desync = [=](const size_t idx)
+	{
+		auto child = g_LocalAnimations->GetDesyncMatrix()[idx].GetOrigin();
+		return child;
+	};
+
+	if (g::pLocal == pEntity && cfg::model::localDesync && cfg::model::localDesyncSkeleton) {
+		for (int i = 0; i < pStudioHdr->nBones; i++){
+
+			auto bone = pStudioHdr->GetBone(i);
+			if (!bone)
+				continue;
+
+			if (bone->iParent == -1)
+				continue;
+
+			if (!(bone->iFlags & BONE_USED_BY_HITBOX))
+				continue;
+
+			auto child = skeleton_position_desync(i);
+			auto parent = skeleton_position_desync(bone->iParent);
+			auto chestbone = skeleton_position_desync(6);
+
+			auto upper = skeleton_position_desync(6 + 1) - chestbone;
+			auto breast = chestbone + upper - (upper / 3);
+
+			auto deltachild = child - breast;
+			auto deltaparent = parent - breast;
+
+			if (deltaparent.Length() < 9.0f && deltachild.Length() < 9.0f)
+				parent = breast;
+
+			if (i == 5)
+				child = breast;
+
+			if (std::abs(deltachild.z) < 5.0f && deltaparent.Length() < 5.0f && deltachild.Length() < 5.0f || i == 6)
+				continue;
+
+			Vector sParent;
+			Vector sChild;
+			i::DebugOverlay->ScreenPosition(parent, sParent);
+			i::DebugOverlay->ScreenPosition(child, sChild);
+
+			i::Surface->DrawSetColor(cfg::model::localDesyncColor[0] * 255.f, cfg::model::localDesyncColor[1] * 255.f, cfg::model::localDesyncColor[2] * 255.f, color[3]);
+			i::Surface->DrawLine(sParent[0], sParent[1], sChild[0], sChild[1]);
+		}
+	}
+
+	for (int i = 0; i < pStudioHdr->nBones; i++)
+	{
+		auto bone = pStudioHdr->GetBone(i);
+		if (!bone)
+			continue;
+
+		if (bone->iParent == -1)
+			continue;
+
+		if (!(bone->iFlags & BONE_USED_BY_HITBOX))
+			continue;
+
+		auto child = skeleton_position(i);
+		auto parent = skeleton_position(bone->iParent);
+		auto chestbone = skeleton_position(6);
+
+		auto upper = skeleton_position(6 + 1) - chestbone;
+		auto breast = chestbone + upper - (upper / 3);
+
+		auto deltachild = child - breast;
+		auto deltaparent = parent - breast;
+
+		if (deltaparent.Length() < 9.0f && deltachild.Length() < 9.0f)
+			parent = breast;
+
+		if (i == 5)
+			child = breast;
+
+		if (std::abs(deltachild.z) < 5.0f && deltaparent.Length() < 5.0f && deltachild.Length() < 5.0f || i == 6)
+			continue;
+
+		Vector sParent;
+		Vector sChild;
+		i::DebugOverlay->ScreenPosition(parent, sParent);
+		i::DebugOverlay->ScreenPosition(child, sChild);
+
+		i::Surface->DrawSetColor(color[0], color[1], color[2], color[3]);
+		i::Surface->DrawLine(sParent[0], sParent[1], sChild[0], sChild[1]);
+
+		//this->set_main_color(current_config.skeleton_col);
+
+		//if (vec2_t start, end; g_render.world_to_screen(parent, start) && g_render.world_to_screen(child, end))
+		//	g_render.line(start, end, this->set_dormant_color(player, vis_color));
+
+		//mstudiobone_t* pBone = pStudioHdr->GetBone(j);
+
+		//if (pBone && (pBone->iFlags & BONE_USED_BY_HITBOX) && (pBone->iParent != -1))
+		//{
+		//	auto vChild = pEntity->GetBonePosition(j).value();
+		//	auto vParent = pEntity->GetBonePosition(pBone->iParent).value();
+
+		//	int iChestBone = 6;  // Parameter of relevant Bone number
+		//	Vector vBreastBone; // New reference Point for connecting many bones
+		//	Vector vUpperDirection = pEntity->GetBonePosition(iChestBone + 1).value() - pEntity->GetBonePosition(iChestBone).value(); // direction vector from chest to neck
+		//	vBreastBone = pEntity->GetBonePosition(iChestBone).value() + vUpperDirection / 2;
+		//	Vector vDeltaChild = vChild - vBreastBone; // Used to determine close bones to the reference point
+		//	Vector vDeltaParent = vParent - vBreastBone;
+
+		//	// Eliminating / Converting all disturbing bone positions in three steps.
+		//	if ((vDeltaParent.Length() < 9 && vDeltaChild.Length() < 9))
+		//		vParent = vBreastBone;
+
+		//	if (j == iChestBone - 1)
+		//		vChild = vBreastBone;
+
+		//	if (abs(vDeltaChild.z) < 5 && (vDeltaParent.Length() < 5 && vDeltaChild.Length() < 5) || j == iChestBone)
+		//		continue;
+
+		//	Vector sParent;
+		//	Vector sChild;
+		//	i::DebugOverlay->ScreenPosition(vParent, sParent);
+		//	i::DebugOverlay->ScreenPosition(vChild, sChild);
+
+		//	i::Surface->DrawSetColor(color[0], color[1], color[2], color[3]);
+		//	i::Surface->DrawLine(sParent[0], sParent[1], sChild[0], sChild[1]);
+		//}
 	}
 }

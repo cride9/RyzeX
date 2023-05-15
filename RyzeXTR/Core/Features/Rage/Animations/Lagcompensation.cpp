@@ -262,7 +262,7 @@ void Lagcompensation::FilterRecords( )
 				continue;
 			}
 
-			if (pCurrentRecord.bValid = lagcomp.IsValidRecord(pCurrentRecord.flSimulationTime, TICKS_TO_TIME(6))) {
+			if (pCurrentRecord.bValid = lagcomp.IsValidRecord(pCurrentRecord.flSimulationTime)) {
 				pPlayerLogs[i].iLastValid = j;
 			}
 

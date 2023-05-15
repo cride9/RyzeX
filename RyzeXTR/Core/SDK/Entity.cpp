@@ -279,7 +279,7 @@ void CBaseEntity::ModifyEyePosition(const CAnimState* pAnimState, Vector* vecPos
 	if (pBaseEntity == nullptr)
 		return;
 
-	IClientEntity* pGroundEntity = i::EntityList->GetClientEntityFromHandle(pBaseEntity->GetGroundEntity());
+	IClientEntity* pGroundEntity = pBaseEntity->GetGroundEntity();
 
 	if (!pAnimState->bHitGroundAnimation && pAnimState->flDuckAmount == 0.f && pGroundEntity != nullptr)
 		return;

@@ -34,6 +34,8 @@ void CConfig::Setup() {
 		SetupValue(forceBaimKey, 0, "rage", "forceBaimKey");
 		SetupValue(aimbotTargetSelection, 0, "rage", "aimbotTargetSelection");
 		SetupValue(iAimbotFov, 180, "rage", "aimbotfov");
+		SetupValue(bSilentAim, false, "rage", "bSiletAim");
+		SetupValue(ragebotbind, 0, "rage", "ragebotbind");
 
 		SetupValue( autostop[ 0 ], false, "rage", "autostop1" );
 		SetupValue( autostop[ 1 ], false, "rage", "autostop2" );
@@ -269,6 +271,12 @@ void CConfig::Setup() {
 		SetupValue(flFlagsColor[ENEMY][5][2], 1.f, "visual", "ENEMYflFlags5B");
 		SetupValue(flFlagsColor[ENEMY][5][3], 1.f, "visual", "ENEMYflFlags5A");
 
+		SetupValue(bSkeleton[ENEMY], false, "visual", "bSkeletonENEMY");
+		SetupValue(flSkeletonColor[ENEMY][0], 1.f, "visual", "flSkeletonColorENEMYR");
+		SetupValue(flSkeletonColor[ENEMY][1], 1.f, "visual", "flSkeletonColorENEMYG");
+		SetupValue(flSkeletonColor[ENEMY][2], 1.f, "visual", "flSkeletonColorENEMYB");
+		SetupValue(flSkeletonColor[ENEMY][3], 1.f, "visual", "flSkeletonColorENEMYA");
+
 		// teammate
 		SetupValue(bEnable[TEAM], false, "visual", "teamEsp");
 
@@ -356,6 +364,12 @@ void CConfig::Setup() {
 		SetupValue(flFlagsColor[TEAM][5][2], 1.f, "visual", "TEAMflFlags5B");
 		SetupValue(flFlagsColor[TEAM][5][3], 1.f, "visual", "TEAMflFlags5A");
 
+		SetupValue(bSkeleton[TEAM], false, "visual", "bSkeletonTEAM");
+		SetupValue(flSkeletonColor[TEAM][0], 1.f, "visual", "flSkeletonColorTEAMR");
+		SetupValue(flSkeletonColor[TEAM][1], 1.f, "visual", "flSkeletonColorTEAMG");
+		SetupValue(flSkeletonColor[TEAM][2], 1.f, "visual", "flSkeletonColorTEAMB");
+		SetupValue(flSkeletonColor[TEAM][3], 1.f, "visual", "flSkeletonColorTEAMA");
+
 		// local
 		SetupValue(bEnable[LOCAL], false, "visual", "localEsp");
 
@@ -442,6 +456,12 @@ void CConfig::Setup() {
 		SetupValue(flFlagsColor[LOCAL][5][1], 1.f, "visual", "LOCALflFlags5G");
 		SetupValue(flFlagsColor[LOCAL][5][2], 1.f, "visual", "LOCALflFlags5B");
 		SetupValue(flFlagsColor[LOCAL][5][3], 1.f, "visual", "LOCALflFlags5A");
+
+		SetupValue(bSkeleton[LOCAL], false, "visual", "bSkeletonLOCAL");
+		SetupValue(flSkeletonColor[LOCAL][0], 1.f, "visual", "flSkeletonColorLOCALR");
+		SetupValue(flSkeletonColor[LOCAL][1], 1.f, "visual", "flSkeletonColorLOCALG");
+		SetupValue(flSkeletonColor[LOCAL][2], 1.f, "visual", "flSkeletonColorLOCALB");
+		SetupValue(flSkeletonColor[LOCAL][3], 1.f, "visual", "flSkeletonColorLOCALA");
 	}
 
 	// model
@@ -705,6 +725,7 @@ void CConfig::Setup() {
 		SetupValue(localDesync, false, "model", "localDesync");
 		SetupValue(localDesyncType, 0, "model", "localDesyncType");
 		SetupValue(localDesyncXhair, false, "model", "localDesyncXhair");
+		SetupValue(localDesyncSkeleton, false, "model", "localDesyncSkeleton");
 
 		SetupValue(localDesyncColor[0], 0.480f, "model", "localDesyncColorR"); // (0.480f, 0.634f, 0.813f, 0.868f)
 		SetupValue(localDesyncColor[1], 0.634f, "model", "localDesyncColorG");

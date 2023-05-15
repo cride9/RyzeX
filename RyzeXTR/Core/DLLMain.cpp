@@ -83,7 +83,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 
 	IPT::Setup();
 
-	SkinChanger::Dump( );
+	//SkinChanger::Dump( );
 
 #if NDEBUG
 	//util::LogConsole("[RELEASE] Built date: " __DATE__ " at " __TIME__ "\n");

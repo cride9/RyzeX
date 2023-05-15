@@ -65,9 +65,9 @@ void i::SetupInterfaces() {
 	if (WeaponSystem == nullptr)
 		throw std::runtime_error("Failed to get IWeaponSystem");
 
-	ItemSystem = reinterpret_cast<decltype(ItemSystem)>(util::GetAbsoluteAddress(util::FindSignature("client.dll", "E8 ? ? ? ? 0F B7 0F") + 1));
-	if (ItemSystem == nullptr)
-		throw std::runtime_error("Failed to get ItemSystem");
+	//ItemSystem = reinterpret_cast<decltype(ItemSystem)>(util::GetAbsoluteAddress(util::FindSignature("client.dll", "E8 ? ? ? ? 0F B7 0F") + 1));
+	//if (ItemSystem == nullptr)
+	//	throw std::runtime_error("Failed to get ItemSystem");
 
 	util::Print("Interfaces initialized!");
 }

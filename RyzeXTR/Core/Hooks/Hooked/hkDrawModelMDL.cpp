@@ -6,6 +6,8 @@ void __fastcall h::hkDrawModelMDL(void* ecx, int edx, IMatRenderContext* ctx, co
 
 	static auto original = detour::drawModelMdl.GetOriginal<decltype(&h::hkDrawModelMDL)>();
 
+	return original(ecx, edx, ctx, state, info, bonetoworld);
+
 	if (!g::pLocal)
 		return original(ecx, edx, ctx, state, info, bonetoworld);
 

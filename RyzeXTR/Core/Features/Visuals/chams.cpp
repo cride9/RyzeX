@@ -175,21 +175,36 @@ static void chams::PrepareMaterial() {
 
 	if (!materials[DEFAULT])
 		materials[DEFAULT] = CreateMaterial("ryzextr_players", "VertexLitGeneric");
+	else
+		materials[DEFAULT]->IncrementReferenceCount();
+
 	if (!materials[FLAT])
 		materials[FLAT] = CreateMaterial("ryzextr_playersflat", "UnlitGeneric");
+	else
+		materials[FLAT]->IncrementReferenceCount();
+
 	if (!materials[GLOW])
 		materials[GLOW] = RyzeCreateMaterial("ryzextr_glow", "VertexLitGeneric", GlowChams);
+	else
+		materials[GLOW]->IncrementReferenceCount();
+
 	if (!materials[THINGLOW])
 		materials[THINGLOW] = i::MaterialSystem->FindMaterial("dev/glow_armsrace", nullptr, true, nullptr);
-	if (!materials[ANIMATED])
-		materials[ANIMATED] = RyzeCreateMaterial("ryzextr_animated", "VertexLitGeneric", AnimatedChams);
-}
+	else
+		materials[THINGLOW]->IncrementReferenceCount();
 
+	if (!materials[ANIMATED])
+		materials[ANIMATED] = RyzeCreateMaterial("ryzextr_animated", "VertexLitGeneric", AnimatedChams); 
+	else
+		materials[ANIMATED]->IncrementReferenceCount();
+}
+using namespace cfg::model;
 bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags) {
 
 	static auto original = detour::drawModel.GetOriginal<decltype(&h::hkDrawModel)>();
 
-	using namespace cfg::model;
+	if (nFlags & (STUDIO_RENDER | STUDIO_SKIP_FLEXES | STUDIO_DONOTMODIFYSTENCILSTATE | STUDIO_NOLIGHTING_OR_CUBEMAP | STUDIO_SKIP_DECALS))
+		return false;
 
 	IClientRenderable* pRenderable = info.pClientEntity;
 
@@ -205,10 +220,14 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 	PrepareMaterial();
 
-	if (pEnt->IsPlayer() && pEnt->IsAlive()) {
+	if (szModelName.find("player\\contactshadow") != std::string_view::npos) {
+		static float reset[4] = { 0, 0, 0, 0 };
+		BeginChams(materials[0], reset, false, false);
+		original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+		return true;
+	}
 
-		if (nFlags & (STUDIO_RENDER | STUDIO_SKIP_FLEXES | STUDIO_DONOTMODIFYSTENCILSTATE | STUDIO_NOLIGHTING_OR_CUBEMAP | STUDIO_SKIP_DECALS))
-			return false;
+	if (pEnt->IsPlayer() && pEnt->IsAlive()) {
 
 		if (pEnt == g::pLocal) {
 
@@ -345,7 +364,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 			if (enemyBTEnable) {
 
-				if (matrix3x4_t pMatrix[256];  GenerateLerpedMatrix(pEnt, pMatrix)) {
+				if (matrix3x4_t pMatrix[256]; GenerateLerpedMatrix(pEnt, pMatrix)) {
 
 					BeginChams(materials[enemyBTType], enemyBTColor, true, enemyBTXhair);
 					original(i::StudioRender, 0, pResults, info, pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
@@ -463,6 +482,102 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		return true;
+	}
+	else if ((szModelName.find("weapons\\w_") != std::string_view::npos)) {
+
+		CBaseEntity* pEntity = nullptr;
+		for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
+
+			CBaseEntity* tempEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+			if (tempEntity && tempEntity->IsAlive()) {
+				if (!pEntity)
+					pEntity = tempEntity;
+				if (pEntity && (vecModelOrigin - tempEntity->GetVecOrigin()).Length() < (vecModelOrigin - pEntity->GetVecOrigin()).Length())
+					pEntity = tempEntity;
+			}
+		}
+		if (!pEntity)
+			return false;
+
+		// enemy
+		if (pEntity->GetTeam() != g::pLocal->GetTeam()) {
+
+			if (attachmentChams[ENEMY]) {
+				BeginChams(chams::materials[attachmentChamsMaterial[ENEMY]], attachmentChamsColor[ENEMY], false, attachmentChamsXhair[ENEMY]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			else {
+				if (!i::StudioRender->IsForcedMaterialOverride())
+					EndChams();
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentOverlay[ENEMY]) {
+				BeginChams(chams::materials[GLOW], attachmentOverlayColor[ENEMY], false, attachmentOverlayXhair[ENEMY]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentThinOverlay[ENEMY]) {
+				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[ENEMY], false, attachmentThinOverlayXhair[ENEMY]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentAnimatedOverlay[ENEMY]) {
+				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[ENEMY], false, attachmentAnimatedOverlayXhair[ENEMY]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			return true;
+		}
+
+		// local
+		else if (pEntity == g::pLocal) {
+
+			if (attachmentChams[LOCAL]) {
+				BeginChams(chams::materials[attachmentChamsMaterial[LOCAL]], attachmentChamsColor[LOCAL], false, attachmentChamsXhair[LOCAL]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			else {
+				if (!i::StudioRender->IsForcedMaterialOverride())
+					EndChams();
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentOverlay[LOCAL]) {
+				BeginChams(chams::materials[GLOW], attachmentOverlayColor[LOCAL], false, attachmentOverlayXhair[LOCAL]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentThinOverlay[LOCAL]) {
+				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[LOCAL], false, attachmentThinOverlayXhair[LOCAL]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentAnimatedOverlay[LOCAL]) {
+				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[LOCAL], false, attachmentAnimatedOverlayXhair[LOCAL]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			return true;
+		}
+		// teammate
+		else if (pEntity->GetTeam() == g::pLocal->GetTeam() && g::pLocal != pEntity) {
+
+			if (attachmentChams[TEAM]) {
+				BeginChams(chams::materials[attachmentChamsMaterial[TEAM]], attachmentChamsColor[TEAM], false, attachmentChamsXhair[TEAM]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			else {
+				if (!i::StudioRender->IsForcedMaterialOverride())
+					EndChams();
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentOverlay[TEAM]) {
+				BeginChams(chams::materials[GLOW], attachmentOverlayColor[TEAM], false, attachmentOverlayXhair[TEAM]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentThinOverlay[TEAM]) {
+				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[TEAM], false, attachmentThinOverlayXhair[TEAM]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			if (attachmentAnimatedOverlay[TEAM]) {
+				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[TEAM], false, attachmentAnimatedOverlayXhair[TEAM]);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			}
+			return true;
+		}
 	}
 	return false;
 }

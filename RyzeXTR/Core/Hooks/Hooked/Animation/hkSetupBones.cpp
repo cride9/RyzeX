@@ -142,7 +142,7 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 	else if (matrix) {
 		if (pEnt == g::pLocal) 
 			bResult = g_LocalAnimations->CopyCachedMatrix(matrix, maxbones);
-		else 
+		else
 			bResult = anims.CopyCachedMatrix(pEnt, matrix, maxbones);
 	}
 

@@ -26,6 +26,8 @@ namespace cfg {
 		inline bool autoscope[] = { false, false, false };
 		inline bool forceSafePoint[] = { false, false, false, false ,false, false };
 		inline int iAimbotFov = 180.f;
+		inline bool bSilentAim = false;
+		inline int ragebotbind;
 
 		inline bool doubletap;
 		inline int  doubletapkey;
@@ -162,6 +164,9 @@ namespace cfg {
 		inline bool bWeapon[3] = { false, false, false };
 		inline float flWeaponColor[3][4];
 
+		inline bool bSkeleton[3] = { false, false, false };
+		inline float flSkeletonColor[3][4];
+
 		inline bool bFlags[3][6];
 		inline float flFlagsColor[3][6][4];
 	}
@@ -288,6 +293,7 @@ namespace cfg {
 
 		inline bool localDesync = false;
 		inline bool localDesyncXhair = false;
+		inline bool localDesyncSkeleton = false;
 		inline int localDesyncType = 0;
 		inline float localDesyncColor[4] = { 255.f, 255.f, 255.f, 255.f };
 

@@ -25,6 +25,7 @@ namespace visual {
 	void WeaponEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void MoneyEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
+	void SkeletonEsp(CBaseEntity*, Color);
 
 	void Flags(float&, int&, CBaseEntity*, size_t&, bool*, float[5][4], bool bDormant = false);
 

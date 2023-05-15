@@ -7,23 +7,23 @@ void ___thiscall C_CSPlayer::BuildTransformations (DWORD this, int studioHdr, in
 	v8 = *(_DWORD *)(this + 0x26A4);
 
 	if (v8) {
-		v9 = *(_DWORD *)(v8 +0x2950);
+		v9 = *(_DWORD *)(v8 +0x2950); // maybe studiohdr?
 
-		if ( v9 &&*(_DWORD *)v9 && (**(_DWORD **)(v9 + 48) & *(_DWORD *)(this + 9904)) != 0 && (boneMask & 0xFFF00) != 0 ) {
+		if ( v9 &&*(_DWORD *)v9 && (**(_DWORD **)(v9 + 0x30) & *(_DWORD *)(this + 0x26B0)) != 0 && !bonemask ) {
 			
 			// this = entity pointer
 			// *(_DWORD *)(this+0x26A8) = entity->m_dwBoneMatrix
 			// boneMask = bonemask
 
-			C_CSPlayer::ClampBonesInBBox((float *)this, *(_DWORD *)(this+0x26A8), boneMask);
+			C_CSPlayer::ClampBonesInBBox(CBaseEntity* pEntity, matrix3x4_t* pMatrix, int iBoneMask);
 		}
 	}
 }
 */
 
-void __fastcall h::hkClampBonesInBBox(void* ecx, void* edx, matrix3x4_t* pMatrix, int iBoneMask) {
+void __fastcall h::hkClampBonesInBBox(CBaseEntity* pEntity, void* edx, matrix3x4_t* pMatrix, int iBoneMask) {
 
 	static auto original = detour::clampBonesInBBox.GetOriginal<decltype(&hkClampBonesInBBox)>();
 
-	return original(ecx, edx, pMatrix, iBoneMask);
+	return original(pEntity, edx, pMatrix, iBoneMask);
 }

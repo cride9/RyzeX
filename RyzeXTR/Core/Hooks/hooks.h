@@ -146,7 +146,7 @@ namespace h {
 	void __fastcall		hkEmitSound(void*, int, IRecipientFilter&, int, int, const char*, HSOUNDSCRIPTHASH, const char*, float, int, float, int, int, const Vector*, const Vector*, CUtlVector<Vector>*, bool, float, int, int);
 	bool __fastcall		hkShouldDrawViewmodel(void*, void*);
 	void __fastcall		hkPlayerMove(void*, void*);
-	void __fastcall		hkClampBonesInBBox(void*, void*, matrix3x4_t*, int);
+	void __fastcall		hkClampBonesInBBox(CBaseEntity*, void*, matrix3x4_t*, int);
 	void __fastcall		hkGetColorModulation(void*, void*, float*, float*, float*);
 	int	__cdecl			hkStartSound(void*);
 	void __fastcall     hkInstallStringTableCallback(const char* tableName);
@@ -209,6 +209,7 @@ public:
 		i::GameEvent->AddListener(this, "weapon_fire", false);
 		i::GameEvent->AddListener(this, "round_start", false);
 		i::GameEvent->AddListener(this, "item_purchase", false);
+		i::GameEvent->AddListener(this, "bomb_beginplant", false);
 	}
 
 	void Destroy() {

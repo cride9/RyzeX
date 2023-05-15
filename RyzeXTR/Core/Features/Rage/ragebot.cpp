@@ -65,7 +65,7 @@ Vector VelocityExtrapolate( CBaseEntity* player, Vector aimPos )
 void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket ) {
 
 	static CConVar* recoilScale = i::ConVar->FindVar( "weapon_recoil_scale" );
-	if ( !pLocal || !cfg::rage::enable ) {
+	if ( !pLocal || !cfg::rage::enable || !IPT::HandleInput(cfg::rage::ragebotbind)) {
 		exploits::bCanCharge = true;
 		rageBotData.pAimbotTarget = nullptr;
 		return;
@@ -103,15 +103,18 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 			if (Hitchance(rageBotData.pAimbotTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition, rageBotData.iTargetedHitbox)) {
 
 				rageBotData.bCanShoot = true;
+				Vector vecAngle = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
+				pCmd->angViewPoint = vecAngle;
+				if (!cfg::rage::bSilentAim)
+					i::EngineClient->SetViewAngles(vecAngle);
 
-				pCmd->angViewPoint = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 				pCmd->iButtons |= IN_ATTACK;
 
 				int backuplmao = pCmd->iTickCount;
 				pCmd->iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
-				rageBotData.iCommand = pCmd->iCommandNumber;
 
-				ShouldSendPacket(bSendPacket);
+				if (bSendPacket = ShouldSendPacket(bSendPacket); bSendPacket)
+					rageBotData.iCommand = pCmd->iCommandNumber;
 			}
 			else {
 				rageBotData.bCanShoot = false;
@@ -134,7 +137,7 @@ std::pair<CBaseEntity*, int> CRageBot::SelectTargetIndex(CBaseCombatWeapon* pWea
 	static std::array<Vector, 3> multiPointed = { Vector(0, 0, 0) };
 	static float flRadius = 0.f;
 	static int iAppliedRecord = 0;
-
+	
 	vecIndexes.clear();
 
 	Trace_t traceData;

@@ -526,7 +526,7 @@ public:
 	ADD_NETVAR(GetTickBase, int, "CBasePlayer->m_nTickBase");
 	ADD_PNETVAR(GetNextThink, int, "CBasePlayer->m_nNextThinkTick");
 	ADD_NETVAR(GetVelocity, Vector, "CBasePlayer->m_vecVelocity[0]");
-	ADD_NETVAR(GetGroundEntity, CBaseHandle, "CBasePlayer->m_hGroundEntity");
+	//ADD_NETVAR(GetGroundEntity, CBaseHandle, "CBasePlayer->m_hGroundEntity");
 	ADD_NETVAR(GetHealth, int, "CBasePlayer->m_iHealth");
 	ADD_NETVAR(GetLifeState, int, "CBasePlayer->m_lifeState");
 	ADD_NETVAR(GetFlags, int, "CBasePlayer->m_fFlags");
@@ -575,6 +575,12 @@ public:
 	template <typename T>
 	T* GetOffsetPointer(uintptr_t offset) {
 		return reinterpret_cast<T*>(uint32_t(this) + offset);
+	}
+
+	CBaseEntity* GetGroundEntity() {
+
+		static auto offset = n::netvars[fnv::HashConst("CBasePlayer->m_hGroundEntity")];
+		return reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(*reinterpret_cast<CBaseHandle*>(uint32_t(this) + offset)));
 	}
 
 	std::array<int, 64>& GetMyWeapons() {

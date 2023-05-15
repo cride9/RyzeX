@@ -19,7 +19,8 @@ void __fastcall h::hkGetColorModulation(void* ecx, void* edx, float* r, float* g
 	if (cfg::misc::nightmode) {
 
 		if (strstr(szGroup, "Other") || strstr(szName, "player") || strstr(szName, "chams") ||
-			strstr(szName, "weapon") || strstr(szName, "glow") || strstr(szName, "skybox"))
+			strstr(szName, "weapon") || strstr(szName, "glow") || strstr(szName, "skybox") || 
+			strstr(szName, "dev/scope") || strstr(szName, "effects/"))
 			return;
 
 		bool bProp = strstr(szGroup, "StaticProp");

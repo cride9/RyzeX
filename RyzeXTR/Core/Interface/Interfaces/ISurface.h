@@ -1,5 +1,6 @@
 #pragma once
 #include "../../SDK/DataTyes/Color.h"
+#include <codecvt>
 
 enum EFontDrawType : int
 {
@@ -51,45 +52,67 @@ typedef unsigned long HScheme, HPanel, HTexture, HCursor, HFont;
 class ISurface {
 
 public:
+	static std::wstring __fastcall MultiByteToWide(const std::string& str) noexcept {
 
-	void DrawT(int X, int Y, Color Color, HFont Font, bool Center, const char* _Input, ...) {
+		std::wstring ret;
+		int str_len;
 
-		int apple = 0;
-		/* set up buffer */
-		char Buffer[256] = { '\0' };
+		if (str.empty())
+			return {};
 
-		/* set up varargs*/
-		va_list Args;
+		str_len = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
+		ret = std::wstring(str_len, 0);
+		MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &ret[0], str_len);
 
-		va_start(Args, _Input);
-		vsprintf_s(Buffer, _Input, Args);
-		va_end(Args);
+		return ret;
+	}
 
-		size_t Size = strlen(Buffer) + 1;
+	void __fastcall DrawT(int X, int Y, Color Color, HFont Font, bool Center, const char* _Input, ...) noexcept {
 
-		/* set up widebuffer*/
-		wchar_t* WideBuffer = new wchar_t[Size];
+		int w, h;
 
-		/* char -> wchar */
-		mbstowcs_s(0, WideBuffer, Size, Buffer, Size - 1);
-
-		/* check center */
-		int Width = 0, Height = 0;
-
-		if (Center) {
-			GetTextSize(Font, WideBuffer, Width, Height);
-		}
-
-		/* call and draw*/
-		DrawSetTextColor(Color[0], Color[1], Color[2], Color[3]);
+		auto text = MultiByteToWide(_Input);
+		GetTextSize(Font, text.c_str(), w, h);
 		DrawSetTextFont(Font);
-		DrawSetTextPos(X - (Width / 2), Y);
-		DrawPrintText(WideBuffer, wcslen(WideBuffer));
+		DrawSetTextColor(Color);
 
-		//delete WideBuffer, Size;
-		delete[] WideBuffer;
+		if (Center)
+			X -= w / 2;
 
-		return;
+		DrawSetTextPos(X, Y);
+		DrawPrintText(text.c_str(), (int)text.size());
+
+		///* set up buffer */
+		//char Buffer[64] = { '\0' };
+
+		///* set up varargs*/
+		//va_list Args;
+
+		//va_start(Args, _Input);
+		//vsprintf_s(Buffer, _Input, Args);
+		//va_end(Args);
+
+		//size_t Size = strlen(Buffer) + 1;
+
+		///* set up widebuffer*/
+		//wchar_t* WideBuffer = new wchar_t[Size];
+
+		///* char -> wchar */
+		//mbstowcs_s(0, WideBuffer, Size, Buffer, Size - 1);
+
+		///* check center */
+		//int Width = 0, Height = 0;
+
+		//if (Center) 
+		//	GetTextSize(Font, WideBuffer, Width, Height);
+
+		///* call and draw*/
+		//DrawSetTextColor(Color[0], Color[1], Color[2], Color[3]);
+		//DrawSetTextFont(Font);
+		//DrawSetTextPos(X - (Width / 2), Y);
+		//DrawPrintText(WideBuffer, wcslen(WideBuffer));
+
+		//delete[Size] WideBuffer;
 	}
 
 	void DrawSetColor(Color colDraw) {

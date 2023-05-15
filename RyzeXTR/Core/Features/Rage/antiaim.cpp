@@ -35,7 +35,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	}
 
 	// E, ladder, noclip check
-	if (pCmd->iButtons & IN_USE || g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP) {
+	if (pCmd->iButtons & IN_USE || g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP || g::pLocal->GetFlags() & FL_FROZEN) {
 
 		desyncValue = 0.f;
 
@@ -198,7 +198,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	if ( !bSendPacket && cfg::antiaim::iDesyncType != EXTENDED && cfg::antiaim::iDesyncType != FLICK ) {
 
-		pCmd->angViewPoint.y += M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue);
+		pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue));
+		float difference = (M::NormalizeYaw(g::pLocal->AnimState()->flGoalFeetYaw) - M::NormalizeYaw(g::pLocal->AnimState()->flEyeYaw));
+		if (fabs(difference) < fabs(desyncValue))
+			pCmd->angViewPoint.y += desyncValue > 0 ? desyncValue - difference : desyncValue + difference;
+		
 		oldValue = desyncValue;
 	}
 }

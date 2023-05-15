@@ -23,10 +23,10 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FastStop(pCmd);
 	FakeDuck(pCmd);
 	SlideFix();
+	BlockBot(pCmd);
 	OnlyCheatLogs();
 	RemovePostProcessing();
 	FixScopeSens();
-	BlockBot(pCmd);
 	ClanTag();
 #if NDEBUG
 	Security();
@@ -109,6 +109,9 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	}
 	if (!strcmp(pEvent->GetName(), itemPurchase)) {
 
+	}
+	if (!strcmp(pEvent->GetName(), "bomb_beginplant")) {
+		CustomBombText("lmao");
 	}
 }
 
@@ -1323,10 +1326,13 @@ void Friction(float flFriction, Vector* vecVelocity)
 
 void misc::BlockBot(CUserCmd* pCmd) {
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::blockbot || !IPT::HandleInput(cfg::misc::blockbotKey))
+	static Vector vecOriginalViewAngle = Vector(0, 0, 0);
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::blockbot || !IPT::HandleInput(cfg::misc::blockbotKey)) {
+		vecOriginalViewAngle = Vector(0, 0, 0);
 		return;
+	}
 
-	if (CBaseEntity* pBlockedPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetGroundEntity())); 
+	if (CBaseEntity* pBlockedPlayer = g::pLocal->GetGroundEntity(); 
 		pBlockedPlayer != nullptr && 
 		pBlockedPlayer->IsPlayer()) {
 
@@ -1334,17 +1340,20 @@ void misc::BlockBot(CUserCmd* pCmd) {
 
 		// allowed difference before we fall down cuz head has a bigger surface (idk why)
 		// so if player is going in small circles, we won't fall (or doing small changes that could kill most blockbots)
-		if ((vecExtrapolatedLocalPos - pBlockedPlayer->GetVecOrigin()).Length2D() > 1.29217472f) {
+		if (abs((vecExtrapolatedLocalPos - pBlockedPlayer->GetVecOrigin()).Length2D()) > 0.75f/*1.29217472f*/) {
 
 			Vector vecAngle;
 			M::VectorAngles(pBlockedPlayer->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
 
 			g::vecOriginalViewAngle.y = vecAngle.y;
 			g::pCmd->flForwardMove = 450.f;
-			g::pCmd->flSideMove = 0.f;
+			g::pCmd->flSideMove = 0.f; 
 		}
 	}
 	else {
+
+		if (vecOriginalViewAngle.IsZero())
+			vecOriginalViewAngle = pCmd->angViewPoint;
 
 		float flBestDistance = 250.f;
 		CBaseEntity* pTarget = nullptr;
@@ -1373,13 +1382,16 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		Vector vecAngle;
 		M::VectorAngles(pTarget->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
 
-		vecAngle.y -= g::pLocal->GetEyeAngles().y;
+		vecAngle.y -= vecOriginalViewAngle.y;
 		vecAngle.NormalizeAngle();
 
-		if (vecAngle.y < -0.5f)
+		if (vecAngle.y < -0.75f)
 			pCmd->flSideMove = 450.f;
-		else if (vecAngle.y > 0.5f)
+		else if (vecAngle.y > 0.75f)
 			pCmd->flSideMove = -450.f;
+
+		if (!(pCmd->iButtons & IN_FORWARD))
+			g::vecOriginalViewAngle = vecOriginalViewAngle;
 	}
 }
 
@@ -1451,7 +1463,7 @@ void misc::CapsuleHandler(IGameEvent* pEvent, int iCall) {
 
 void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDuration) {
 
-	/*if (pEntity >= 64 || pEntity < 1)
+	if (pEntity >= 64 || pEntity < 1)
 		return;
 
 	auto pLog = &lagcomp.GetLog(pEntity);
@@ -1482,7 +1494,7 @@ void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDura
 			else
 				i::DebugOverlay->AddCapsuleOverlay(vMin, vMax, pHitbox->flRadius, arrColor, flDuration);
 		}
-	}*/
+	}
 }
 
 std::string GetHitgroupName(int iHitgroup) {
@@ -1568,21 +1580,21 @@ void misc::CheatLog(IGameEvent* pEvent) {
 		}
 	}
 }
+#pragma runtime_checks( "", off )
+void misc::CustomBombText(const char* szText) {
 
-//void misc::CustomBombText(const char* szText) {
-//
-//	if (!g::pLocal || !g::pLocal->IsAlive())
-//		return;
-//
-//	if (!g::pLocal->GetWeapon() || g::pLocal->GetWeapon()->GetItemDefinitionIndex() != WEAPON_C4)
-//		return;
-//
-//	C4* pWeapon = reinterpret_cast<C4*>(reinterpret_cast<CWeaponCSBase*>(g::pLocal->GetWeapon()));
-//	CBaseViewModel* pViewmodel = reinterpret_cast<CBaseViewModel*>(g::pLocal->GetViewModel());
-//	CBaseEntity* pViewmodelEntity = reinterpret_cast<CBaseEntity*>(pViewmodel);
-//	
-//	if (!pWeapon || !pViewmodel || !pViewmodelEntity)
-//		return;
-//
-//	pWeapon->OnFireEvent(pViewmodel, Vector(0, 0, 0), Vector(0, 0, 0), 7001, szText);
-//}
+	if (!g::pLocal || !g::pLocal->IsAlive())
+		return;
+
+	if (!g::pLocal->GetWeapon() || g::pLocal->GetWeapon()->GetItemDefinitionIndex() != WEAPON_C4)
+		return;
+
+	C4* pWeapon = reinterpret_cast<C4*>(reinterpret_cast<CWeaponCSBase*>(g::pLocal->GetWeapon()));
+	CBaseViewModel* pViewmodel = reinterpret_cast<CBaseViewModel*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetViewModel()));
+	
+	if (!pWeapon || !pViewmodel)
+		return;
+
+	pWeapon->OnFireEvent(pViewmodel, Vector(0, 0, 0), Vector(0, 0, 0), 7002, szText);
+}
+#pragma runtime_checks( "", restore )

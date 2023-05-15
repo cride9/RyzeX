@@ -39,8 +39,8 @@ bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMe
 	 * @note: disable files crc check (sv_pure)
 	 * dont send message if it has FileCRCCheck type
 	 */
-	//if ( pMessage->GetType( ) == INetChannelInfo::PAINTMAP)
-	//	return false;
+	if ( pMessage->GetType( ) == INetChannelInfo::PAINTMAP)
+		return false;
 
 	/*
 	 * @note: fix lag with chocking packets when voice chat is active

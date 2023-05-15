@@ -20,10 +20,12 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 
-		misc::ServerHitboxes();
+		//misc::ServerHitboxes();
 
 		if (cfg::misc::removals[1])
 			g::pLocal->GetFlashMaxAlpha() = 0.f;
+		else
+			g::pLocal->GetFlashMaxAlpha() = 255.f;
 		
 		misc::BulletImpact(nullptr, curStage, true);
 		break;
@@ -32,7 +34,8 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
-		lagcomp.RemoveInterpolation();
+		if (cfg::rage::enable)
+			lagcomp.RemoveInterpolation();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:

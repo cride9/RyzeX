@@ -105,7 +105,7 @@ namespace menu {
 
 	void HandleLogoDrawing() noexcept;
 
-	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool*, float[5][4]) noexcept;
+	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool*, float[5][4], bool&, float*) noexcept;
 }
 
 

@@ -98,6 +98,8 @@ void menu::Ragetab() noexcept {
     ImGui::BeginChild("leftside", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
         ImGui::Checkbox("Enable", &enable);
+		ImGui::Keybind("##ragekey", &ragebotbind);
+		ImGui::Checkbox("Silent", &bSilentAim);
 		ImGui::Combo("Target selection", &aimbotTargetSelection, aimbotTargetSelectionList, IM_ARRAYSIZE(aimbotTargetSelectionList));
 		ImGui::SliderInt("Aimbot fov", &iAimbotFov, 1.f, 180.f);
 
@@ -317,7 +319,9 @@ void menu::Visualtab() noexcept {
             bWeapon[ENEMY],
             flWeaponColor[ENEMY],
 			bFlags[ENEMY],
-			flFlagsColor[ENEMY]);
+			flFlagsColor[ENEMY],
+			bSkeleton[ENEMY],
+			flSkeletonColor[ENEMY]);
         break;
 
     case TEAM:
@@ -339,7 +343,9 @@ void menu::Visualtab() noexcept {
 			bWeapon[TEAM],
 			flWeaponColor[TEAM],
 			bFlags[TEAM],
-			flFlagsColor[TEAM]);
+			flFlagsColor[TEAM],
+			bSkeleton[TEAM],
+			flSkeletonColor[TEAM]);
         break;
 
     case LOCAL:
@@ -361,7 +367,9 @@ void menu::Visualtab() noexcept {
 			bWeapon[LOCAL],
 			flWeaponColor[LOCAL],
 			bFlags[LOCAL],
-			flFlagsColor[LOCAL]);
+			flFlagsColor[LOCAL],
+			bSkeleton[LOCAL],
+			flSkeletonColor[LOCAL]);
         break;
 
     case WORLD:
@@ -819,6 +827,7 @@ void menu::Visualtab() noexcept {
 				ImGui::ColorEdit4("##localDesync", localDesyncColor);
 				ImGui::Combo("Material", &localDesyncType, allType, IM_ARRAYSIZE(allType));
 				ImGui::Checkbox("Wireframe ##2", &localDesyncXhair);
+				ImGui::Checkbox("Skeleton ##2", &localDesyncSkeleton);
 			}
 			else if (selectedModelType == 1) {
 
@@ -1086,7 +1095,10 @@ void menu::HandleVisualTypeGeneration(
 	float* weaponColor,
 
 	bool* bFlags,
-	float flFlagsColor[5][4]
+	float flFlagsColor[5][4],
+
+	bool& bSkeleton,
+	float* flSkeletonColor
 ) 
 noexcept {
 
@@ -1114,6 +1126,9 @@ noexcept {
 
         ImGui::Checkbox("Ammo", &ammo);
         ImGui::ColorEdit4("##ammocolor", ammoColor);
+
+		ImGui::Checkbox("Skeleton", &bSkeleton);
+		ImGui::ColorEdit4("##skeletoncolor", flSkeletonColor);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
 		if (ImGui::Button("Flags", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))

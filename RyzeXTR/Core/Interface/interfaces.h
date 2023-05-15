@@ -77,7 +77,7 @@ namespace i {
 	inline CClientModeShared* ClientModeShared;
 	inline CGlobalVarsBase* GlobalVars;
 
-	inline std::add_pointer_t<IItemSystem* __cdecl()> ItemSystem;
+	//inline std::add_pointer_t<IItemSystem* __cdecl()> ItemSystem;
 
 	template <typename T>
 	T* GetInterface(const char* szLib, const char* szName) {
