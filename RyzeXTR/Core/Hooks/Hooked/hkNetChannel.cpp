@@ -120,8 +120,8 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	const int iOldInSequenceNr = thisptr->iInSequenceNr;
 
 	// calculate max available fake latency with our real ping to keep it w/o real lags or delays
-	const float flMaxLatency = std::fmax( 0.f, std::clamp( cfg::misc::fakePingFactor / 1000.f, 0.f, sv_maxunlag->GetFloat( ) ) - pNetChannelInfo->GetLatency( FLOW_OUTGOING ) );
-	//lagcomp.AddLatencyToNetChannel( thisptr, flMaxLatency );
+	const float flMaxLatency = std::fmax( 0.f, std::clamp( cfg::misc::fakePingFactor / 1000.f, 0.f, 1000.f/*sv_maxunlag->GetFloat( )*/ ) - pNetChannelInfo->GetLatency( FLOW_OUTGOING ) );
+	lagcomp.AddLatencyToNetChannel( thisptr, flMaxLatency );
 
 	const int iReturn = original( thisptr, edx, pDatagram );
 

@@ -47,9 +47,9 @@ public:
 	// https://github.com/perilouswithadollarsign/cstrike15_src/blob/29e4c1fda9698d5cebcdaf1a0de4b829fa149bf8/game/shared/cstrike15/csgo_playeranimstate.cpp#L1351
 	void LayerSetUpMovementRebuild(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
 	/* enemy anims */
+	void RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::AnimationInfo_t* pLog);
 
 	/* resolver */
-
 	void ResolverHandler( IGameEvent* );
 	float GetLocalCycleIncrement( CBaseEntity*, float );
 	void UpdateOnFeetYaw( CBaseEntity*, Lagcompensation::LagRecord_t* );

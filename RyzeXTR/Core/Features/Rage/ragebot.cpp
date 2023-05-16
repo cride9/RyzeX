@@ -173,7 +173,7 @@ std::pair<CBaseEntity*, int> CRageBot::SelectTargetIndex(CBaseCombatWeapon* pWea
 			if (bAdded)
 				continue;
 		}
-		else if (pLog->iFirstValid != 32) {
+		if (pLog->iFirstValid != 32 && !bAdded) {
 
 			const unsigned int iFirstValid = pLog->iFirstValid;
 			if (iFirstValid >= pLog->pRecord.size())
@@ -223,7 +223,7 @@ std::pair<CBaseEntity*, int> CRageBot::SelectTargetIndex(CBaseCombatWeapon* pWea
 				}
 			}
 		}
-		else if ( cfg::rage::m_bEnableBacktrack ) {
+		if ( cfg::rage::m_bEnableBacktrack && !bAdded) {
 
 			const unsigned int iLastValid = pLog->iLastValid;
 				if (iLastValid >= pLog->pRecord.size())
@@ -346,7 +346,11 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 					continue;
 			}
 
-			if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, nullptr, pCurrentApplied->pEntity); flDamage > iMinimumDamage || flDamage > pEntity.first->GetHealth() + 5) {
+			FireBulletData_t dataOut;
+			if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &dataOut, pCurrentApplied->pEntity); flDamage > iMinimumDamage || flDamage > pEntity.first->GetHealth() + 5) {
+
+				if (dataOut.enterTrace.iHitbox != iHitbox)
+					continue;
 
 				rageBotData.SetTarget(pCurrentApplied, iHitbox);
 				return vecPoint;
@@ -983,7 +987,9 @@ bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, 
 	if (pRecord->pRightMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pLeftMatrix->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pCenterMatrix->GetOrigin() == Vector(0, 0, 0))
+	{
 		return false;
+	}
 
 	/* Just decleare a static enum so we can make it look cleaner */
 	static enum SIDE {
@@ -1034,6 +1040,9 @@ Vector CRageBot::InterpolateLocalEyePosition( Vector vecEyePosition, int iInterp
 }
 
 int CRageBot::CalculateTickCount( float flSimulationTime ) {
+
+	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey))
+		return g::pCmd->iTickCount;
 
 	return lagcomp.FixTickCount(flSimulationTime);
 

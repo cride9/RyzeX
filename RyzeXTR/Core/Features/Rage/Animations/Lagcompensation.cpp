@@ -198,15 +198,11 @@ void Lagcompensation::FrameStageNotify() {
 			Lagcompensation::LagRecord_t* pCurrentRecord = &pCurrentLog->pRecord.front( );
 
 			// update animations on current record.
-			anims.UpdateEnemyAnimations( pCurrentLog->pEntity, pCurrentRecord );
-
-			// set animation layers.
-			pCurrentLog->pEntity->SetAnimationLayers( pBackupRecord.pLayers );
+			//anims.UpdateEnemyAnimations( pCurrentLog->pEntity, pCurrentRecord );
+			anims.RebuildEnemyAnimations(pCurrentLog->pEntity, pCurrentLog);
 
 			SetupPlayerBones(pCurrentLog->pEntity, pCurrentRecord, pCurrentRecord->pMatrix, EMatrixFlags::VisualAdjustment);
-
-			// restore correctly synced values.
-			pBackupRecord.Restore( pCurrentLog->pEntity );
+			anims.UpdateSafePointMatrixes(pEntity, pCurrentRecord);
 
 			// is data changed?
 			bChanged = true;
@@ -372,8 +368,12 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 	simulationData.bOnGround = m_pCurrentRecord->fFlags & FL_ONGROUND;
 	simulationData.bDataFilled = true;
 
-	int  iSimulationTickDelta = std::clamp( TIME_TO_TICKS(m_pCurrentRecord->flSimulationTime - m_pPrevious->flSimulationTime ), 1, 15 );
-	auto delta_ticks = ( std::clamp( TIME_TO_TICKS( i::EngineClient->GetNetChannelInfo( )->GetAvgLatency( FLOW_INCOMING ) + i::EngineClient->GetNetChannelInfo( )->GetAvgLatency( FLOW_OUTGOING ) ) + i::GlobalVars->iTickCount -
+	INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
+	if (!pNetChannel)
+		return;
+
+	int  iSimulationTickDelta = std::clamp( abs(TIME_TO_TICKS(m_pCurrentRecord->flSimulationTime - m_pPrevious->flSimulationTime )), 1, 15 );
+	auto delta_ticks = ( std::clamp( TIME_TO_TICKS(pNetChannel->GetAvgLatency( FLOW_INCOMING ) + pNetChannel->GetAvgLatency( FLOW_OUTGOING ) ) + i::GlobalVars->iTickCount -
 		TIME_TO_TICKS( m_pCurrentRecord->flSimulationTime + lagcomp.GetClientInterpAmount( ) ), 0, 100 ) ) - iSimulationTickDelta;
 
 	if ( delta_ticks > 0 && simulationData.bDataFilled )
@@ -383,8 +383,8 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 			auto ticks_left = iSimulationTickDelta;
 			do
 			{
-				Trace_t      trace;
-				CTraceFilter filter( g::pLocal );
+				//Trace_t      trace;
+				//CTraceFilter filter( g::pLocal );
 
 				auto predicted_origin = simulationData.vecOrigin;
 				auto time_to_extrapolate = TIME_TO_TICKS( i::GlobalVars->iTickCount ) - m_pEntity->GetSimulationTime( );
@@ -414,7 +414,7 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 				predicted_origin = predict_next_velocity( m_pCurrentRecord->vecVelocity, m_pPrevious->vecVelocity );
 				predicted_origin.z += simulationData.vecVelocity.z - sv_gravity * time_to_extrapolate;
 
-				i::EngineTrace->TraceRay( Ray_t( simulationData.vecOrigin, predicted_origin, simulationData.pEntity->vecMins( ), simulationData.pEntity->vecMaxs( ) ), CONTENTS_SOLID, &filter, &trace );
+				//i::EngineTrace->TraceRay( Ray_t( simulationData.vecOrigin, predicted_origin, simulationData.pEntity->vecMins( ), simulationData.pEntity->vecMaxs( ) ), CONTENTS_SOLID, &filter, &trace );
 
 				m_pCurrentRecord->flSimulationTime = m_pEntity->GetSimulationTime( ) + time_to_extrapolate;
 				--ticks_left;

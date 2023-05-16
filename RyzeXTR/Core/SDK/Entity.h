@@ -547,7 +547,7 @@ public:
 	ADD_NETVAROFFSET(GetButtonDisabled, int, "CBasePlayer->m_hViewEntity", -0xC);
 	ADD_NETVAROFFSET(GetButtonForced, int, "CBasePlayer->m_hViewEntity", -0x8);
 	ADD_NETVAROFFSET(AnimState, CAnimState*, "CCSPlayer->m_bIsScoped", -0x14); // @ida: 8B 8E ? ? ? ? F3 0F 10 48 ? E8 ? ? ? ? C7 + 0x2
-	ADD_NETVAR(m_flThirdpersonRecoil, float, "CCSPlayer->m_flThirdpersonRecoil");
+	ADD_NETVAR(GetThirdpersonRecoil, float, "CCSPlayer->m_flThirdpersonRecoil");
 	ADD_NETVAR(m_bStrafing, bool, "CCSPlayer->m_bStrafing");
 	ADD_NETVAR(GetMoveState, int, "CCSPlayer->m_iMoveState");
 

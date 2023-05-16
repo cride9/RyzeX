@@ -97,7 +97,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 		g::pLocal->GetEFlags(),
 		g::pLocal->GetFlags(),
 		g::pLocal->GetMoveType(),
-		g::pLocal->m_flThirdpersonRecoil(),
+		g::pLocal->GetThirdpersonRecoil(),
 		g::pLocal->GetLowerBodyYaw()
 	);
 
@@ -129,7 +129,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 		if (m_Record)
 		{
 			/* set player data from the animation record */ 
-			g::pLocal->m_flThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			g::pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
 			g::pLocal->GetVelocity() = m_Record->m_vecVelocity;
 			g::pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
 			g::pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
@@ -212,7 +212,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 	g::pLocal->GetEFlags() = std::get < 8 >(m_Data);
 	g::pLocal->GetFlags() = std::get < 9 >(m_Data);
 	g::pLocal->GetMoveType() = std::get < 10 >(m_Data);
-	g::pLocal->m_flThirdpersonRecoil() = std::get < 11 >(m_Data);
+	g::pLocal->GetThirdpersonRecoil() = std::get < 11 >(m_Data);
 	g::pLocal->GetLowerBodyYaw() = std::get < 12 >(m_Data);
 }
 void C_LocalAnimations::CopyPlayerAnimationData(bool bFake)
@@ -285,7 +285,7 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 		if (m_Record)
 		{
 			/* set player data from the animation record */
-			g::pLocal->m_flThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			g::pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
 			g::pLocal->GetVelocity() = m_Record->m_vecVelocity;
 			g::pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
 			g::pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;

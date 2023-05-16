@@ -48,7 +48,7 @@ namespace misc {
 	void WalkBotHandler(IGameEvent*);
 	void MoveToPosition(Vector&);
 	void ClanTag();
-	void CapsuleHandler(IGameEvent*, int);
+	void CapsuleHandler(IGameEvent*);
 	void CapsuleOnHit(int, int, Color, float);
 
 	void DrawBream(Vector, Vector, Color);

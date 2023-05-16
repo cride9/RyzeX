@@ -52,26 +52,14 @@ typedef unsigned long HScheme, HPanel, HTexture, HCursor, HFont;
 class ISurface {
 
 public:
-	static std::wstring __fastcall MultiByteToWide(const std::string& str) noexcept {
 
-		std::wstring ret;
-		int str_len;
-
-		if (str.empty())
-			return {};
-
-		str_len = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
-		ret = std::wstring(str_len, 0);
-		MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &ret[0], str_len);
-
-		return ret;
-	}
-
-	void __fastcall DrawT(int X, int Y, Color Color, HFont Font, bool Center, const char* _Input, ...) noexcept {
+	void DrawT(int X, int Y, Color Color, HFont Font, bool Center, const char* _Input, ...) noexcept {
 
 		int w, h;
+		static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		static std::wstring text;
+		text = converter.from_bytes(_Input);
 
-		auto text = MultiByteToWide(_Input);
 		GetTextSize(Font, text.c_str(), w, h);
 		DrawSetTextFont(Font);
 		DrawSetTextColor(Color);
@@ -80,39 +68,7 @@ public:
 			X -= w / 2;
 
 		DrawSetTextPos(X, Y);
-		DrawPrintText(text.c_str(), (int)text.size());
-
-		///* set up buffer */
-		//char Buffer[64] = { '\0' };
-
-		///* set up varargs*/
-		//va_list Args;
-
-		//va_start(Args, _Input);
-		//vsprintf_s(Buffer, _Input, Args);
-		//va_end(Args);
-
-		//size_t Size = strlen(Buffer) + 1;
-
-		///* set up widebuffer*/
-		//wchar_t* WideBuffer = new wchar_t[Size];
-
-		///* char -> wchar */
-		//mbstowcs_s(0, WideBuffer, Size, Buffer, Size - 1);
-
-		///* check center */
-		//int Width = 0, Height = 0;
-
-		//if (Center) 
-		//	GetTextSize(Font, WideBuffer, Width, Height);
-
-		///* call and draw*/
-		//DrawSetTextColor(Color[0], Color[1], Color[2], Color[3]);
-		//DrawSetTextFont(Font);
-		//DrawSetTextPos(X - (Width / 2), Y);
-		//DrawPrintText(WideBuffer, wcslen(WideBuffer));
-
-		//delete[Size] WideBuffer;
+		DrawPrintText(text.c_str(), text.size());
 	}
 
 	void DrawSetColor(Color colDraw) {

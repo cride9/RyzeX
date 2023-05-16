@@ -125,7 +125,7 @@ void visual::VisualRender() {
 		}
 		else {
 
-			if (pEnt == g::pLocal) { // Local
+			if (pEnt == g::pLocal && i::Input->bCameraInThirdPerson) { // Local
 
 				if (!bEnable[LOCAL])
 					continue;

@@ -20,7 +20,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 
-		//misc::ServerHitboxes();
+		misc::ServerHitboxes();
 
 		if (cfg::misc::removals[1])
 			g::pLocal->GetFlashMaxAlpha() = 0.f;
@@ -31,6 +31,8 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
+		if (!Config2->bSaving)
+			lagcomp.FrameStageNotify();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
@@ -60,8 +62,7 @@ void hkPostFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
-		if (!Config2->bSaving)
-			lagcomp.FrameStageNotify();
+
 		break;
 
 	case FRAME_RENDER_START:

@@ -29,7 +29,7 @@ void __fastcall h::hkPacketEnd( void* ecx, void* edx )
 		ClientState->pNetChannel->iChokedPackets = current_choke;
 	}
 
-	networking.OnPacketEnd(ClientState);
+	networking.OnPacketEnd(static_cast<CClientState*>(ecx));
 	return original( ecx, edx );
 }
 

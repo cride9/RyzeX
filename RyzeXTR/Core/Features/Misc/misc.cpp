@@ -87,10 +87,10 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	PreserveKillfeed(pEvent);
 	if (!strcmp(pEvent->GetName(), playerHurt)) {
 		HandlePlayerHitEffects(pEvent);
-		CapsuleHandler(pEvent, 0);
+		CapsuleHandler(pEvent);
 	}
 	if (!strcmp(pEvent->GetName(), playerDeath)) {
-		CapsuleHandler(pEvent, 1);
+		CapsuleHandler(pEvent);
 	}
 	if (!strcmp(pEvent->GetName(), bulletImpact)) {
 		WorldCrosshairHandler(pEvent);
@@ -1336,17 +1336,21 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		pBlockedPlayer != nullptr && 
 		pBlockedPlayer->IsPlayer()) {
 
+		auto pLog = &lagcomp.GetLog(pBlockedPlayer->EntIndex());
+		if (!pLog || pLog->pRecord.empty())
+			return;
+
 		Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
 
 		// allowed difference before we fall down cuz head has a bigger surface (idk why)
 		// so if player is going in small circles, we won't fall (or doing small changes that could kill most blockbots)
-		if (abs((vecExtrapolatedLocalPos - pBlockedPlayer->GetVecOrigin()).Length2D()) > 0.75f/*1.29217472f*/) {
+		if (abs((vecExtrapolatedLocalPos - pLog->pRecord.front().vecOrigin).Length2D()) > 0.75f/*1.29217472f*/) {
 
 			Vector vecAngle;
-			M::VectorAngles(pBlockedPlayer->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
+			M::VectorAngles(pLog->pRecord.front().vecOrigin - vecExtrapolatedLocalPos, vecAngle);
 
 			g::vecOriginalViewAngle.y = vecAngle.y;
-			g::pCmd->flForwardMove = 450.f;
+			g::pCmd->flForwardMove = pCmd->iButtons & IN_DUCK ? 450.f * 3 : 450.f;
 			g::pCmd->flSideMove = 0.f; 
 		}
 	}
@@ -1377,10 +1381,14 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		if (!pTarget)
 			return;
 
+		auto pLog = &lagcomp.GetLog(pTarget->EntIndex());
+		if (!pLog || pLog->pRecord.empty())
+			return;
+
 		Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
 
 		Vector vecAngle;
-		M::VectorAngles(pTarget->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
+		M::VectorAngles(pLog->pRecord.front().vecOrigin - vecExtrapolatedLocalPos, vecAngle);
 
 		vecAngle.y -= vecOriginalViewAngle.y;
 		vecAngle.NormalizeAngle();
@@ -1445,7 +1453,7 @@ void misc::ClanTag() {
 	flTime = iMainTime;
 }
 
-void misc::CapsuleHandler(IGameEvent* pEvent, int iCall) {
+void misc::CapsuleHandler(IGameEvent* pEvent) {
 
 	if (!g::pLocal || !cfg::misc::bDrawCapsule)
 		return;
@@ -1454,10 +1462,7 @@ void misc::CapsuleHandler(IGameEvent* pEvent, int iCall) {
 	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
 	int iHitgroup = pEvent->GetInt("hitgroup");
 	if (int iLocalIndex = i::EngineClient->GetLocalPlayer(); iUserID != iLocalIndex && iAttacker == iLocalIndex) {
-		if (iCall) 
-			CapsuleOnHit(iUserID, iHitgroup, Color(cfg::misc::flDrawCapsuleColor), 3.f);
-		else 
-			CapsuleOnHit(iUserID, iHitgroup, Color(cfg::misc::flDrawCapsuleColor), 3.f);
+		CapsuleOnHit(iUserID, iHitgroup, Color(cfg::misc::flDrawCapsuleColor), 3.f);
 	}
 }
 
