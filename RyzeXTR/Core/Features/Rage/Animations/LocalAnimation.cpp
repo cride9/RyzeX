@@ -4,6 +4,7 @@
 #include "../../../SDK/Menu/config.h"
 #include "../../Networking/networking.h"
 #include "../../../SDK/InputSystem.h"
+#include "../antiaim.h"
 
 void localanimation::SetSequence(CAnimationLayer* pLayer, int iSequence) {
 
@@ -68,7 +69,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 {
 	g_LocalAnimations->StoreAnimationRecord();
 
-	if (!bSendPacket)
+	if (!bSendPacket) 
 		return;
 
 	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
@@ -446,6 +447,9 @@ void C_LocalAnimations::DoAnimationEvent(int nButtons, bool bIsFakeAnimations)
 }
 void C_LocalAnimations::StoreAnimationRecord()
 {
+	if (!g::pLocal->IsAlive())
+		return;
+
 	AnimationRecord_t m_AnimRecord;
 
 	// store record data
@@ -469,7 +473,7 @@ void C_LocalAnimations::StoreAnimationRecord()
 			if (!pGrenade->IsPinPulled() && pGrenade->GetThrowTime() > 0.0f)
 				m_AnimRecord.m_bIsShooting = true;
 		}
-		else if ((pWeapon->GetItemIDHigh() == WEAPON_REVOLVER /*&& g_Globals->m_Packet.m_bCanFireRev*/) || (pWeapon->m_nItemID() != WEAPON_REVOLVER /*&& g_Globals->m_Packet.m_bCanFire*/))
+		else if ((pWeapon->GetItemIDHigh() == WEAPON_REVOLVER /*&& g_Globals->m_Packet.m_bCanFireRev*/) || (pWeapon->GetItemDefinitionIndex() != WEAPON_REVOLVER /*&& g_Globals->m_Packet.m_bCanFire*/))
 		{
 			if (g::pCmd->iButtons & IN_ATTACK)
 				m_AnimRecord.m_bIsShooting = true;
@@ -649,7 +653,7 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask)
 	g::pLocal->GetLastSkipFrameCount() = 0;
 
 	// setup bones
-	g::bSettingUpBones[g::pLocal->EntIndex()] = std::make_tuple(true, EMatrixFlags::Interpolated | EMatrixFlags::VisualAdjustment);
+	g::bSettingUpBones[g::pLocal->EntIndex()] = std::make_tuple(true, 0);
 	g::pLocal->SetupBones(aMatrix, MAXSTUDIOBONES, nMask, 0.0f);
 	g::bSettingUpBones[g::pLocal->EntIndex()] = std::make_tuple(false, 0);
 
@@ -705,11 +709,9 @@ void C_LocalAnimations::InterpolateMatricies()
 
 	// copy bones
 	std::memcpy(g::pLocal->GetCachedBoneData().Base(), m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * g::pLocal->GetCachedBoneData().Count());
-	//std::memcpy(g::pLocal->GetBoneAccessor()->matBones, m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * g::pLocal->GetCachedBoneData().Count());
 	g::pLocal->GetBoneAccessor()->matBones = m_LocalData.m_Real.m_Matrix.data();
 
-	// SetupBones_AttachmentHelper
-	g::pLocal->SetupBones_AttachmentHelper();
+	return g::pLocal->SetupBones_AttachmentHelper();
 }
 void C_LocalAnimations::TransformateMatricies()
 {

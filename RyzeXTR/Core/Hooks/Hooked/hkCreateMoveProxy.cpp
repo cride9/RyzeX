@@ -92,8 +92,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (i::ClientState->nChokedCommands >= maxusercmd->GetInt() - 1)
 		bSendPacket = true;
 
-	if (bSendPacket)
-		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
+	//if (bSendPacket)
+	//	packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();

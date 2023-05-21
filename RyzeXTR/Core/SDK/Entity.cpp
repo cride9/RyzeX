@@ -37,7 +37,10 @@ void CBaseEntity::SetUpMovement() {
 
 CBaseCombatWeapon* CBaseEntity::GetWeapon()
 {
-	return (CBaseCombatWeapon*)i::EntityList->GetClientEntityFromHandle(this->GetActiveWeaponHandle());
+	if (auto pHandle = this->GetActiveWeaponHandle(); pHandle)
+		return static_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntityFromHandle(pHandle));
+	else
+		return nullptr;
 }
 
 bool CBaseEntity::IsGrenade(CBaseCombatWeapon* weapon)

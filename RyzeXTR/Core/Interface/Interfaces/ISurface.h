@@ -1,4 +1,5 @@
 #pragma once
+#include <format>
 #include "../../SDK/DataTyes/Color.h"
 #include <codecvt>
 
@@ -58,16 +59,18 @@ public:
 		int w, h;
 		static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		static std::wstring text;
-		text = converter.from_bytes(_Input);
+		try {
+			text = converter.from_bytes(_Input);
+		}
+		catch (std::range_error){
+			util::LogConsole(std::format("Name: {} cannot be converted (not utf-8)", _Input).c_str());
+			return;
+		}
 
 		GetTextSize(Font, text.c_str(), w, h);
 		DrawSetTextFont(Font);
 		DrawSetTextColor(Color);
-
-		if (Center)
-			X -= w / 2;
-
-		DrawSetTextPos(X, Y);
+		DrawSetTextPos(Center ? X - w / 2 : X, Y);
 		DrawPrintText(text.c_str(), text.size());
 	}
 

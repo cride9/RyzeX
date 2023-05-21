@@ -6,7 +6,10 @@
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Changers/skinchanger.h"
 
-void hkPreFrameStageNotify(EStage curStage) {
+void hkPreFrameStageNotify(EStage& curStage) {
+
+	if (!g::pLocal)
+		return;
 
 	switch (curStage) {
 
@@ -15,7 +18,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_RENDER_END:
-
+		//i::Prediction->SetLocalViewAngles();
 		break;
 
 	case FRAME_RENDER_START:
@@ -26,13 +29,12 @@ void hkPreFrameStageNotify(EStage curStage) {
 			g::pLocal->GetFlashMaxAlpha() = 0.f;
 		else
 			g::pLocal->GetFlashMaxAlpha() = 255.f;
-		
-		misc::BulletImpact(nullptr, curStage, true);
+
+		misc::BulletImpactFrameStage();
 		break;
 
 	case FRAME_NET_UPDATE_END:
-		if (!Config2->bSaving)
-			lagcomp.FrameStageNotify();
+		lagcomp.FrameStageNotify();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
@@ -42,10 +44,19 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
 		break;
+
+	default:
+		break;
 	}
 }
 
-void hkPostFrameStageNotify(EStage curStage) {
+void hkPostFrameStageNotify(EStage& curStage) {
+
+	if (!(i::ClientState->iDeltaTick > 0))
+		return;
+
+	if (!g::pLocal)
+		return;
 
 	switch (curStage) {
 
@@ -62,25 +73,22 @@ void hkPostFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
-
 		break;
 
 	case FRAME_RENDER_START:
 
 		break;
+
+	default:
+		break;
 	}
 }
 
-void __fastcall h::hkFrameStageNotify(void* ecx, void* edx, EStage curStage) {
+void __fastcall h::hkFrameStageNotify(IBaseClientDLL* ecx, int edx, EStage curStage) {
 
 	static auto original = detour::frameStageNotify.GetOriginal<decltype(&h::hkFrameStageNotify)>();
 
-	if (i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal)
-		return original(ecx, edx, curStage);
-
 	hkPreFrameStageNotify(curStage);
-
 	original(ecx, edx, curStage);
-
 	hkPostFrameStageNotify(curStage);
 }

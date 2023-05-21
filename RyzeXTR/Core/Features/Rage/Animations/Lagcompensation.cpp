@@ -6,11 +6,127 @@
 
 #include "../../../SDK/InputSystem.h"
 
-void Lagcompensation::SetupPlayerBones(CBaseEntity* pPlayer, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* Matrix, int nFlags) {
+void Lagcompensation::SetupPlayerBones(CBaseEntity* pEnt, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* Matrix, int nFlags) {
 
-	g::bSettingUpBones[pPlayer->EntIndex()] = std::make_tuple(true, nFlags);
-	pPlayer->SetupBones(Matrix, 128, nFlags, TICKS_TO_TIME(lagcomp.FixTickCount(pRecord->flSimulationTime)));
-	g::bSettingUpBones[pPlayer->EntIndex()] = std::make_tuple(false, 0);
+	if (!pRecord || !Matrix || !pEnt || !pEnt->IsAlive() || !pEnt->GetAnimationOverlays() || !pEnt->AnimState())
+		return;
+
+	int nBoneMask2 = BONE_USED_BY_ANYTHING;
+	if (nFlags & BoneUsedByHitbox)
+		nBoneMask2 = BONE_USED_BY_HITBOX;
+
+	g::bSettingUpBones[pEnt->EntIndex()] = std::make_tuple(true, nFlags);
+	pEnt->SetupBones(Matrix, 128, nBoneMask2, TICKS_TO_TIME(lagcomp.FixTickCount(pRecord->flSimulationTime)));
+	g::bSettingUpBones[pEnt->EntIndex()] = std::make_tuple(false, 0);
+
+	return;
+
+	/* Reset layers */
+	pEnt->SetAnimationLayers(pRecord->pLayers);
+
+	// save globals
+	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
+	(
+		// backup globals
+		i::GlobalVars->flCurrentTime,
+		i::GlobalVars->flRealTime,
+		i::GlobalVars->flFrameTime,
+		i::GlobalVars->flAbsFrameTime,
+		i::GlobalVars->flInterpolationAmount,
+
+		// backup frame count and tick count
+		i::GlobalVars->iFrameCount,
+		i::GlobalVars->iTickCount
+	);
+
+	/* Store player's data */
+	std::tuple < int, int, int, int, int, Vector > m_PlayerData = std::make_tuple
+	(
+		pEnt->GetLastSkipFrameCount(),
+		pEnt->GetEffects(),
+		pEnt->GetClientEffects(),
+		pEnt->GetOcclusionFrameCount(),
+		pEnt->m_nOcclusionMask(),
+		pEnt->GetAbsOrigin()
+	);
+
+	/* Force game's globals */
+	int nSimulationTick = TIME_TO_TICKS(pRecord->flSimulationTime);
+	i::GlobalVars->flCurrentTime = pRecord->flSimulationTime;
+	i::GlobalVars->flRealTime = pRecord->flSimulationTime;
+	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
+	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
+	i::GlobalVars->iTickCount = nSimulationTick;
+	i::GlobalVars->iFrameCount = INT_MAX; /* ShouldSkipAnimationFrame fix */
+	i::GlobalVars->flInterpolationAmount = 0.0f;
+
+	/* Force it https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/game/client/c_baseanimating.cpp#L3102 */
+	pEnt->InvalidateBoneCache();
+
+	/* Force the owner of animation layers */
+	for (int iLayer = 0; iLayer < ANIMATION_LAYER_COUNT; iLayer++)
+	{
+		CAnimationLayer* m_Layer = &pEnt->GetAnimationOverlays()[iLayer];
+		if (!m_Layer)
+			continue;
+
+		m_Layer->pOwner = pEnt;
+	}
+
+	/* Disable ACT_CSGO_IDLE_TURN_BALANCEADJUST animation */
+	if (nFlags & VisualAdjustment)
+	{
+		pEnt->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.0f;
+		if (pEnt->GetSequenceActivity(pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].nSequence) == ACT_CSGO_IDLE_TURN_BALANCEADJUST)
+		{
+			pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].flCycle = 0.0f;
+			pEnt->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].flWeight = 0.0f;
+		}
+	}
+
+	/* Remove interpolation if required */
+	if (!(nFlags & Interpolated))
+		pEnt->SetAbsOrigin(pRecord->vecOrigin);
+
+	/* Compute bone mask */
+	int nBoneMask = BONE_USED_BY_ANYTHING;
+	if (nFlags & BoneUsedByHitbox)
+		nBoneMask = BONE_USED_BY_HITBOX;
+
+	/* Fix player's data */
+	pEnt->GetClientEffects() |= 2;
+	pEnt->GetEffects() |= EF_NOINTERP;
+	pEnt->GetOcclusionFrameCount() = -1;
+	pEnt->m_nOcclusionMask() &= ~2;
+	pEnt->GetLastSkipFrameCount() = 0;
+
+	/* Setup bones */
+	//bResult = original(ecx, edx, matrix, maxbones, nBoneMask, TICKS_TO_TIME(lagcomp.FixTickCount(m_Record->flSimulationTime)));
+	g::bSettingUpBones[pEnt->EntIndex()] = std::make_tuple(true, nFlags);
+	pEnt->SetupBones(Matrix, 128, nBoneMask, TICKS_TO_TIME(lagcomp.FixTickCount(pRecord->flSimulationTime)));
+	g::bSettingUpBones[pEnt->EntIndex()] = std::make_tuple(false, 0);
+
+	/* Restore player's data */
+	pEnt->GetLastSkipFrameCount() = std::get < 0 >(m_PlayerData);
+	pEnt->GetEffects() = std::get < 1 >(m_PlayerData);
+	pEnt->GetClientEffects() = std::get < 2 >(m_PlayerData);
+	pEnt->GetOcclusionFrameCount() = std::get < 3 >(m_PlayerData);
+	pEnt->m_nOcclusionMask() = std::get < 4 >(m_PlayerData);
+	pEnt->SetAbsOrigin(std::get < 5 >(m_PlayerData));
+
+	/* Reset layers */
+	std::memcpy(pEnt->GetAnimationOverlays(), pRecord->pLayers, sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+
+	// restore globals
+	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
+	i::GlobalVars->flRealTime = std::get < 1 >(m_Globals);
+	i::GlobalVars->flFrameTime = std::get < 2 >(m_Globals);
+	i::GlobalVars->flAbsFrameTime = std::get < 3 >(m_Globals);
+	i::GlobalVars->flInterpolationAmount = std::get < 4 >(m_Globals);
+
+	// restore frame count and tick count
+	i::GlobalVars->iFrameCount = std::get < 5 >(m_Globals);
+	i::GlobalVars->iTickCount = std::get < 6 >(m_Globals);
 }
 
 Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* pEntity )
@@ -26,9 +142,7 @@ Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* pEntity )
 	vecAbsOrigin = pEntity->GetAbsOrigin( );
 	vecMins = pEntity->GetCollideable( )->OBBMins( );
 	vecMaxs = pEntity->GetCollideable( )->OBBMaxs( );
-
 	pEntity->GetAnimationLayers( pLayers );
-
 	pEntity->GetPoseParameters( flPoses );
 	flInterpTime = 0.f;
 	bValid = true;
@@ -64,7 +178,41 @@ void Lagcompensation::LagRecord_t::Apply( CBaseEntity* pEntity, bool Backup )
 	pEntity->GetVecAbsVelocity( ) = Backup ? vecAbsVelocity : vecVelocity;
 	pEntity->GetVecOrigin( ) = vecOrigin;
 	pEntity->SetAbsOrigin( Backup ? vecAbsOrigin : vecOrigin );
-	pEntity->SetBoneCache( pMatrix );
+	pEntity->SetBoneCache( pVisualMatrix );
+}
+
+void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity, bool Backup, int pMatrixID)
+{
+	pEntity->GetFlags() = fFlags;
+	pEntity->GetSimulationTime() = flSimulationTime;
+	pEntity->GetLowerBodyYaw() = flLowerBodyYawTarget;
+	pEntity->GetDuckAmount() = flDuck;
+	pEntity->GetEyeAngles() = vecEyeAngles;
+	pEntity->GetCollideable()->OBBMaxs() = vecMaxs;
+	pEntity->GetCollideable()->OBBMins() = vecMins;
+	pEntity->GetVelocity() = vecVelocity;
+	pEntity->GetVecAbsVelocity() = Backup ? vecAbsVelocity : vecVelocity;
+	pEntity->GetVecOrigin() = vecOrigin;
+	pEntity->SetAbsOrigin(Backup ? vecAbsOrigin : vecOrigin);
+	switch (pMatrixID)
+	{
+	case 1:
+		pEntity->SetBoneCache(pMatrix);
+		break;
+	case 2:
+		pEntity->SetBoneCache(pLeftMatrix);
+		break;
+	case 3:
+		pEntity->SetBoneCache(pRightMatrix);
+		break;
+	case 4:
+		pEntity->SetBoneCache(pCenterMatrix);
+		break;
+	default:
+		pEntity->SetBoneCache(pVisualMatrix);
+		break;
+	}
+	//pEntity->SetBoneCache(pVisualMatrix);
 }
 
 void Lagcompensation::LagRecord_t::Apply( CBaseEntity* pEntity )
@@ -78,7 +226,7 @@ void Lagcompensation::LagRecord_t::Apply( CBaseEntity* pEntity )
 	pEntity->GetFlags( ) = fFlags;
 	pEntity->GetVecOrigin( ) = vecOrigin;
 	pEntity->SetAbsOrigin( vecOrigin );
-	pEntity->SetBoneCache( pMatrix );
+	pEntity->SetBoneCache( pVisualMatrix );
 }
 
 void Lagcompensation::LagRecord_t::Restore( CBaseEntity* pEntity )
@@ -99,126 +247,81 @@ void Lagcompensation::FrameStageNotify() {
 	
 	bool bChanged = false;
 
-	if (!g::pLocal)
+	if (!g::pLocal || cfg::debugSwitch)
 		return;
 
-	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++ )
+	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++ )
 	{
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 		Lagcompensation::AnimationInfo_t* pCurrentLog = &pPlayerLogs[i];
 
-		// check if nullptr.
-		if ( !pEntity ) {
+		if ( !pEntity || pEntity == g::pLocal ) {
 			pCurrentLog->pRecord.clear( );
 			continue;
 		}
 
-		// update entity ptr if required.
-		// reset entity if changed.
 		if (pCurrentLog->pEntity != pEntity) {
 
 			pCurrentLog->pRecord.clear();
 			pCurrentLog->pEntity = pEntity;
 		}
 
-		// check if nullptr, etc.
-		if (pCurrentLog->pEntity->EntIndex() == g::pLocal->EntIndex()) {
-			pCurrentLog->pRecord.clear( );
-			continue;
-		}
-
-		// don't store records if no we dont need backtrack but atleast save 2 records for previous record.
-		if ( !cfg::rage::m_bEnableBacktrack && pCurrentLog->pRecord.size( ) > 2 )
-			pCurrentLog->pRecord.pop_back( );
-
-		// if this happens, delete all the animation.
-		if ( !pCurrentLog->pEntity->IsAlive( ) ) {
+		if ( !pCurrentLog->pEntity->IsAlive( ) || pCurrentLog->pEntity->GetTeam() == g::pLocal->GetTeam()) {
 
 			pCurrentLog->pEntity->IsClientSideAnimation( ) = g::bAllowAnimations[ pCurrentLog->pEntity->EntIndex( ) ] = true;
 			pCurrentLog->pRecord.clear( );
 			continue;
 		}
 
-		if (pCurrentLog->pEntity->GetTeam() == g::pLocal->GetTeam()) {
-
-			pCurrentLog->pEntity->IsClientSideAnimation() = g::bAllowAnimations[pCurrentLog->pEntity->EntIndex()] = true;
-			pCurrentLog->pRecord.clear();
-			continue;
-		}
-
-		// indicate that this entity has been out of pvs.
-		// insert dummy record to separate records
-		// to fix stuff like lag record and pPrediction.
-		if ( pCurrentLog->pEntity->IsDormant( ) ) {
+		if (pCurrentLog->pEntity->IsDormant()) {
 
 			bool bInsert = true;
 
-			// we have any records already?
-			if ( !pCurrentLog->pRecord.empty( ) ) {
+			if (!pCurrentLog->pRecord.empty()) {
 
-				Lagcompensation::LagRecord_t& iFront = pCurrentLog->pRecord.front( );
+				Lagcompensation::LagRecord_t& iFront = pCurrentLog->pRecord.front();
 
-				// we already have a dormancy separator.
-				if ( iFront.bDormant )
+				if (iFront.bDormant)
 					bInsert = false;
 			}
 
-			if ( bInsert ) {
-				// add new record.
-				pCurrentLog->pRecord.push_front( Lagcompensation::LagRecord_t( pCurrentLog->pEntity ) );
+			if (bInsert) {
 
-				// get reference to newly added pRecord.
-				Lagcompensation::LagRecord_t* pCurrentRecord = &pCurrentLog->pRecord.front( );
+				pCurrentLog->pRecord.push_front(Lagcompensation::LagRecord_t(pCurrentLog->pEntity));
 
-				// mark as dormant.
+				Lagcompensation::LagRecord_t* pCurrentRecord = &pCurrentLog->pRecord.front();
+
 				pCurrentRecord->bDormant = true;
 			}
-
-			// fix it on dormant.
-			//anims.FixJumpFallAnimation( pCurrentLog->pEntity );
-
-			// reset data.
 			continue;
 		}
 
-		// this is the first data update we are receving
 		bool bUpdate = ( pCurrentLog->pRecord.empty( ) || anims.NewDataRecievedFromServer( pEntity ) );
 
-		// we received data with a newer simulation context.
-		if ( bUpdate )
-		{
-			// make a full backup of the entity
-			Lagcompensation::LagRecord_t pBackupRecord = Lagcompensation::LagRecord_t( pCurrentLog->pEntity );
-			pBackupRecord.Apply( pCurrentLog->pEntity );
+		if ( bUpdate ) {
 
-			// add new record.
-			pCurrentLog->pRecord.push_front( Lagcompensation::LagRecord_t( pCurrentLog->pEntity ) );
-
-			// get reference to newly added record.
-			Lagcompensation::LagRecord_t* pCurrentRecord = &pCurrentLog->pRecord.front( );
-
-			// update animations on current record.
-			//anims.UpdateEnemyAnimations( pCurrentLog->pEntity, pCurrentRecord );
+			pCurrentLog->pRecord.push_front(Lagcompensation::LagRecord_t(pCurrentLog->pEntity));
 			anims.RebuildEnemyAnimations(pCurrentLog->pEntity, pCurrentLog);
 
-			SetupPlayerBones(pCurrentLog->pEntity, pCurrentRecord, pCurrentRecord->pMatrix, EMatrixFlags::VisualAdjustment);
-			anims.UpdateSafePointMatrixes(pEntity, pCurrentRecord);
-
-			// is data changed?
 			bChanged = true;
 		}
 
-		// max tick amt.
-		float flMaxTickAmt = /*C::Get<bool>( Vars.bRageSafeBacktracking ) ? std::ceil( I::ConVar->FindVar( XorStr( "sv_maxunlag" ) )->GetFloat( ) * ( 1.f / I::Globals->m_flIntervalPerTick ) ) + 3 :*/ 16;
-
-		// no need to store insane amount of data.
-		while ( pCurrentLog->pRecord.size( ) > flMaxTickAmt )
+		while ( pCurrentLog->pRecord.size( ) > 32)
 			pCurrentLog->pRecord.pop_back( );
-	}
 
-	// filter the pRecord if the data changed.
-	if ( bChanged )
-		FilterRecords( );
+		// filter the pRecord if the data changed.
+		if (bChanged) {
+
+			for (size_t j = 0; j < pCurrentLog->pRecord.size(); j++)
+			{
+				if (pCurrentLog->pRecord.at(j).bValid = lagcomp.IsValidRecord(pCurrentLog->pRecord.at(j).flSimulationTime))
+					pCurrentLog->iLastValid = j;
+
+				if (pCurrentLog->pRecord.at(j).bValid && pCurrentLog->iFirstValid >= j)
+					pCurrentLog->iFirstValid = j;
+			}
+		}
+	}
 }
 
 Lagcompensation::AnimationInfo_t& Lagcompensation::GetLog( const int iEntIndex )
@@ -238,32 +341,24 @@ void Lagcompensation::FilterRecords( )
 			continue;
 		}
 
-		// max tick amt.
-		float flMaxTickAmt = /*C::Get<bool>( Vars.bRageSafeBacktracking ) ? std::ceil( I::ConVar->FindVar( XorStr( "sv_maxunlag" ) )->GetFloat( ) * ( 1.f / I::Globals->m_flIntervalPerTick ) ) + 3 :*/ 16;
-
 		// no need to store insane amount of data.
-		while ( pPlayerLogs[ i ].pRecord.size( ) > flMaxTickAmt )
-			pPlayerLogs[ i ].pRecord.pop_back( );
+		//while ( pPlayerLogs[ i ].pRecord.size( ) > 16 )
+		//	pPlayerLogs[ i ].pRecord.pop_back( );
 
 		for ( auto j = 0u; j < pPlayerLogs[ i ].pRecord.size( ); j++ )
 		{
-			auto pCurrentRecord = pPlayerLogs[ i ].pRecord[ j ];
+			auto& pCurrentRecord = pPlayerLogs[ i ].pRecord[ j ];
 			if ( pCurrentRecord.bDormant && !j )
 				continue;
 
-			if ( pCurrentRecord.bDormant )
-			{
-				pPlayerLogs[ i ].pRecord.erase( pPlayerLogs[ i ].pRecord.begin( ) + j );
-				j--;
-				continue;
-			}
+			//if ( pCurrentRecord.bDormant )
+			//{
+			//	pPlayerLogs[ i ].pRecord.erase( pPlayerLogs[ i ].pRecord.begin( ) + j );
+			//	j--;
+			//	continue;
+			//}
 
-			if (pCurrentRecord.bValid = lagcomp.IsValidRecord(pCurrentRecord.flSimulationTime)) {
-				pPlayerLogs[i].iLastValid = j;
-			}
 
-			if (pCurrentRecord.bValid && pPlayerLogs[i].iFirstValid >= j)
-				pPlayerLogs[i].iFirstValid = j;
 		}
 	}
 }
@@ -277,9 +372,9 @@ void Lagcompensation::SetInterpolationFlags(CBaseEntity* pEnemy)
 
 	for (int i = 0; i < pVarMap->m_nInterpolatedEntries; i++) {
 
-		VarMapEntry_t* pEntry = &pVarMap->m_Entries[i];
-		pEntry->m_bNeedsToInterpolate = false;
-	}
+		VarMapEntry_t& pEntry = pVarMap->m_Entries[i];
+		pEntry.m_bNeedsToInterpolate = false;
+	}	
 }
 
 bool Lagcompensation::IsBreakingLagcompensation( Lagcompensation::LagRecord_t* pLagRecord )
@@ -287,74 +382,40 @@ bool Lagcompensation::IsBreakingLagcompensation( Lagcompensation::LagRecord_t* p
 	Lagcompensation::AnimationInfo_t* pInfo = &lagcomp.GetLog( pLagRecord->iEntIndex );
 
 	// check if we have at least one entry.
-	if ( !&pInfo || pInfo->pRecord.size( ) <= 0 )
+	if ( !&pInfo || pInfo->pRecord.size( ) <= 2 )
 		return false;
 
 	Vector previousOrigin = pLagRecord->pEntity->GetAbsOrigin( );
-
-	bool m_bFoundRecord = false;
-
-	Lagcompensation::LagRecord_t* pPrevious = nullptr;
-
-	// the previous record.
-	if ( pInfo->pRecord.size( ) >= 2 )
-		pPrevious = &pInfo->pRecord[ 1 ];
+	Lagcompensation::LagRecord_t* pPrevious = &pInfo->pRecord.at(1);
 
 	// walk context looking for any invalidating event.
-	for ( Lagcompensation::LagRecord_t& pRecord : pInfo->pRecord )
+	//for ( Lagcompensation::LagRecord_t& pRecord : pInfo->pRecord )
 	{
-		if ( !pRecord.pEntity->IsAlive( ) )
+		if ( !pLagRecord->pEntity->IsAlive( ) )
 		{
-	/*		L::PushConsoleColor( FOREGROUND_RED );
-			L::Print( XorStr( "Lagcomp: client [{:d}] not alive, not lag compensating!" ), pRecord.pEntity->EntIndex( ) );
-			L::PopConsoleColor( );*/
-			// entity must be alive, lost track
 			return false;
 		}
 
-		Vector delta = pRecord.vecOrigin - previousOrigin;
+		Vector delta = pLagRecord->vecOrigin - pPrevious->vecOrigin;
 		if ( delta.LengthSqr( ) > LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR )
 		{
-			ExtrapolatePlayer( pRecord.pEntity, &pRecord, pPrevious );
-
-			//Vector m_vecAbsOrigin = pRecord.pEntity->GetAbsOrigin( );
-			//L::PushConsoleColor( FOREGROUND_RED );
-			//L::Print( XorStr( "Lagcomp: client [{:d}] teleported, not lag compensating!" ), pRecord.pEntity->EntIndex( ) );
-			//L::Print( XorStr( "Current Origin: [{:f}] [{:f}] [{:f}]" ), m_vecAbsOrigin.x, m_vecAbsOrigin.y, m_vecAbsOrigin.z );
-			//L::PopConsoleColor( );
+			ExtrapolatePlayer(pLagRecord->pEntity, pLagRecord, pPrevious );
 
 			// lost track, too much difference.
 			return true;
 		}
 
 		// player is abusing tickbase and breaking lagcompensation
-		if ( pRecord.flSimulationTime < pRecord.flOldSimulationTime )
+		if (pLagRecord->flSimulationTime < pLagRecord->flOldSimulationTime )
 		{
-			//L::PushConsoleColor( FOREGROUND_RED );
-			//L::Print( XorStr( "Lagcomp: client [{:d}] is shifting tickbase, not lag compensating!" ), pRecord.pEntity->EntIndex( ) );
-			//L::PopConsoleColor( );
 			return true;
 		}
 		//else if ( &pRecord && ( pInfo->pEntity->GetSimulationTime( ) == pRecord.flSimulationTime ) )
 		//	return true;
 
-		// did we find a context smaller than target time?
-		if ( pRecord.flSimulationTime <= pLagRecord->flSimulationTime )
-		{
-			m_bFoundRecord = true;
-			break; // hurra, stop-
-		}
-
-		previousOrigin = pRecord.vecOrigin;
+		previousOrigin = pLagRecord->vecOrigin;
 	}
 
-	if ( !m_bFoundRecord )
-	{
-		//L::PushConsoleColor( FOREGROUND_RED );
-		//L::Print( XorStr( "No valid positions in history for BacktrackPlayer client [{:d}]" ), pLagRecord->pEntity->EntIndex( ) );
-		//L::PopConsoleColor( );
-		return false;
-	}
 	return false;
 }
 
@@ -385,7 +446,6 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 			{
 				//Trace_t      trace;
 				//CTraceFilter filter( g::pLocal );
-
 				auto predicted_origin = simulationData.vecOrigin;
 				auto time_to_extrapolate = TIME_TO_TICKS( i::GlobalVars->iTickCount ) - m_pEntity->GetSimulationTime( );
 				auto choke_delta_time = m_pCurrentRecord->flSimulationTime - m_pPrevious->flSimulationTime;
@@ -467,7 +527,7 @@ bool Lagcompensation::IsValidRecord( float mflSimulationTime, float flRange )
 	//auto iExtraTick = !pTickbase.pShiftData.bInRechargeCycle && pTickbase.pShiftData.bRecharged && pTickbase.pShiftData.iShiftGettingUsed && !pTickbase.pShiftData.bDidShot ? pTickbase.pShiftData.iShiftGettingUsed : 0.f;
 	auto iExtraTick = !exploits::bIsRecharging /*&& pTickbase.pShiftData.bRecharged */ && exploits::iShiftAmount && !exploits::bIsShiftingTicks ? exploits::iShiftAmount : 0.f;
 
-	return std::fabsf( m_flCorrect - ( i::GlobalVars->flCurrentTime - mflSimulationTime ) ) < flRange /*+ TICKS_TO_TIME( iExtraTick / 2 )*/;
+	return /*std::fabsf*/( /*m_flCorrect -*/ ( i::GlobalVars->flCurrentTime - mflSimulationTime ) ) < 0.19f /*+ TICKS_TO_TIME( iExtraTick / 2 )*/;
 }
 
 int Lagcompensation::FixTickCount( const float& flSimulationTime )
@@ -492,7 +552,7 @@ void Lagcompensation::UpdateIncomingSequences( INetChannel* pNetChannel )
 	}
 
 	// is cached too much sequences
-	if ( vecSequences.size( ) > 2048U )
+	while ( vecSequences.size( ) > 2048U )
 		vecSequences.pop_back( );
 }
 
@@ -524,15 +584,9 @@ void Lagcompensation::RemoveInterpolation() {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity())
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity() || pEntity == g::pLocal)
 			continue;
 
-		if (pEntity == g::pLocal) {
-			continue;
-			if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && cfg::antiaim::defensive)
-				SetInterpolationFlags(pEntity);
-		}
-		else
-			SetInterpolationFlags(pEntity);
+		SetInterpolationFlags(pEntity);
 	}
 }

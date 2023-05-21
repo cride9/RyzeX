@@ -34,7 +34,8 @@ namespace misc {
 	void Slowwalk(CUserCmd*, float);
 	void FastStop(CUserCmd*);
 	void FakeDuck(CUserCmd*);
-	void BulletImpact(IGameEvent* = nullptr, EStage = FRAME_UNDEFINED, bool bFrameStage = false );
+	void BulletImpact(IGameEvent*);
+	void BulletImpactFrameStage();
 	void SlideFix();
 	void SkyboxChanger(const char*);
 	void OnlyCheatLogs();
@@ -50,6 +51,7 @@ namespace misc {
 	void ClanTag();
 	void CapsuleHandler(IGameEvent*);
 	void CapsuleOnHit(int, int, Color, float);
+	void LeftHandKnife();
 
 	void DrawBream(Vector, Vector, Color);
 	void WorldCrosshairHandler(IGameEvent*);

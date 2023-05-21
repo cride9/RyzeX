@@ -199,7 +199,7 @@ void menu::Antiaimtab() noexcept {
 			ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1], -58.f, 58.f, "%.f");
 
 			if (iDesyncType == 4) {
-				ImGui::SliderFloat("Yaw desync angle", &flDesyncValue, 0.f, 58.f, "%.f");
+				ImGui::SliderInt("Yaw desync angle", &iDesyncValue, 0, 100);
 				ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset, 0, 180.f);
 				ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch, 0, cfg::antiaim::fakelagmax);
 			}
@@ -207,7 +207,7 @@ void menu::Antiaimtab() noexcept {
 				if (iDesyncType == 2)
 					ImGui::Checkbox("Sway LBY", &m_bSwayDesync);
 
-				ImGui::SliderFloat("Yaw desync angle", &flDesyncValue, 0.f, 58.f, "%.f");
+				ImGui::SliderInt("Yaw desync angle", &iDesyncValue, 0, 100);
 				ImGui::Keybind("invertButton", &iInverterBind);
 				ImGui::Combo("Yaw target modifier", &desyncModifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
 				if (desyncModifier != 0)
@@ -410,6 +410,7 @@ void menu::Visualtab() noexcept {
 			};
 
 			ImGui::Combo("Skybox", &cfg::misc::iSkybox, szSkyboxes, IM_ARRAYSIZE(szSkyboxes));
+			ImGui::ColorEdit4("##skyboxcolor", flSkyboxColor);
 
             ImGui::Checkbox("Preserve killfeed", &preserveKillfeed);
 

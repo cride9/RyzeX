@@ -39,7 +39,7 @@ public:
 
 private:
 
-	std::pair<CBaseEntity*, int>	SelectTargetIndex(CBaseCombatWeapon*, Vector&);
+	std::pair<CBaseEntity*, int> __fastcall SelectTargetIndex(CBaseCombatWeapon*, Vector&);
 	Vector				Hitscan(CBaseEntity*, CBaseCombatWeapon*, Vector&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector, int);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*, Vector);

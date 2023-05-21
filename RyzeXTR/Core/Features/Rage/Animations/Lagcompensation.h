@@ -65,12 +65,15 @@ public:
 		LagRecord_t( ) = default;
 		LagRecord_t( CBaseEntity* pEntity );
 
-		void Apply( CBaseEntity* pEntity, bool Backup );
+		void Apply(CBaseEntity* pEntity, bool Backup);
+		// 1 - resolved, 2 - left, 3 - right, 4 - center
+		void Apply( CBaseEntity* pEntity, bool Backup, int pMatrixID );
 		void Restore( CBaseEntity* pEntity );
 		void Apply( CBaseEntity* pEntity );
 
 		CBaseEntity* pEntity{};
 		matrix3x4_t pMatrix[ 128 ];
+		matrix3x4_t pVisualMatrix[128];
 		matrix3x4_t pLeftMatrix[128];
 		matrix3x4_t pRightMatrix[128];
 		matrix3x4_t pCenterMatrix[128];

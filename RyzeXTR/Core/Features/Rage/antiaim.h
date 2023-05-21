@@ -29,6 +29,8 @@ enum EDESYNC : int {
 namespace antiaim {
 
 	inline bool needMicromovement = false;
+	inline bool flickJitter = false;
+	inline bool bHideFlick = false;
 
 	inline float desyncValue = 0.f;
 	inline bool shotInvert = false;

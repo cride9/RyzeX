@@ -112,10 +112,10 @@ bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out)
 	const auto lerp = M::Lerp(NextOrigin, FirstInvalid->vecOrigin, flDelta );
 
 	matrix3x4_t ret[256];
-	memcpy(ret, FirstInvalid->pMatrix, sizeof(matrix3x4_t[256]));
+	memcpy(ret, FirstInvalid->pVisualMatrix, sizeof(matrix3x4_t[256]));
 
 	for (size_t i{ }; i < 256; ++i) {
-		const auto matrix_delta = Vector( FirstInvalid->pMatrix[ i ][ 0 ][ 3 ], FirstInvalid->pMatrix[ i ][ 1 ][ 3 ], FirstInvalid->pMatrix[ i ][ 2 ][ 3 ] ) - FirstInvalid->vecOrigin;
+		const auto matrix_delta = Vector( FirstInvalid->pVisualMatrix[ i ][ 0 ][ 3 ], FirstInvalid->pVisualMatrix[ i ][ 1 ][ 3 ], FirstInvalid->pVisualMatrix[ i ][ 2 ][ 3 ] ) - FirstInvalid->vecOrigin;
 		MatrixSetOrigin(matrix_delta + lerp, ret[i]);
 	}
 
@@ -343,7 +343,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		}
 		else {
 
-#if NO
+#if _DEBUG
 			if (lagcomp.GetLog(pEnt->EntIndex()).pEntity) {
 
 				if (lagcomp.GetLog(pEnt->EntIndex()).pRecord.size() >= 2) {
@@ -486,17 +486,20 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 	else if ((szModelName.find("weapons\\w_") != std::string_view::npos)) {
 
 		CBaseEntity* pEntity = nullptr;
+		bool bFoundCloseEntity = false;
 		for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 
 			CBaseEntity* tempEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 			if (tempEntity && tempEntity->IsAlive()) {
 				if (!pEntity)
 					pEntity = tempEntity;
-				if (pEntity && (vecModelOrigin - tempEntity->GetVecOrigin()).Length() < (vecModelOrigin - pEntity->GetVecOrigin()).Length())
+				if (pEntity && (vecModelOrigin - tempEntity->GetVecOrigin()).Length() < (vecModelOrigin - pEntity->GetVecOrigin()).Length()) {
 					pEntity = tempEntity;
+					bFoundCloseEntity = true;
+				}
 			}
 		}
-		if (!pEntity)
+		if (!pEntity || !bFoundCloseEntity)
 			return false;
 
 		// enemy

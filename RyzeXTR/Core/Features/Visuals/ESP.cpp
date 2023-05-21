@@ -586,3 +586,64 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 		//}
 	}
 }
+
+// thx @94
+void visual::GrenadeEsp() {
+
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal || !i::EngineClient->IsConnected() || !i::EngineClient->IsInGame())
+		return;
+
+	for (size_t i = 0; i < i::EntityList->GetHighestEntityIndex(); i++) {
+
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+		if (!pEntity || pEntity->IsPlayer())
+			continue;
+
+		// change the entity to a weapon
+		CBaseCombatWeapon* pWeapon = reinterpret_cast<CBaseCombatWeapon*>(pEntity);
+
+		Vector vecScreenPosition;
+		if (i::DebugOverlay->ScreenPosition(pWeapon->GetAbsOrigin(), vecScreenPosition))
+			continue;
+
+		if (!pWeapon->GetClientClass())
+			continue;
+
+		//Vector vecMins, vecMaxs;
+		//pWeapon->GetRenderBounds(vecMins, vecMaxs);
+
+		const EClassIndex iClientID = pWeapon->GetClientClass()->nClassID;
+
+		using enum EClassIndex;
+		if (iClientID == CDecoyProjectile)
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Decoy");
+
+		else if (iClientID == CMolotovProjectile)
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Molotov");
+
+		else if (iClientID == CSmokeGrenadeProjectile)
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Smoke");
+
+		else if (iClientID == CBaseCSGrenadeProjectile) {
+
+			const Model_t* pModel = pWeapon->GetModel();
+
+			if (pModel) {
+
+				std::string szName = pModel->szName;
+
+				if (szName.find("flashbang") != std::string::npos)
+					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Flashbang");
+				else if (szName.find("fraggrenade") != std::string::npos)
+					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Grenade");
+			}
+		}
+
+		else if (iClientID == CInferno) 
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Fire");
+		
+		else if (iClientID == CPlantedC4)
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Bomb");
+	}
+}

@@ -27,7 +27,7 @@ namespace cfg {
 		inline bool forceSafePoint[] = { false, false, false, false ,false, false };
 		inline int iAimbotFov = 180.f;
 		inline bool bSilentAim = false;
-		inline int ragebotbind;
+		inline int ragebotbind = 0;
 
 		inline bool doubletap;
 		inline int  doubletapkey;
@@ -103,7 +103,7 @@ namespace cfg {
 		inline bool bInvertOnShoot = false;
 
 		inline int iDesyncType = 0;
-		inline float flDesyncValue = 58.f;
+		inline int iDesyncValue = 100;
 		inline int iInverterBind = 0;
 
 		inline float bodyLean[2];
@@ -357,6 +357,7 @@ namespace cfg {
 		inline float nightmodeColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
 		inline int iSkybox = 0;
+		inline float flSkyboxColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
 		inline bool aspectRatio = false;
 		inline int aspectRatioValue = 0;

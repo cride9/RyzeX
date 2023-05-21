@@ -188,7 +188,7 @@ struct StartSoundParams_t
 	int				m_iUserData;
 	int				m_iSoundSource;
 	int				m_iEntityChannel;
-	CSfxTable* m_pSfx;
+	CSfxTable*		m_pSfx;
 	Vector			m_vecOrigin;
 	Vector			m_vecDirection;
 	bool			m_bUpdatePositions;

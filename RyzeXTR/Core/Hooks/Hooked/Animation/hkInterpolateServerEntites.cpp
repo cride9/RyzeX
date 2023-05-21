@@ -11,6 +11,6 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 
 	original(ecx, edx);
 
-	//anims.InterpolateMatricies();
+	anims.InterpolateMatricies();
 	g_LocalAnimations->InterpolateMatricies();
 }

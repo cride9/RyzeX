@@ -130,7 +130,7 @@ namespace h {
 
 	void* __fastcall	hkAllocKeyValuesMemory(CKeyValuesSystem*, int, int);
 	void __fastcall		hkCreateMoveProxy(IBaseClientDLL*, int, int, float, bool);
-	void __fastcall		hkFrameStageNotify(void*, void*, EStage);
+	void __fastcall		hkFrameStageNotify(IBaseClientDLL*, int, EStage);
 	void __fastcall		hkPaintTraverse(uintptr_t, int, unsigned int, bool, bool);
 	void __cdecl		hkClMove(float, bool);
 	void __fastcall		hkOverrideView(void*, void*, CViewSetup*);
@@ -148,7 +148,7 @@ namespace h {
 	void __fastcall		hkPlayerMove(void*, void*);
 	void __fastcall		hkClampBonesInBBox(CBaseEntity*, void*, matrix3x4_t*, int);
 	void __fastcall		hkGetColorModulation(void*, void*, float*, float*, float*);
-	int	__cdecl			hkStartSound(void*);
+	int	__cdecl			hkStartSound(StartSoundParams_t&);
 	void __fastcall     hkInstallStringTableCallback(const char* tableName);
 
 	// netchannel table

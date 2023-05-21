@@ -152,7 +152,7 @@ void CConfig::Setup() {
 		SetupValue(invertangle, 0, "antiaim", "invertangle");
 
 		SetupValue(iDesyncType, 0, "antiaim", "desynctype");
-		SetupValue(flDesyncValue, 0, "antiaim", "desyncvalue");
+		SetupValue(iDesyncValue, 0, "antiaim", "desyncvalue");
 		SetupValue(iInverterBind, 0, "antiaim", "desyncinverter");
 		SetupValue(iFlickOffset, 0, "antiaim", "flickOffset");
 		SetupValue(flickAngleSwitch, 0, "antiaim", "flickAngleSwitch");
@@ -813,6 +813,10 @@ void CConfig::Setup() {
 		SetupValue(nightmodeColor[3], 1.f, "visual", "nightmodeColorA");
 
 		SetupValue(iSkybox, 0, "misc", "skyboxchanger");
+		SetupValue(flSkyboxColor[0], 1.f, "visual", "flSkyboxColorR");
+		SetupValue(flSkyboxColor[1], 1.f, "visual", "flSkyboxColorG");
+		SetupValue(flSkyboxColor[2], 1.f, "visual", "flSkyboxColorB");
+		SetupValue(flSkyboxColor[3], 1.f, "visual", "flSkyboxColorA");
 
 		SetupValue(aspectRatio, false, "misc", "aspectRatio");
 		SetupValue(aspectRatioValue, 0, "misc", "aspectRatioValue");

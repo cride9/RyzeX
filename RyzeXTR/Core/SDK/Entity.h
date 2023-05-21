@@ -336,7 +336,7 @@ class IClientNetworkable
 public:
 	virtual IClientUnknown* GetIClientUnknown() = 0;
 	virtual void					Release() = 0;
-	virtual CBaseClient* GetClientClass() = 0;
+	virtual CBaseClient*			GetClientClass() = 0;
 	virtual void					NotifyShouldTransmit(int iState) = 0;
 	virtual void					OnPreDataChanged(EDataUpdateType updateType) = 0;
 	virtual void					OnDataChanged(EDataUpdateType updateType) = 0;
@@ -1139,19 +1139,28 @@ public:
 	ADD_NETVAR(GetFallbackStatTrak, int, "CBaseAttributableItem->m_nFallbackStatTrak");
 	ADD_PNETVAR(GetEconItemView, CEconItemView, "CBaseAttributableItem->m_Item");
 
-	int16_t& m_nItemID()
-	{
-		return *(int16_t*)((DWORD)(this) + 0x2FBA);
-	}
+	ADD_PNETVAR(GetFireDeltaX, int, "DT_Inferno->m_fireXDelta");
+	ADD_PNETVAR(GetFireDeltaY, int, "DT_Inferno->m_fireYDelta");
+	ADD_PNETVAR(GetFireDeltaZ, int, "DT_Inferno->m_fireZDelta");
+
+	ADD_PNETVAR(IsFireBurning, bool, "DT_Inferno->m_bFireIsBurning");
+	ADD_NETVAR(GetFireCount, int, "DT_Inferno->m_fireCount");
+	ADD_NETVAR(GetFireBeginTick, int, "DT_Inferno->m_nFireEffectTickBegin");
 
 	bool IsGrenade() {
 
-		return this->GetCSWpnData()->nWeaponType == WEAPONTYPE_GRENADE;
+		if (auto pData = this->GetCSWpnData(); pData)
+			return pData->nWeaponType == WEAPONTYPE_GRENADE;
+		else
+			return false;
 	}
 
 	bool IsKnife() {
 
-		int idx = this->m_nItemID();
+		if (!this)
+			return false;
+
+		int idx = this->GetItemDefinitionIndex();
 		return idx == WEAPON_KNIFE || idx == WEAPON_KNIFE_BAYONET || idx == WEAPON_KNIFE_BUTTERFLY || idx == WEAPON_KNIFE_FALCHION
 			|| idx == WEAPON_KNIFE_FLIP || idx == WEAPON_KNIFE_GUT || idx == WEAPON_KNIFE_KARAMBIT || idx == WEAPON_KNIFE_M9_BAYONET
 			|| idx == WEAPON_KNIFE_PUSH || idx == WEAPON_KNIFE_SURVIVAL_BOWIE || idx == WEAPON_KNIFE_T || idx == WEAPON_KNIFE_TACTICAL

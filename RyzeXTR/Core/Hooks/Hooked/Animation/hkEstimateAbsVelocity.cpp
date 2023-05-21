@@ -6,6 +6,8 @@ void __fastcall h::hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector
 {
 	static auto EstimateAbsVelocity = detour::estimateAbsVelocity.GetOriginal<decltype(&hkEstimateAbsVelocity)>();
 
+	return EstimateAbsVelocity(pPlayer, edx, vecVelocity);
+
 	// no interpolation, we dont want to estimate abs velocity
 	if (pPlayer->GetEffects() & EF_NOINTERP)
 		return;

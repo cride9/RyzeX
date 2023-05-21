@@ -1,10 +1,10 @@
 #include "../hooks.h"
 
-int __cdecl h::hkStartSound(void* stack) {
+int __cdecl h::hkStartSound(StartSoundParams_t& stack) {
 	
 	static auto original = detour::startSound.GetOriginal<decltype(&h::hkStartSound)>();
 
-	if (!stack)
+	if (!&stack)
 		return 0;
 
 	return original(stack);

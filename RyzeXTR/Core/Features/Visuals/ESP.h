@@ -26,6 +26,8 @@ namespace visual {
 	void MoneyEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
 	void SkeletonEsp(CBaseEntity*, Color);
+	
+	void GrenadeEsp();
 
 	void Flags(float&, int&, CBaseEntity*, size_t&, bool*, float[5][4], bool bDormant = false);
 

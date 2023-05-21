@@ -31,7 +31,7 @@ void h::SetupHooks() {
 	HookTable(detour::getViewmodelFov, i::ClientMode, table::getViewmodelFov, &hkGetViewModelFov);
 	//HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
-	//HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
+	HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
 	HookTable(detour::drawModelMdl, i::ModelRender, table::drawModelMdl, &hkDrawModelMDL);
 	HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
@@ -42,7 +42,7 @@ void h::SetupHooks() {
 	HookSignature(detour::buildTransform, "client.dll", "55 8B EC 83 E4 F0 81 ? ? ? ? ? 56 57 8B F9 8B ? ? ? ? ? 89 7C 24 28", &hkBuildTransformation);
 	HookSignature(detour::calculateView, "client.dll", "55 8B EC 83 EC 14 53 56 57 FF 75 18", &hkCalculateView);
 	HookSignature(detour::sequenceChange, "client.dll", "55 8B EC 51 53 8B 5D 08 56 8B F1 57 85", &hkCheckForSequenceChange);
-	//HookSignature(detour::procedrualFoot, "client.dll", "55 8B EC 83 E4 F0 83 EC 78 56 8B F1 57 8B", &hkDoProceduralFootPlant);
+	HookSignature(detour::procedrualFoot, "client.dll", "55 8B EC 83 E4 F0 83 EC 78 56 8B F1 57 8B", &hkDoProceduralFootPlant);
 	HookSignature(detour::isHltv, "engine.dll", "A1 ? ? ? ? 80 ? ? ? ? ? ? 75 0C", &hkIsHltv);
 	HookSignature(detour::modifyEyePosition, "client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 14", &hkModifyEyePosition);
 	HookSignature(detour::skipAnimation, "client.dll", "57 8B F9 8B 07 8B 80 ? ? ? ? FF D0 84 C0 75 02", &hkShouldSkipAnimationFrame);
@@ -53,8 +53,7 @@ void h::SetupHooks() {
 	HookSignature(detour::extraBoneProcessing, "client.dll", "55 8B EC 83 E4 F8 81 ? ? ? ? ? 53 56 8B F1 57 89 74 24 1C", &hkDoExtraBoneProcessing);
 	HookSignature(detour::physicsSimulate, "client.dll", "56 8B F1 8B 8E ? ? ? ? 83 F9 FF 74 23", &hkPhysicsSimulate);
 	HookSignature(detour::interpolateEntites, "client.dll", "55 8B EC 83 EC 1C 8B 0D ? ? ? ? 53 56 57", &hkInterpolateServerEntites);
-	HookSignature(detour::drawViewmodel, "client.dll", "55 8B EC 51 57 E8", hkShouldDrawViewmodel);
-	//HookSignature(detour::emitSound, "client.dll", "8D 8F ? ? ? ? F3 0F 10 84 24 ? ? ? ? 50", &hkEmitSound, 0x2);
+	HookSignature(detour::drawViewmodel, "client.dll", "55 8B EC 51 57 E8", &hkShouldDrawViewmodel);
 	HookSignature(detour::isFollowingEntity, "client.dll", "F6 ? ? ? ? ? ? 74 31 80", &hkIsFollowingEntity);
 	HookSignature(detour::playerMove, "client.dll", "55 8B EC 83 EC 08 56 8B F1 8B 8E 54 0E 00 00 E8", &hkPlayerMove);
 	HookSignature(detour::clampBonesInBBox, "client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38", &hkClampBonesInBBox);
@@ -110,12 +109,12 @@ void h::HookClientState() {
 		oldtemptEntities = util::GetVFunc(clientStateHookable, table::temptEntities);
 
 		// PacketStart Detour
-		if (!detour::packetStart.IsHooked())
-			h::HookTable(detour::packetStart, clientStateHookable, table::packetStart, &h::hkPacketStart);
+		//if (!detour::packetStart.IsHooked())
+		//	h::HookTable(detour::packetStart, clientStateHookable, table::packetStart, &h::hkPacketStart);
 
 		// PacketEnd Detour
-		if (!detour::packetEnd.IsHooked())
-			h::HookTable(detour::packetEnd, clientStateHookable, table::packetEnd, &h::hkPacketEnd);
+		//if (!detour::packetEnd.IsHooked())
+		//	h::HookTable(detour::packetEnd, clientStateHookable, table::packetEnd, &h::hkPacketEnd);
 
 		if (!detour::temptEntities.IsHooked())
 			h::HookTable(detour::temptEntities, clientStateHookable, table::temptEntities, &h::hkTemptEntities);

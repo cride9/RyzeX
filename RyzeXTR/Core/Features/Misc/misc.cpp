@@ -28,6 +28,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	RemovePostProcessing();
 	FixScopeSens();
 	ClanTag();
+	LeftHandKnife();
 #if NDEBUG
 	Security();
 #endif
@@ -94,7 +95,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	}
 	if (!strcmp(pEvent->GetName(), bulletImpact)) {
 		WorldCrosshairHandler(pEvent);
-		BulletImpact(pEvent, FRAME_UNDEFINED, false);
+		BulletImpact(pEvent);
 		BulletTracer(pEvent);
 	}
 	if (!strcmp(pEvent->GetName(), weaponFire)) {
@@ -285,12 +286,46 @@ void misc::SlideFix() {
 	g::pCmd->iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVERIGHT | IN_MOVELEFT);
 }
 
-void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) {
+void misc::BulletImpactFrameStage() {
+
+	CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
+	//CUtlVector<ClientHitVerify_t>* pImpactList = reinterpret_cast<CUtlVector<ClientHitVerify_t>*>(g::pLocal + 0x11C50);
+
+	if (!&pImpactList || pImpactList.Size() == 0)
+		return;
+
+	if (!cfg::misc::bulletImpact)
+		return;
+
+	static int iLastCount = 0;
+	for (int i = pImpactList.Count(); i > iLastCount; --i) {
+
+		i::DebugOverlay->AddBoxOverlay(
+			Vector(pImpactList[i - 1].pos),
+			Vector(-2.0f, -2.0f, -2.0f),
+			Vector(2.0f, 2.0f, 2.0f),
+			Vector(0.0f, 0.0f, 0.0f),
+			cfg::misc::impactColor[1][0] * 255, // b
+			cfg::misc::impactColor[1][1] * 255, // g
+			cfg::misc::impactColor[1][2] * 255, // g
+			cfg::misc::impactColor[1][3] * 255, // a
+			4.f
+		);
+	}
+
+	if (pImpactList.Count() != iLastCount)
+		iLastCount = pImpactList.Count();
+}
+
+void misc::BulletImpact(IGameEvent* pEvent) {
 
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return;
 
-	if (pEvent != nullptr && bFrameStage == false && cfg::misc::bulletImpact) {
+	if (!cfg::misc::bulletImpact)
+		return;
+
+	if (pEvent != nullptr) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 
@@ -310,39 +345,6 @@ void misc::BulletImpact(IGameEvent* pEvent, EStage curStage, bool bFrameStage ) 
 			cfg::misc::impactColor[0][3] * 255, // a
 			4.f
 		);
-	}
-
-	if ( curStage == FRAME_RENDER_START && bFrameStage == true ) {
-
-		CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
-		//CUtlVector<ClientHitVerify_t>* pImpactList = reinterpret_cast<CUtlVector<ClientHitVerify_t>*>(g::pLocal + 0x11C50);
-
-		if (!&pImpactList || pImpactList.Size() == 0)
-			return;
-
-		if (!cfg::misc::bulletImpact) {
-			pImpactList.RemoveAll();
-			return;
-		}
-
-		static int iLastCount = 0;
-		for (int i = pImpactList.Count(); i > iLastCount; --i) {
-
-			i::DebugOverlay->AddBoxOverlay(
-				Vector(pImpactList[i - 1].pos),
-				Vector(-2.0f, -2.0f, -2.0f),
-				Vector(2.0f, 2.0f, 2.0f),
-				Vector(0.0f, 0.0f, 0.0f),
-				cfg::misc::impactColor[1][0] * 255, // b
-				cfg::misc::impactColor[1][1] * 255, // g
-				cfg::misc::impactColor[1][2] * 255, // g
-				cfg::misc::impactColor[1][3] * 255, // a
-				4.f
-			);
-		}
-
-		if (pImpactList.Count() != iLastCount)
-			iLastCount = pImpactList.Count();
 	}
 }
 
@@ -888,42 +890,41 @@ void misc::FakeLag(bool& bSendPacket) {
 
 	if (cfg::antiaim::fakelag) {
 
-		if (/*!g::bWaiting &&*/ cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ) {
-			iCurrentChoke = min(2, iCurrentChoke);
-		}
-		else {
+		switch (cfg::antiaim::fakelagType) {
 
-			switch (cfg::antiaim::fakelagType) {
+		case MAXIMUM:
+			iCurrentChoke = cfg::antiaim::fakelag;
+			break;
 
-			case MAXIMUM:
-				iCurrentChoke = cfg::antiaim::fakelag;
-				break;
+		case ADAPTIVE:
 
-			case ADAPTIVE:
+			iCurrentChoke = max(1, 15 * (flVelocity / flMaxVelocity));
+			break;
 
-				iCurrentChoke = max(1, 15 * (flVelocity / flMaxVelocity));
-				break;
+		case JITTER:
 
-			case JITTER:
+			if (bChokeCycleEnded) {
 
-				if (bChokeCycleEnded) {
-
-					iCurrentChoke = iMin;
-					bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
-				}
-				else {
-
-					iCurrentChoke = cfg::antiaim::fakelag;
-					bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
-				}
-				break;
+				antiaim::flickJitter = false;
+				iCurrentChoke = iMin;
+				bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
 			}
+			else {
+
+				iCurrentChoke = cfg::antiaim::fakelag;
+				bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
+				
+				if (bChokeCycleEnded)
+					antiaim::flickJitter = true;
+			}
+			break;
 		}
 	}
 	else
 		iCurrentChoke = cfg::antiaim::fakelag;
 
-	networking.LagcompensatedTicks = min(iMax, max(cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 2 : iMin, iCurrentChoke));
+	iMax = cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 2 : iMax;
+	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
 	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;
 }
 
@@ -1336,18 +1337,14 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		pBlockedPlayer != nullptr && 
 		pBlockedPlayer->IsPlayer()) {
 
-		auto pLog = &lagcomp.GetLog(pBlockedPlayer->EntIndex());
-		if (!pLog || pLog->pRecord.empty())
-			return;
-
 		Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
 
 		// allowed difference before we fall down cuz head has a bigger surface (idk why)
 		// so if player is going in small circles, we won't fall (or doing small changes that could kill most blockbots)
-		if (abs((vecExtrapolatedLocalPos - pLog->pRecord.front().vecOrigin).Length2D()) > 0.75f/*1.29217472f*/) {
+		if (abs((vecExtrapolatedLocalPos - pBlockedPlayer->GetVecOrigin()).Length2D()) > 0.75f/*1.29217472f*/) {
 
 			Vector vecAngle;
-			M::VectorAngles(pLog->pRecord.front().vecOrigin - vecExtrapolatedLocalPos, vecAngle);
+			M::VectorAngles(pBlockedPlayer->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
 
 			g::vecOriginalViewAngle.y = vecAngle.y;
 			g::pCmd->flForwardMove = pCmd->iButtons & IN_DUCK ? 450.f * 3 : 450.f;
@@ -1381,14 +1378,10 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		if (!pTarget)
 			return;
 
-		auto pLog = &lagcomp.GetLog(pTarget->EntIndex());
-		if (!pLog || pLog->pRecord.empty())
-			return;
-
 		Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
 
 		Vector vecAngle;
-		M::VectorAngles(pLog->pRecord.front().vecOrigin - vecExtrapolatedLocalPos, vecAngle);
+		M::VectorAngles(pTarget->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
 
 		vecAngle.y -= vecOriginalViewAngle.y;
 		vecAngle.NormalizeAngle();
@@ -1490,8 +1483,8 @@ void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDura
 			continue;
 
 		Vector vMin, vMax;
-		vMin = M::VectorTransform(pHitbox->vecBBMin, pLog->pRecord.front().pMatrix[pHitbox->iBone]);
-		vMax = M::VectorTransform(pHitbox->vecBBMax, pLog->pRecord.front().pMatrix[pHitbox->iBone]);
+		vMin = M::VectorTransform(pHitbox->vecBBMin, pLog->pRecord.front().pVisualMatrix[pHitbox->iBone]);
+		vMax = M::VectorTransform(pHitbox->vecBBMax, pLog->pRecord.front().pVisualMatrix[pHitbox->iBone]);
 
 		if (pHitbox->flRadius > -1) {
 			if (pHitbox->iGroup == iHitgroup) 
@@ -1585,6 +1578,19 @@ void misc::CheatLog(IGameEvent* pEvent) {
 		}
 	}
 }
+
+void misc::LeftHandKnife() {
+	
+	if (!g::pLocal || !g::pLocal->IsAlive())
+		return;
+
+	static CConVar* convar = i::ConVar->FindVar("cl_righthand");
+	static int iBackupValue = convar->GetInt();
+
+	if (CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon(); pWeapon)
+		convar->SetValue(pWeapon->IsKnife() ? iBackupValue ? 0 : 1 : iBackupValue);
+}
+
 #pragma runtime_checks( "", off )
 void misc::CustomBombText(const char* szText) {
 
