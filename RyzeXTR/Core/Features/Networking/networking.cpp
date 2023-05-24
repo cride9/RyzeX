@@ -101,9 +101,6 @@ void CNetworking::RestoreNetvarData( int nCommand )
 
 void CNetworking::OnPacketEnd( CClientState* ClientState )
 {
-	if ( ClientState->clockDriftMgr.iCurClockOffset != ClientState->clockDriftMgr.flClockOffsets[15] )
-		return;
-
 	prediction.AdjustViewmodelData( g::pLocal );
 	return this->RestoreNetvarData( i::ClientState->iLastCommandAck );
 }

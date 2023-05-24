@@ -147,7 +147,7 @@ void Prediction::End(CUserCmd* pCmd, CBaseEntity* pLocal) const
 void Prediction::SaveNetvars( int iCommand, CBaseEntity* pLocal)
 {
 
-	pNetvarData[ iCommand % 150 ].fFlags = pLocal->GetFlags( );
+	pNetvarData[ iCommand % 150 ].iFlags = pLocal->GetFlags( );
 	pNetvarData[ iCommand % 150 ].flDuckAmount = pLocal->GetDuckAmount( );
 	pNetvarData[ iCommand % 150 ].flDuckSpeed = pLocal->GetDuckSpeed( );
 	pNetvarData[ iCommand % 150 ].vecOrigin = pLocal->GetVecOrigin( );
@@ -169,7 +169,7 @@ void Prediction::SaveNetvars( int iCommand, CBaseEntity* pLocal)
 
 void Prediction::RestoreNetvars(int iCommand, CBaseEntity* pLocal)
 {
-	pLocal->GetFlags( ) = pNetvarData[ iCommand % 150 ].fFlags;
+	pLocal->GetFlags( ) = pNetvarData[ iCommand % 150 ].iFlags;
 	pLocal->GetDuckAmount( ) = pNetvarData[ iCommand % 150 ].flDuckAmount;
 	pLocal->GetDuckSpeed( ) = pNetvarData[ iCommand % 150 ].flDuckSpeed;
 	pLocal->GetVecOrigin( ) = pNetvarData[ iCommand % 150 ].vecOrigin;

@@ -278,7 +278,7 @@ float M::Interpolate(const float from, const float to, const float percent) {
 	return to * percent + from * (1.f - percent);
 }
 
-void M::Extrapolate(CBaseEntity* pEnt , Vector& vecOrigin, Vector& vecVelocity, int& fFlags, bool bOnGround) {
+void M::Extrapolate(CBaseEntity* pEnt , Vector& vecOrigin, Vector& vecVelocity, int& iFlags, bool bOnGround) {
 
 	Vector                start, end, normal;
 	CGameTrace            trace;
@@ -325,11 +325,11 @@ void M::Extrapolate(CBaseEntity* pEnt , Vector& vecOrigin, Vector& vecVelocity, 
 	i::EngineTrace->TraceRay(Ray_t(start, end, pEnt->GetCollideable()->OBBMins(), pEnt->GetCollideable()->OBBMaxs()), CONTENTS_SOLID, &filter, &trace);
 
 	// strip onground flag.
-	fFlags &= ~FL_ONGROUND;
+	iFlags &= ~FL_ONGROUND;
 
 	// add back onground flag if we are onground.
 	if (trace.flFraction != 1.f && trace.plane.vecNormal.z > 0.7f)
-		fFlags |= FL_ONGROUND;
+		iFlags |= FL_ONGROUND;
 }
 
 void M::RotatePoint(const ImVec2& vecIn, const float flAngle, ImVec2* pOutPoint)

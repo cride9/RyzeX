@@ -27,7 +27,7 @@ public:
 		void SetTarget(Lagcompensation::LagRecord_t* pRecord, int iTargetHitbox) {
 
 			pAimbotTarget = pRecord->pEntity;
-			pTargetMatrix = pRecord->pMatrix;
+			pTargetMatrix = pRecord->pMatricies[1];
 			flTargetSimulation = pRecord->flSimulationTime;
 			iTargetedHitbox = iTargetHitbox;
 		}

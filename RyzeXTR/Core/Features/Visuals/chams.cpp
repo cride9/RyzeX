@@ -112,10 +112,10 @@ bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out)
 	const auto lerp = M::Lerp(NextOrigin, FirstInvalid->vecOrigin, flDelta );
 
 	matrix3x4_t ret[256];
-	memcpy(ret, FirstInvalid->pVisualMatrix, sizeof(matrix3x4_t[256]));
+	memcpy(ret, FirstInvalid->pMatricies[VISUAL], sizeof(matrix3x4_t[256]));
 
 	for (size_t i{ }; i < 256; ++i) {
-		const auto matrix_delta = Vector( FirstInvalid->pVisualMatrix[ i ][ 0 ][ 3 ], FirstInvalid->pVisualMatrix[ i ][ 1 ][ 3 ], FirstInvalid->pVisualMatrix[ i ][ 2 ][ 3 ] ) - FirstInvalid->vecOrigin;
+		const auto matrix_delta = Vector( FirstInvalid->pMatricies[VISUAL][ i ][ 0 ][ 3 ], FirstInvalid->pMatricies[VISUAL][ i ][ 1 ][ 3 ], FirstInvalid->pMatricies[VISUAL][ i ][ 2 ][ 3 ] ) - FirstInvalid->vecOrigin;
 		MatrixSetOrigin(matrix_delta + lerp, ret[i]);
 	}
 
@@ -351,13 +351,13 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					auto lastrecord = lagcomp.GetLog(pEnt->EntIndex()).pRecord.front();
 
 					BeginChams(materials[FLAT], teamAnimOverlayXQZColor, true, teamAnimOverlayXQZXhair);
-					original(i::StudioRender, 0, pResults, info, lastrecord.pLeftMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, lastrecord.pMatricies[LEFT], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 					BeginChams(materials[FLAT], teamAnimOverlayColor, true, teamAnimOverlayXQZXhair);
-					original(i::StudioRender, 0, pResults, info, lastrecord.pCenterMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, lastrecord.pMatricies[RIGHT], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 					BeginChams(materials[FLAT], teamThinOverlayXQZColor, true, teamAnimOverlayXQZXhair);
-					original(i::StudioRender, 0, pResults, info, lastrecord.pRightMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, lastrecord.pMatricies[CENTER], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 			}
 #endif

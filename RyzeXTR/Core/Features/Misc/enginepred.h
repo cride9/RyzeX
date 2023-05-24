@@ -13,7 +13,7 @@ struct CNetvarData
 
 	int nRenderMode = 0;
 	int nTickbase = 0;
-	int fFlags = 0;
+	int iFlags = 0;
 
 	Vector vecOrigin = Vector( 0.f, 0.f, 0.f );
 	Vector vecVelocity = Vector( 0.f, 0.f, 0.f );

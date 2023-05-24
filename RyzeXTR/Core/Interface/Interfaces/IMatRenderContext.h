@@ -28,14 +28,14 @@ struct LightDesc_t
 		this->flAttenuation1 = 0.f;
 		this->flAttenuation2 = 0.f;
 
-		fFlags = LIGHTTYPE_OPTIMIZATIONFLAGS_DERIVED_VALUES_CALCED;
+		iFlags = LIGHTTYPE_OPTIMIZATIONFLAGS_DERIVED_VALUES_CALCED;
 
 		if (flAttenuation0)
-			fFlags |= LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION0;
+			iFlags |= LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION0;
 		if (flAttenuation1)
-			fFlags |= LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION1;
+			iFlags |= LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION1;
 		if (flAttenuation2)
-			fFlags |= LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION2;
+			iFlags |= LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION2;
 
 		if (nType == MATERIAL_LIGHT_SPOT)
 		{
@@ -73,7 +73,7 @@ struct LightDesc_t
 	float		flThetaDot;
 	float		flPhiDot;
 	float		flOneOverThetaDotMinusPhiDot;
-	std::uint32_t fFlags;
+	std::uint32_t iFlags;
 protected:
 	float		flRangeSquared;
 };

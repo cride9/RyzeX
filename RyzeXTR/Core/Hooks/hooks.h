@@ -76,6 +76,7 @@ namespace detour {
 	inline CDetourHook clampBonesInBBox;
 	inline CDetourHook getColorModulation;
 	inline CDetourHook startSound;
+	inline CDetourHook dispatchSound;
 	inline CDetourHook installStringTableCallback;
 
 	// netchannel table
@@ -150,6 +151,7 @@ namespace h {
 	void __fastcall		hkGetColorModulation(void*, void*, float*, float*, float*);
 	int	__cdecl			hkStartSound(StartSoundParams_t&);
 	void __fastcall     hkInstallStringTableCallback(const char* tableName);
+	void __cdecl		hkDispatchSound(SoundInfoSOURCESDK_t*);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );
@@ -192,7 +194,8 @@ namespace h {
 	void HookClientState();
 	void UnHookClientState();
 
-	inline WNDPROC pOriginalWNDProc; // Original CSGO window proc
+	inline WNDPROC pOriginalWNDProc;
+	// Original CSGO window proc
 }
 
 class Event : public IGameEventListener

@@ -58,6 +58,7 @@ void h::SetupHooks() {
 	HookSignature(detour::playerMove, "client.dll", "55 8B EC 83 EC 08 56 8B F1 8B 8E 54 0E 00 00 E8", &hkPlayerMove);
 	HookSignature(detour::clampBonesInBBox, "client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38", &hkClampBonesInBBox);
 	HookSignature(detour::getColorModulation, "materialsystem.dll", "55 8B EC 83 EC ? 56 8B F1 8A 46", &hkGetColorModulation);
+	HookSignature(detour::dispatchSound, "engine.dll", "55 8B EC 81 EC ?? ?? ?? ?? 56 8B F1 8D 4D 98 E8", &hkDispatchSound);
 	//HookSignature(detour::startSound, "engine.dll", "55 8B EC 81 ? ? ? ? ? 53 56 8B F1 57 8B 7E", &hkStartSound);
 
 	menu::DestroyDirectX();
@@ -109,12 +110,12 @@ void h::HookClientState() {
 		oldtemptEntities = util::GetVFunc(clientStateHookable, table::temptEntities);
 
 		// PacketStart Detour
-		//if (!detour::packetStart.IsHooked())
-		//	h::HookTable(detour::packetStart, clientStateHookable, table::packetStart, &h::hkPacketStart);
+		if (!detour::packetStart.IsHooked())
+			h::HookTable(detour::packetStart, clientStateHookable, table::packetStart, &h::hkPacketStart);
 
 		// PacketEnd Detour
-		//if (!detour::packetEnd.IsHooked())
-		//	h::HookTable(detour::packetEnd, clientStateHookable, table::packetEnd, &h::hkPacketEnd);
+		if (!detour::packetEnd.IsHooked())
+			h::HookTable(detour::packetEnd, clientStateHookable, table::packetEnd, &h::hkPacketEnd);
 
 		if (!detour::temptEntities.IsHooked())
 			h::HookTable(detour::temptEntities, clientStateHookable, table::temptEntities, &h::hkTemptEntities);

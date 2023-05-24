@@ -15,8 +15,10 @@ void __fastcall h::hkPacketEnd( void* ecx, void* edx )
 	static auto original = detour::packetEnd.GetOriginal<decltype( &hkPacketEnd )>( );
 
 	int nCommandsAcknowledged = i::ClientState->iCommandAck - i::ClientState->iLastCommandAck;
-	if (nCommandsAcknowledged <= 0)
-		return;
+	if (nCommandsAcknowledged <= 0) {
+		util::Print("hkPacketEnd returned");
+		return original(ecx, edx);
+	}
 
 	CClientState* ClientState = static_cast<CClientState*>(ecx);
 

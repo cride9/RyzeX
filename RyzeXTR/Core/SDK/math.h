@@ -100,7 +100,7 @@ namespace M
 
 	Vector Interpolate(const Vector, const Vector, const float);
 	float Interpolate(const float, const float, const float);
-	void Extrapolate(CBaseEntity* pEnt, Vector& vecOrigin, Vector& vecVelocity, int& fFlags, bool bOnGround);
+	void Extrapolate(CBaseEntity* pEnt, Vector& vecOrigin, Vector& vecVelocity, int& iFlags, bool bOnGround);
 
 	float Approach(float, float, float);
 	Vector Approach(Vector target, Vector value, float speed);

@@ -12,8 +12,8 @@
 
 struct SequenceObject_t
 {
-	SequenceObject_t( int iInReliableState, int iOutReliableState, int iSequenceNr, float flCurrentTime )
-		: iInReliableState( iInReliableState ), iOutReliableState( iOutReliableState ), iSequenceNr( iSequenceNr ), flCurrentTime( flCurrentTime ) { }
+	SequenceObject_t(int iInReliableState, int iOutReliableState, int iSequenceNr, float flCurrentTime)
+		: iInReliableState(iInReliableState), iOutReliableState(iOutReliableState), iSequenceNr(iSequenceNr), flCurrentTime(flCurrentTime) { }
 
 	int iInReliableState;
 	int iOutReliableState;
@@ -24,11 +24,11 @@ struct SequenceObject_t
 class CSimulationData
 {
 public:
-	CSimulationData( ) : pEntity( nullptr ), bOnGround( false )
+	CSimulationData() : pEntity(nullptr), bOnGround(false)
 	{
 	}
 
-	~CSimulationData( )
+	~CSimulationData()
 	{
 	}
 
@@ -40,6 +40,16 @@ public:
 	bool bOnGround;
 
 	bool bDataFilled = false;
+};
+
+enum EMatrixType {
+
+	VISUAL,
+	RESOLVE,
+	LEFT,
+	RIGHT,
+	CENTER,
+	MAX
 };
 
 class Lagcompensation {
@@ -62,22 +72,18 @@ public:
 			Vector vecDirection;
 		};
 
-		LagRecord_t( ) = default;
-		LagRecord_t( CBaseEntity* pEntity );
+		LagRecord_t() = default;
+		LagRecord_t(CBaseEntity* pEntity);
 
 		void Apply(CBaseEntity* pEntity, bool Backup);
-		// 1 - resolved, 2 - left, 3 - right, 4 - center
-		void Apply( CBaseEntity* pEntity, bool Backup, int pMatrixID );
-		void Restore( CBaseEntity* pEntity );
-		void Apply( CBaseEntity* pEntity );
+		void Restore(CBaseEntity* pEntity);
+		void Apply(CBaseEntity* pEntity);
+		void ApplyMatrix(CBaseEntity* pEntity, EMatrixType iType);
 
 		CBaseEntity* pEntity{};
-		matrix3x4_t pMatrix[ 128 ];
-		matrix3x4_t pVisualMatrix[128];
-		matrix3x4_t pLeftMatrix[128];
-		matrix3x4_t pRightMatrix[128];
-		matrix3x4_t pCenterMatrix[128];
-		bool bSetupMatrixes = false;
+
+		// 0 - Visual, 1 - Resolve, 2 - Left, 3 - Right, 4 - Center
+		matrix3x4_t pMatricies[MAX][128];
 
 		bool bBreakingLagcompensation{};
 		bool bFakewalking{};
@@ -99,15 +105,13 @@ public:
 		Vector vecEyeAngles{};
 		Vector vecAbsAngles{};
 
-		float pResolverPlaybackrate[ 3 ];
-		CAnimationLayer pResolverLayers[ 3 ][ 13 ];
-		CAnimationLayer pResolverLayers2[ 3 ][ 13 ];
+		float pResolverPlaybackrate[3];
+		CAnimationLayer pResolverLayers[3][13];
+		CAnimationLayer pResolverLayers2[3][13];
+		LayerData_t LayerData[3];
 
-		LayerData_t LayerData[ 4 ];
-
-		CAnimationLayer pLayers[ 13 ];
-
-		float flPoses[ 24 ];
+		CAnimationLayer pLayers[13];
+		float flPoses[24];
 
 		float flServerTick{};
 		float flAnimationTime{};
@@ -119,11 +123,12 @@ public:
 		float flLastShotTime{};
 		float flSpawnTime{};
 		float flDeltaAngle{};
+		float flEyeYaw{};
 
 		int iCachedCount{};
 		int iWritableBones{};
 
-		int fFlags{};
+		int iFlags{};
 		int iEFlags{};
 		int iEffects{};
 		int iEntIndex{};
@@ -143,10 +148,10 @@ public:
 		ANIMATION
 	};
 
-
 	struct AnimationInfo_t
 	{
 		CBaseEntity* pEntity;
+		int iLastUpdateTick;
 		int iLastValid;
 		int iFirstValid = 32;
 		float flSpawntime;
@@ -170,42 +175,41 @@ public:
 	/* Everything will be ran inside this */
 	void FrameStageNotify();
 	// get animation info
-	AnimationInfo_t& GetLog( const int iEntIndex );
+	AnimationInfo_t& GetLog(const int iEntIndex);
 	// check if player is breaking lagcomp
-	bool IsBreakingLagcompensation( Lagcompensation::LagRecord_t* pLagRecord );
+	bool IsBreakingLagcompensation(Lagcompensation::LagRecord_t* pLagRecord);
 	// fix tickcount so we can backtrack
-	int FixTickCount( const float& flSimulationTime );
-	
-	void UpdateIncomingSequences( INetChannel* pNetChannel );
-	void ClearIncomingSequences( );
-	void AddLatencyToNetChannel( INetChannel* pNetChannel, float flLatency );
+	int FixTickCount(const float& flSimulationTime);
 
-	void RemoveInterpolation();
-
-	void SetupPlayerBones(CBaseEntity* pPlayer, Lagcompensation::LagRecord_t* pRecord,matrix3x4_t* Matrix, int nFlags);
+	void UpdateIncomingSequences(INetChannel* pNetChannel);
+	void ClearIncomingSequences();
+	void AddLatencyToNetChannel(INetChannel* pNetChannel, float flLatency);
 
 	// get client interp amount
-	static float GetClientInterpAmount( );
+	static float GetClientInterpAmount();
+
+	// fuck interpolation
+	void SetInterpolationFlags();
+
 private:
 	// filter records after updating them
-	void FilterRecords( );
+	void FilterRecords();
+
 	// extrapolate players breaking lagcomp
-	void ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious ) const;
+	void ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious) const;
 	// check if record is valid
-	bool IsValidRecord( float m_flSimulationTime, float m_flRange = 0.2f );
-	// fuck interpolation
-	void SetInterpolationFlags(CBaseEntity* pEnemy);
+	static bool IsValidRecord(float m_flSimulationTime, float m_flRange = 0.199f);
 
 	// Values
 	/* animation info */
-	AnimationInfo_t pPlayerLogs[ 65 ];
+	AnimationInfo_t pPlayerLogs[65];
 	/* stored sequences */
 	std::deque<SequenceObject_t> vecSequences = { };
 	/* our real incoming sequences count */
 	int nRealIncomingSequence = 0;
 	/* count of incoming sequences what we can spike */
 	int nLastIncomingSequence = 0;
-	
+
 	int nInvalidateFlags{};
 };
 inline Lagcompensation lagcomp;

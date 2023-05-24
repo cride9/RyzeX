@@ -137,14 +137,36 @@ struct SoundInfo_t
 	float		m_flLastSpatializedVolume;
 	float		m_flRadius;
 	int			m_iPitch;
-	Vector* m_vecOrigin;
-	Vector* m_m_vecDirection;
+	Vector*		m_vecOrigin;
+	Vector*		m_m_vecDirection;
 	bool		m_bUpdatePositions;
 	bool		m_bIsSentence;
 	bool		m_bDryMix;
 	bool		m_bSpeaker;
 	bool		m_bSpecialDSP;
 	bool		m_bFromServer;
+};
+
+struct SoundInfoSOURCESDK_t
+{
+	int				nSequenceNumber;
+	int				nEntityIndex;
+	int				nChannel;
+	const char* pszName;		// UNDONE: Make this a FilenameHandle_t to avoid bugs with arrays of these
+	Vector			vOrigin;
+	Vector			vDirection;
+	float			fVolume;
+	int				Soundlevel;
+	bool			bLooping;
+	int				nPitch;
+	int				nSpecialDSP;
+	Vector			vListenerOrigin;
+	int				nFlags;
+	int 			nSoundNum;
+	float			fDelay;
+	bool			bIsSentence;
+	bool			bIsAmbient;
+	int				nSpeakerEntity;
 };
 
 class CAudioSource;

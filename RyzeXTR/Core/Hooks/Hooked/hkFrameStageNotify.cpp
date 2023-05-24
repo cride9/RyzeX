@@ -34,12 +34,11 @@ void hkPreFrameStageNotify(EStage& curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
-		lagcomp.FrameStageNotify();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
 		if (cfg::rage::enable)
-			lagcomp.RemoveInterpolation();
+			lagcomp.SetInterpolationFlags();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
@@ -73,6 +72,7 @@ void hkPostFrameStageNotify(EStage& curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
+		lagcomp.FrameStageNotify();
 		break;
 
 	case FRAME_RENDER_START:

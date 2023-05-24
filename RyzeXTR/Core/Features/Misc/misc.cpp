@@ -288,10 +288,13 @@ void misc::SlideFix() {
 
 void misc::BulletImpactFrameStage() {
 
+	if (!g::pLocal || !g::pLocal->IsAlive())
+		return;
+
 	CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
 	//CUtlVector<ClientHitVerify_t>* pImpactList = reinterpret_cast<CUtlVector<ClientHitVerify_t>*>(g::pLocal + 0x11C50);
 
-	if (!&pImpactList || pImpactList.Size() == 0)
+	if (!&pImpactList || pImpactList.Size() == 0 )
 		return;
 
 	if (!cfg::misc::bulletImpact)
@@ -1329,15 +1332,15 @@ void misc::BlockBot(CUserCmd* pCmd) {
 
 	static Vector vecOriginalViewAngle = Vector(0, 0, 0);
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::blockbot || !IPT::HandleInput(cfg::misc::blockbotKey)) {
-		vecOriginalViewAngle = Vector(0, 0, 0);
+		vecOriginalViewAngle = Vector(FP_ZERO, FP_ZERO, FP_ZERO);
 		return;
 	}
+	Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
 
 	if (CBaseEntity* pBlockedPlayer = g::pLocal->GetGroundEntity(); 
 		pBlockedPlayer != nullptr && 
 		pBlockedPlayer->IsPlayer()) {
 
-		Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
 
 		// allowed difference before we fall down cuz head has a bigger surface (idk why)
 		// so if player is going in small circles, we won't fall (or doing small changes that could kill most blockbots)
@@ -1353,8 +1356,10 @@ void misc::BlockBot(CUserCmd* pCmd) {
 	}
 	else {
 
-		if (vecOriginalViewAngle.IsZero())
-			vecOriginalViewAngle = pCmd->angViewPoint;
+		if (vecOriginalViewAngle.IsZero()) {
+			i::EngineClient->GetViewAngles(vecOriginalViewAngle);
+			vecOriginalViewAngle.NormalizeAngle();
+		}
 
 		float flBestDistance = 250.f;
 		CBaseEntity* pTarget = nullptr;
@@ -1378,21 +1383,19 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		if (!pTarget)
 			return;
 
-		Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
-
 		Vector vecAngle;
 		M::VectorAngles(pTarget->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
 
 		vecAngle.y -= vecOriginalViewAngle.y;
 		vecAngle.NormalizeAngle();
 
+		//if (!(pCmd->iButtons & IN_FORWARD))
+		g::vecOriginalViewAngle = vecOriginalViewAngle;
+
 		if (vecAngle.y < -0.75f)
 			pCmd->flSideMove = 450.f;
 		else if (vecAngle.y > 0.75f)
 			pCmd->flSideMove = -450.f;
-
-		if (!(pCmd->iButtons & IN_FORWARD))
-			g::vecOriginalViewAngle = vecOriginalViewAngle;
 	}
 }
 
@@ -1483,8 +1486,8 @@ void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDura
 			continue;
 
 		Vector vMin, vMax;
-		vMin = M::VectorTransform(pHitbox->vecBBMin, pLog->pRecord.front().pVisualMatrix[pHitbox->iBone]);
-		vMax = M::VectorTransform(pHitbox->vecBBMax, pLog->pRecord.front().pVisualMatrix[pHitbox->iBone]);
+		vMin = M::VectorTransform(pHitbox->vecBBMin, pLog->pRecord.front().pMatricies[VISUAL][pHitbox->iBone]);
+		vMax = M::VectorTransform(pHitbox->vecBBMax, pLog->pRecord.front().pMatricies[VISUAL][pHitbox->iBone]);
 
 		if (pHitbox->flRadius > -1) {
 			if (pHitbox->iGroup == iHitgroup) 

@@ -559,10 +559,15 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 
 bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut)
 {
-	alignas(16) matrix3x4_t bone_out[128];
-	const auto ret = HandleBoneSetup(target, bone_out, boneMask, currentTime);
-	memcpy(pBoneToWorldOut, bone_out, sizeof(matrix3x4_t[128]));
-	return ret;
+	g::bSettingUpBones[target->EntIndex()] = std::make_tuple(true, boneMask);
+	bool bReturnValue = target->SetupBones(pBoneToWorldOut, MAXSTUDIOBONES, boneMask, 0.f);
+	g::bSettingUpBones[target->EntIndex()] = std::make_tuple(false, 0);
+
+	return bReturnValue;
+	//alignas(16) matrix3x4_t bone_out[128];
+	//const auto ret = HandleBoneSetup(target, bone_out, boneMask, currentTime);
+	//memcpy(pBoneToWorldOut, bone_out, sizeof(matrix3x4_t[128]));
+	//return ret;
 }
 
 bool CBaseEntity::IsBreakable()

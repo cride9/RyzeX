@@ -15,7 +15,6 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	/* If we're not connected to a server clear every pointer to not crash */
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL && g::pLocal && !i::EngineClient->IsConnected() && !i::EngineClient->IsInGame()) {
-
 		for (size_t index = 0; index < 65; index++) {
 			if (auto pCurrent = &lagcomp.GetLog(index); !pCurrent->pRecord.empty() || pCurrent->pEntity) {
 				pCurrent->pRecord.clear();
