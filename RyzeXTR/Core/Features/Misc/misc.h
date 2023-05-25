@@ -37,7 +37,7 @@ namespace misc {
 	void BulletImpact(IGameEvent*);
 	void BulletImpactFrameStage();
 	void SlideFix();
-	void SkyboxChanger(const char*);
+	void SkyboxChanger();
 	void OnlyCheatLogs();
 	void IdealTick(CUserCmd*);
 	void ServerHitboxes();

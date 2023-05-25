@@ -6,6 +6,9 @@
 
 void Event::FireGameEvent(IGameEvent* pEvent) {
 
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+		return;
+
 	if (!pEvent)
 		return;
 

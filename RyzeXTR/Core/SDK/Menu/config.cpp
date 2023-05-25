@@ -143,6 +143,7 @@ void CConfig::Setup() {
 		SetupValue(bInvertOnShoot, false, "antiaim", "bInvertOnShoot");
 		SetupValue(bodyLean[0], 0.f, "antiaim", "bodyLean1");
 		SetupValue(bodyLean[1], 0.f, "antiaim", "bodyLean2");
+		SetupValue(bAntiJitter, false, "antiaim", "bAntiJitter");
 
 		SetupValue(modifier, 0, "antiaim", "modifier");
 		SetupValue(desyncModifier, 0, "antiaim", "desyncModifier");
@@ -826,6 +827,12 @@ void CConfig::Setup() {
 		SetupValue(impactColor[0], 4, 1.f, "misc", "impactColorS");
 		SetupValue(impactColor[1], 4, 1.f, "misc", "impactColorC");
 
+		SetupValue(bDroppedWeaponESP, false, "misc", "bDroppedWeaponESP");
+		SetupValue(flDroppedWeaponESP, 4, 1.f, "misc", "flDroppedWeaponESP");
+
+		SetupValue(bProjectileESP, false, "misc", "bProjectileESP");
+		SetupValue(flProjectileESP, 4, 1.f, "misc", "flProjectileESP");
+
 		SetupValue(onlyCheatLogs, true, "misc", "onlyCheatLogs");
 
 		SetupValue(bulletTracer, false, "misc", "bulletTracer");
@@ -853,9 +860,12 @@ void CConfig::Setup() {
 
 		SetupValue(thirdperson, false, "misc", "thirdperson");
 		SetupValue(thirdpersonbind, 0, "misc", "thirdpersonbind");
+		SetupValue(thirdpersonDistance, 160, "misc", "thirdpersonDistance");
 
-		SetupValue(viewmodelFov, 75, "misc", "viewmodelFov");
+		SetupValue(viewmodelFov, 66, "misc", "viewmodelFov");
 		SetupValue(fov, 90, "misc", "fov");
+
+		SetupValue(bombBuffer, "RyzeXTR", "misc", "bombText");
 
 		SetupValue(removals, false, 5, "misc", "removals");
 		SetupValue(drawViewmodelOnScope, false, "misc", "drawViewmodelOnScope");
@@ -878,6 +888,7 @@ void CConfig::Setup() {
 		SetupValue( m_flHitSoundVolume, 100.f, "misc", "hitsoundvolume" );
 		SetupValue( m_szWavPath, "", "misc", "hitsoundpath" );
 		SetupValue(cfg::m_iKeyStates, 256, 0, "misc", "keystates");
+
 	}
 }
 

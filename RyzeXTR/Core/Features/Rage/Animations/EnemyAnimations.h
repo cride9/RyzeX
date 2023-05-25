@@ -44,8 +44,18 @@ public:
 		int iMoveState{};
 	};
 
+	enum EResolverHandler {
+
+		WEAPONFIRE,
+		PLAYERHURT,
+		BULLETIMPACT,
+		PLAYERDEATH,
+		HANDLERCOUNT
+	};
+
 	AnimationData_t pAnimationData[65];
 	Lagcompensation::AnimationInfo_t pLogs[65];
+	std::array<bool, HANDLERCOUNT> bResolverHandler{false};
 
 	bool NewDataRecievedFromServer(CBaseEntity* pPlayer);
 	void FixAnimatingInSameFrame(CBaseEntity* pEntity);
@@ -76,6 +86,7 @@ public:
 	void GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	void UpdateAnimLayer(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, int nSequence, float flPlaybackRate, float flWeight, float flCycle);
 	float BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
+	void RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::AnimationInfo_t* pLog);
 
 	/* resolver */
 	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);

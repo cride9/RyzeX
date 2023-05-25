@@ -89,6 +89,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkStartSound.cpp" />
     <ClCompile Include="Core\Features\Misc\serversounds.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDispatchSound.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkSetText.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />

@@ -190,8 +190,10 @@ void menu::Antiaimtab() noexcept {
         ImGui::Combo("Yaw base", &iYawBase, yawBaseList, IM_ARRAYSIZE(yawBaseList));
         ImGui::Combo("Yaw", &iYaw, yawList, IM_ARRAYSIZE(yawList));
         ImGui::Combo("Modifier", &modifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
-        if (modifier != 0)
-            ImGui::SliderInt("Modifier value", &jittervalue, 0, 90);
+		if (modifier != 0) {
+			ImGui::SliderInt("Modifier value", &jittervalue, 0, 90);
+			ImGui::Checkbox("Anti jitter prediction", &bAntiJitter);
+		}
         ImGui::Combo("Lower body yaw target", &iDesyncType, desyncList, IM_ARRAYSIZE(desyncList));
         if (iDesyncType != 0) {
 
@@ -379,6 +381,7 @@ void menu::Visualtab() noexcept {
         {
             ImGui::Checkbox("Thirdperson", &thirdperson);
             ImGui::Keybind("##tpKey", &thirdpersonbind);
+			ImGui::SliderInt("Distance", &thirdpersonDistance, 0, 300);
 
             ImGui::Checkbox("Nightmode", &nightmode);
             ImGui::ColorEdit4("nightmodecolor", nightmodeColor);
@@ -411,6 +414,12 @@ void menu::Visualtab() noexcept {
 
 			ImGui::Combo("Skybox", &cfg::misc::iSkybox, szSkyboxes, IM_ARRAYSIZE(szSkyboxes));
 			ImGui::ColorEdit4("##skyboxcolor", flSkyboxColor);
+
+			ImGui::Checkbox("Dropped weapons", &cfg::misc::bDroppedWeaponESP);
+			ImGui::ColorEdit4("##droppedcolor", cfg::misc::flDroppedWeaponESP);
+
+			ImGui::Checkbox("Projectile", &cfg::misc::bProjectileESP);
+			ImGui::ColorEdit4("##Projectilecolor", cfg::misc::flProjectileESP);
 
             ImGui::Checkbox("Preserve killfeed", &preserveKillfeed);
 
@@ -964,6 +973,10 @@ void menu::Misctab() noexcept {
 		ImGui::Checkbox("Blockbot", &blockbot);
 		ImGui::Keybind("##blockbotKey", &blockbotKey);
 		ImGui::Checkbox("Clantag", &clantag);
+		char bombCharBuffer[12]{};
+		strcpy(bombCharBuffer, bombBuffer.c_str());
+		ImGui::InputText("Custom bomb text", bombCharBuffer, sizeof(bombCharBuffer));
+		bombBuffer = bombCharBuffer;
 
 #if _DEBUG
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));

@@ -249,8 +249,11 @@ void visual::WeaponEsp(int& left, float& top, int& right, float& bot, CBaseEntit
 	if (!pWeaponInfo)
 		return;
 
-	std::string text = pWeaponInfo->szWeaponName;
-	text.erase(0, 7);
+	std::string text = "";
+	wchar_t* localizeName = i::Localize->Find(pWeaponInfo->szHudName);
+	static std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+	if (localizeName)
+		text = converter.to_bytes(localizeName);
 
 	if (bAmmoEnabled[pEnt->EntIndex()])
 		bot += 10;
@@ -294,8 +297,11 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 	}
 	if (pWeapon && bFlags[WEAPON]) {
 
-		std::string text = pWeapon->GetCSWpnData()->szWeaponName;
-		text.erase(0, 7);
+		std::string text = "";
+		wchar_t* localizeName = i::Localize->Find(pWeapon->GetCSWpnData()->szHudName);
+		static std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+		if (localizeName)
+			text = converter.to_bytes(localizeName);
 
 		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[WEAPON], g::fonts::FlagESP, false, text.c_str());
 		spacing += 10;
@@ -455,9 +461,17 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 	if (!pStudioHdr)
 		return;
 
+	auto* pLog = &lagcomp.GetLog(pEntity->EntIndex());
+	if (!pLog || pLog->pRecord.empty() || pLog->pRecord.front().pMatricies[VISUAL]->GetOrigin().IsZero())
+		return;
+
+	bool bNotLagcompensated = false;
+	if (pEntity->GetTeam() == g::pLocal->GetTeam())
+		bNotLagcompensated = true;
+
 	auto skeleton_position = [=](const size_t idx)
 	{
-		auto child = pEntity->GetCachedBoneData().Base()[idx].GetOrigin();
+		auto child = bNotLagcompensated ? pEntity->GetCachedBoneData().Base()[idx].GetOrigin() : pLog->pRecord.front().pMatricies[VISUAL][idx].GetOrigin();
 		return child;
 	};
 	auto skeleton_position_desync = [=](const size_t idx)
@@ -546,49 +560,11 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 
 		i::Surface->DrawSetColor(color[0], color[1], color[2], color[3]);
 		i::Surface->DrawLine(sParent[0], sParent[1], sChild[0], sChild[1]);
-
-		//this->set_main_color(current_config.skeleton_col);
-
-		//if (vec2_t start, end; g_render.world_to_screen(parent, start) && g_render.world_to_screen(child, end))
-		//	g_render.line(start, end, this->set_dormant_color(player, vis_color));
-
-		//mstudiobone_t* pBone = pStudioHdr->GetBone(j);
-
-		//if (pBone && (pBone->iFlags & BONE_USED_BY_HITBOX) && (pBone->iParent != -1))
-		//{
-		//	auto vChild = pEntity->GetBonePosition(j).value();
-		//	auto vParent = pEntity->GetBonePosition(pBone->iParent).value();
-
-		//	int iChestBone = 6;  // Parameter of relevant Bone number
-		//	Vector vBreastBone; // New reference Point for connecting many bones
-		//	Vector vUpperDirection = pEntity->GetBonePosition(iChestBone + 1).value() - pEntity->GetBonePosition(iChestBone).value(); // direction vector from chest to neck
-		//	vBreastBone = pEntity->GetBonePosition(iChestBone).value() + vUpperDirection / 2;
-		//	Vector vDeltaChild = vChild - vBreastBone; // Used to determine close bones to the reference point
-		//	Vector vDeltaParent = vParent - vBreastBone;
-
-		//	// Eliminating / Converting all disturbing bone positions in three steps.
-		//	if ((vDeltaParent.Length() < 9 && vDeltaChild.Length() < 9))
-		//		vParent = vBreastBone;
-
-		//	if (j == iChestBone - 1)
-		//		vChild = vBreastBone;
-
-		//	if (abs(vDeltaChild.z) < 5 && (vDeltaParent.Length() < 5 && vDeltaChild.Length() < 5) || j == iChestBone)
-		//		continue;
-
-		//	Vector sParent;
-		//	Vector sChild;
-		//	i::DebugOverlay->ScreenPosition(vParent, sParent);
-		//	i::DebugOverlay->ScreenPosition(vChild, sChild);
-
-		//	i::Surface->DrawSetColor(color[0], color[1], color[2], color[3]);
-		//	i::Surface->DrawLine(sParent[0], sParent[1], sChild[0], sChild[1]);
-		//}
 	}
 }
 
 // thx @94
-void visual::GrenadeEsp() {
+void visual::WorldEsp() {
 
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal || !i::EngineClient->IsConnected() || !i::EngineClient->IsInGame())
 		return;
@@ -610,20 +586,23 @@ void visual::GrenadeEsp() {
 		if (!pWeapon->GetClientClass())
 			continue;
 
-		//Vector vecMins, vecMaxs;
-		//pWeapon->GetRenderBounds(vecMins, vecMaxs);
-
+		DroppedWeapons(pWeapon, vecScreenPosition);
 		const EClassIndex iClientID = pWeapon->GetClientClass()->nClassID;
+
+		if (!cfg::misc::bProjectileESP)
+			return;
+
+		Color espColor = Color(cfg::misc::flProjectileESP[0] * 255.f, cfg::misc::flProjectileESP[1] * 255.f, cfg::misc::flProjectileESP[2] * 255.f, cfg::misc::flProjectileESP[3] * 255.f);
 
 		using enum EClassIndex;
 		if (iClientID == CDecoyProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Decoy");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Decoy");
 
 		else if (iClientID == CMolotovProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Molotov");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Molotov");
 
 		else if (iClientID == CSmokeGrenadeProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Smoke");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Smoke");
 
 		else if (iClientID == CBaseCSGrenadeProjectile) {
 
@@ -634,16 +613,54 @@ void visual::GrenadeEsp() {
 				std::string szName = pModel->szName;
 
 				if (szName.find("flashbang") != std::string::npos)
-					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Flashbang");
+					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Flashbang");
 				else if (szName.find("fraggrenade") != std::string::npos)
-					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Grenade");
+					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Grenade");
 			}
 		}
 
 		else if (iClientID == CInferno) 
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Fire");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Fire");
 		
 		else if (iClientID == CPlantedC4)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Bomb");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Bomb");
 	}
+}
+
+void visual::DroppedWeapons(CBaseCombatWeapon* pWeapon, Vector& vecScreenPosition) {
+
+	if (!cfg::misc::bDroppedWeaponESP)
+		return;
+
+	CCSWeaponInfo* pData = pWeapon->GetCSWpnData();
+
+	if (!pData)
+		return;
+
+	const EClassIndex iClientID = pWeapon->GetClientClass()->nClassID;
+
+	using enum EClassIndex;
+	if (iClientID == CC4)
+		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Grenade");
+
+	if (pWeapon->GetItemDefinitionIndex() == WEAPON_TASER && pWeapon->GetAmmo() == 0)
+		return;
+
+	if (pData->nWeaponType < 1 || pData->nWeaponType > 9 || pData->nWeaponType == 8)
+		return;
+
+	if (pData->nWeaponType == 9) // grenade
+		return;
+
+	Color espColor = Color(cfg::misc::flDroppedWeaponESP[0] * 255.f, cfg::misc::flDroppedWeaponESP[1] * 255.f, cfg::misc::flDroppedWeaponESP[2] * 255.f, cfg::misc::flDroppedWeaponESP[3] * 255.f);
+
+	static std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+	wchar_t* pName = i::Localize->Find(pData->szHudName);
+	std::string name = "";
+	if (pName)
+		name = converter.to_bytes(pName);
+
+	std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+
+	i::Surface->DrawT(vecScreenPosition.x + 1, vecScreenPosition.y - -2, espColor, g::fonts::FlagESP, true, name.c_str());
 }

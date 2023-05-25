@@ -157,8 +157,9 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 		if (pEntity != pEntityByIndex || !pLog || !pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity() || pEntity->GetTeam() == g::pLocal->GetTeam() || pLog->pRecord.empty())
 			continue;
 
-		if (!pLog->pRecord.front().pMatricies[1] || pLog->pRecord.front().pMatricies[1]->GetOrigin().IsZero())
-			continue;
+		for (size_t i = 0; i < EMatrixType::MAX; i++) 
+			if (!pLog->pRecord.front().pMatricies[i]->Base() || !pLog->pRecord.front().pMatricies[i]->GetOrigin().IsValid() || pLog->pRecord.front().pMatricies[i]->GetOrigin().IsZero())
+				return std::make_pair(nullptr, -1);
 		
 		Vector vecHitboxPosition;
 		if (Lagcompensation::LagRecord_t* pShotRecord = CheckOnShotRecord(pLog, iAppliedRecord); pShotRecord) {
@@ -350,8 +351,8 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			FireBulletData_t dataOut;
 			if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &dataOut, pCurrentApplied->pEntity); flDamage > iMinimumDamage || flDamage > pEntity.first->GetHealth() + 5) {
 
-				//if (dataOut.enterTrace.iHitbox != iHitbox)
-				//	continue;
+				if (iHitbox == HITBOX_HEAD && dataOut.enterTrace.iHitbox != HITBOX_HEAD)
+					return Vector(0, 0, 0);
 
 				rageBotData.SetTarget(pCurrentApplied, iHitbox);
 				return vecPoint;
@@ -949,33 +950,34 @@ std::array<Vector, 3> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity
 	switch (iMultiOptimization[iHitbox] % 5)
 	{
 	case 0:
-		output[1] = (vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
+		output[2] = (vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
 		if (bGenerateMore)
-			output[2] = (vecAngle + Vector(flHitboxDistance * 0.5f, 0.f, 0.f));
+			output[1] = (vecAngle + Vector(flHitboxDistance * 0.5f, 0.f, 0.f));
 		break;
 	case 1:
-		output[1] = (vecAngle + Vector(0.f, flHitboxDistance, 0.f));
+		output[2] = (vecAngle + Vector(0.f, flHitboxDistance, 0.f));
 		if (bGenerateMore)
-			output[2] = (vecAngle + Vector(0.f, flHitboxDistance * 0.5f, 0.f));
+			output[1] = (vecAngle + Vector(0.f, flHitboxDistance * 0.5f, 0.f));
 		break;
 	case 2:
-		output[1] = (vecAngle + Vector(0.f, 0.f, flHitboxDistance));
+		output[2] = (vecAngle + Vector(0.f, 0.f, flHitboxDistance));
 		if (bGenerateMore)
-			output[2] = (vecAngle + Vector(0.f, 0.f, flHitboxDistance * 0.5f));
+			output[1] = (vecAngle + Vector(0.f, 0.f, flHitboxDistance * 0.5f));
 		break;
 	case 3:
-		output[1] = (vecAngle + Vector(0.f, -flHitboxDistance, 0.f));
+		output[2] = (vecAngle + Vector(0.f, -flHitboxDistance, 0.f));
 		if (bGenerateMore)
-			output[2] = (vecAngle + Vector(0.f, -flHitboxDistance * 0.5f, 0.f));
+			output[1] = (vecAngle + Vector(0.f, -flHitboxDistance * 0.5f, 0.f));
 		break;
 	case 4:
-		output[1] = (vecAngle + Vector(-flHitboxDistance, 0.f, 0.f));
+		output[2] = (vecAngle + Vector(-flHitboxDistance, 0.f, 0.f));
 		if (bGenerateMore)
-			output[2] = (vecAngle + Vector(-flHitboxDistance * 0.5f, 0.f, 0.f));
+			output[1] = (vecAngle + Vector(-flHitboxDistance * 0.5f, 0.f, 0.f));
 		break;
 	}
 	if (!bGenerateMore)
-		output[2] = Vector(0, 0, 0);
+		output[1] = Vector(0, 0, 0);
+
 	iMultiOptimization[iHitbox]++;
 
 	if (iMultiOptimization[iHitbox] >= 5)

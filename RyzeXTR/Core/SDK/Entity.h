@@ -550,7 +550,7 @@ public:
 	ADD_NETVAR(GetThirdpersonRecoil, float, "CCSPlayer->m_flThirdpersonRecoil");
 	ADD_NETVAR(m_bStrafing, bool, "CCSPlayer->m_bStrafing");
 	ADD_NETVAR(GetMoveState, int, "CCSPlayer->m_iMoveState");
-
+	ADD_NETVAR(GetDuckOverride, bool, "CCSPlayer->m_bDuckOverride");
 
 	// pointer offset variables
 	ADD_PNETVAROFFSET(GetViewAngles, Vector, "CBasePlayer->deadflag", 0x4);

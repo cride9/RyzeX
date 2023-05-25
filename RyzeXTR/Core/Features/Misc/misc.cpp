@@ -35,7 +35,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	//ViewModel();
 }
 
-void misc::SkyboxChanger(const char* szOldSkybox) {
+void misc::SkyboxChanger() {
 
 	static std::string szSkyboxes[] = {
 	"cs_baggage_skybox_",
@@ -69,8 +69,8 @@ void misc::SkyboxChanger(const char* szOldSkybox) {
 		return;
 	}
 
-	if (szSkyboxes[0] == "None")
-		szSkyboxes[0] = szOldSkybox;
+	//if (szSkyboxes[0] == "None")
+	//	szSkyboxes[0] = szOldSkybox;
 
 	static std::string szBackup;
 	if (szBackup.c_str() != szSkyboxes[cfg::misc::iSkybox] || bRefreshNewGame) {
@@ -332,7 +332,7 @@ void misc::BulletImpact(IGameEvent* pEvent) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 
-		if (iUser != g::pLocal->EntIndex())
+		if (iUser != i::EngineClient->GetLocalPlayer())
 			return;
 
 		Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
@@ -835,7 +835,7 @@ void misc::ThirdPerson() {
 	if (!cfg::misc::thirdperson || !g::pLocal)
 		return;
 
-	static std::string tpfix = "cam_idealpitch 0;" "cam_idealyaw 0;" "cam_idealdist 140;" "thirdperson;";
+	static std::string tpfix = "cam_idealpitch 0;" "cam_idealyaw 0;" "thirdperson;";
 	static bool didSetThirdPerson = false;
 	static CConVar* svcheats = i::ConVar->FindVar("sv_cheats");
 
@@ -849,6 +849,8 @@ void misc::ThirdPerson() {
 			i::EngineClient->ExecuteClientCmd(tpfix.c_str());
 			didSetThirdPerson = true;
 		}
+		static CConVar* cam_idealdist = i::ConVar->FindVar("cam_idealdist");
+		cam_idealdist->SetValue(cfg::misc::thirdpersonDistance);
 	}
 	else {
 		i::EngineClient->ExecuteClientCmd("firstperson");

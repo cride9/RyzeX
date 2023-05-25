@@ -27,7 +27,8 @@ namespace visual {
 	void Glow(CBaseEntity* pLocal);
 	void SkeletonEsp(CBaseEntity*, Color);
 	
-	void GrenadeEsp();
+	void WorldEsp();
+	void DroppedWeapons(CBaseCombatWeapon*, Vector&);
 
 	void Flags(float&, int&, CBaseEntity*, size_t&, bool*, float[5][4], bool bDormant = false);
 

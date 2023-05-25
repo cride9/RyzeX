@@ -10,8 +10,7 @@
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
 
-static bool evenInvert = false;
-static bool unevenInvert = false;
+static bool jitter = false;
 
 void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
@@ -50,10 +49,12 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	// Update lower body yaw
 	Update( pCmd );
 
-	// uneven, even fakelag jitter stuff
-	evenInvert = !evenInvert;
-	if (i::GlobalVars->iTickCount % 2 == 1)
-		unevenInvert = !unevenInvert;
+	if (i::GlobalVars->iTickCount % 2 == 1) {
+		if (M::RandomInt(0, 1) && cfg::antiaim::bAntiJitter)
+			jitter = !jitter;
+		else
+			jitter = !jitter;
+	}
 
 	// pitch
 	switch (cfg::antiaim::iPitch) {
@@ -95,7 +96,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	}
 
 	if (cfg::antiaim::modifier == 1)
-		pCmd->angViewPoint.y += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue) : unevenInvert ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
+		pCmd->angViewPoint.y += jitter ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
 	else if (cfg::antiaim::modifier == 2)
 		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue, cfg::antiaim::jittervalue);
 
@@ -148,7 +149,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			break;
 		case JITTER:
 			needMicromovement = true;
-				desyncValue = cfg::antiaim::fakelag % 2 != 0 ? evenInvert ? (flMaxDesync) : -(flMaxDesync) : unevenInvert ? (flMaxDesync) : -(flMaxDesync);
+				desyncValue = jitter ? -(flMaxDesync) : (flMaxDesync);
 			break;
 
 		case FLICK:
@@ -181,7 +182,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	if (cfg::antiaim::iDesyncType) {
 		if (cfg::antiaim::desyncModifier == 1)
-			desyncValue += cfg::antiaim::fakelag % 2 == 0 ? evenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue) : unevenInvert ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);
+			desyncValue += jitter ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);
 		else if (cfg::antiaim::desyncModifier == 2)
 			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
 	}

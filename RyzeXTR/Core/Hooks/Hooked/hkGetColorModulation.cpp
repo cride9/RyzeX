@@ -13,11 +13,11 @@ void __fastcall h::hkGetColorModulation(void* ecx, void* edx, float* r, float* g
 
 	if (strstr(szName, "skybox/")) {
 
-		//*r = cfg::misc::flSkyboxColor[0];
-		//*g = cfg::misc::flSkyboxColor[1];
-		//*b = cfg::misc::flSkyboxColor[2];
+		*r = cfg::misc::flSkyboxColor[0];
+		*g = cfg::misc::flSkyboxColor[1];
+		*b = cfg::misc::flSkyboxColor[2];
 
-		misc::SkyboxChanger(szName);
+		misc::SkyboxChanger();
 		return;
 	}
 

@@ -715,6 +715,9 @@ void C_LocalAnimations::InterpolateMatricies()
 }
 void C_LocalAnimations::TransformateMatricies()
 {
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+		return;
+
 	Vector vecOriginDelta = g::pLocal->GetAbsOrigin() - m_LocalData.m_Real.m_vecMatrixOrigin;
 	for (auto& Matrix : m_LocalData.m_Real.m_Matrix)
 	{

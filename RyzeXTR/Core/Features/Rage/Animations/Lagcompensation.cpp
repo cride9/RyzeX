@@ -87,7 +87,7 @@ void Lagcompensation::FrameStageNotify() {
 
 	bool bChanged = false;
 
-	if (!g::pLocal)
+	if (!g::pLocal || i::ClientState->iSignonState != SIGNONSTATE_FULL)
 		return;
 
 	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
@@ -192,22 +192,23 @@ void Lagcompensation::FrameStageNotify() {
 			Lagcompensation::LagRecord_t* pCurrentRecord = &pPlayerLogs[i].pRecord.front();
 
 			// update animations on current record.
-			anims.UpdateEnemyAnimations(pPlayerLogs[i].pEntity, pCurrentRecord);
+			//anims.UpdateEnemyAnimations(pPlayerLogs[i].pEntity, pCurrentRecord);
+			anims.RebuildEnemyAnimations(pPlayerLogs[i].pEntity, &pPlayerLogs[i]);
 
 			// set animation layers.
 			pPlayerLogs[i].pEntity->SetAnimationLayers(pBackupRecord.pLayers);
 
 			// generate the right matrix when enemy stopped choking
 			// create bone matrix for this pRecord.
-			if (pPlayerLogs[i].pEntity->GetTeam() != g::pLocal->GetTeam()) {
-				pCurrentRecord->pEntity->SetupBonesFix(pCurrentRecord->pEntity, Interpolated | VisualAdjustment, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatricies[VISUAL]);
-				pCurrentRecord->pEntity->SetBoneCache(pCurrentRecord->pMatricies[VISUAL]);
+			//if (pPlayerLogs[i].pEntity->GetTeam() != g::pLocal->GetTeam()) {
+			//	pCurrentRecord->pEntity->SetupBonesFix(pCurrentRecord->pEntity, Interpolated | VisualAdjustment, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatricies[VISUAL]);
+			//	pCurrentRecord->pEntity->SetBoneCache(pCurrentRecord->pMatricies[VISUAL]);
 
-				if (cfg::rage::enable) {
-					pCurrentRecord->pEntity->SetupBonesFix(pCurrentRecord->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatricies[RESOLVE]);
-					anims.GenerateSafePointMatricies(pCurrentRecord->pEntity, pCurrentRecord);
-				}
-			}
+			//	if (cfg::rage::enable) {
+			//		pCurrentRecord->pEntity->SetupBonesFix(pCurrentRecord->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatricies[RESOLVE]);
+			//		anims.GenerateSafePointMatricies(pCurrentRecord->pEntity, pCurrentRecord);
+			//	}
+			//}
 
 			// restore correctly synced values.
 			pBackupRecord.Restore(pPlayerLogs[i].pEntity);

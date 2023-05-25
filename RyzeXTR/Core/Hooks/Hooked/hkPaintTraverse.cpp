@@ -10,6 +10,13 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	static auto original = detour::paintTraverse.GetOriginal<decltype(&h::hkPaintTraverse)>();
 
+	// TimerLabel
+	//if (!strcmp("TimerLabel", i::Panel->GetName(vguiPanel))) {
+
+
+	//	return;
+	//}
+
 	if (cfg::misc::removals[3] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
 
@@ -34,7 +41,7 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 		serversound.Start();
 		visual::VisualRender();
-		visual::GrenadeEsp();
+		visual::WorldEsp();
 		serversound.Finish();
 
 		if (g::pLocal) {

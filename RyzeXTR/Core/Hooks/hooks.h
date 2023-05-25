@@ -78,6 +78,7 @@ namespace detour {
 	inline CDetourHook startSound;
 	inline CDetourHook dispatchSound;
 	inline CDetourHook installStringTableCallback;
+	inline CDetourHook setText;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -152,6 +153,7 @@ namespace h {
 	int	__cdecl			hkStartSound(StartSoundParams_t&);
 	void __fastcall     hkInstallStringTableCallback(const char* tableName);
 	void __cdecl		hkDispatchSound(SoundInfoSOURCESDK_t*);
+	void __fastcall		hkSetText(void* ecx, void* edx, const char* tokenName);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

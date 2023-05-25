@@ -101,6 +101,7 @@ namespace cfg {
 		inline int iYaw = 1;
 		inline bool bSlideWalk = false;
 		inline bool bInvertOnShoot = false;
+		inline bool bAntiJitter = false;
 
 		inline int iDesyncType = 0;
 		inline int iDesyncValue = 100;
@@ -363,11 +364,19 @@ namespace cfg {
 		inline int aspectRatioValue = 0;
 		inline bool preserveKillfeed = false;
 		inline bool thirdperson = false;
+		inline int thirdpersonbind = 0;
+		inline int thirdpersonDistance = 0;
+
 		inline bool bulletImpact = false;
 		inline float impactColor[2][4];
 
+		inline bool bDroppedWeaponESP = false;
+		inline float flDroppedWeaponESP[4];
+
+		inline bool bProjectileESP = false;
+		inline float flProjectileESP[4];
+
 		inline bool onlyCheatLogs = false;
-		inline int thirdpersonbind = 0;
 
 		inline bool bulletTracer = false;
 		inline float bulletTracerColor[4] = { 1.f ,1.f, 1.f, 1.f };
@@ -399,6 +408,8 @@ namespace cfg {
 		inline int m_iHitSound = 0;
 		inline float m_flHitSoundVolume = 100.f;
 		inline std::string m_szWavPath = "";
+
+		inline std::string bombBuffer = "RyzeXTR";
 	
 	}
 	namespace skin {
