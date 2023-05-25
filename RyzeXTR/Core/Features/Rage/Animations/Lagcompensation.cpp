@@ -97,6 +97,7 @@ void Lagcompensation::FrameStageNotify() {
 		// check if nullptr.
 		if (!pEntity)
 		{
+			anims.missedShots[i] = 0;
 			pPlayerLogs[i].pRecord.clear();
 			continue;
 		}
@@ -112,6 +113,7 @@ void Lagcompensation::FrameStageNotify() {
 		// check if nullptr, etc.
 		if (!pPlayerLogs[i].pEntity || pPlayerLogs[i].pEntity->EntIndex() == g::pLocal->EntIndex() || !pPlayerLogs[i].pEntity->IsPlayer())
 		{
+			anims.missedShots[i] = 0;
 			pPlayerLogs[i].pRecord.clear();
 			continue;
 		}
@@ -123,12 +125,14 @@ void Lagcompensation::FrameStageNotify() {
 		// if this happens, delete all the animation.
 		if (!pPlayerLogs[i].pEntity->IsAlive())
 		{
+			anims.missedShots[i] = 0;
 			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
 			pPlayerLogs[i].pRecord.clear();
 			continue;
 		}
 
 		if (pPlayerLogs[i].pEntity->GetTeam() == g::pLocal->GetTeam()) {
+			anims.missedShots[i] = 0;
 			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
 			pPlayerLogs[i].pRecord.clear();
 			continue;
@@ -182,8 +186,8 @@ void Lagcompensation::FrameStageNotify() {
 		if (bUpdate)
 		{
 			// make a full backup of the entity
-			Lagcompensation::LagRecord_t pBackupRecord = Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity);
-			pBackupRecord.Apply(pPlayerLogs[i].pEntity);
+			//Lagcompensation::LagRecord_t pBackupRecord = Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity);
+			//pBackupRecord.Apply(pPlayerLogs[i].pEntity);
 
 			// add new record.
 			pPlayerLogs[i].pRecord.push_front(Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity));
@@ -196,22 +200,10 @@ void Lagcompensation::FrameStageNotify() {
 			anims.RebuildEnemyAnimations(pPlayerLogs[i].pEntity, &pPlayerLogs[i]);
 
 			// set animation layers.
-			pPlayerLogs[i].pEntity->SetAnimationLayers(pBackupRecord.pLayers);
-
-			// generate the right matrix when enemy stopped choking
-			// create bone matrix for this pRecord.
-			//if (pPlayerLogs[i].pEntity->GetTeam() != g::pLocal->GetTeam()) {
-			//	pCurrentRecord->pEntity->SetupBonesFix(pCurrentRecord->pEntity, Interpolated | VisualAdjustment, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatricies[VISUAL]);
-			//	pCurrentRecord->pEntity->SetBoneCache(pCurrentRecord->pMatricies[VISUAL]);
-
-			//	if (cfg::rage::enable) {
-			//		pCurrentRecord->pEntity->SetupBonesFix(pCurrentRecord->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatricies[RESOLVE]);
-			//		anims.GenerateSafePointMatricies(pCurrentRecord->pEntity, pCurrentRecord);
-			//	}
-			//}
+			//pPlayerLogs[i].pEntity->SetAnimationLayers(pBackupRecord.pLayers);
 
 			// restore correctly synced values.
-			pBackupRecord.Restore(pPlayerLogs[i].pEntity);
+			//pBackupRecord.Restore(pPlayerLogs[i].pEntity);
 
 			// is data changed?
 			bChanged = true;
@@ -321,23 +313,13 @@ bool Lagcompensation::IsBreakingLagcompensation(Lagcompensation::LagRecord_t* pL
 	{
 		if (!pRecord.pEntity->IsAlive())
 		{
-			/*		L::PushConsoleColor( FOREGROUND_RED );
-					L::Print( XorStr( "Lagcomp: client [{:d}] not alive, not lag compensating!" ), pRecord.pEntity->EntIndex( ) );
-					L::PopConsoleColor( );*/
-					// entity must be alive, lost track
 			return false;
 		}
 
 		Vector delta = pRecord.vecOrigin - previousOrigin;
 		if (delta.LengthSqr() > LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR)
 		{
-			ExtrapolatePlayer(pRecord.pEntity, &pRecord, pPrevious);
-
-			Vector m_vecAbsOrigin = pRecord.pEntity->GetAbsOrigin();
-			//L::PushConsoleColor( FOREGROUND_RED );
-			//L::Print( XorStr( "Lagcomp: client [{:d}] teleported, not lag compensating!" ), pRecord.pEntity->EntIndex( ) );
-			//L::Print( XorStr( "Current Origin: [{:f}] [{:f}] [{:f}]" ), m_vecAbsOrigin.x, m_vecAbsOrigin.y, m_vecAbsOrigin.z );
-			//L::PopConsoleColor( );
+			//ExtrapolatePlayer(pRecord.pEntity, &pRecord, pPrevious);
 
 			// lost track, too much difference.
 			return true;
@@ -346,35 +328,21 @@ bool Lagcompensation::IsBreakingLagcompensation(Lagcompensation::LagRecord_t* pL
 		// player is abusing tickbase and breaking lagcompensation
 		if (pRecord.flSimulationTime < pRecord.flOldSimulationTime)
 		{
-			//L::PushConsoleColor( FOREGROUND_RED );
-			//L::Print( XorStr( "Lagcomp: client [{:d}] is shifting tickbase, not lag compensating!" ), pRecord.pEntity->EntIndex( ) );
-			//L::PopConsoleColor( );
 			return true;
 		}
 		else if (&pRecord && (pInfo.pEntity->GetSimulationTime() == pRecord.flSimulationTime))
 			return true;
 
-		// did we find a context smaller than target time?
-		if (pRecord.flSimulationTime <= pLagRecord->flSimulationTime)
-		{
-			m_bFoundRecord = true;
-			break; // hurra, stop-
-		}
-
 		previousOrigin = pRecord.vecOrigin;
 	}
-
-	if (!m_bFoundRecord)
-	{
-		//L::PushConsoleColor( FOREGROUND_RED );
-		//L::Print( XorStr( "No valid positions in history for BacktrackPlayer client [{:d}]" ), pLagRecord->pEntity->EntIndex( ) );
-		//L::PopConsoleColor( );
-		return false;
-	}
+	return false;
 }
 
 void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious) const
 {
+	if (!m_pPrevious)
+		return;
+
 	CSimulationData simulationData;
 
 	simulationData.pEntity = m_pEntity;
@@ -473,12 +441,12 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	if ((i::GlobalVars->flCurrentTime - mflSimulationTime) < 0.f)
 		return false;
 
-	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
+	//static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
 
-	float m_flCorrect = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) + i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_OUTGOING) + GetClientInterpAmount();
-	std::clamp(m_flCorrect, 0.f, sv_maxunlag->GetFloat());
+	//float m_flCorrect = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) + i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_OUTGOING) /*+ GetClientInterpAmount()*/;
+	//m_flCorrect = std::clamp(m_flCorrect, 0.f, sv_maxunlag->GetFloat());
 
-	return std::fabsf(m_flCorrect - (i::GlobalVars->flCurrentTime - mflSimulationTime)) <= flRange;
+	return (i::GlobalVars->flCurrentTime - mflSimulationTime) <= flRange;
 }
 
 int Lagcompensation::FixTickCount(const float& flSimulationTime)

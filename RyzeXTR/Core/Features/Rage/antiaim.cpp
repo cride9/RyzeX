@@ -43,18 +43,19 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	// this fixes event delays cuz 1 command is shooting next command is registering
 	// thats how this shit game works, it is what it is
-	if (abs(pCmd->iCommandNumber - ragebot.rageBotData.iCommand) < 4)
-		bSendPacket = true;
+	/*if (abs(pCmd->iCommandNumber - ragebot.rageBotData.iCommand) < 4)
+		bSendPacket = true;*/
 
 	// Update lower body yaw
 	Update( pCmd );
 
-	if (i::GlobalVars->iTickCount % 2 == 1) {
-		if (M::RandomInt(0, 1) && cfg::antiaim::bAntiJitter)
+	if (cfg::antiaim::bAntiJitter) {
+		if (M::RandomInt(0, 1)) {
 			jitter = !jitter;
-		else
-			jitter = !jitter;
+		}
 	}
+	else
+		jitter = !jitter;
 
 	// pitch
 	switch (cfg::antiaim::iPitch) {

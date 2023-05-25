@@ -20,12 +20,9 @@ void Animations::ResolverLogic() {
 			return;
 
 	Ray_t ray(g::pLocal->GetEyePosition(), bulletImpact);
-	//CTraceFilter filter(g::pLocal);
-
 	Trace_t trace;
 
 	ragebot.rageBotData.pAimbotTarget->SetBoneCache(ragebot.rageBotData.pTargetMatrix);
-	//i::EngineTrace->TraceRay(ray, MASK_SHOT, &filter, &trace);
 	i::EngineTrace->ClipRayToEntity(ray, MASK_SHOT, ragebot.rageBotData.pAimbotTarget, &trace);
 
 	for (bool& bCurrent : bResolverHandler)
@@ -65,7 +62,6 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 			missedShots[ragebot.rageBotData.pAimbotTarget->EntIndex()]++;
 		}
 		bResolverHandler[WEAPONFIRE] = true;
-		ResolverLogic();
 	}
 	if (!strcmp(pEvent->GetName(), "player_hurt")) {
 
@@ -79,7 +75,6 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 			didHurt = true;
 		}
 		bResolverHandler[PLAYERHURT] = true;
-		ResolverLogic();
 	}
 	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
 
@@ -90,7 +85,6 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 
 		bulletImpact = Vector(pEvent->GetFloat("x"), pEvent->GetFloat("y"), pEvent->GetFloat("z"));
 		bResolverHandler[BULLETIMPACT] = true;
-		ResolverLogic();
 	}
 	if (!strcmp(pEvent->GetName(), "player_death")) {
 
@@ -104,7 +98,6 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 			didHurt = true;
 		}
 		bResolverHandler[PLAYERDEATH] = true;
-		ResolverLogic();
 	}
 }
 
@@ -1280,6 +1273,8 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 	if (!pState || !pCurrent || !pCurrent->pLayers)
 		return;
 
+	pCurrent->bBreakingLagcompensation = lagcomp.IsBreakingLagcompensation(pCurrent);
+
 	if (pRecords->size() > 2) {
 		pPrevious = &pRecords->at(1);
 		if (pPrevious->bDormant)
@@ -1311,6 +1306,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 		}
 	}
 	else {
+
 		static CConVar* sv_maxspeed = i::ConVar->FindVar("sv_maxspeed");
 		const float flMaxSpeed = sv_maxspeed->GetFloat();
 
@@ -1535,6 +1531,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 	}
 
 	if (pPrevious) {
+
 		for (int tick = 1; tick <= iSimulationTicks; tick++) {
 
 			float flSimulationTime = pPrevious->flSimulationTime + TICKS_TO_TIME(tick);

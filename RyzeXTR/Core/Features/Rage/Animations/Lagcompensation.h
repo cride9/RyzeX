@@ -191,14 +191,15 @@ public:
 	// fuck interpolation
 	void SetInterpolationFlags();
 
+	// check if record is valid
+	static bool IsValidRecord(float m_flSimulationTime, float m_flRange = 0.19f);
+
 private:
 	// filter records after updating them
 	void FilterRecords();
 
 	// extrapolate players breaking lagcomp
 	void ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious) const;
-	// check if record is valid
-	static bool IsValidRecord(float m_flSimulationTime, float m_flRange = 0.199f);
 
 	// Values
 	/* animation info */

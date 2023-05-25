@@ -14,6 +14,9 @@ class CRageBot {
 public:
 
 	void CreateMove(CUserCmd*, CBaseEntity*, bool&);
+	bool bSendPacketThisTick = false;
+	int iTickCount = 0;
+	bool bSetTickCount = false;
 
 	struct
 	{
@@ -46,10 +49,11 @@ private:
 	Vector				InterpolateLocalEyePosition(Vector, int = 1);
 	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, int iHitbox);
 	int					CalculateTickCount(float);
+	bool				bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
 	Lagcompensation::LagRecord_t* CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog, int&);
-	bool CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon);
+	bool				CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon);
 	bool				ShouldSendPacket(bool&);
 
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);

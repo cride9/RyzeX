@@ -486,20 +486,21 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 	else if ((szModelName.find("weapons\\w_") != std::string_view::npos)) {
 
 		CBaseEntity* pEntity = nullptr;
-		bool bFoundCloseEntity = false;
 		for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
-
 			CBaseEntity* tempEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 			if (tempEntity && tempEntity->IsAlive()) {
-				if (!pEntity)
-					pEntity = tempEntity;
-				if (pEntity && (vecModelOrigin - tempEntity->GetVecOrigin()).Length() < (vecModelOrigin - pEntity->GetVecOrigin()).Length()) {
-					pEntity = tempEntity;
-					bFoundCloseEntity = true;
+				if ((vecModelOrigin - tempEntity->GetVecOrigin()).Length() < 100.f) {
+					if (pEntity) {
+						if ((vecModelOrigin - tempEntity->GetVecOrigin()).Length() < (vecModelOrigin - pEntity->GetVecOrigin()).Length())
+							pEntity = tempEntity;
+					}
+					else {
+						pEntity = tempEntity;
+					}
 				}
 			}
 		}
-		if (!pEntity || !bFoundCloseEntity)
+		if (!pEntity)
 			return false;
 
 		// enemy

@@ -11,6 +11,7 @@
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/ragebot.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../Features/Rage/Animations/EnemyAnimations.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -88,6 +89,15 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	h::HookClientState();
 
+	if (ragebot.bSendPacketThisTick) {
+		bSendPacket = true;
+		ragebot.bSendPacketThisTick = false;
+	}
+	if (ragebot.bSetTickCount) {
+		ragebot.bSetTickCount = false;
+		pCmd->iTickCount = TIME_TO_TICKS(ragebot.rageBotData.flTargetSimulation + lagcomp.GetClientInterpAmount());
+	}
+
 	static auto maxusercmd = i::ConVar->FindVar("sv_maxusrcmdprocessticks");
 	if (i::ClientState->nChokedCommands >= maxusercmd->GetInt() - 1)
 		bSendPacket = true;
@@ -105,6 +115,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		localanim.localdata.vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
 
 	g_LocalAnimations->OnCreateMove(bSendPacket);
+	anims.ResolverLogic();
 }
 
 __declspec(naked) void __fastcall h::hkCreateMoveProxy(IBaseClientDLL* thisptr, int edx, int nSequenceNumber, float flInputSampleFrametime, bool bIsActive)
