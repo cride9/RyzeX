@@ -76,7 +76,9 @@ public:
 
 	void ResolverHandler(IGameEvent*);
 	void ResolverLogic();
+	void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
 	void SetGoalFeetYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, float flServerVelocityXY, float flPlaybackrate = 0.f, int brutePhase = 0);
+
 
 	/* PASTED FUNTIONS */
 	float GetLocalCycleIncrement(CBaseEntity*, float);

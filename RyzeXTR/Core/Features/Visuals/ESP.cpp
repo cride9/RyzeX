@@ -311,6 +311,9 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[MONEY], g::fonts::FlagESP, false, std::format(moneyPrefix, pEnt->GetMoney()).c_str());
 
+
+		spacing += 10;
+		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[MONEY], g::fonts::FlagESP, false, std::format("{} brueforce", anims.missedShots[pEnt->EntIndex()]).c_str());
 		spacing += 10;
 	}
 

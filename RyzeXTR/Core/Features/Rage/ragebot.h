@@ -39,6 +39,7 @@ public:
 
 	std::array<Vector, 3> CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int);
 	std::array<Vector, 6> HitboxPoints(Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, Vector&, int);
+	bool bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);
 
 private:
 
@@ -49,7 +50,6 @@ private:
 	Vector				InterpolateLocalEyePosition(Vector, int = 1);
 	bool				SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, int iHitbox);
 	int					CalculateTickCount(float);
-	bool				bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
 	Lagcompensation::LagRecord_t* CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog, int&);

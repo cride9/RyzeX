@@ -98,6 +98,56 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 	}
 }
 
+void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
+
+	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
+	if (!pLocal || !pEntity || !pEntity->IsAlive())
+		return;
+
+	Vector vecEyePosition = pLocal->GetEyePosition();
+	Vector vecLHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]);
+	Vector vecRHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]);
+
+	CTraceFilter traceFilter(pLocal);
+	Trace_t traceLData;
+	Trace_t traceRData;
+
+	float flResolveYaw = 0.f;
+	static int iFoundSide = 0;
+	pRecord->ApplyMatrix(pEntity, LEFT);
+	i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecLHitboxPosition), MASK_SHOT, &traceFilter, &traceLData);
+	pRecord->ApplyMatrix(pEntity, RIGHT);
+	i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecRHitboxPosition), MASK_SHOT, &traceFilter, &traceRData);
+
+	bool bHitLeft = traceLData.pHitEntity == pEntity;
+	bool bHitRight = traceRData.pHitEntity == pEntity;
+
+	if (bHitLeft && bHitRight) {
+		if (!iFoundSide) {
+			iFoundSide = RIGHT;
+		}
+	}
+	else if (!bHitLeft && !bHitRight)
+		iFoundSide = 0;
+	else if (!bHitLeft && bHitRight && !iFoundSide)
+		iFoundSide = RIGHT;
+	else if (bHitLeft && !bHitRight && !iFoundSide)
+		iFoundSide = LEFT;
+	
+	if (iFoundSide)
+		flResolveYaw = iFoundSide == RIGHT ? 58 : -58;
+	
+	switch (missedShots[pEntity->EntIndex()] % 3) {
+
+	case 1:	flResolveYaw *= 0;
+		break;
+	case 2: flResolveYaw *= -1;
+		break;
+	}
+
+	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y) + flResolveYaw;
+}
+
 // removed resolver from Integral, do your own one here ;)
 void Animations::SetGoalFeetYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, float flServerVelocityXY, float flPlaybackrate, int brutePhase)
 {
@@ -1647,7 +1697,8 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 
 	if (pEntity->GetTeam() != g::pLocal->GetTeam()) {
 
-		SetGoalFeetYaw(pEntity, pCurrent, pPrevious, GetVelocityLengthXY(pEntity));
+		Resolver(pEntity, pCurrent, pPrevious);
+		//SetGoalFeetYaw(pEntity, pCurrent, pPrevious, GetVelocityLengthXY(pEntity));
 		pCurrent->pEntity->SetupBonesFix(pCurrent->pEntity, Interpolated | VisualAdjustment, i::GlobalVars->flCurrentTime, pCurrent->pMatricies[VISUAL]);
 		pCurrent->pEntity->SetBoneCache(pCurrent->pMatricies[VISUAL]);
 

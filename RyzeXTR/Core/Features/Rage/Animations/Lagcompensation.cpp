@@ -97,7 +97,6 @@ void Lagcompensation::FrameStageNotify() {
 		// check if nullptr.
 		if (!pEntity)
 		{
-			anims.missedShots[i] = 0;
 			pPlayerLogs[i].pRecord.clear();
 			continue;
 		}
@@ -113,7 +112,6 @@ void Lagcompensation::FrameStageNotify() {
 		// check if nullptr, etc.
 		if (!pPlayerLogs[i].pEntity || pPlayerLogs[i].pEntity->EntIndex() == g::pLocal->EntIndex() || !pPlayerLogs[i].pEntity->IsPlayer())
 		{
-			anims.missedShots[i] = 0;
 			pPlayerLogs[i].pRecord.clear();
 			continue;
 		}
@@ -125,14 +123,12 @@ void Lagcompensation::FrameStageNotify() {
 		// if this happens, delete all the animation.
 		if (!pPlayerLogs[i].pEntity->IsAlive())
 		{
-			anims.missedShots[i] = 0;
 			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
 			pPlayerLogs[i].pRecord.clear();
 			continue;
 		}
 
 		if (pPlayerLogs[i].pEntity->GetTeam() == g::pLocal->GetTeam()) {
-			anims.missedShots[i] = 0;
 			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
 			pPlayerLogs[i].pRecord.clear();
 			continue;

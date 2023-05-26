@@ -443,7 +443,7 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 		Trace_t Trace;
 		i::EngineTrace->ClipRayToEntity( Ray_t( vecEyePosition, vecEnd ), MASK_SHOT | CONTENTS_GRATE, pEnt, &Trace );
 
-		if ( Trace.pHitEntity == pEnt && Trace.iHitbox == iHitbox )
+		if ( Trace.pHitEntity == pEnt /*&& Trace.iHitbox == iHitbox */)
 			iHits++;
 	}
 
