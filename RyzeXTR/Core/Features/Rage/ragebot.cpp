@@ -160,72 +160,72 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 				return std::make_pair(nullptr, -1);
 		
 		Vector vecHitboxPosition;
-		//if (Lagcompensation::LagRecord_t* pShotRecord = CheckOnShotRecord(pLog, iAppliedRecord); pShotRecord) {
+		if (Lagcompensation::LagRecord_t* pShotRecord = CheckOnShotRecord(pLog, iAppliedRecord); pShotRecord) {
 
-		//	pShotRecord->ApplyMatrix(pEntity, RESOLVE);
-		//	vecHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pShotRecord->pMatricies[1], flRadius);
-		//	multiPointed = CreatePoints(pShotRecord->pEntity, g::pLocal, pWeapon, vecHitboxPosition, flRadius, HITBOX_HEAD);
+			pShotRecord->ApplyMatrix(pEntity, RESOLVE);
+			vecHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pShotRecord->pMatricies[1], flRadius);
+			multiPointed = CreatePoints(pShotRecord->pEntity, g::pLocal, pWeapon, vecHitboxPosition, flRadius, HITBOX_HEAD);
 
-		//	for (Vector& vecPoint : multiPointed) {
-		//		
-		//		if (autowall.GetDamage(g::pLocal, vecInterpolatedEyePosition, vecHitboxPosition, pWeapon) > 2) {
-		//			vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
-		//			bAdded = true;
-		//			break;
-		//		}
-		//	}
+			for (Vector& vecPoint : multiPointed) {
+				
+				if (autowall.GetDamage(g::pLocal, vecInterpolatedEyePosition, vecHitboxPosition, pWeapon) > 2) {
+					vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
+					bAdded = true;
+					break;
+				}
+			}
 
-		//	if (bAdded) {
-		//		continue;
-		//	}
-		//}
-		//if (pLog->iFirstValid != 32 && !bAdded) {
+			if (bAdded) {
+				continue;
+			}
+		}
+		if (pLog->iFirstValid != 32 && !bAdded) {
 
-		//	const unsigned int iFirstValid = pLog->iFirstValid;
-		//	if (iFirstValid >= pLog->pRecord.size())
-		//		continue;
+			const unsigned int iFirstValid = pLog->iFirstValid;
+			if (iFirstValid >= pLog->pRecord.size())
+				continue;
 
-		//	Lagcompensation::LagRecord_t* pFirstValidRecord = &pLog->pRecord.at(iFirstValid);
-		//	pFirstValidRecord->ApplyMatrix(pEntity, RESOLVE);
+			Lagcompensation::LagRecord_t* pFirstValidRecord = &pLog->pRecord.at(iFirstValid);
+			pFirstValidRecord->ApplyMatrix(pEntity, RESOLVE);
 
-		//	for (int& i : arrHitboxChecks){
+			for (int& i : arrHitboxChecks){
 
-		//		vecHitboxPosition = pEntity->GetHitboxPosition(i, pFirstValidRecord->pMatricies[1], flRadius);
-		//		multiPointed = CreatePoints(pFirstValidRecord->pEntity, g::pLocal, pWeapon, vecHitboxPosition, flRadius, i);
+				vecHitboxPosition = pEntity->GetHitboxPosition(i, pFirstValidRecord->pMatricies[1], flRadius);
+				multiPointed = CreatePoints(pFirstValidRecord->pEntity, g::pLocal, pWeapon, vecHitboxPosition, flRadius, i);
 
-		//		for (Vector& vecPoint : multiPointed) {
+				for (Vector& vecPoint : multiPointed) {
 
-		//			i::EngineTrace->TraceRay(Ray_t(vecInterpolatedEyePosition, vecPoint), MASK_SHOT, &traceFilter, &traceData);
-		//			if (traceData.pHitEntity == pEntity) {
-		//				bAdded = true;
-		//				iAppliedRecord = iFirstValid;
-		//				vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
-		//				break;
-		//			}
-		//		}
-		//		if (bAdded) {
-		//			break;
-		//		}
-		//	}	
-		//	if (bAdded) {
-		//		continue;
-		//	}
+					i::EngineTrace->TraceRay(Ray_t(vecInterpolatedEyePosition, vecPoint), MASK_SHOT, &traceFilter, &traceData);
+					if (traceData.pHitEntity == pEntity) {
+						bAdded = true;
+						iAppliedRecord = iFirstValid;
+						vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
+						break;
+					}
+				}
+				if (bAdded) {
+					break;
+				}
+			}	
+			if (bAdded) {
+				continue;
+			}
 
-		//	if (!bAdded) { // cannot hit, simulate a bullet to check autowallable entities
+			if (!bAdded) { // cannot hit, simulate a bullet to check autowallable entities
 
-		//		for (int& i : arrHitboxChecks) {
+				for (int& i : arrHitboxChecks) {
 
-		//			vecHitboxPosition = pEntity->GetHitboxPosition(i, pFirstValidRecord->pMatricies[1]);
+					vecHitboxPosition = pEntity->GetHitboxPosition(i, pFirstValidRecord->pMatricies[1]);
 
-		//			if (autowall.GetDamage(g::pLocal, vecInterpolatedEyePosition, vecHitboxPosition, pWeapon) > 2) {
-		//				bAdded = true;
-		//				iAppliedRecord = iFirstValid;
-		//				vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
-		//				break;
-		//			}
-		//		}
-		//	}
-		//}
+					if (autowall.GetDamage(g::pLocal, vecInterpolatedEyePosition, vecHitboxPosition, pWeapon) > 2) {
+						bAdded = true;
+						iAppliedRecord = iFirstValid;
+						vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
+						break;
+					}
+				}
+			}
+		}
 		if ( cfg::rage::m_bEnableBacktrack && !bAdded) {
 
 			const unsigned int iLastValid = pLog->iLastValid;
@@ -350,9 +350,6 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			FireBulletData_t dataOut;
 			if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &dataOut, pCurrentApplied->pEntity); flDamage > iMinimumDamage || flDamage > pEntity.first->GetHealth() + 5) {
 
-				if (iHitbox == HITBOX_HEAD && dataOut.enterTrace.iHitbox != HITBOX_HEAD)
-					return Vector(0, 0, 0);
-
 				rageBotData.SetTarget(pCurrentApplied, iHitbox);
 				return vecPoint;
 			}
@@ -446,7 +443,7 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 		Trace_t Trace;
 		i::EngineTrace->ClipRayToEntity( Ray_t( vecEyePosition, vecEnd ), MASK_SHOT | CONTENTS_GRATE, pEnt, &Trace );
 
-		if ( Trace.pHitEntity == pEnt )
+		if ( Trace.pHitEntity == pEnt && Trace.iHitbox == iHitbox )
 			iHits++;
 	}
 

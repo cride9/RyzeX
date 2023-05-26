@@ -186,8 +186,8 @@ void Lagcompensation::FrameStageNotify() {
 		if (bUpdate)
 		{
 			// make a full backup of the entity
-			//Lagcompensation::LagRecord_t pBackupRecord = Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity);
-			//pBackupRecord.Apply(pPlayerLogs[i].pEntity);
+			Lagcompensation::LagRecord_t pBackupRecord = Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity);
+			pBackupRecord.Apply(pPlayerLogs[i].pEntity);
 
 			// add new record.
 			pPlayerLogs[i].pRecord.push_front(Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity));
@@ -203,7 +203,7 @@ void Lagcompensation::FrameStageNotify() {
 			//pPlayerLogs[i].pEntity->SetAnimationLayers(pBackupRecord.pLayers);
 
 			// restore correctly synced values.
-			//pBackupRecord.Restore(pPlayerLogs[i].pEntity);
+			pBackupRecord.Restore(pPlayerLogs[i].pEntity);
 
 			// is data changed?
 			bChanged = true;
@@ -248,7 +248,7 @@ void Lagcompensation::FilterRecords()
 
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++)
 		{
-			auto pCurrentRecord = pPlayerLogs[i].pRecord[j];
+			auto& pCurrentRecord = pPlayerLogs[i].pRecord[j];
 			if (pCurrentRecord.bDormant && !j)
 				continue;
 
@@ -362,8 +362,8 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 			auto ticks_left = iSimulationTickDelta;
 			do
 			{
-				Trace_t      trace;
-				CTraceFilter filter(g::pLocal);
+				//Trace_t      trace;
+				//CTraceFilter filter(g::pLocal);
 
 				auto predicted_origin = simulationData.vecOrigin;
 				auto time_to_extrapolate = TIME_TO_TICKS(i::GlobalVars->iTickCount) - m_pEntity->GetSimulationTime();
@@ -393,7 +393,7 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 				predicted_origin = predict_next_velocity(m_pCurrentRecord->vecVelocity, m_pPrevious->vecVelocity);
 				predicted_origin.z += simulationData.vecVelocity.z - sv_gravity * time_to_extrapolate;
 
-				i::EngineTrace->TraceRay(Ray_t(simulationData.vecOrigin, predicted_origin, simulationData.pEntity->vecMins(), simulationData.pEntity->vecMaxs()), CONTENTS_SOLID, &filter, &trace);
+				//i::EngineTrace->TraceRay(Ray_t(simulationData.vecOrigin, predicted_origin, simulationData.pEntity->vecMins(), simulationData.pEntity->vecMaxs()), CONTENTS_SOLID, &filter, &trace);
 
 				m_pCurrentRecord->flSimulationTime = m_pEntity->GetSimulationTime() + time_to_extrapolate;
 				--ticks_left;

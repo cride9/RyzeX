@@ -632,11 +632,6 @@ void visual::DroppedWeapons(CBaseCombatWeapon* pWeapon, Vector& vecScreenPositio
 	if (!cfg::misc::bDroppedWeaponESP)
 		return;
 
-	CCSWeaponInfo* pData = pWeapon->GetCSWpnData();
-
-	if (!pData)
-		return;
-
 	const EClassIndex iClientID = pWeapon->GetClientClass()->nClassID;
 
 	using enum EClassIndex;
@@ -644,6 +639,11 @@ void visual::DroppedWeapons(CBaseCombatWeapon* pWeapon, Vector& vecScreenPositio
 		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Grenade");
 
 	if (pWeapon->GetItemDefinitionIndex() == WEAPON_TASER && pWeapon->GetAmmo() == 0)
+		return;
+
+	CCSWeaponInfo* pData = pWeapon->GetCSWpnData();
+
+	if (!pData)
 		return;
 
 	if (pData->nWeaponType < 1 || pData->nWeaponType > 9 || pData->nWeaponType == 8)
