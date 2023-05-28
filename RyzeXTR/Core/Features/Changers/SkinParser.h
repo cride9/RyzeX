@@ -61,7 +61,7 @@ struct SkinKit_t
 	int m_nRarity;
 	int m_iWeaponID;
 
-	bool operator < (const SkinKit_t& other) const { return (m_szName < other.m_szName); }
+	bool operator < ( const SkinKit_t& other ) const { return ( m_szName < other.m_szName ); }
 };
 
 struct SkinColors_t

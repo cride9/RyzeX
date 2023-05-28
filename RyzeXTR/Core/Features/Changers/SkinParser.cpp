@@ -1,4 +1,5 @@
 #include "SkinParser.h"
+
 void SkinChanger::Dump()
 {
 	const auto V_UCS2ToUTF8 = static_cast<int(*)(const wchar_t* ucs2, char* utf8, int len)>(util::GetExportAddress("vstdlib.dll", "V_UCS2ToUTF8"));

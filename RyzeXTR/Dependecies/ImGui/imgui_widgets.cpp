@@ -3523,7 +3523,7 @@ bool ImGui::Keybind(const char* str_id, int* current_key, int* key_style) {
 
     if (g.ActiveId == id) {
         for (auto i = 0; i < 5; i++) {
-            if (io->MouseDown[i]) {
+            if ( IsMouseDown(i )) {
                 switch (i) {
                 case 0:
                     key = VK_LBUTTON;
@@ -3547,7 +3547,7 @@ bool ImGui::Keybind(const char* str_id, int* current_key, int* key_style) {
 
         if (!value_changed) {
             for (auto i = VK_BACK; i <= VK_RMENU; i++) {
-                if (io->KeysDown[i]) {
+                if ( IsKeyDown( i )) {
                     key = i;
                     value_changed = true;
                     ClearActiveID();

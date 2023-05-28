@@ -8033,6 +8033,16 @@ bool ImGui::TestShortcutRouting(ImGuiKeyChord key_chord, ImGuiID owner_id)
 
 // Note that Dear ImGui doesn't know the meaning/semantic of ImGuiKey from 0..511: they are legacy native keycodes.
 // Consider transitioning from 'IsKeyDown(MY_ENGINE_KEY_A)' (<1.87) to IsKeyDown(ImGuiKey_A) (>= 1.87)
+
+bool ImGui::IsKeyDown( int user_key_index )
+{
+    if ( user_key_index < 0 )
+        return false;
+    ImGuiContext& g = *GImGui;
+    IM_ASSERT( user_key_index >= 0 && user_key_index < IM_ARRAYSIZE( g.IO.KeysDown ) );
+    return g.IO.KeysDown[ user_key_index ];
+}
+
 bool ImGui::IsKeyDown(ImGuiKey key)
 {
     return IsKeyDown(key, ImGuiKeyOwner_Any);
