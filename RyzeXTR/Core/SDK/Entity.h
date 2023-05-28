@@ -540,7 +540,7 @@ public:
 
 	// pointer netvars
 	//ADD_PNETVAR(GetFallVelocity, float, "CBasePlayer->m_flFallVelocity"); Tf is going on here? Leaving it commented out incase you don't like the change
-	ADD_PNETVAR(GetObserverMode, int, "CBasePlayer->m_iObserverMode");
+	ADD_NETVAR(GetObserverMode, int, "CBasePlayer->m_iObserverMode");
 	ADD_PNETVAR(GetLastPlace, const char, "CBasePlayer->m_szLastPlaceName");
 
 	// offset variables
@@ -944,6 +944,12 @@ public:
 
 	void UpdateCollisionBounds() {
 		util::CallVFunc<void>(this, 340);
+	}
+
+	void SetCollisionBounds(Vector vecMins, Vector vecMaxs) {
+
+		static auto sig = (void*)((DWORD)(util::FindSignature(("client.dll"), ("53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 89 6C 24 04 8B EC 83 EC 18 56 57 8B 7B"))));
+		((void(__thiscall*)(void*, Vector*, Vector*))(sig))((void*)((DWORD)(this) + 0x320), &vecMins, &vecMaxs);
 	}
 
 	bool PhysicsRunThink(int nThinkMethod) {

@@ -30,6 +30,8 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 	flLowerBodyYawTarget = pEntity->GetLowerBodyYaw();
 	flEyeYaw = pEntity->AnimState()->flEyeYaw;
 	flInterpTime = 0.f;
+	flMaxSpeed = pWeapon ? pEntity->IsScoped() ? pWeapon->GetCSWpnData()->flMaxSpeed[0] : pWeapon->GetCSWpnData()->flMaxSpeed[1] : 260.f;
+	flThirdPersonRecoil = pEntity->GetThirdpersonRecoil();
 
 	vecEyeAngles = pEntity->GetEyeAngles();
 	vecAbsAngles = pEntity->GetAbsAngles();
@@ -85,138 +87,225 @@ void Lagcompensation::LagRecord_t::Restore(CBaseEntity* pEntity)
 
 void Lagcompensation::FrameStageNotify() {
 
-	bool bChanged = false;
-
-	if (!g::pLocal || i::ClientState->iSignonState != SIGNONSTATE_FULL)
+	if (!g::pLocal)
 		return;
 
-	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
-	{
-		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++) {
 
-		// check if nullptr.
-		if (!pEntity)
-		{
-			pPlayerLogs[i].pRecord.clear();
+		auto pLog = &pPlayerLogs[i];
+
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || pEntity->GetTeam() == g::pLocal->GetTeam() || pEntity == g::pLocal) {
+			pLog->bLeftDormancy = true;
+			if (pEntity != g::pLocal)
+				g::bAllowAnimations[i] = true;
+			
 			continue;
 		}
 
-		// update entity ptr if required.
-		// reset entity if changed.
-		if (pPlayerLogs[i].pEntity != pEntity)
-			pPlayerLogs[i].pRecord.clear();
+		if (pEntity != pLog->pEntity)
+			pLog->pRecord.clear();
 
-		// update entity ptr.
-		pPlayerLogs[i].pEntity = pEntity;
+		pLog->pEntity = pEntity;
 
-		// check if nullptr, etc.
-		if (!pPlayerLogs[i].pEntity || pPlayerLogs[i].pEntity->EntIndex() == g::pLocal->EntIndex() || !pPlayerLogs[i].pEntity->IsPlayer())
-		{
-			pPlayerLogs[i].pRecord.clear();
+		if (pEntity->GetSimulationTime() == pEntity->GetOldSimulationTime())
+			continue;
+
+		if (pEntity->IsDormant()) {
+			pLog->bLeftDormancy = true;
 			continue;
 		}
 
-		// don't store records if no we dont need backtrack but atleast save 2 records for previous record.
-		if ( !cfg::rage::m_bEnableBacktrack && pPlayerLogs[ i ].pRecord.size( ) > 2 )
-			pPlayerLogs[ i ].pRecord.pop_back( );
-
-		// if this happens, delete all the animation.
-		if (!pPlayerLogs[i].pEntity->IsAlive())
-		{
-			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
-			pPlayerLogs[i].pRecord.clear();
-			continue;
+		LagRecord_t pPrevious;
+		pPrevious.bRestoreData = false;
+		if (!pLog->pRecord.empty()) {
+			pPrevious = pLog->pRecord.front();
+			pPrevious.bRestoreData = true;
 		}
 
-		if (pPlayerLogs[i].pEntity->GetTeam() == g::pLocal->GetTeam()) {
-			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
-			pPlayerLogs[i].pRecord.clear();
-			continue;
-		}
-
-		if (pPlayerLogs[i].iLastUpdateTick == i::GlobalVars->iTickCount) 
-			continue;
-
-		pPlayerLogs[i].iLastUpdateTick = i::GlobalVars->iTickCount;
-
-		// indicate that this entity has been out of pvs.
-		// insert dummy record to separate records
-		// to fix stuff like lag record and pPrediction.
-		if (pPlayerLogs[i].pEntity->IsDormant())
-		{
-			bool bInsert = true;
-
-			// we have any records already?
-			if (!pPlayerLogs[i].pRecord.empty())
-			{
-				Lagcompensation::LagRecord_t& iFront = pPlayerLogs[i].pRecord.front();
-
-				// we already have a dormancy separator.
-				if (iFront.bDormant)
-					bInsert = false;
+		Lagcompensation::LagRecord_t pRecord(pPlayerLogs[i].pEntity);
+		if (pPrevious.bRestoreData) {
+			if (pPrevious.pLayers[11].flCycle == pRecord.pLayers[11].flCycle){
+				pEntity->GetSimulationTime() == pPrevious.flSimulationTime;
+				continue;
 			}
+		}
 
-			if (bInsert)
-			{
-				// add new record.
-				pPlayerLogs[i].pRecord.push_front(Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity));
+		if (pPrevious.flSimulationTime > pRecord.flSimulationTime) {
 
-				// get reference to newly added pRecord.
-				Lagcompensation::LagRecord_t* pCurrentRecord = &pPlayerLogs[i].pRecord.front();
+			pLog->flExploitTime = pEntity->GetSimulationTime();
+			pLog->pRecord.clear();
+		}
 
-				// mark as dormant.
-				pCurrentRecord->bDormant = true;
+		if (pLog->bLeftDormancy) 
+			pLog->pRecord.clear();
+		
+		if (pRecord.flSimulationTime <= pLog->flExploitTime) {
+			pRecord.bValid = false;
+			pRecord.bBreakingLagcompensation = true;
+		}
+
+		if (pPrevious.bRestoreData) {
+			if ((pRecord.vecOrigin - pPrevious.vecOrigin).Length2DSqr() > 4096.0f) {
+				pRecord.bBreakingLagcompensation = true;
+				pLog->pRecord.clear();
 			}
-
-			// fix it on dormant.
-			//anims.FixJumpFallAnimation( pPlayerLogs[ i ].pEntity );
-
-			// reset data.
-			continue;
 		}
 
-		// this is the first data update we are receving
-		bool bUpdate = (pPlayerLogs[i].pRecord.empty() || anims.NewDataRecievedFromServer(pEntity));
+		if (pRecord.flSimulationTime < pPrevious.flSimulationTime) {
 
-		// we received data with a newer simulation context.
-		if (bUpdate)
-		{
-			// make a full backup of the entity
-			Lagcompensation::LagRecord_t pBackupRecord = Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity);
-			pBackupRecord.Apply(pPlayerLogs[i].pEntity);
+			pRecord.bValid = false;
+			pRecord.bBreakingLagcompensation = true;
 
-			// add new record.
-			pPlayerLogs[i].pRecord.push_front(Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity));
-
-			// get reference to newly added record.
-			Lagcompensation::LagRecord_t* pCurrentRecord = &pPlayerLogs[i].pRecord.front();
-
-			// update animations on current record.
-			//anims.UpdateEnemyAnimations(pPlayerLogs[i].pEntity, pCurrentRecord);
-			anims.RebuildEnemyAnimations(pPlayerLogs[i].pEntity, &pPlayerLogs[i]);
-
-			// set animation layers.
-			//pPlayerLogs[i].pEntity->SetAnimationLayers(pBackupRecord.pLayers);
-
-			// restore correctly synced values.
-			pBackupRecord.Restore(pPlayerLogs[i].pEntity);
-
-			// is data changed?
-			bChanged = true;
+			if (pPrevious.bRestoreData)
+				pRecord.iChoked = TIME_TO_TICKS(pRecord.flOldSimulationTime - pPrevious.flOldSimulationTime);
+			else
+				pRecord.iChoked = pPrevious.iChoked;
+		}
+		else {
+			if (pPrevious.bRestoreData)
+				pRecord.iChoked = TIME_TO_TICKS(pRecord.flSimulationTime - pPrevious.flSimulationTime);
+			else
+				pRecord.iChoked = TIME_TO_TICKS(pRecord.flSimulationTime - pRecord.flOldSimulationTime);
 		}
 
-		// max tick amt.
-		float flMaxTickAmt = /*C::Get<bool>( Vars.bRageSafeBacktracking ) ? std::ceil( I::ConVar->FindVar( Str( "sv_maxunlag" ) )->GetFloat( ) * ( 1.f / I::Globals->m_flIntervalPerTick ) ) + 3 :*/ 32;
+		if (pLog->bLeftDormancy)
+			pRecord.bFirstAfterDormant = true;
 
-		// no need to store insane amount of data.
-		while (pPlayerLogs[i].pRecord.size() > flMaxTickAmt)
-			pPlayerLogs[i].pRecord.pop_back();
-	}
+		pLog->pRecord.emplace_front(pRecord);
+		while (pLog->pRecord.size() > 32)
+			pLog->pRecord.pop_back();
 
-	// filter the pRecord if the data changed.
-	if (bChanged)
+		anims.RebuildEnemyAnimations(pEntity, &pLog->pRecord.front(), pLog);
+
+		pLog->bLeftDormancy = false;
+
 		FilterRecords();
+	}
 }
+
+//void Lagcompensation::FrameStageNotify() {
+//
+//	bool bChanged = false;
+//
+//	if (!g::pLocal || i::ClientState->iSignonState != SIGNONSTATE_FULL)
+//		return;
+//
+//	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
+//	{
+//		CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+//
+//		// check if nullptr.
+//		if (!pEntity)
+//		{
+//			pPlayerLogs[i].pRecord.clear();
+//			continue;
+//		}
+//
+//		// update entity ptr if required.
+//		// reset entity if changed.
+//		if (pPlayerLogs[i].pEntity != pEntity)
+//			pPlayerLogs[i].pRecord.clear();
+//
+//		// update entity ptr.
+//		pPlayerLogs[i].pEntity = pEntity;
+//
+//		// check if nullptr, etc.
+//		if (!pPlayerLogs[i].pEntity || pPlayerLogs[i].pEntity->EntIndex() == g::pLocal->EntIndex() || !pPlayerLogs[i].pEntity->IsPlayer())
+//		{
+//			pPlayerLogs[i].pRecord.clear();
+//			continue;
+//		}
+//
+//		// don't store records if no we dont need backtrack but atleast save 2 records for previous record.
+//		if ( !cfg::rage::m_bEnableBacktrack && pPlayerLogs[ i ].pRecord.size( ) > 2 )
+//			pPlayerLogs[ i ].pRecord.pop_back( );
+//
+//		// if this happens, delete all the animation.
+//		if (!pPlayerLogs[i].pEntity->IsAlive())
+//		{
+//			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
+//			pPlayerLogs[i].pRecord.clear();
+//			continue;
+//		}
+//
+//		if (pPlayerLogs[i].pEntity->GetTeam() == g::pLocal->GetTeam()) {
+//			pPlayerLogs[i].pEntity->IsClientSideAnimation() = g::bAllowAnimations[pPlayerLogs[i].pEntity->EntIndex()] = true;
+//			pPlayerLogs[i].pRecord.clear();
+//			continue;
+//		}
+//
+//		if (pPlayerLogs[i].iLastUpdateTick == i::GlobalVars->iTickCount) 
+//			continue;
+//
+//		pPlayerLogs[i].iLastUpdateTick = i::GlobalVars->iTickCount;
+//
+//		// indicate that this entity has been out of pvs.
+//		// insert dummy record to separate records
+//		// to fix stuff like lag record and pPrediction.
+//		if (pPlayerLogs[i].pEntity->IsDormant())
+//		{
+//			bool bInsert = true;
+//
+//			// we have any records already?
+//			if (!pPlayerLogs[i].pRecord.empty())
+//			{
+//				Lagcompensation::LagRecord_t& iFront = pPlayerLogs[i].pRecord.front();
+//
+//				// we already have a dormancy separator.
+//				if (iFront.bDormant)
+//					bInsert = false;
+//			}
+//
+//			if (bInsert)
+//			{
+//				// add new record.
+//				pPlayerLogs[i].pRecord.push_front(Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity));
+//
+//				// get reference to newly added pRecord.
+//				Lagcompensation::LagRecord_t* pCurrentRecord = &pPlayerLogs[i].pRecord.front();
+//
+//				// mark as dormant.
+//				pCurrentRecord->bDormant = true;
+//			}
+//
+//			// fix it on dormant.
+//			//anims.FixJumpFallAnimation( pPlayerLogs[ i ].pEntity );
+//
+//			// reset data.
+//			continue;
+//		}
+//
+//		// this is the first data update we are receving
+//		bool bUpdate = (pPlayerLogs[i].pRecord.empty() || anims.NewDataRecievedFromServer(pEntity));
+//
+//		// we received data with a newer simulation context.
+//		if (bUpdate)
+//		{
+//			// add new record.
+//			pPlayerLogs[i].pRecord.push_front(Lagcompensation::LagRecord_t(pPlayerLogs[i].pEntity));
+//
+//			// get reference to newly added record.
+//			Lagcompensation::LagRecord_t* pCurrentRecord = &pPlayerLogs[i].pRecord.front();
+//
+//			anims.RebuildEnemyAnimations(pPlayerLogs[i].pEntity, pCurrentRecord , &pPlayerLogs[i]);
+//
+//			// is data changed?
+//			bChanged = true;
+//		}
+//
+//		// max tick amt.
+//		float flMaxTickAmt = /*C::Get<bool>( Vars.bRageSafeBacktracking ) ? std::ceil( I::ConVar->FindVar( Str( "sv_maxunlag" ) )->GetFloat( ) * ( 1.f / I::Globals->m_flIntervalPerTick ) ) + 3 :*/ 32;
+//
+//		// no need to store insane amount of data.
+//		while (pPlayerLogs[i].pRecord.size() > flMaxTickAmt)
+//			pPlayerLogs[i].pRecord.pop_back();
+//	}
+//
+//	// filter the pRecord if the data changed.
+//	if (bChanged)
+//		FilterRecords();
+//}
 
 Lagcompensation::AnimationInfo_t& Lagcompensation::GetLog(const int iEntIndex)
 {
@@ -509,5 +598,41 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 		break;
 	default:
 		break;
+	}
+	pEntity->SetCollisionBounds(vecMins, vecMaxs);
+	return pEntity->InvalidateBoneCache();
+}
+
+void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
+
+	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+		if (!pEntity || !pEntity->IsAlive() || pEntity->GetTeam() == pLocal->GetTeam() || !pEntity->GetModel() || pEntity->IsDormant())
+			continue;
+
+		arrBackupData[i].first = Lagcompensation::LagRecord_t(pEntity);
+		pEntity->GetAnimationLayers(arrBackupData[i].first.pLayers);
+		pEntity->GetPoseParameters(arrBackupData[i].first.flPoses);
+		pEntity->GetBoneCache(arrBackupData[i].first.pMatricies[VISUAL]);
+		arrBackupData[i].second = true;
+	}
+}
+
+void Lagcompensation::FinishLagcompensation(CBaseEntity* pLocal) {
+
+	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+		if (!arrBackupData[i].second)
+			continue;
+
+		pEntity->SetAnimationLayers(arrBackupData[i].first.pLayers);
+		pEntity->SetPoseParameters(arrBackupData[i].first.flPoses);
+		pEntity->SetBoneCache(arrBackupData[i].first.pMatricies[VISUAL]);
+		arrBackupData[i].first.Apply(pEntity, true);
+		arrBackupData[i].second = false;
 	}
 }

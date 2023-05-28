@@ -196,6 +196,8 @@ void menu::Setup() {
 
 	DestroyWindow();
 	DestroyWindowClass();
+
+	util::Print("Menu initialized");
 }
 
 void menu::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept {

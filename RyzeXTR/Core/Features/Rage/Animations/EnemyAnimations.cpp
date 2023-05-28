@@ -101,7 +101,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!pLocal || !pEntity || !pEntity->IsAlive())
+	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious)
 		return;
 
 	Vector vecEyePosition = pLocal->GetEyePosition();
@@ -1045,7 +1045,7 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 		}
 
 		// setup bones
-		//g_PlayerAnimations->SetupPlayerMatrix(pEntity, m_LagRecord, aMatrix, EMatrixFlags::BoneUsedByHitbox);
+		//g_PlayerAnimations->SetupPlayerMatrix(pEntity, pRecord, aMatrix, EMatrixFlags::BoneUsedByHitbox);
 		pEntity->SetupBonesFix(pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, aMatrix);
 
 		// restore data
@@ -1160,7 +1160,8 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 	if (pRecord.empty())
 		return;
 
-	Vector vecOriginDelta = pEnt->GetAbsOrigin() - pRecord.at(1).vecAbsOrigin;
+	static Vector vecLastOrigin = pEnt->GetAbsOrigin();
+	Vector vecOriginDelta = pEnt->GetAbsOrigin() - vecLastOrigin;
 
 	for (auto& Matrix : pRecord.front().pMatricies[VISUAL])
 	{
@@ -1168,6 +1169,7 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 		Matrix[1][3] += vecOriginDelta.y;
 		Matrix[2][3] += vecOriginDelta.z;
 	}
+	vecLastOrigin = pEnt->GetAbsOrigin();
 }
 
 void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer) {
@@ -1304,115 +1306,533 @@ float Animations::GetVelocityLengthXY(CBaseEntity* pEntity)
 	return (pEntity->GetAnimationOverlays()[6].flPlaybackRate / flSequenceCycleRate) / (1.0f - (pRecord->flWalkToRunTransition * 0.15f)) * (flSequenceGroundSpeed) / pEntity->AnimState()->flLastUpdateIncrement;
 }
 
-void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::AnimationInfo_t* pLog) {
+//void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::AnimationInfo_t* pLog) {
+//
+//	if (!pEntity || !pLog || pLog->pRecord.empty())
+//		return;
+//
+//	CAnimState* pState = pEntity->AnimState();
+//	std::deque<Lagcompensation::LagRecord_t>* pRecords = &pLog->pRecord;
+//
+//	int iSimulationTicks = 0;
+//	float flMaxSpeed = 0.f;
+//	Lagcompensation::LagRecord_t* pPrevious = nullptr;
+//	Lagcompensation::LagRecord_t* pCurrentRecord = &pRecords->front();
+//
+//	if (!pState || !pCurrentRecord || !pCurrentRecord->pLayers)
+//		return;
+//
+//	pCurrentRecord->bBreakingLagcompensation = lagcomp.IsBreakingLagcompensation(pCurrentRecord);
+//
+//	if (pRecords->size() > 2) {
+//		pPrevious = &pRecords->at(1);
+//		if (pPrevious->bDormant)
+//			pPrevious = nullptr;
+//
+//		if (pPrevious != nullptr) {
+//			const CAnimationLayer* pAliveLoop = &pCurrentRecord->pLayers[ANIMATION_LAYER_ALIVELOOP];
+//			const CAnimationLayer* pPreviousAliveLoop = &pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP];
+//
+//
+//			int iTicksAnimated = TIME_TO_TICKS(pCurrentRecord->flSimulationTime - pCurrentRecord->flOldSimulationTime);
+//			if (pAliveLoop->flPlaybackRate == pPreviousAliveLoop->flPlaybackRate)
+//				iTicksAnimated = (pAliveLoop->flCycle - pPreviousAliveLoop->flCycle) / (pAliveLoop->flPlaybackRate * i::GlobalVars->flIntervalPerTick);
+//			else
+//				iTicksAnimated = ((((pAliveLoop->flCycle / pAliveLoop->flPlaybackRate) + ((1.0f - pPreviousAliveLoop->flCycle) / pPreviousAliveLoop->flPlaybackRate)) / i::GlobalVars->flIntervalPerTick));
+//
+//			iSimulationTicks = min(max(iTicksAnimated, TIME_TO_TICKS(pCurrentRecord->flSimulationTime - pCurrentRecord->flOldSimulationTime)), 17);
+//
+//			if (TIME_TO_TICKS(pCurrentRecord->flSimulationTime - pCurrentRecord->flOldSimulationTime) > 17)
+//				pPrevious = nullptr;
+//		}
+//	}
+//
+//	if (!pPrevious) {
+//		const float flVelLength = pCurrentRecord->vecVelocity.Length();
+//		if (CBaseCombatWeapon* pWeapon = pCurrentRecord->pEntity->GetWeapon(); pWeapon != nullptr) {
+//			if (flMaxSpeed = pCurrentRecord->pEntity->IsScoped() ? pWeapon->GetCSWpnData()->flMaxSpeed[0] : pWeapon->GetCSWpnData()->flMaxSpeed[1]; flVelLength > flMaxSpeed)
+//				pCurrentRecord->vecVelocity *= flMaxSpeed / flVelLength;
+//		}
+//	}
+//	else {
+//
+//		static CConVar* sv_maxspeed = i::ConVar->FindVar("sv_maxspeed");
+//		const float flMaxSpeed = sv_maxspeed->GetFloat();
+//
+//		const CAnimationLayer* pAliveLoop = &pCurrentRecord->pLayers[ANIMATION_LAYER_ALIVELOOP];
+//		const CAnimationLayer* pPrevAliveLoop = &pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP];
+//
+//		const CAnimationLayer* pMovement = &pCurrentRecord->pLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
+//		const CAnimationLayer* pPrevMovement = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
+//		const CAnimationLayer* pLanding = &pCurrentRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+//		const CAnimationLayer* pPrevLanding = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+//
+//		pCurrentRecord->vecVelocity = (pCurrentRecord->vecOrigin - pPrevious->vecOrigin) * (1.0f / TICKS_TO_TIME(iSimulationTicks));
+//		float flAnimationVelocity = 0.f;
+//		int iVelocityMode = 0;
+//
+//		if (pMovement->flPlaybackRate < 0.00001f)
+//			pCurrentRecord->vecVelocity.x = pCurrentRecord->vecVelocity.y = 0.0f;
+//		else {
+//			float flWeight = pAliveLoop->flWeight;
+//			if (flWeight < 1.0f) {
+//				if (pAliveLoop->flPlaybackRate == pPrevAliveLoop->flPlaybackRate) {
+//					if (pAliveLoop->nSequence == pPrevAliveLoop->nSequence) {
+//						if (pAliveLoop->flCycle > pPrevAliveLoop->flCycle) {
+//							if (pState->pActiveWeapon == pEntity->GetWeapon()) {
+//								float m_flSpeedAsPortionOfRunTopSpeed = ((1.0f - flWeight) / 2.8571432f) + 0.55f;
+//
+//								if (m_flSpeedAsPortionOfRunTopSpeed > 0.55f && m_flSpeedAsPortionOfRunTopSpeed < 0.9f) {
+//									flAnimationVelocity = m_flSpeedAsPortionOfRunTopSpeed * flMaxSpeed;
+//									iVelocityMode = 2;
+//								}
+//								else if (m_flSpeedAsPortionOfRunTopSpeed > 0.9f) {
+//									flAnimationVelocity = pCurrentRecord->vecVelocity.Length2D();
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//
+//			if (flAnimationVelocity <= 0.0f) {
+//				float flWeight = pMovement->flWeight;
+//				if (flWeight > 0.1f && flWeight < 0.9f) {
+//					if (pLanding->flWeight <= 0.0f) {
+//						if (flWeight > pPrevMovement->flWeight) {
+//							if (pCurrentRecord->pLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence == pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence) {
+//								if (pMovement->nSequence == pPrevMovement->nSequence) {
+//									if (pLanding->nSequence == pPrevLanding->nSequence) {
+//										if (pCurrentRecord->pLayers[ANIMATION_LAYER_ADJUST].nSequence == pPrevious->pLayers[ANIMATION_LAYER_ADJUST].nSequence) {
+//											if (pCurrentRecord->iFlags & FL_ONGROUND) {
+//												float flSpeedModifier = 1.0f;
+//												if (pCurrentRecord->iFlags & FL_DUCKING)
+//													flSpeedModifier = CS_PLAYER_SPEED_DUCK_MODIFIER;
+//												else if (pCurrentRecord->bFakewalking)
+//													flSpeedModifier = CS_PLAYER_SPEED_WALK_MODIFIER;
+//
+//												if (flSpeedModifier < 1.0f) {
+//													flAnimationVelocity = (flWeight * (flMaxSpeed * flSpeedModifier));
+//													iVelocityMode = 1;
+//												}
+//											}
+//										}
+//									}
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//
+//		if (flAnimationVelocity > 0.0f && pCurrentRecord->vecVelocity.Length2D() > 0) {
+//			const float flModifier = flAnimationVelocity / pCurrentRecord->vecVelocity.Length2D();
+//			pCurrentRecord->vecVelocity.x *= flModifier;
+//			pCurrentRecord->vecVelocity.y *= flModifier;
+//		}
+//
+//		const float flVelLength = pCurrentRecord->vecVelocity.Length();
+//
+//		if (flVelLength > flMaxSpeed)
+//			pCurrentRecord->vecVelocity *= flMaxSpeed / flVelLength;
+//	}
+//
+//	if (pPrevious) {
+//
+//		CAnimationLayer* pStrafeLayer = &pPrevious->pLayers[7];
+//		pState->flStrafeChangeCycle = pStrafeLayer->flCycle;
+//		pState->flStrafeChangeWeight = pStrafeLayer->flWeight;
+//		pState->nStrafeSequence = pStrafeLayer->nSequence;
+//		pState->flFeetCycle = pPrevious->pLayers[6].flCycle;
+//		pState->flMoveWeight = pPrevious->pLayers[6].flWeight;
+//		pState->flAccelerationWeight = pPrevious->pLayers[12].flWeight;
+//		pEntity->SetAnimationLayers(pPrevious->pLayers);
+//	}
+//
+//	const float flCurrentTime = i::GlobalVars->flCurrentTime;
+//	const float flRealTime = i::GlobalVars->flRealTime;
+//	const float flFrameTime = i::GlobalVars->flFrameTime;
+//	const float flAbsFrameTime = i::GlobalVars->flAbsFrameTime;
+//	const float flInterpolationAmount = i::GlobalVars->flInterpolationAmount;
+//	const float iTickCount = i::GlobalVars->iTickCount;
+//	const float iFrameCount = i::GlobalVars->iFrameCount;
+//
+//	const Vector vecBackupVelocity = pEntity->GetVelocity();
+//	const Vector vecbackupAbsVelocity = pEntity->GetVecAbsVelocity();
+//	const Vector vecBackupAbsOrigin = pEntity->GetAbsOrigin();
+//	const int iBackupFlags = pEntity->GetFlags();
+//	const int iBackupEFlags = pEntity->GetEFlags();
+//	const float flBackupDuckAmount = pEntity->GetDuckAmount();
+//	const float flBackupLowerBodyYaw = pEntity->GetLowerBodyYaw();
+//	const float flBackupThirdpersonRecoil = pEntity->GetThirdpersonRecoil();
+//
+//	pEntity->GetEFlags() &= ~(EFL_DIRTY_ABSVELOCITY | EFL_DIRTY_ABSTRANSFORM);
+//
+//	ICollideable* pCollideable = pEntity->GetCollideable();
+//	if (pCollideable) {
+//
+//		pEntity->UpdateCollisionBounds();
+//		pCurrentRecord->vecMins = pCollideable->OBBMins();
+//		pCurrentRecord->vecMaxs = pCollideable->OBBMaxs();
+//	}
+//
+//	int iActivityTick = 0;
+//	int iActivityType = 0;
+//	CAnimationLayer* pJumpingLayer = nullptr;
+//	CAnimationLayer* pLandingLayer = nullptr;
+//
+//	if (iSimulationTicks <= 1 || !pPrevious) {
+//
+//		int iSimulatedCount = TIME_TO_TICKS(pCurrentRecord->flSimulationTime);
+//
+//		i::GlobalVars->flCurrentTime = pCurrentRecord->flSimulationTime;
+//		i::GlobalVars->flRealTime = pCurrentRecord->flSimulationTime;
+//		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
+//		i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
+//		i::GlobalVars->iFrameCount = iSimulatedCount;
+//		i::GlobalVars->iTickCount = iSimulatedCount;
+//		i::GlobalVars->flInterpolationAmount = 0.f;
+//
+//		pEntity->SetAbsOrigin(pCurrentRecord->vecOrigin);
+//		pEntity->GetVelocity() = pCurrentRecord->vecVelocity;
+//		pEntity->GetVecAbsVelocity() = pCurrentRecord->vecVelocity;
+//
+//		pState->iLastUpdateFrame = 0;
+//		if (pState->flLastUpdateTime == i::GlobalVars->flCurrentTime)
+//			pState->flLastUpdateTime = i::GlobalVars->flCurrentTime + i::GlobalVars->flIntervalPerTick;
+//
+//		pState->pEntity = pEntity;
+//		pState->pLastActiveWeapon = pEntity->GetWeapon();
+//
+//		for (int iLayer = 0; iLayer < ANIMATION_LAYER_COUNT; iLayer++)
+//		{
+//			CAnimationLayer* pLayer = &pEntity->GetAnimationOverlays()[iLayer];
+//			if (!pLayer)
+//				continue;
+//
+//			pLayer->pOwner = pEntity;
+//		}
+//
+//		bool bClientSideAnimation = pEntity->IsClientSideAnimation();
+//		pEntity->IsClientSideAnimation() = true;
+//
+//		g::bAllowAnimations[pEntity->EntIndex()] = true;
+//		pEntity->UpdateClientSideAnimations();
+//		g::bAllowAnimations[pEntity->EntIndex()] = false;
+//
+//		pEntity->IsClientSideAnimation() = bClientSideAnimation;
+//	}
+//	else {
+//
+//		pJumpingLayer = &pCurrentRecord->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+//		pLandingLayer = &pCurrentRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+//		const CAnimationLayer* pPrevJumpingLayer = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+//		const CAnimationLayer* pPrevLandingLayer = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+//
+//		const int nJumpingActivity = pEntity->GetSequenceActivity(pJumpingLayer->nSequence);
+//		const int nLandingActivity = pEntity->GetSequenceActivity(pLandingLayer->nSequence);
+//
+//		if (nJumpingActivity == ACT_CSGO_JUMP) {
+//			if (pJumpingLayer->flWeight > 0.0f && pJumpingLayer->flPlaybackRate > 0.0f) {
+//				if (pJumpingLayer->flCycle < pPrevJumpingLayer->flCycle) {
+//					pState->flDurationInAir = pJumpingLayer->flCycle / pJumpingLayer->flPlaybackRate;
+//					if (pState->flDurationInAir > 0.0f) {
+//						iActivityTick = TIME_TO_TICKS(pCurrentRecord->flSimulationTime - pState->flDurationInAir) + 1;
+//						iActivityType = 1;
+//					}
+//				}
+//			}
+//		}
+//
+//		if (nLandingActivity == ACT_CSGO_LAND_LIGHT || nLandingActivity == ACT_CSGO_LAND_HEAVY) {
+//			if (pLandingLayer->flWeight > 0.0f && pPrevLandingLayer->flWeight <= 0.0f) {
+//				if (pLandingLayer->flCycle > pPrevLandingLayer->flCycle) {
+//					float flLandDuration = pLandingLayer->flCycle / pLandingLayer->flPlaybackRate;
+//					if (flLandDuration > 0.0f) {
+//						iActivityTick = TIME_TO_TICKS(pCurrentRecord->flSimulationTime - flLandDuration) + 1;
+//						iActivityType = 2;
+//
+//						float flDurationInAir = (pJumpingLayer->flCycle - pLandingLayer->flCycle);
+//						if (flDurationInAir < 0.0f)
+//							flDurationInAir += 1.0f;
+//
+//						pState->flDurationInAir = flDurationInAir / pJumpingLayer->flPlaybackRate;
+//					}
+//				}
+//			}
+//		}
+//	}
+//
+//	float flActivityPlayback = 0.0f;
+//	if (pJumpingLayer && pLandingLayer) {
+//
+//		switch (iActivityType) {
+//
+//		case 1:
+//			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(pJumpingLayer, pJumpingLayer->nSequence);
+//			break;
+//
+//		case 2:
+//			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(pLandingLayer, pLandingLayer->nSequence);
+//			break;
+//		}
+//	}
+//
+//	if (pPrevious) {
+//
+//		for (int tick = 1; tick <= iSimulationTicks; tick++) {
+//
+//			float flSimulationTime = pPrevious->flSimulationTime + TICKS_TO_TIME(tick);
+//			int iCurrentSimulationTick = TIME_TO_TICKS(flSimulationTime);
+//
+//			i::GlobalVars->flCurrentTime = pCurrentRecord->flSimulationTime;
+//			i::GlobalVars->flRealTime = pCurrentRecord->flSimulationTime;
+//			i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
+//			i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
+//			i::GlobalVars->iFrameCount = iCurrentSimulationTick;
+//			i::GlobalVars->iTickCount = iCurrentSimulationTick;
+//			i::GlobalVars->flInterpolationAmount = 0.f;
+//
+//			pEntity->GetDuckAmount() = M::AnimationLerp(pPrevious->flDuck, pCurrentRecord->flDuck, tick, iSimulationTicks);
+//			pEntity->GetLowerBodyYaw() = pPrevious->flLowerBodyYawTarget;
+//			pEntity->GetEyeAngles() = pPrevious->vecEyeAngles;
+//
+//			if (!pPrevious->vecOrigin.IsZero() && !pCurrentRecord->vecOrigin.IsZero()) {
+//				if (!pCurrentRecord->bBreakingLagcompensation) {
+//					pEntity->GetVecOrigin() = M::AnimationLerp(pPrevious->vecOrigin, pCurrentRecord->vecOrigin, tick, iSimulationTicks);
+//					pEntity->SetAbsOrigin(pEntity->GetVecOrigin());
+//				}
+//				else {
+//					pEntity->GetVecOrigin() = pCurrentRecord->vecOrigin;
+//					pEntity->SetAbsOrigin(pCurrentRecord->vecOrigin);
+//				}
+//			}
+//
+//			if (flSimulationTime < pCurrentRecord->flSimulationTime) {
+//
+//				if (pCurrentRecord->bDidShot) {
+//					pEntity->GetEyeAngles() = pCurrentRecord->vecEyeAngles;
+//					pEntity->GetLowerBodyYaw() = pCurrentRecord->flLowerBodyYawTarget;
+//				}
+//
+//				if (iActivityType != 0) {
+//					if (iCurrentSimulationTick == iActivityTick) {
+//						int nLayer = ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL;
+//						if (iActivityType == 2)
+//							nLayer = ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB;
+//
+//						pEntity->GetAnimationOverlays()[nLayer].flCycle = 0.0f;
+//						pEntity->GetAnimationOverlays()[nLayer].flWeight = 0.0f;
+//						pEntity->GetAnimationOverlays()[nLayer].flPlaybackRate = flActivityPlayback;
+//
+//						if (iActivityType == 1)
+//							pEntity->GetFlags() &= ~FL_ONGROUND;
+//						else if (iActivityType == 2)
+//							pEntity->GetFlags() |= FL_ONGROUND;
+//					}
+//					else if (iCurrentSimulationTick < iActivityTick) {
+//
+//						if (iActivityType == 1)
+//							pEntity->GetFlags() |= FL_ONGROUND;
+//						else if (iActivityType == 2)
+//							pEntity->GetFlags() &= ~FL_ONGROUND;
+//					}
+//				}
+//			}
+//			else {
+//				pEntity->GetFlags() = pCurrentRecord->iFlags;
+//				pEntity->GetDuckAmount() = pCurrentRecord->flDuck;
+//				pEntity->GetLowerBodyYaw() = pCurrentRecord->flLowerBodyYawTarget;
+//				pEntity->GetEyeAngles() = pCurrentRecord->vecEyeAngles;
+//			}
+//
+//			Vector& vecVelocity = pEntity->GetVelocity();
+//			vecVelocity.x = M::AnimationLerp(pPrevious->vecVelocity.x, pCurrentRecord->vecVelocity.x, tick, iSimulationTicks);
+//			vecVelocity.y = M::AnimationLerp(pPrevious->vecVelocity.y, pCurrentRecord->vecVelocity.y, tick, iSimulationTicks);
+//			pEntity->m_vecAbsVelocity() = vecVelocity;
+//
+//			pState->iLastUpdateFrame = 0;
+//			if (pState->flLastUpdateTime == i::GlobalVars->flCurrentTime)
+//				pState->flLastUpdateTime = i::GlobalVars->flCurrentTime + i::GlobalVars->flIntervalPerTick;
+//
+//			pState->pEntity = pEntity;
+//			pState->pLastActiveWeapon = pEntity->GetWeapon() ? pEntity->GetWeapon() : pState->pLastActiveWeapon;
+//
+//			for (int iLayer = 0; iLayer < ANIMATION_LAYER_COUNT; iLayer++)
+//			{
+//				CAnimationLayer* pLayer = &pEntity->GetAnimationOverlays()[iLayer];
+//				if (!pLayer)
+//					continue;
+//
+//				pLayer->pOwner = pEntity;
+//			}
+//
+//			bool bClientSideAnimation = pEntity->IsClientSideAnimation();
+//			pEntity->IsClientSideAnimation() = true;
+//
+//			g::bAllowAnimations[pEntity->EntIndex()] = true;
+//			pEntity->UpdateClientSideAnimations();
+//			g::bAllowAnimations[pEntity->EntIndex()] = false;
+//
+//			pEntity->IsClientSideAnimation() = bClientSideAnimation;
+//		}
+//	}
+//
+//	pEntity->SetAnimationLayers(pCurrentRecord->pLayers);
+//
+//	pEntity->SetAbsOrigin(vecBackupAbsOrigin);
+//
+//	pCurrentRecord->vecAbsAngles = Vector(0.0f, pState->flGoalFeetYaw, 0.0f);
+//
+//	float flAimMatrixWidthRange = M::Lerp(std::clamp(pEntity->AnimState()->flRunningSpeed, 0.0f, 1.0f), 1.0f, M::Lerp(pEntity->AnimState()->flWalkToRunTransition, 0.8f, 0.5f));
+//	if (pEntity->AnimState()->flDuckAmount > 0)
+//		flAimMatrixWidthRange = M::Lerp(pEntity->AnimState()->flDuckAmount * std::clamp(pEntity->AnimState()->flDuckingSpeed, 0.0f, 1.0f), flAimMatrixWidthRange, 0.5f);
+//
+//	float flDesyncDelta = flAimMatrixWidthRange * pEntity->AnimState()->flMaxBodyYaw;
+//
+//	pEntity->GetPoseParameters(pCurrentRecord->flPoses);
+//
+//	if (pEntity->GetTeam() != g::pLocal->GetTeam()) {
+//
+//		Resolver(pEntity, pCurrentRecord, pPrevious);
+//		//SetGoalFeetYaw(pEntity, pCurrentRecord, pPrevious, GetVelocityLengthXY(pEntity));
+//		pCurrentRecord->pEntity->SetupBonesFix(pCurrentRecord->pEntity, Interpolated | VisualAdjustment, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatricies[VISUAL]);
+//		pCurrentRecord->pEntity->SetBoneCache(pCurrentRecord->pMatricies[VISUAL]);
+//
+//		if (cfg::rage::enable) {
+//			pCurrentRecord->pEntity->SetupBonesFix(pCurrentRecord->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pCurrentRecord->pMatricies[RESOLVE]);
+//			GenerateSafePointMatricies(pCurrentRecord->pEntity, pCurrentRecord);
+//		}
+//	}
+//
+//	pEntity->GetVelocity() = vecBackupVelocity;
+//	pEntity->GetVecAbsVelocity() = vecbackupAbsVelocity;
+//	pEntity->SetAbsOrigin(vecBackupAbsOrigin);
+//	pEntity->GetFlags() = iBackupFlags;
+//	pEntity->GetEFlags() = iBackupEFlags;
+//	pEntity->GetDuckAmount() = flBackupDuckAmount;
+//	pEntity->GetLowerBodyYaw() = flBackupLowerBodyYaw;
+//	pEntity->GetThirdpersonRecoil() = flBackupThirdpersonRecoil;
+//
+//	i::GlobalVars->flCurrentTime = flCurrentTime;
+//	i::GlobalVars->flRealTime = flRealTime;
+//	i::GlobalVars->flFrameTime = flFrameTime;
+//	i::GlobalVars->flAbsFrameTime = flAbsFrameTime;
+//	i::GlobalVars->flInterpolationAmount = flInterpolationAmount;
+//	i::GlobalVars->iTickCount = iTickCount;
+//	i::GlobalVars->iFrameCount = iFrameCount;
+//}
 
-	if (!pEntity || !pLog || pLog->pRecord.empty())
-		return;
+Vector DeterminePlayerVelocity(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, CAnimState* pState) {
 
-	CAnimState* pState = pEntity->AnimState();
-	std::deque<Lagcompensation::LagRecord_t>* pRecords = &pLog->pRecord;
+	/* Prepare data once */
+	if (!pPrevious)
+	{
+		const float flVelLength = pRecord->vecVelocity.Length();
+		if (flVelLength > pRecord->flMaxSpeed)
+			pRecord->vecVelocity *= pRecord->flMaxSpeed / flVelLength;
 
-	int iSimulationTicks = 0;
-	float flMaxSpeed = 0.f;
-	Lagcompensation::LagRecord_t* pPrevious = nullptr;
-	Lagcompensation::LagRecord_t* pCurrent = &pRecords->front();
-
-	if (!pState || !pCurrent || !pCurrent->pLayers)
-		return;
-
-	pCurrent->bBreakingLagcompensation = lagcomp.IsBreakingLagcompensation(pCurrent);
-
-	if (pRecords->size() > 2) {
-		pPrevious = &pRecords->at(1);
-		if (pPrevious->bDormant)
-			pPrevious = nullptr;
-
-		if (pPrevious != nullptr) {
-			const CAnimationLayer* pAliveLoop = &pCurrent->pLayers[ANIMATION_LAYER_ALIVELOOP];
-			const CAnimationLayer* pPreviousAliveLoop = &pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP];
-
-
-			int iTicksAnimated = TIME_TO_TICKS(pCurrent->flSimulationTime - pCurrent->flOldSimulationTime);
-			if (pAliveLoop->flPlaybackRate == pPreviousAliveLoop->flPlaybackRate)
-				iTicksAnimated = (pAliveLoop->flCycle - pPreviousAliveLoop->flCycle) / (pAliveLoop->flPlaybackRate * i::GlobalVars->flIntervalPerTick);
-			else
-				iTicksAnimated = ((((pAliveLoop->flCycle / pAliveLoop->flPlaybackRate) + ((1.0f - pPreviousAliveLoop->flCycle) / pPreviousAliveLoop->flPlaybackRate)) / i::GlobalVars->flIntervalPerTick));
-
-			iSimulationTicks = min(max(iTicksAnimated, TIME_TO_TICKS(pCurrent->flSimulationTime - pCurrent->flOldSimulationTime)), 17);
-
-			if (TIME_TO_TICKS(pCurrent->flSimulationTime - pCurrent->flOldSimulationTime) > 17)
-				pPrevious = nullptr;
-		}
+		return pRecord->vecVelocity;
 	}
 
-	if (!pPrevious) {
-		const float flVelLength = pCurrent->vecVelocity.Length();
-		if (CBaseCombatWeapon* pWeapon = pCurrent->pEntity->GetWeapon(); pWeapon != nullptr) {
-			if (flMaxSpeed = pCurrent->pEntity->IsScoped() ? pWeapon->GetCSWpnData()->flMaxSpeed[0] : pWeapon->GetCSWpnData()->flMaxSpeed[1]; flVelLength > flMaxSpeed)
-				pCurrent->vecVelocity *= flMaxSpeed / flVelLength;
-		}
-	}
-	else {
+	/* Define const */
+	static CConVar* sv_maxspeed = i::ConVar->FindVar("sv_maxspeed");
+	const float flMaxSpeed = sv_maxspeed->GetFloat();
 
-		static CConVar* sv_maxspeed = i::ConVar->FindVar("sv_maxspeed");
-		const float flMaxSpeed = sv_maxspeed->GetFloat();
+	/* Get animation layers */
+	const CAnimationLayer* AliveLoop = &pRecord->pLayers[ANIMATION_LAYER_ALIVELOOP];
+	const CAnimationLayer* PrevAliveLoop = &pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP];
+	const CAnimationLayer* Movement = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
+	const CAnimationLayer* PrevMovement = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
+	const CAnimationLayer* Landing = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	const CAnimationLayer* PrevLanding = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
 
-		const CAnimationLayer* pAliveLoop = &pCurrent->pLayers[ANIMATION_LAYER_ALIVELOOP];
-		const CAnimationLayer* pPrevAliveLoop = &pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP];
+	/* Recalculate velocity using origin delta */
+	pRecord->vecVelocity = (pRecord->vecOrigin - pPrevious->vecOrigin) * (1.0f / TICKS_TO_TIME(pRecord->iChoked));
 
-		const CAnimationLayer* pMovement = &pCurrent->pLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
-		const CAnimationLayer* pPrevMovement = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
-		const CAnimationLayer* pLanding = &pCurrent->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
-		const CAnimationLayer* pPrevLanding = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	/* Check PlaybackRate */
+	if (Movement->flPlaybackRate < 0.00001f)
+		pRecord->vecVelocity.x = pRecord->vecVelocity.y = 0.0f;
+	else
+	{
+		/* Compute velocity using flSpeedAsPortionOfRunTopSpeed */
+		float flWeight = AliveLoop->flWeight;
+		if (flWeight < 1.0f)
+		{
+			/* Check PlaybackRate */
+			if (AliveLoop->flPlaybackRate == PrevAliveLoop->flPlaybackRate)
+			{
+				/* Check Sequence */
+				if (AliveLoop->nSequence == PrevAliveLoop->nSequence)
+				{
+					/* Very important cycle check */
+					if (AliveLoop->flCycle > PrevAliveLoop->flCycle)
+					{
+						/* Check weapon */
+						if (pState->pActiveWeapon == pEntity->GetWeapon())
+						{
+							/* Get flSpeedAsPortionOfRunTopSpeed */
+							float flSpeedAsPortionOfRunTopSpeed = ((1.0f - flWeight) / 2.8571432f) + 0.55f;
 
-		pCurrent->vecVelocity = (pCurrent->vecOrigin - pPrevious->vecOrigin) * (1.0f / TICKS_TO_TIME(iSimulationTicks));
-		float flAnimationVelocity = 0.f;
-		int iVelocityMode = 0;
-
-		if (pMovement->flPlaybackRate < 0.00001f)
-			pCurrent->vecVelocity.x = pCurrent->vecVelocity.y = 0.0f;
-		else {
-			float flWeight = pAliveLoop->flWeight;
-			if (flWeight < 1.0f) {
-				if (pAliveLoop->flPlaybackRate == pPrevAliveLoop->flPlaybackRate) {
-					if (pAliveLoop->nSequence == pPrevAliveLoop->nSequence) {
-						if (pAliveLoop->flCycle > pPrevAliveLoop->flCycle) {
-							if (pState->pActiveWeapon == pEntity->GetWeapon()) {
-								float m_flSpeedAsPortionOfRunTopSpeed = ((1.0f - flWeight) / 2.8571432f) + 0.55f;
-
-								if (m_flSpeedAsPortionOfRunTopSpeed > 0.55f && m_flSpeedAsPortionOfRunTopSpeed < 0.9f) {
-									flAnimationVelocity = m_flSpeedAsPortionOfRunTopSpeed * flMaxSpeed;
-									iVelocityMode = 2;
-								}
-								else if (m_flSpeedAsPortionOfRunTopSpeed > 0.9f) {
-									flAnimationVelocity = pCurrent->vecVelocity.Length2D();
-								}
+							/* Check flSpeedAsPortionOfRunTopSpeed bounds ( from 55% to 90% from the speed ) */
+							if (flSpeedAsPortionOfRunTopSpeed > 0.55f && flSpeedAsPortionOfRunTopSpeed < 0.9f)
+							{
+								/* Compute velocity */
+								pRecord->flAnimationVelocity = flSpeedAsPortionOfRunTopSpeed * pRecord->flMaxSpeed;
+								pRecord->nVelocityMode = EFixedVelocity::AliveLoopLayer;
+							}
+							else if (flSpeedAsPortionOfRunTopSpeed > 0.9f)
+							{
+								/* Compute velocity */
+								pRecord->flAnimationVelocity = pRecord->vecVelocity.Length2D();
 							}
 						}
 					}
 				}
 			}
+		}
 
-			if (flAnimationVelocity <= 0.0f) {
-				float flWeight = pMovement->flWeight;
-				if (flWeight > 0.1f && flWeight < 0.9f) {
-					if (pLanding->flWeight <= 0.0f) {
-						if (flWeight > pPrevMovement->flWeight) {
-							if (pCurrent->pLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence == pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence) {
-								if (pMovement->nSequence == pPrevMovement->nSequence) {
-									if (pLanding->nSequence == pPrevLanding->nSequence) {
-										if (pCurrent->pLayers[ANIMATION_LAYER_ADJUST].nSequence == pPrevious->pLayers[ANIMATION_LAYER_ADJUST].nSequence) {
-											if (pCurrent->iFlags & FL_ONGROUND) {
-												float flSpeedModifier = 1.0f;
-												if (pCurrent->iFlags & FL_DUCKING)
-													flSpeedModifier = CS_PLAYER_SPEED_DUCK_MODIFIER;
-												else if (pCurrent->bFakewalking)
-													flSpeedModifier = CS_PLAYER_SPEED_WALK_MODIFIER;
+		/* Compute velocity using Movement ( 6 ) weight  */
+		if (pRecord->flAnimationVelocity <= 0.0f)
+		{
+			/* Check Weight bounds from 10% to 90% from the speed */
+			float flWeight = Movement->flWeight;
+			if (flWeight > 0.1f && flWeight < 0.9f)
+			{
+				/* Skip on land */
+				if (Landing->flWeight <= 0.0f)
+				{
+					/* Check Accelerate */
+					if (flWeight > PrevMovement->flWeight)
+					{
+						/* Skip on direction switch */
+						if (pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence == pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence)
+						{
+							/* Check move sequence */
+							if (Movement->nSequence == PrevMovement->nSequence)
+							{
+								/* Check land sequence */
+								if (Landing->nSequence == PrevLanding->nSequence)
+								{
+									/* Check stand sequence */
+									if (pRecord->pLayers[ANIMATION_LAYER_ADJUST].nSequence == pPrevious->pLayers[ANIMATION_LAYER_ADJUST].nSequence)
+									{
+										/* Check Flags */
+										if (pRecord->iFlags & FL_ONGROUND)
+										{
+											/* Compute MaxSpeed modifier */
+											float flSpeedModifier = 1.0f;
+											if (pRecord->iFlags & FL_DUCKING)
+												flSpeedModifier = CS_PLAYER_SPEED_DUCK_MODIFIER;
+											else if (pRecord->bFakewalking)
+												flSpeedModifier = CS_PLAYER_SPEED_WALK_MODIFIER;
 
-												if (flSpeedModifier < 1.0f) {
-													flAnimationVelocity = (flWeight * (flMaxSpeed * flSpeedModifier));
-													iVelocityMode = 1;
-												}
+											/* Compute Velocity ( THIS CODE ONLY WORKS IN DUCK AND WALK ) */
+											if (flSpeedModifier < 1.0f)
+											{
+												pRecord->flAnimationVelocity = (flWeight * (pRecord->flMaxSpeed * flSpeedModifier));
+												pRecord->nVelocityMode = EFixedVelocity::MovementLayer;
 											}
 										}
 									}
@@ -1423,30 +1843,243 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 				}
 			}
 		}
+	}
 
-		if (flAnimationVelocity > 0.0f && pCurrent->vecVelocity.Length2D() > 0) {
-			const float flModifier = flAnimationVelocity / pCurrent->vecVelocity.Length2D();
-			pCurrent->vecVelocity.x *= flModifier;
-			pCurrent->vecVelocity.y *= flModifier;
+	/* Compute velocity from Record->flAnimationVelocity floating point */
+	if (pRecord->flAnimationVelocity > 0.0f)
+	{
+		const float flModifier = pRecord->flAnimationVelocity / pRecord->vecVelocity.Length2D();
+		pRecord->vecVelocity.x *= flModifier;
+		pRecord->vecVelocity.y *= flModifier;
+	}
+
+	/* Prepare data once */
+	const float flVelLength = pRecord->vecVelocity.Length();
+
+	/* Clamp velocity if its out bounds */
+	if (flVelLength > pRecord->flMaxSpeed)
+		pRecord->vecVelocity *= pRecord->flMaxSpeed / flVelLength;
+
+	return pRecord->vecVelocity;
+}
+
+int DetermineAnimationCycle(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
+
+	const CAnimationLayer* pAliveLoop = &pRecord->pLayers[ANIMATION_LAYER_ALIVELOOP];
+	const CAnimationLayer* pPrevAliveLoop = &pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP];
+
+	/* Get ticks animated on the server ( by default it's simtime delta ) */
+	int nTicksAnimated = pRecord->iChoked;
+	if (pAliveLoop->flPlaybackRate == pPrevAliveLoop->flPlaybackRate)
+		nTicksAnimated = (pAliveLoop->flCycle - pPrevAliveLoop->flCycle) / (pAliveLoop->flPlaybackRate * i::GlobalVars->flIntervalPerTick);
+	else
+		nTicksAnimated = ((((pAliveLoop->flCycle / pAliveLoop->flPlaybackRate) + ((1.0f - pPrevAliveLoop->flCycle) / pPrevAliveLoop->flPlaybackRate)) / i::GlobalVars->flIntervalPerTick));
+
+	return min(max(nTicksAnimated, pRecord->iChoked), 17);
+}
+
+Lagcompensation::LagRecord_t* SetupData(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog) {
+
+	if (pRecord->bFirstAfterDormant)
+		return nullptr;
+
+	if (pLog->pRecord.size() < 2)
+		return nullptr;
+
+	auto* pPrevious = &pLog->pRecord.at(1);
+	pPrevious->iChoked = DetermineAnimationCycle(pEntity, pRecord, pPrevious);
+	if (TIME_TO_TICKS(pRecord->flSimulationTime - pPrevious->flSimulationTime) > 17)
+		return nullptr;
+
+	return pPrevious;
+}
+
+void CopyRecordData(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, CAnimState* pState) {
+
+	Lagcompensation::LagRecord_t* pForceRecord = pRecord;
+	if (pPrevious)
+		pForceRecord = pPrevious;
+
+	CAnimationLayer* pStrafeLayer = &pForceRecord->pLayers[7];
+	pState->flStrafeChangeCycle = pStrafeLayer->flCycle;
+	pState->flStrafeChangeWeight = pStrafeLayer->flWeight;
+	pState->nStrafeSequence = pStrafeLayer->nSequence;
+	pState->flFeetCycle = pForceRecord->pLayers[6].flCycle;
+	pState->flMoveWeight = pForceRecord->pLayers[6].flWeight;
+	pState->flAccelerationWeight = pForceRecord->pLayers[12].flWeight;
+	pEntity->SetAnimationLayers(pForceRecord->pLayers);
+}
+
+void UpdateCollision(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
+
+	ICollideable* pCollideable = pEntity->GetCollideable();
+	if (!pCollideable)
+		return;
+
+	pEntity->UpdateCollisionBounds();
+	pRecord->vecMins = pCollideable->OBBMins();
+	pRecord->vecMaxs = pCollideable->OBBMaxs();
+}
+
+void SimulatePlayerActivity(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
+
+	const CAnimationLayer* pJumpingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	const CAnimationLayer* pLandingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	const CAnimationLayer* pPrevJumpingLayer = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	const CAnimationLayer* pPrevLandingLayer = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+
+	const int nJumpingActivity = pEntity->GetSequenceActivity(pJumpingLayer->nSequence);
+	const int nLandingActivity = pEntity->GetSequenceActivity(pLandingLayer->nSequence);
+
+	if (nJumpingActivity == ACT_CSGO_JUMP) {
+		if (pJumpingLayer->flWeight > 0.0f && pJumpingLayer->flPlaybackRate > 0.0f) {
+			if (pJumpingLayer->flCycle < pPrevJumpingLayer->flCycle) {
+				pRecord->flDurationInAir = pJumpingLayer->flCycle / pJumpingLayer->flPlaybackRate;
+				if (pRecord->flDurationInAir > 0.0f) {
+					pRecord->iActivityTick = TIME_TO_TICKS(pRecord->flSimulationTime - pRecord->flDurationInAir) + 1;
+					pRecord->iActivityType = Jump;
+				}
+			}
 		}
-
-		const float flVelLength = pCurrent->vecVelocity.Length();
-
-		if (flVelLength > flMaxSpeed)
-			pCurrent->vecVelocity *= flMaxSpeed / flVelLength;
 	}
 
-	if (pPrevious) {
+	if (nLandingActivity == ACT_CSGO_LAND_LIGHT || nLandingActivity == ACT_CSGO_LAND_HEAVY) {
+		if (pLandingLayer->flWeight > 0.0f && pPrevLandingLayer->flWeight <= 0.0f) {
+			if (pLandingLayer->flCycle > pPrevLandingLayer->flCycle) {
+				float flLandDuration = pLandingLayer->flCycle / pLandingLayer->flPlaybackRate;
+				if (flLandDuration > 0.0f) {
 
-		CAnimationLayer* pStrafeLayer = &pPrevious->pLayers[7];
-		pState->flStrafeChangeCycle = pStrafeLayer->flCycle;
-		pState->flStrafeChangeWeight = pStrafeLayer->flWeight;
-		pState->nStrafeSequence = pStrafeLayer->nSequence;
-		pState->flFeetCycle = pPrevious->pLayers[6].flCycle;
-		pState->flMoveWeight = pPrevious->pLayers[6].flWeight;
-		pState->flAccelerationWeight = pPrevious->pLayers[12].flWeight;
-		pEntity->SetAnimationLayers(pPrevious->pLayers);
+					pRecord->iActivityTick = TIME_TO_TICKS(pRecord->flSimulationTime - flLandDuration) + 1;
+					pRecord->iActivityType = Land;
+
+					float flDurationInAir = (pJumpingLayer->flCycle - pLandingLayer->flCycle);
+					if (flDurationInAir < 0.0f)
+						flDurationInAir += 1.0f;
+
+					pRecord->flDurationInAir = flDurationInAir / pJumpingLayer->flPlaybackRate;
+				}
+			}
+		}
 	}
+}
+
+float ComputeActivityPlayback(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
+
+	CAnimationLayer* pJumpingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	CAnimationLayer* pLandingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+
+	float flActivityPlayback = 0.0f;
+	if (pJumpingLayer && pLandingLayer) {
+
+		switch (pRecord->iActivityType) {
+
+		case 1:
+			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(pJumpingLayer, pJumpingLayer->nSequence);
+			break;
+
+		case 2:
+			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(pLandingLayer, pLandingLayer->nSequence);
+			break;
+		}
+	}
+	return flActivityPlayback;
+}
+
+void HandleDormancyLeaving(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, CAnimState* pState) {
+
+	/* Get animation layers */
+	const CAnimationLayer* JumpingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	const CAnimationLayer* LandingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+
+	/* Final flLastUpdateTime */
+	float flLastUpdateTime = pRecord->flSimulationTime - i::GlobalVars->flIntervalPerTick;
+
+	/* Fix animation state timing */
+	if (pRecord->iFlags & FL_ONGROUND) /* On ground */
+	{
+		/* Use information from landing */
+		int nActivity = pEntity->GetSequenceActivity(LandingLayer->nSequence);
+		if (nActivity == ACT_CSGO_LAND_HEAVY || nActivity == ACT_CSGO_LAND_LIGHT)
+		{
+			/* Compute land duration */
+			float flLandDuration = LandingLayer->flCycle / LandingLayer->flPlaybackRate;
+
+			/* Check landing time */
+			float flLandingTime = pRecord->flSimulationTime - flLandDuration;
+			if (flLandingTime == flLastUpdateTime)
+			{
+				pState->bOnGround = true;
+				pState->bHitGroundAnimation = true;
+				pState->flHitGroundCycle = 0.0f;
+			}
+			else if (flLandingTime - i::GlobalVars->flIntervalPerTick == flLastUpdateTime)
+			{
+				pState->bOnGround = false;
+				pState->bHitGroundAnimation = false;
+				pState->flHitGroundCycle = 0.0f;
+			}
+
+			/* Determine duration in air */
+			float flDurationInAir = (JumpingLayer->flCycle - LandingLayer->flCycle);
+			if (flDurationInAir < 0.0f)
+				flDurationInAir += 1.0f;
+
+			/* Set time in air */
+			pState->flDurationInAir = flDurationInAir / JumpingLayer->flPlaybackRate;
+
+			/* Check bounds.*/
+			/* There's two conditions to let this data be useful: */
+			/* It's useful if player has landed after the latest client animation update */
+			/* It's useful if player has landed before the previous tick */
+			if (flLandingTime < flLastUpdateTime && flLandingTime > pState->flLastUpdateTime)
+				flLastUpdateTime = flLandingTime;
+		}
+	}
+	else /* In air */
+	{
+		/* Use information from jumping */
+		int nActivity = pEntity->GetSequenceActivity(JumpingLayer->nSequence);
+		if (nActivity == ACT_CSGO_JUMP)
+		{
+			/* Compute duration in air */
+			float flDurationInAir = JumpingLayer->flCycle / JumpingLayer->flPlaybackRate;
+
+			/* Check landing time */
+			float flJumpingTime = pRecord->flSimulationTime - flDurationInAir;
+			if (flJumpingTime <= flLastUpdateTime)
+				pState->bOnGround = false;
+			else if (flJumpingTime - i::GlobalVars->flIntervalPerTick)
+				pState->bOnGround = true;
+
+			/* Check bounds.*/
+			/* There's two conditions to let this data be useful: */
+			/* It's useful if player has jumped after the latest client animation update */
+			/* It's useful if player has jumped before the previous tick */
+			if (flJumpingTime < flLastUpdateTime && flJumpingTime > pState->flLastUpdateTime)
+				flLastUpdateTime = flJumpingTime;
+
+			/* Set time in air */
+			pState->flDurationInAir = flDurationInAir - i::GlobalVars->flIntervalPerTick;
+
+			/* Disable landing */
+			pState->bHitGroundAnimation = false;
+		}
+	}
+
+	/* Set flLastUpdateTime */
+	pState->flLastUpdateTime = flLastUpdateTime;
+}
+
+void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog) {
+
+	CAnimState* pState = pEntity->AnimState();
+	Lagcompensation::LagRecord_t* pPrevious = SetupData(pEntity, pRecord, pLog);
+	
+	pRecord->vecVelocity = DeterminePlayerVelocity(pEntity, pRecord, pPrevious, pState);
+	if (pRecord->bFirstAfterDormant)
+		HandleDormancyLeaving(pEntity, pRecord, pState);
+
+	CopyRecordData(pEntity, pRecord, pPrevious, pState);
 
 	const float flCurrentTime = i::GlobalVars->flCurrentTime;
 	const float flRealTime = i::GlobalVars->flRealTime;
@@ -1467,241 +2100,122 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 
 	pEntity->GetEFlags() &= ~(EFL_DIRTY_ABSVELOCITY | EFL_DIRTY_ABSTRANSFORM);
 
-	ICollideable* pCollideable = pEntity->GetCollideable();
-	if (pCollideable) {
+	UpdateCollision(pEntity, pRecord);
 
-		pEntity->UpdateCollisionBounds();
-		pCurrent->vecMins = pCollideable->OBBMins();
-		pCurrent->vecMaxs = pCollideable->OBBMaxs();
-	}
+	if (pRecord->iChoked <= 1 || !pPrevious) {
 
-	int iActivityTick = 0;
-	int iActivityType = 0;
-	CAnimationLayer* pJumpingLayer = nullptr;
-	CAnimationLayer* pLandingLayer = nullptr;
+		int iSimulatedCount = TIME_TO_TICKS(pRecord->flSimulationTime);
 
-	if (iSimulationTicks <= 1 || !pPrevious) {
-
-		int iSimulatedCount = TIME_TO_TICKS(pCurrent->flSimulationTime);
-
-		i::GlobalVars->flCurrentTime = pCurrent->flSimulationTime;
-		i::GlobalVars->flRealTime = pCurrent->flSimulationTime;
+		i::GlobalVars->flCurrentTime = pRecord->flSimulationTime;
+		i::GlobalVars->flRealTime = pRecord->flSimulationTime;
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
 		i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
 		i::GlobalVars->iFrameCount = iSimulatedCount;
 		i::GlobalVars->iTickCount = iSimulatedCount;
 		i::GlobalVars->flInterpolationAmount = 0.f;
 
-		pEntity->SetAbsOrigin(pCurrent->vecOrigin);
-		pEntity->GetVelocity() = pCurrent->vecVelocity;
-		pEntity->GetVecAbsVelocity() = pCurrent->vecVelocity;
+		pEntity->SetAbsOrigin(pRecord->vecOrigin);
+		pEntity->GetVelocity() = pRecord->vecVelocity;
+		pEntity->GetVecAbsVelocity() = pRecord->vecVelocity;
 
-		pState->iLastUpdateFrame = 0;
-		if (pState->flLastUpdateTime == i::GlobalVars->flCurrentTime)
-			pState->flLastUpdateTime = i::GlobalVars->flCurrentTime + i::GlobalVars->flIntervalPerTick;
-
-		pState->pEntity = pEntity;
-		pState->pLastActiveWeapon = pEntity->GetWeapon();
-
-		for (int iLayer = 0; iLayer < ANIMATION_LAYER_COUNT; iLayer++)
-		{
-			CAnimationLayer* pLayer = &pEntity->GetAnimationOverlays()[iLayer];
-			if (!pLayer)
-				continue;
-
-			pLayer->pOwner = pEntity;
-		}
-
-		bool bClientSideAnimation = pEntity->IsClientSideAnimation();
-		pEntity->IsClientSideAnimation() = true;
-
-		g::bAllowAnimations[pEntity->EntIndex()] = true;
-		pEntity->UpdateClientSideAnimations();
-		g::bAllowAnimations[pEntity->EntIndex()] = false;
-
-		pEntity->IsClientSideAnimation() = bClientSideAnimation;
+		UpdateClientSideAnimations(pEntity, pRecord);
 	}
 	else {
 
-		pJumpingLayer = &pCurrent->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
-		pLandingLayer = &pCurrent->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
-		const CAnimationLayer* pPrevJumpingLayer = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
-		const CAnimationLayer* pPrevLandingLayer = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+		SimulatePlayerActivity(pEntity, pRecord, pPrevious);
 
-		const int nJumpingActivity = pEntity->GetSequenceActivity(pJumpingLayer->nSequence);
-		const int nLandingActivity = pEntity->GetSequenceActivity(pLandingLayer->nSequence);
+		pRecord->flActivityPlayback = ComputeActivityPlayback(pEntity, pRecord);
 
-		if (nJumpingActivity == ACT_CSGO_JUMP) {
-			if (pJumpingLayer->flWeight > 0.0f && pJumpingLayer->flPlaybackRate > 0.0f) {
-				if (pJumpingLayer->flCycle < pPrevJumpingLayer->flCycle) {
-					pState->flDurationInAir = pJumpingLayer->flCycle / pJumpingLayer->flPlaybackRate;
-					if (pState->flDurationInAir > 0.0f) {
-						iActivityTick = TIME_TO_TICKS(pCurrent->flSimulationTime - pState->flDurationInAir) + 1;
-						iActivityType = 1;
-					}
-				}
-			}
-		}
+		for (int iSimulationTick = 1; iSimulationTick <= pRecord->iChoked; iSimulationTick++) {
 
-		if (nLandingActivity == ACT_CSGO_LAND_LIGHT || nLandingActivity == ACT_CSGO_LAND_HEAVY) {
-			if (pLandingLayer->flWeight > 0.0f && pPrevLandingLayer->flWeight <= 0.0f) {
-				if (pLandingLayer->flCycle > pPrevLandingLayer->flCycle) {
-					float flLandDuration = pLandingLayer->flCycle / pLandingLayer->flPlaybackRate;
-					if (flLandDuration > 0.0f) {
-						iActivityTick = TIME_TO_TICKS(pCurrent->flSimulationTime - flLandDuration) + 1;
-						iActivityType = 2;
-
-						float flDurationInAir = (pJumpingLayer->flCycle - pLandingLayer->flCycle);
-						if (flDurationInAir < 0.0f)
-							flDurationInAir += 1.0f;
-
-						pState->flDurationInAir = flDurationInAir / pJumpingLayer->flPlaybackRate;
-					}
-				}
-			}
-		}
-	}
-
-	float flActivityPlayback = 0.0f;
-	if (pJumpingLayer && pLandingLayer) {
-
-		switch (iActivityType) {
-
-		case 1:
-			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(pJumpingLayer, pJumpingLayer->nSequence);
-			break;
-
-		case 2:
-			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(pLandingLayer, pLandingLayer->nSequence);
-			break;
-		}
-	}
-
-	if (pPrevious) {
-
-		for (int tick = 1; tick <= iSimulationTicks; tick++) {
-
-			float flSimulationTime = pPrevious->flSimulationTime + TICKS_TO_TIME(tick);
+			float flSimulationTime = pPrevious->flSimulationTime + TICKS_TO_TIME(iSimulationTick);
 			int iCurrentSimulationTick = TIME_TO_TICKS(flSimulationTime);
 
-			i::GlobalVars->flCurrentTime = pCurrent->flSimulationTime;
-			i::GlobalVars->flRealTime = pCurrent->flSimulationTime;
+			i::GlobalVars->flCurrentTime = flSimulationTime;
+			i::GlobalVars->flRealTime = flSimulationTime;
 			i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
 			i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
 			i::GlobalVars->iFrameCount = iCurrentSimulationTick;
 			i::GlobalVars->iTickCount = iCurrentSimulationTick;
 			i::GlobalVars->flInterpolationAmount = 0.f;
 
-			pEntity->GetDuckAmount() = M::AnimationLerp(pPrevious->flDuck, pCurrent->flDuck, tick, iSimulationTicks);
+			pEntity->GetDuckAmount() = M::AnimationLerp(pPrevious->flDuck, pRecord->flDuck, iSimulationTick, pRecord->iChoked);
 			pEntity->GetLowerBodyYaw() = pPrevious->flLowerBodyYawTarget;
 			pEntity->GetEyeAngles() = pPrevious->vecEyeAngles;
 
-			if (!pPrevious->vecOrigin.IsZero() && !pCurrent->vecOrigin.IsZero()) {
-				if (!pCurrent->bBreakingLagcompensation) {
-					pEntity->GetVecOrigin() = M::AnimationLerp(pPrevious->vecOrigin, pCurrent->vecOrigin, tick, iSimulationTicks);
-					pEntity->SetAbsOrigin(pEntity->GetVecOrigin());
-				}
-				else {
-					pEntity->GetVecOrigin() = pCurrent->vecOrigin;
-					pEntity->SetAbsOrigin(pCurrent->vecOrigin);
-				}
-			}
+			pEntity->GetVecOrigin() = M::AnimationLerp(pPrevious->vecOrigin, pRecord->vecOrigin, iSimulationTick, pRecord->iChoked);
+			pEntity->SetAbsOrigin(pEntity->GetVecOrigin());
 
-			if (flSimulationTime < pCurrent->flSimulationTime) {
+			if (flSimulationTime < pRecord->flSimulationTime) {
 
-				if (pCurrent->bDidShot) {
-					pEntity->GetEyeAngles() = pCurrent->vecEyeAngles;
-					pEntity->GetLowerBodyYaw() = pCurrent->flLowerBodyYawTarget;
+				if (pRecord->bDidShot) {
+
+					if (iCurrentSimulationTick < TIME_TO_TICKS(pRecord->flLastShotTime))
+						pEntity->GetThirdpersonRecoil() = pPrevious->flThirdPersonRecoil;
+					else {
+						pEntity->GetEyeAngles() = pRecord->vecEyeAngles;
+						pEntity->GetLowerBodyYaw() = pRecord->flLowerBodyYawTarget;
+						pEntity->GetThirdpersonRecoil() = pRecord->flThirdPersonRecoil;
+					}
 				}
 
-				if (iActivityType != 0) {
-					if (iCurrentSimulationTick == iActivityTick) {
+				if (pRecord->iActivityType != NoActivity) {
+					if (iCurrentSimulationTick == pRecord->iActivityTick) {
+
 						int nLayer = ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL;
-						if (iActivityType == 2)
+						if (pRecord->iActivityType == Land)
 							nLayer = ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB;
 
 						pEntity->GetAnimationOverlays()[nLayer].flCycle = 0.0f;
 						pEntity->GetAnimationOverlays()[nLayer].flWeight = 0.0f;
-						pEntity->GetAnimationOverlays()[nLayer].flPlaybackRate = flActivityPlayback;
+						pEntity->GetAnimationOverlays()[nLayer].flPlaybackRate = pRecord->flActivityPlayback;
 
-						if (iActivityType == 1)
+						if (pRecord->iActivityType == Jump)
 							pEntity->GetFlags() &= ~FL_ONGROUND;
-						else if (iActivityType == 2)
+						else if (pRecord->iActivityType == Land)
 							pEntity->GetFlags() |= FL_ONGROUND;
 					}
-					else if (iCurrentSimulationTick < iActivityTick) {
+					else if (iCurrentSimulationTick < pRecord->iActivityTick) {
 
-						if (iActivityType == 1)
+						if (pRecord->iActivityType == Jump)
 							pEntity->GetFlags() |= FL_ONGROUND;
-						else if (iActivityType == 2)
+						else if (pRecord->iActivityType == Land)
 							pEntity->GetFlags() &= ~FL_ONGROUND;
 					}
 				}
 			}
 			else {
-				pEntity->GetFlags() = pCurrent->iFlags;
-				pEntity->GetDuckAmount() = pCurrent->flDuck;
-				pEntity->GetLowerBodyYaw() = pCurrent->flLowerBodyYawTarget;
-				pEntity->GetEyeAngles() = pCurrent->vecEyeAngles;
+				pEntity->GetFlags() = pRecord->iFlags;
+				pEntity->GetDuckAmount() = pRecord->flDuck;
+				pEntity->GetLowerBodyYaw() = pRecord->flLowerBodyYawTarget;
+				pEntity->GetEyeAngles() = pRecord->vecEyeAngles;
 			}
 
 			Vector& vecVelocity = pEntity->GetVelocity();
-			vecVelocity.x = M::AnimationLerp(pPrevious->vecVelocity.x, pCurrent->vecVelocity.x, tick, iSimulationTicks);
-			vecVelocity.y = M::AnimationLerp(pPrevious->vecVelocity.y, pCurrent->vecVelocity.y, tick, iSimulationTicks);
+			vecVelocity.x = M::AnimationLerp(pPrevious->vecVelocity.x, pRecord->vecVelocity.x, iSimulationTick, pRecord->iChoked);
+			vecVelocity.y = M::AnimationLerp(pPrevious->vecVelocity.y, pRecord->vecVelocity.y, iSimulationTick, pRecord->iChoked);
 			pEntity->m_vecAbsVelocity() = vecVelocity;
 
-			pState->iLastUpdateFrame = 0;
-			if (pState->flLastUpdateTime == i::GlobalVars->flCurrentTime)
-				pState->flLastUpdateTime = i::GlobalVars->flCurrentTime + i::GlobalVars->flIntervalPerTick;
-
-			pState->pEntity = pEntity;
-			pState->pLastActiveWeapon = pEntity->GetWeapon() ? pEntity->GetWeapon() : pState->pLastActiveWeapon;
-
-			for (int iLayer = 0; iLayer < ANIMATION_LAYER_COUNT; iLayer++)
-			{
-				CAnimationLayer* pLayer = &pEntity->GetAnimationOverlays()[iLayer];
-				if (!pLayer)
-					continue;
-
-				pLayer->pOwner = pEntity;
-			}
-
-			bool bClientSideAnimation = pEntity->IsClientSideAnimation();
-			pEntity->IsClientSideAnimation() = true;
-
-			g::bAllowAnimations[pEntity->EntIndex()] = true;
-			pEntity->UpdateClientSideAnimations();
-			g::bAllowAnimations[pEntity->EntIndex()] = false;
-
-			pEntity->IsClientSideAnimation() = bClientSideAnimation;
+			UpdateClientSideAnimations(pEntity, pRecord);
 		}
 	}
 
-	pEntity->SetAnimationLayers(pCurrent->pLayers);
+	pEntity->SetAnimationLayers(pRecord->pLayers);
 
 	pEntity->SetAbsOrigin(vecBackupAbsOrigin);
 
-	pCurrent->vecAbsAngles = Vector(0.0f, pState->flGoalFeetYaw, 0.0f);
+	pRecord->vecAbsAngles = Vector(0.0f, pState->flGoalFeetYaw, 0.0f);
 
-	float flAimMatrixWidthRange = M::Lerp(std::clamp(pEntity->AnimState()->flRunningSpeed, 0.0f, 1.0f), 1.0f, M::Lerp(pEntity->AnimState()->flWalkToRunTransition, 0.8f, 0.5f));
-	if (pEntity->AnimState()->flDuckAmount > 0)
-		flAimMatrixWidthRange = M::Lerp(pEntity->AnimState()->flDuckAmount * std::clamp(pEntity->AnimState()->flDuckingSpeed, 0.0f, 1.0f), flAimMatrixWidthRange, 0.5f);
+	pEntity->GetPoseParameters(pRecord->flPoses);
 
-	float flDesyncDelta = flAimMatrixWidthRange * pEntity->AnimState()->flMaxBodyYaw;
+	Resolver(pEntity, pRecord, pPrevious);
 
-	pEntity->GetPoseParameters(pCurrent->flPoses);
+	pRecord->pEntity->SetupBonesFix(pRecord->pEntity, Interpolated | VisualAdjustment, i::GlobalVars->flCurrentTime, pRecord->pMatricies[VISUAL]);
+	//pRecord->pEntity->SetBoneCache(pRecord->pMatricies[VISUAL]);
 
-	if (pEntity->GetTeam() != g::pLocal->GetTeam()) {
-
-		Resolver(pEntity, pCurrent, pPrevious);
-		//SetGoalFeetYaw(pEntity, pCurrent, pPrevious, GetVelocityLengthXY(pEntity));
-		pCurrent->pEntity->SetupBonesFix(pCurrent->pEntity, Interpolated | VisualAdjustment, i::GlobalVars->flCurrentTime, pCurrent->pMatricies[VISUAL]);
-		pCurrent->pEntity->SetBoneCache(pCurrent->pMatricies[VISUAL]);
-
-		if (cfg::rage::enable) {
-			pCurrent->pEntity->SetupBonesFix(pCurrent->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pCurrent->pMatricies[RESOLVE]);
-			GenerateSafePointMatricies(pCurrent->pEntity, pCurrent);
-		}
+	if (cfg::rage::enable) {
+		pRecord->pEntity->SetupBonesFix(pRecord->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pRecord->pMatricies[RESOLVE]);
+		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
 	}
 
 	pEntity->GetVelocity() = vecBackupVelocity;

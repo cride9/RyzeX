@@ -10,6 +10,21 @@
 #define LAG_COMPENSATION_ERROR_EPS_SQR ( 4.0f * 4.0f )
 #pragma endregion
 
+enum EFixedVelocity
+{
+	Unresolved = 0,
+	MovementLayer,
+	AliveLoopLayer,
+	LeanLayer
+};
+
+enum EPlayerActivity
+{
+	NoActivity = 0,
+	Jump = 1,
+	Land = 2
+};
+
 struct SequenceObject_t
 {
 	SequenceObject_t(int iInReliableState, int iOutReliableState, int iSequenceNr, float flCurrentTime)
@@ -93,6 +108,8 @@ public:
 		bool bSideways{};
 		bool bForwards{};
 		bool bDidShot{};
+		bool bRestoreData{};
+		bool bFirstAfterDormant{};
 
 		Vector vecVelocity{};
 		Vector vecAbsVelocity{};
@@ -124,9 +141,17 @@ public:
 		float flSpawnTime{};
 		float flDeltaAngle{};
 		float flEyeYaw{};
+		float flMaxSpeed{};
+		float flAnimationVelocity{};
+		float flDurationInAir{};
+		float flActivityPlayback{};
+		float flThirdPersonRecoil{};
 
 		int iCachedCount{};
 		int iWritableBones{};
+		int nVelocityMode{};
+		int iActivityTick{};
+		int iActivityType{};
 
 		int iFlags{};
 		int iEFlags{};
@@ -151,29 +176,38 @@ public:
 	struct AnimationInfo_t
 	{
 		CBaseEntity* pEntity;
+
+		bool bLeftDormancy{};
+
 		int iLastUpdateTick;
 		int iLastValid;
 		int iFirstValid = 32;
-		float flSpawntime;
-		std::deque<Lagcompensation::LagRecord_t> pRecord;
-
-		// resolve data.
 		int iShots;
-		int iMissedShots;
+		int iMissedShots; 
+		int iWalkToRunTransitionState;
+		int iDesyncSide;
+
 		float flTimeSinceLegit;
 		float flTimeSinceNoDesync;
 		float flTimeSinceBreakingLBY;
 		float flTimeSinceBodySwaying;
 		float flTimeSinceBodySwayLeft;
 		float flTimeSinceBodySwayRight;
-		int iWalkToRunTransitionState;
+		float flSpawntime;
 		float flWalkToRunTransition;
-		int iDesyncSide;
+		float flExploitTime;
+
 		Lagcompensation::EResolverMode iAntiAimType;
+		std::deque<Lagcompensation::LagRecord_t> pRecord;
 	};
 
 	/* Everything will be ran inside this */
 	void FrameStageNotify();
+
+	/* Those functions will run in createmove */
+	void StartLagcompensation(CBaseEntity*);
+	void FinishLagcompensation(CBaseEntity*);
+
 	// get animation info
 	AnimationInfo_t& GetLog(const int iEntIndex);
 	// check if player is breaking lagcomp
@@ -212,5 +246,7 @@ private:
 	int nLastIncomingSequence = 0;
 
 	int nInvalidateFlags{};
+
+	std::array<std::pair<Lagcompensation::LagRecord_t, bool>, 65> arrBackupData;
 };
 inline Lagcompensation lagcomp;

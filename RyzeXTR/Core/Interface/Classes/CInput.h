@@ -27,4 +27,18 @@ public:
 		return &pVerifiedCommands[nSequenceNumber % 150];
 	}
 
+	void ToThirdPerson()
+	{
+		return util::GetVFunc< void(__thiscall*)(decltype(this)) >(this, 35)(this);
+	}
+
+	void ToFirstPerson()
+	{
+		return util::GetVFunc< void(__thiscall*)(decltype(this)) >(this, 36)(this);
+	}
+
+	int CameraInThirdPerson(int slot = -1)
+	{
+		return util::GetVFunc< int(__thiscall*)(decltype(this), int) >(this, 32)(this, slot);
+	}
 };

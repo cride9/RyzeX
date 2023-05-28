@@ -832,31 +832,106 @@ void misc::BunnyHop(CUserCmd* pCmd) {
 
 void misc::ThirdPerson() {
 
-	if (!cfg::misc::thirdperson || !g::pLocal)
+	Vector offset;
+	Vector vecEyePosition, forward;
+	static CTraceFilter filter(g::pLocal, TRACE_WORLD_ONLY);
+	Trace_t tr;
+
+	if (!CBaseEntity::GetLocalPlayer())
 		return;
 
-	static std::string tpfix = "cam_idealpitch 0;" "cam_idealyaw 0;" "thirdperson;";
-	static bool didSetThirdPerson = false;
-	static CConVar* svcheats = i::ConVar->FindVar("sv_cheats");
+	// for whatever reason override_view also gets called from the main menu.
+	if (!i::EngineClient->IsInGame() || i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal)
+		return;
 
-	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && g::pLocal->IsAlive()) {
+	if (g::pLocal->GetTeam() == TEAM_UNASSIGNED)
+		return;
 
-		if (!didSetThirdPerson) {
+	// check if we have a local player and it is alive.
+	bool alive = g::pLocal && g::pLocal->IsAlive();
 
-			*(int*)((DWORD)&svcheats->fnChangeCallbacks + 0xC) = 0; // ew
-			svcheats->SetValue(1);
+	// camera should be in thirdperson.
+	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && cfg::misc::thirdperson)
+	{
+		// if alive and not in thirdperson already switch to thirdperson.
+		if (alive && !i::Input->CameraInThirdPerson())
+			i::Input->ToThirdPerson();
 
-			i::EngineClient->ExecuteClientCmd(tpfix.c_str());
-			didSetThirdPerson = true;
+		// if dead and spectating in firstperson switch to thirdperson.
+		else if (g::pLocal->GetObserverMode() == 4)
+		{
+			// if in thirdperson, switch to firstperson.
+			// we need to disable thirdperson to spectate properly.
+			if (i::Input->CameraInThirdPerson())
+			{
+				i::Input->ToFirstPerson();
+				i::Input->vecCameraOffset.z = 0.f;
+			}
+
+			g::pLocal->GetObserverMode() = 5;
 		}
-		static CConVar* cam_idealdist = i::ConVar->FindVar("cam_idealdist");
-		cam_idealdist->SetValue(cfg::misc::thirdpersonDistance);
 	}
-	else {
-		i::EngineClient->ExecuteClientCmd("firstperson");
-		didSetThirdPerson = false;
+
+	// camera should be in firstperson.
+	else if (i::Input->CameraInThirdPerson())
+	{
+		i::Input->ToFirstPerson();
+		i::Input->vecCameraOffset.z = 0.f;
+	}
+	// if after all of this we are still in thirdperson.
+	if (i::Input->CameraInThirdPerson())
+	{
+		// get camera angles.
+		i::EngineClient->GetViewAngles(offset);
+
+		// get our viewangle's forward directional vector.
+		M::AngleVectors(offset, &forward);
+
+		// cam_idealdist convar.
+		offset.z = (float)cfg::misc::thirdpersonDistance;
+
+		// start pos.
+		vecEyePosition = g::pLocal->GetEyePosition();
+
+		// setup trace filter and trace.
+		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecEyePosition - (forward * offset.z), { -16.f, -16.f, -16.f }, { 16.f, 16.f, 16.f }), MASK_SOLID, &filter, &tr);
+
+		// adapt distance to travel time.
+		tr.flFraction = max(0.f, min(tr.flFraction, 1.f));
+		offset.z *= tr.flFraction;
+
+		// override camera angles.
+		i::Input->vecCameraOffset = { offset.x, offset.y, offset.z };
 	}
 }
+
+//void misc::ThirdPerson() {
+//
+//	if (!cfg::misc::thirdperson || !g::pLocal)
+//		return;
+//
+//	static std::string tpfix = "cam_idealpitch 0;" "cam_idealyaw 0;" "thirdperson;";
+//	static bool didSetThirdPerson = false;
+//	static CConVar* svcheats = i::ConVar->FindVar("sv_cheats");
+//
+//	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && g::pLocal->IsAlive()) {
+//
+//		if (!didSetThirdPerson) {
+//
+//			*(int*)((DWORD)&svcheats->fnChangeCallbacks + 0xC) = 0; // ew
+//			svcheats->SetValue(1);
+//
+//			i::EngineClient->ExecuteClientCmd(tpfix.c_str());
+//			didSetThirdPerson = true;
+//		}
+//		static CConVar* cam_idealdist = i::ConVar->FindVar("cam_idealdist");
+//		cam_idealdist->SetValue(cfg::misc::thirdpersonDistance);
+//	}
+//	else {
+//		i::EngineClient->ExecuteClientCmd("firstperson");
+//		didSetThirdPerson = false;
+//	}
+//}
 
 void misc::FakeLag(bool& bSendPacket) {
 
@@ -1005,21 +1080,16 @@ void misc::FixScopeSens() {
 	// zoom_sensitivity_ratio_mouse 
 	static CConVar* zoom_sensitivity_ratio_mouse = i::ConVar->FindVar("zoom_sensitivity_ratio_mouse");
 
-	static float backup = zoom_sensitivity_ratio_mouse->GetFloat();
-
 	if (!g::pLocal || !g::pLocal->GetWeapon()) {
-		zoom_sensitivity_ratio_mouse->SetValue(backup);
+		zoom_sensitivity_ratio_mouse->SetValue(1);
 	}
 
 	if (!g::pLocal->IsScoped() || !i::EngineClient->IsInGame()) {
-		zoom_sensitivity_ratio_mouse->SetValue(backup);
+		zoom_sensitivity_ratio_mouse->SetValue(1);
 		return;
 	}
 
-	if (g::pLocal->IsScoped() && zoom_sensitivity_ratio_mouse->GetFloat() != 0 && backup != zoom_sensitivity_ratio_mouse->GetFloat())
-		backup = zoom_sensitivity_ratio_mouse->GetFloat();
-
-	zoom_sensitivity_ratio_mouse->SetValue(g::pLocal->IsScoped() ? cfg::misc::removals[3] ? 0 : backup : backup);
+	zoom_sensitivity_ratio_mouse->SetValue(g::pLocal->IsScoped() ? cfg::misc::removals[3] ? 0 : 1 : 1);
 }
 
 void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {

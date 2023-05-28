@@ -24,6 +24,7 @@ bool M::Setup()
 	if (RandomGaussianFloat == nullptr)
 		return false;
 
+	util::Print("Math initialized");
 	return true;
 }
 

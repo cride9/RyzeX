@@ -36,6 +36,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CBaseEntity* pLocal = g::pLocal = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	g::pCmd = pCmd;
 
+	lagcomp.StartLagcompensation(pLocal);
+
 	Vector oldViewAngle = g::vecOriginalViewAngle = pCmd->angViewPoint;
 
 	// for now that is the fix for the menu xddxdx
@@ -115,6 +117,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		localanim.localdata.vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
 
 	g_LocalAnimations->OnCreateMove(bSendPacket);
+	lagcomp.FinishLagcompensation(pLocal);
 	anims.ResolverLogic();
 }
 

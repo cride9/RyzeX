@@ -25,6 +25,7 @@ bool IPT::Setup( )
 	if ( pOldWndProc == nullptr )
 		return false;
 
+	util::Print("Input system initialized");
 	return true;
 }
 

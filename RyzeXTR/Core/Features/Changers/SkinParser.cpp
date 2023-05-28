@@ -1,8 +1,9 @@
 #include "SkinParser.h"
+#include <unordered_set>
 
 void SkinChanger::Dump()
 {
-	const auto V_UCS2ToUTF8 = static_cast<int(*)(const wchar_t* ucs2, char* utf8, int len)>(util::GetExportAddress("vstdlib.dll", "V_UCS2ToUTF8"));
+	const auto V_UCS2ToUTF8 = static_cast<int(*)(const wchar_t* ucs2, char* utf8, int len)>(reinterpret_cast<void*>(util::GetExportAddress(util::GetModuleBaseHandle(("vstdlib.dll")), ("V_UCS2ToUTF8"))));
 	std::ifstream items = std::ifstream("csgo/scripts/items/items_game_cdn.txt");
 	std::string gameItems = std::string(std::istreambuf_iterator <char> { items }, std::istreambuf_iterator <char> { });
 
@@ -24,7 +25,7 @@ void SkinChanger::Dump()
 	// Skip VTable, first member variable of ItemSystem is ItemSchema
 	ItemSchema_t* m_pItemSchematic = reinterpret_cast<ItemSchema_t*>(uintptr_t(item_system_fn()) + sizeof(void*));
 
-	std::vector<std::pair<short, EItemDefinitionIndex>> kitsWeapons;
+	std::vector<std::pair<short, short>> kitsWeapons;
 	kitsWeapons.reserve(2000);
 
 	for (int i = 0; i < m_pItemSchematic->getLootListCount(); ++i)
@@ -92,14 +93,14 @@ void SkinChanger::Dump()
 		}
 		else
 		{
-			std::unordered_set<EItemDefinitionIndex> weapons;
+			std::unordered_set<short> weapons;
 
 			for (auto it = std::lower_bound(kitsWeapons.begin(), kitsWeapons.end(), paintKit->m_nID, [](const auto& p, auto id) { return p.first < id; }); it != kitsWeapons.end() && it->first == paintKit->m_nID; ++it)
 			{
 				weapons.insert(it->second);
 			}
 
-			for (EItemDefinitionIndex weapon : weapons)
+			for (short weapon : weapons)
 			{
 				const auto itemDef = m_pItemSchematic->getItemDefinitionInterface(weapon);
 				if (!itemDef)
@@ -162,4 +163,5 @@ void SkinChanger::Dump()
 		inf.m_colColor[3] = m_pPaintKit->m_rgbaColor[3];
 		SkinColors.push_back(inf);
 	}
+	util::Print("Skins dumped");
 }

@@ -76,14 +76,12 @@
     <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
     <ClCompile Include="Core\SDK\WavParser.cpp" />
-    <ClCompile Include="Core\Features\Changers\skinchanger.cpp" />
     <ClCompile Include="Core\Features\Changers\agentchanger.cpp" />
     <ClCompile Include="Core\Features\Changers\glovechanger.cpp" />
     <ClCompile Include="Core\SDK\RayTracer rebuilt\CRayTrace.cpp" />
     <ClCompile Include="Core\SDK\InputSystem.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkPlayerMove.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkClampBonesInBBox.cpp" />
-    <ClCompile Include="Core\Features\Changers\parser.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModelMDL.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetColorModulation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkStartSound.cpp" />
@@ -178,7 +176,6 @@
     <ClInclude Include="Core\Interface\Interfaces\IEngineSoundClient.h" />
     <ClInclude Include="Core\Interface\Interfaces\IViewRenderBeams.h" />
     <ClInclude Include="Core\SDK\WavParser.h" />
-    <ClInclude Include="Core\Features\Changers\skinchanger.h" />
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />
     <ClInclude Include="Core\Features\Changers\glovechanger.h" />
     <ClInclude Include="Core\SDK\RayTracer rebuilt\CRayTrace.h" />
@@ -186,7 +183,6 @@
     <ClInclude Include="Core\SDK\InputSystem.h" />
     <ClInclude Include="Core\memeSounds.h" />
     <ClInclude Include="Core\Interface\Interfaces\IMdlCache.h" />
-    <ClInclude Include="Core\Features\Changers\parser.h" />
     <ClInclude Include="Core\Interface\Interfaces\CLocalize.h" />
     <ClInclude Include="Core\Features\Misc\serversounds.h" />
     <ClInclude Include="Core\Interface\Interfaces\IItemSystem.h" />

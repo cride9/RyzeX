@@ -17,7 +17,7 @@ public:
 	virtual int ScreenPosition(const Vector& worldPosition, Vector& screen) = 0;
 	virtual int ScreenPosition(float flXPos, float flYPos, Vector& vecScreen) = 0;
 	virtual void* GetFirst() = 0;
-	virtual void* GetNext(void* pCurrent) = 0;
+	virtual void* GetNext(void* pCurrentRecord) = 0;
 	virtual void ClearDeadOverlays() = 0;
 	virtual void ClearAllOverlays() = 0;
 	virtual void AddTextOverlayRGB(const Vector& vecOrigin, int iLineOffset, float flDuration, float r, float g, float b, float a, const char* fmt, ...) = 0;

@@ -81,6 +81,7 @@ public:
 	virtual bool CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount);
 	virtual void SetupShootPosition();
 	virtual void CopyPlayerAnimationData(bool bFake);
+	virtual void AnimationBreaker(float*);
 
 	virtual float GetYawDelta()
 	{

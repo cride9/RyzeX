@@ -64,7 +64,7 @@ void h::SetupHooks() {
 
 	menu::DestroyDirectX();
 
-	//util::Print("Hooks initialized!");
+	util::Print("Hooks initialized");
 
 	//i::EngineClient->ExecuteClientCmd("toggleconsole");
 	//i::EngineClient->ExecuteClientCmd("clear");

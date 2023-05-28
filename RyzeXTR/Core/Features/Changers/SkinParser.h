@@ -1,13 +1,7 @@
 #pragma once
-#include <iostream>
-#include <string>
-#include <algorithm>
-#include <codecvt>
-#include <unordered_set>
-
-#include "../../SDK/DataTyes/Color.h"
+//#include "../../SDK/DataTyes/Color.h"
 #include "../../Interface/Interfaces/IItemSystem.h"
-#include "../../utilities.h"
+//#include "../../utilities.h"
 #include "../../SDK/Entity.h"
 
 struct EConItem_t
@@ -76,8 +70,8 @@ namespace SkinChanger
 	//ItemSchema_t* m_pItemSchematic;
 
 	/*containers*/
-	std::vector<SkinKit_t> SkinKits;
-	std::vector<SkinKit_t> GloveKits;
-	std::vector<SkinKit_t> StickerKits;
-	std::vector<SkinColors_t> SkinColors;
+	inline std::vector<SkinKit_t> SkinKits;
+	inline std::vector<SkinKit_t> GloveKits;
+	inline std::vector<SkinKit_t> StickerKits;
+	inline std::vector<SkinColors_t> SkinColors;
 }

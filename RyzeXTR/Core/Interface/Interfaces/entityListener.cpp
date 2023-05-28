@@ -5,6 +5,7 @@
 void CEntityListener::Setup()
 {
 	i::EntityList->AddListenerEntity(this);
+	util::Print("Entitylistener initialized");
 }
 
 void CEntityListener::Destroy()

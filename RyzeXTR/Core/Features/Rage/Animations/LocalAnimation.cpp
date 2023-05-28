@@ -64,6 +64,46 @@ void localanimation::SetLayerSequence(CAnimationLayer* layer, int sequence) {
 	}
 }
 
+void C_LocalAnimations::AnimationBreaker(float* flPoseParameter) {
+
+	if (!cfg::antiaim::bSlideWalk)
+		return;
+	/*
+	callbacks.register("post_anim_update", function(e)
+local J = entity_list.get_client_entity( engine.get_local_player( ))
+if menu.misc.animation_breaker:get() == 0 then
+    ui.get("Misc", "General", "Movement", "Leg movement"):set(2)
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(0, 0.5) --forward legs
+elseif menu.misc.animation_breaker:get() == 1 then
+    ui.get("Misc", "General", "Movement", "Leg movement"):set(2)
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(0, 1) --backward legs
+elseif menu.misc.animation_breaker:get() == 2 then
+    ui.get("Misc", "General", "Movement", "Leg movement"):set(1)
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(7, 0) --forward run animation
+elseif menu.misc.animation_breaker:get() == 3 then
+    ui.get("Misc", "General", "Movement", "Leg movement"):set(1)
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(8, 0) --no animations
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(9, 0) --no animations
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(10, 0) --no animations
+elseif menu.misc.animation_breaker:get() == 4 then
+    ui.get("Misc", "General", "Movement", "Leg movement"):set(1)
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(7, 0.8) --crab
+elseif J and client.is_alive and menu.misc.animation_breaker:get() == 5 then
+    ui.get("Misc", "General", "Movement", "Leg movement"):set(1)
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(7, 0) --forward run animation
+    ffi.cast("CCSGOPlayerAnimationState_534535_t**", get_entity_address(J:index()) + 0x9960)[0].flAffectedFraction = 1 --anim in air
+elseif J and client.is_alive and menu.misc.animation_breaker:get() == 6 then
+    ui.get("Misc", "General", "Movement", "Leg movement"):set(1)
+    e:get_prop("DT_BaseAnimating", "m_flPoseParameter"):set_float_index(7, 0.8) --crab
+    ffi.cast("CCSGOPlayerAnimationState_534535_t**", get_entity_address(J:index()) + 0x9960)[0].flAffectedFraction = 1 --anim in air
+end
+	*/
+
+	flPoseParameter[8] = 0;
+	flPoseParameter[9] = 0;
+	flPoseParameter[10] = 0;
+}
+
 /* New stuff */
 void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 {
@@ -187,6 +227,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 	/* copy layers */
 	std::memcpy(m_LocalData.m_Real.m_Layers.data(), g::pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
 	std::memcpy(m_LocalData.m_Real.m_PoseParameters.data(), g::pLocal->GetPoseParameter().data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
+	AnimationBreaker(m_LocalData.m_Real.m_PoseParameters.data());
 
 	g::pLocal->SetAbsOrigin(m_LocalData.m_vecAbsOrigin);
 	//if ( !g_Globals->m_Packet.m_bSkipMatrix )
@@ -358,7 +399,11 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 
 	g::pLocal->GetPoseParameter()[1] = m_LocalData.m_Fake.m_PoseParameters[1];
 	std::memcpy(&g::pLocal->GetAnimationOverlays()[7], &m_LocalData.m_Fake.m_Layers[7], sizeof(CAnimationLayer));
-	g::pLocal->GetPoseParameter()[JUMP_FALL] = 1.f;
+
+	if (!(g::pLocal->GetFlags() & FL_ONGROUND))
+		g::pLocal->GetPoseParameter()[JUMP_FALL] = 1.f;
+
+	AnimationBreaker(m_LocalData.m_Fake.m_PoseParameters.data());
 
 	m_LocalData.m_flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(g::pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(m_AnimationState.flGoalFeetYaw)));
 

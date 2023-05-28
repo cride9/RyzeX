@@ -186,7 +186,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 			desyncValue += jitter ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);
 		else if (cfg::antiaim::desyncModifier == 2)
 			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
-	}
+	}	
 
 	desyncValue *= inverter;
 
