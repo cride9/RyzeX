@@ -15,8 +15,8 @@ public:
 
 	float GetFloat() // idx @ 11
 	{
-		std::uint32_t uXored = *reinterpret_cast<std::uint32_t*>(&pParent->flValue) ^ reinterpret_cast<std::uint32_t>(this);
-		return *reinterpret_cast<float*>(&uXored);
+		std::uint32_t ued = *reinterpret_cast<std::uint32_t*>(&pParent->flValue) ^ reinterpret_cast<std::uint32_t>(this);
+		return *reinterpret_cast<float*>(&ued);
 	}
 
 	int GetInt() // idx @ 12

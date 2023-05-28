@@ -1477,8 +1477,8 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 
 	int iActivityTick = 0;
 	int iActivityType = 0;
-	const CAnimationLayer* pJumpingLayer = nullptr;
-	const CAnimationLayer* pLandingLayer = nullptr;
+	CAnimationLayer* pJumpingLayer = nullptr;
+	CAnimationLayer* pLandingLayer = nullptr;
 
 	if (iSimulationTicks <= 1 || !pPrevious) {
 
@@ -1568,11 +1568,11 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 		switch (iActivityType) {
 
 		case 1:
-			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(const_cast<CAnimationLayer*>(pJumpingLayer), pJumpingLayer->nSequence);
+			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(pJumpingLayer, pJumpingLayer->nSequence);
 			break;
 
 		case 2:
-			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(const_cast<CAnimationLayer*>(pLandingLayer), pLandingLayer->nSequence);
+			flActivityPlayback = pEntity->GetLayerSequenceCycleRate(pLandingLayer, pLandingLayer->nSequence);
 			break;
 		}
 	}
@@ -1643,10 +1643,6 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::A
 				pEntity->GetDuckAmount() = pCurrent->flDuck;
 				pEntity->GetLowerBodyYaw() = pCurrent->flLowerBodyYawTarget;
 				pEntity->GetEyeAngles() = pCurrent->vecEyeAngles;
-			}
-
-			if (!(pEntity->GetFlags() & FL_ONGROUND)) {
-				pEntity->AnimState()->flDuckAmount = 1.f;
 			}
 
 			Vector& vecVelocity = pEntity->GetVelocity();

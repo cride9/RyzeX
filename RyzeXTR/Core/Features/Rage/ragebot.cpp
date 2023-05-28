@@ -1082,6 +1082,9 @@ Vector CRageBot::InterpolateLocalEyePosition( Vector vecEyePosition, int iInterp
 
 int CRageBot::CalculateTickCount( float flSimulationTime ) {
 
+	if (IPT::HandleInput(cfg::rage::doubletapkey) && cfg::rage::doubletap && exploits::bCharged)
+		return g::pCmd->iTickCount;
+
 	return lagcomp.FixTickCount(flSimulationTime);
 
 	// calculate lerp remainder.

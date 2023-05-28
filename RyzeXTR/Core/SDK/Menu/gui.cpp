@@ -31,7 +31,7 @@ void Style() {
 	menu::tabFont = io.Fonts->AddFontFromFileTTF("C:\\Big Pixel demo.otf", 18.f);
 #endif
 
-	st.WindowMinSize = ImVec2(1195 / 2, 760 / 2);
+	st.WindowMinSize = ImVec2(1195 / 2, (760 + 200) / 2);
 	st.WindowPadding = ImVec2(5, 5);
 
 	st.Colors[ImGuiCol_WindowBg] = ImColor(12, 12, 12);

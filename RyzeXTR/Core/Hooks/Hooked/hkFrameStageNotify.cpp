@@ -39,9 +39,11 @@ void hkPreFrameStageNotify(EStage& curStage) {
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
 		if (cfg::rage::enable)
 			lagcomp.SetInterpolationFlags();
+		//g_skins.glove_changer();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
+		//g_skins.run();
 		break;
 
 	default:

@@ -16,6 +16,7 @@
 #include "SDK/InputSystem.h"
 #include "Features/Rage/Animations/LocalAnimation.h"
 #include "Features/Changers/skinchanger.h"
+#include "Features/Changers/parser.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -80,8 +81,8 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	M::Setup();
 	h::SetupHooks();
 	g::entityListener.Setup();
-
 	IPT::Setup();
+
 
 	//SkinChanger::Dump( );
 

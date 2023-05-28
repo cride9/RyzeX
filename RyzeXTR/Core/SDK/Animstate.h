@@ -289,7 +289,7 @@ public:
 	float					flMaxPitch;
 	int						iAnimsetVersion;
 
-	// m_client_dll, XOR( "53 56 57 8b f9 33 f6 8b 4f ? 8b 01 ff 90 ? ? ? ? 89 47" )
+	// m_client_dll, ( "53 56 57 8b f9 33 f6 8b 4f ? 8b 01 ff 90 ? ? ? ? 89 47" )
 	const char* GetWeaponPrefix() {
 		static uintptr_t sig = uintptr_t(util::FindSignature("client.dll", "53 56 57 8b f9 33 f6 8b 4f ? 8b 01 ff 90 ? ? ? ? 89 47"));
 		using GetWeaponPrefixFn = const char* (__thiscall*)(void*);

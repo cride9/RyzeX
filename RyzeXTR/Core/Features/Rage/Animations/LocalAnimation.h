@@ -118,7 +118,7 @@ private:
 			std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_CleanLayers = { };
 			std::array < float, MAXSTUDIOPOSEPARAM > m_PoseParameters = { };
 
-			Vector m_vecMatrixOrigin = Vector(0, 0, 0);
+			Vector m_vecMatriigin = Vector(0, 0, 0);
 			std::array < matrix3x4_t, MAXSTUDIOBONES > m_Matrix = { };
 
 			CAnimState m_AnimationState;
@@ -140,7 +140,7 @@ private:
 			std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_Layers = { };
 			std::array < float, MAXSTUDIOPOSEPARAM > m_PoseParameters = { };
 
-			Vector m_vecMatrixOrigin = Vector(0, 0, 0);
+			Vector m_vecMatriigin = Vector(0, 0, 0);
 			std::array < matrix3x4_t, MAXSTUDIOBONES > m_Matrix = { };
 		} m_Real;
 	} m_LocalData;

@@ -2,7 +2,7 @@
 #define LittleLong( val )	( val )
 
 #define CRC32_INIT_VALUE 0xFFFFFFFFUL
-#define CRC32_XOR_VALUE  0xFFFFFFFFUL
+#define CRC32__VALUE  0xFFFFFFFFUL
 
 #define NUM_BYTES 256
 constexpr CRC32_t pulCRCTable[NUM_BYTES] =
@@ -80,7 +80,7 @@ void CRC32::Init(CRC32_t* pulCRC)
 
 void CRC32::Final(CRC32_t* pulCRC)
 {
-	*pulCRC ^= CRC32_XOR_VALUE;
+	*pulCRC ^= CRC32__VALUE;
 }
 
 CRC32_t CRC32::GetTableEntry(unsigned int nSlot)

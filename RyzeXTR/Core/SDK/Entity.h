@@ -808,7 +808,12 @@ public:
 	ADD_NETVAR(GetNextAttack, float, "CBaseCombatCharacter->m_flNextAttack");
 	ADD_NETVAR(GetActiveWeaponHandle, CBaseHandle, "CBaseCombatCharacter->m_hActiveWeapon");
 
-	ADD_PNETVAR(GetWeaponsHandle, CBaseHandle, "CBaseCombatCharacter->m_hMyWeapons");
+	__forceinline std::array<int, 64>& GetWeaponsHandle()
+	{
+		static auto offset = n::netvars[fnv::HashConst("CBaseCombatCharacter->m_hMyWeapons")];
+		return *reinterpret_cast<std::array<int, 64>*>(uint32_t(this) + offset);
+	}
+	//ADD_PNETVAR(GetWeaponsHandle, CBaseHandle, "CBaseCombatCharacter->m_hMyWeapons");
 	ADD_PNETVAR(GetWearablesHandle, CBaseHandle, "CBaseCombatCharacter->m_hMyWearables");
 
 	ADD_NETVAR(GetSequence, int, "CBaseAnimating->m_nSequence");
@@ -831,7 +836,7 @@ public:
 		return *(std::array<float, 24>*)((uintptr_t)this + _m_flPoseParameter);
 	}
 
-	// pattern::find( m_client_dll, XOR( "55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75" ) ).as<uintptr_t>( );
+	// pattern::find( m_client_dll, ( "55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75" ) ).as<uintptr_t>( );
 	int LookupSequence(const char* name) {
 
 		static uintptr_t sig = (uintptr_t)util::FindSignature("client.dll", "55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75");
@@ -888,6 +893,10 @@ public:
 	const char* GetClassname() {
 		// @ida: client.dll @ [8B 01 FF 90 ? ? ? ? 90 + 0x4] / sizeof(std::uintptr_t)
 		return util::CallVFunc<const char*>(this, 143);
+	}
+
+	void SetModelIndex(int index) {
+		return util::GetVFunc< void(__thiscall*)(void*, int) >(this, 75)(this, index);
 	}
 
 	unsigned int PhysicsSolidMaskForEntity() {

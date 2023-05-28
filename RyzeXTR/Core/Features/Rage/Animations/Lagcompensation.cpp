@@ -206,7 +206,7 @@ void Lagcompensation::FrameStageNotify() {
 		}
 
 		// max tick amt.
-		float flMaxTickAmt = /*C::Get<bool>( Vars.bRageSafeBacktracking ) ? std::ceil( I::ConVar->FindVar( XorStr( "sv_maxunlag" ) )->GetFloat( ) * ( 1.f / I::Globals->m_flIntervalPerTick ) ) + 3 :*/ 32;
+		float flMaxTickAmt = /*C::Get<bool>( Vars.bRageSafeBacktracking ) ? std::ceil( I::ConVar->FindVar( Str( "sv_maxunlag" ) )->GetFloat( ) * ( 1.f / I::Globals->m_flIntervalPerTick ) ) + 3 :*/ 32;
 
 		// no need to store insane amount of data.
 		while (pPlayerLogs[i].pRecord.size() > flMaxTickAmt)
@@ -236,7 +236,7 @@ void Lagcompensation::FilterRecords()
 		}
 
 		// max tick amt.
-		float flMaxTickAmt = /*C::Get<bool>( Vars.bRageSafeBacktracking ) ? std::ceil( I::ConVar->FindVar( XorStr( "sv_maxunlag" ) )->GetFloat( ) * ( 1.f / I::Globals->m_flIntervalPerTick ) ) + 3 :*/ 32;
+		float flMaxTickAmt = /*C::Get<bool>( Vars.bRageSafeBacktracking ) ? std::ceil( I::ConVar->FindVar( Str( "sv_maxunlag" ) )->GetFloat( ) * ( 1.f / I::Globals->m_flIntervalPerTick ) ) + 3 :*/ 32;
 
 		// no need to store insane amount of data.
 		while (pPlayerLogs[i].pRecord.size() > flMaxTickAmt)

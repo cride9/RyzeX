@@ -718,7 +718,7 @@ void C_LocalAnimations::TransformateMatricies()
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
 		return;
 
-	Vector vecOriginDelta = g::pLocal->GetAbsOrigin() - m_LocalData.m_Real.m_vecMatrixOrigin;
+	Vector vecOriginDelta = g::pLocal->GetAbsOrigin() - m_LocalData.m_Real.m_vecMatriigin;
 	for (auto& Matrix : m_LocalData.m_Real.m_Matrix)
 	{
 		Matrix[0][3] += vecOriginDelta.x;
@@ -775,7 +775,7 @@ void C_LocalAnimations::TransformateMatricies()
 
 	}
 
-	m_LocalData.m_Real.m_vecMatrixOrigin = g::pLocal->GetAbsOrigin();
+	m_LocalData.m_Real.m_vecMatriigin = g::pLocal->GetAbsOrigin();
 }
 bool C_LocalAnimations::CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount)
 {
@@ -800,7 +800,7 @@ void C_LocalAnimations::ResetData()
 	m_LocalData.m_Real.m_nFlags = 0;
 	m_LocalData.m_Real.m_Layers = { };
 	m_LocalData.m_Real.m_PoseParameters = { };
-	m_LocalData.m_Real.m_vecMatrixOrigin = Vector(0, 0, 0);
+	m_LocalData.m_Real.m_vecMatriigin = Vector(0, 0, 0);
 	m_LocalData.m_Real.m_Matrix = { };
 
 	m_LocalData.m_Fake.m_nMoveType = 0;
@@ -808,7 +808,7 @@ void C_LocalAnimations::ResetData()
 	m_LocalData.m_Fake.m_Layers = { };
 	m_LocalData.m_Fake.m_CleanLayers = { };
 	m_LocalData.m_Fake.m_PoseParameters = { };
-	m_LocalData.m_Fake.m_vecMatrixOrigin = Vector(0, 0, 0);
+	m_LocalData.m_Fake.m_vecMatriigin = Vector(0, 0, 0);
 	m_LocalData.m_Fake.m_Matrix = { };
 
 	m_LocalData.m_Shoot.m_Matrix = { };

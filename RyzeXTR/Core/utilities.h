@@ -195,4 +195,10 @@ namespace util {
 		if (LoadNamedSky != nullptr)
 			LoadNamedSky(szSkybox);
 	}
+
+	template <typename T>
+	static constexpr auto GetAbsoluteAddress(uintptr_t address) noexcept
+	{
+		return (T)(address + 4 + *reinterpret_cast<std::int32_t*>(address));
+	}
 }
