@@ -1129,6 +1129,7 @@ public:
 class CBaseCombatWeapon : public IClientEntity
 {
 public:
+
 	ADD_NETVAR(GetNextPrimaryAttack, float, "CBaseCombatWeapon->m_flNextPrimaryAttack");
 	ADD_NETVAR(GetNextSecondaryAttack, float, "CBaseCombatWeapon->m_flNextSecondaryAttack");
 	ADD_NETVAR(GetAmmo, int, "CBaseCombatWeapon->m_iClip1");
@@ -1139,7 +1140,7 @@ public:
 	ADD_NETVAR(GetLastShotTime, float, "CWeaponCSBase->m_fLastShotTime");
 
 	//N_ADD_DATAFIELD(bool, IsReloading, this->GetPredictionDescMap(), "m_bInReload");
-
+	ADD_NETVAR(GetModelIndex, int, "CBaseViewModel->m_nModelIndex");
 	ADD_NETVAR(GetItemDefinitionIndex, short, "CBaseAttributableItem->m_iItemDefinitionIndex");
 	ADD_NETVAR(GetItemIDHigh, int, "CBaseAttributableItem->m_iItemIDHigh");
 	ADD_NETVAR(GetItemIDLow, int, "CBaseAttributableItem->m_iItemIDLow");

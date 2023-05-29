@@ -4,6 +4,7 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+#include "../DataTyes/Color.h"
 
 namespace cfg {
 
@@ -414,6 +415,22 @@ namespace cfg {
 	}
 	namespace skin {
 
+		inline bool bEnableSkinChagner;
+
+		inline std::vector<bool> bModifySkinColors;
+		inline std::vector<int> iSkinId{};
+		inline std::vector<std::string> vecSkinsImgPaths{};
+		inline std::vector<float> flSkinWear{};
+		inline std::vector<int> iSkinStattrak{};
+		inline std::vector<std::string> szSkinNametag{};
+
+		inline std::vector<Color> colSkins1{};
+		inline std::vector<Color> colSkins2{};
+		inline std::vector<Color> colSkins3{};
+		inline std::vector<Color> colSkins4{};
+
+		inline int iGloveModel;
+		inline int iKnifeModel;
 	}
 }
 
