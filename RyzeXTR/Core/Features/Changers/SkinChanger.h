@@ -32,13 +32,13 @@ namespace detail
 
 	// Implements FNV-1a hash algorithm
 	template <std::size_t Size>
-	class fnv_hash
+	class FNV1AHash
 	{
 	private:
 		using data_t = typename size_selector<Size>::type;
 
 	public:
-		using hash = typename data_t::type;
+		using Hash = typename data_t::type;
 
 	private:
 		constexpr static auto k_offset_basis = data_t::k_offset_basis;
@@ -46,14 +46,14 @@ namespace detail
 
 	public:
 		template <std::size_t N>
-		static __forceinline constexpr auto hash_constexpr(const char(&str)[N], const std::size_t size = N) -> hash
+		static __forceinline constexpr auto hash_constexpr(const char(&str)[N], const std::size_t size = N) -> Hash
 		{
-			return static_cast<hash>(1ull * (size == 1
+			return static_cast< Hash >(1ull * (size == 1
 				? (k_offset_basis ^ str[0])
 				: (hash_constexpr(str, size - 1) ^ str[size - 1])) * k_prime);
 		}
 
-		static auto __forceinline hash_runtime(const char* str) -> hash
+		static auto __forceinline hash_runtime(const char* str) -> Hash
 		{
 			auto result = k_offset_basis;
 			do
@@ -67,9 +67,9 @@ namespace detail
 	};
 }
 
-using fnv = ::detail::fnv_hash<sizeof(void*) * 8>;
+using FNV1A = ::detail::FNV1AHash<sizeof(void*) * 8>;
 
-#define FNV(str) (std::integral_constant<fnv::hash, fnv::hash_constexpr(str)>::value)
+#define FNV(str) (std::integral_constant<FNV1A::Hash, FNV1A::hash_constexpr(str)>::value)
 
 
 struct EConItem_t
@@ -266,7 +266,7 @@ public:
 		return rand() % (high - low + 1) + low;
 	}
 
-	auto GetNewAnimation(const fnv::hash model, const int sequence) -> int
+	auto GetNewAnimation(const FNV1A::Hash model, const int sequence) -> int
 	{
 		switch (model)
 		{
@@ -432,6 +432,186 @@ public:
 		{"models/player/custom_player/legacy/tm_professional_varj.mdl", "Getaway Sally | The Professionals"}
 
 	};
+
+	inline const int GetRemappedWeaponIndex( int m_iWeaponIndex )
+	{
+		switch ( m_iWeaponIndex )
+		{
+		case WEAPON_KNIFE:
+		case WEAPON_KNIFE_BAYONET:
+		case WEAPON_KNIFE_BUTTERFLY:
+		case WEAPON_KNIFE_CANIS:
+		case WEAPON_KNIFE_CORD:
+		case WEAPON_KNIFE_CSS:
+		case WEAPON_KNIFE_FALCHION:
+		case WEAPON_KNIFE_FLIP:
+		case WEAPON_KNIFE_GG:
+		case WEAPON_KNIFE_GHOST:
+		case WEAPON_KNIFE_GUT:
+		case WEAPON_KNIFE_GYPSY_JACKKNIFE:
+		case WEAPON_KNIFE_KARAMBIT:
+		case WEAPON_KNIFE_M9_BAYONET:
+		case WEAPON_KNIFE_OUTDOOR:
+		case WEAPON_KNIFE_PUSH:
+		case WEAPON_KNIFE_SKELETON:
+		case WEAPON_KNIFE_STILETTO:
+		case WEAPON_KNIFE_SURVIVAL_BOWIE:
+		case WEAPON_KNIFE_T:
+		case WEAPON_KNIFE_TACTICAL:
+		case WEAPON_KNIFE_URSUS:
+		case WEAPON_KNIFE_WIDOWMAKER:
+			return 0;
+		case WEAPON_DEAGLE:
+			return 1;
+		case WEAPON_ELITE:
+			return 2;
+		case WEAPON_FIVESEVEN:
+			return 3;
+		case WEAPON_GLOCK:
+			return 4;
+		case WEAPON_TEC9:
+			return 5;
+		case WEAPON_USP_SILENCER:
+			return 6;
+		case WEAPON_CZ75A:
+			return 7;
+		case WEAPON_REVOLVER:
+			return 8;
+		case WEAPON_HKP2000:
+			return 9;
+		case WEAPON_P250:
+			return 10;
+		case WEAPON_AK47:
+			return 11;
+		case WEAPON_AUG:
+			return 12;
+		case WEAPON_M4A1:
+			return 13;
+		case WEAPON_FAMAS:
+			return 14;
+		case WEAPON_GALILAR:
+			return 15;
+		case WEAPON_SG556:
+			return 16;
+		case WEAPON_M4A1_SILENCER:
+			return 17;
+		case WEAPON_P90:
+			return 18;
+		case WEAPON_MP5SD:
+			return 19;
+		case WEAPON_UMP45:
+			return 20;
+		case WEAPON_MAC10:
+			return 21;
+		case WEAPON_BIZON:
+			return 22;
+		case WEAPON_MP7:
+			return 23;
+		case WEAPON_MP9:
+			return 24;
+		case WEAPON_AWP:
+			return 25;
+		case WEAPON_SCAR20:
+			return 26;
+		case WEAPON_SSG08:
+			return 27;
+		case WEAPON_G3SG1:
+			return 28;
+		case WEAPON_M249:
+			return 29;
+		case WEAPON_NEGEV:
+			return 30;
+		case WEAPON_XM1014:
+			return 31;
+		case WEAPON_MAG7:
+			return 32;
+		case WEAPON_SAWEDOFF:
+			return 33;
+		case WEAPON_NOVA:
+			return 34;
+		case GLOVE_CT:
+		case GLOVE_LEATHER_HANDWRAPS:
+		case GLOVE_MOTORCYCLE:
+		case GLOVE_SLICK:
+		case GLOVE_SPECIALIST:
+		case GLOVE_SPORTY:
+		case GLOVE_STUDDED_BLOODHOUND:
+		case GLOVE_STUDDED_HYDRA:
+		case GLOVE_STUDDED_BROKENFANG:
+		case GLOVE_T:
+			return 35;
+		}
+	}
+
+	inline const int GetKnifeDefinitionIndex( int m_iWeaponIndex )
+	{
+		switch ( m_iWeaponIndex )
+		{
+		case 1:
+			return WEAPON_KNIFE_BAYONET;
+		case 2:
+			return WEAPON_KNIFE_M9_BAYONET;
+		case 3:
+			return WEAPON_KNIFE_KARAMBIT;
+		case 4:
+			return WEAPON_KNIFE_SURVIVAL_BOWIE;
+		case 5:
+			return WEAPON_KNIFE_BUTTERFLY;
+		case 6:
+			return WEAPON_KNIFE_FALCHION;
+		case 7:
+			return WEAPON_KNIFE_FLIP;
+		case 8:
+			return WEAPON_KNIFE_GUT;
+		case 9:
+			return WEAPON_KNIFE_TACTICAL;
+		case 10:
+			return WEAPON_KNIFE_PUSH;
+		case 11:
+			return WEAPON_KNIFE_GYPSY_JACKKNIFE;
+		case 12:
+			return WEAPON_KNIFE_STILETTO;
+		case 13:
+			return WEAPON_KNIFE_WIDOWMAKER;
+		case 14:
+			return WEAPON_KNIFE_URSUS;
+		case 15:
+			return WEAPON_KNIFE_CORD;
+		case 16:
+			return WEAPON_KNIFE_CANIS;
+		case 17:
+			return WEAPON_KNIFE_OUTDOOR;
+		case 18:
+			return WEAPON_KNIFE_SKELETON;
+		case 19:
+			return WEAPON_KNIFE_CSS;
+		}
+	}
+
+	inline const int GetGloveIdFromMenu( int m_iWeaponIndex )
+	{
+		switch ( m_iWeaponIndex )
+		{
+		case 0:
+			break;
+		case 1:
+			return GLOVE_STUDDED_BLOODHOUND;
+		case 2:
+			return GLOVE_SPORTY;
+		case 3:
+			return GLOVE_SLICK;
+		case 4:
+			return GLOVE_LEATHER_HANDWRAPS;
+		case 5:
+			return GLOVE_MOTORCYCLE;
+		case 6:
+			return GLOVE_SPECIALIST;
+		case 7:
+			return GLOVE_STUDDED_HYDRA;
+		case 8:
+			return GLOVE_STUDDED_BROKENFANG;
+		}
+	}
 
 	bool bshouldFullUpdate = false;
 	float flUpdateTime = 0.0f;

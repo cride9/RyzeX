@@ -39,6 +39,7 @@ struct String_t
 	int length;		//0x000C
 }; //Size=0x0010
 
+#if 0
 void CSkinChanger::ApplyStickers(CBaseCombatWeapon* pWeapon)
 {
 	const auto econ_item_interface_wrapper = reinterpret_cast<void*>(pWeapon->GetEconItemView());
@@ -47,6 +48,7 @@ void CSkinChanger::ApplyStickers(CBaseCombatWeapon* pWeapon)
 		h::HookTable(detour::GetStickerAttributeBySlotIndexInt, econ_item_interface_wrapper, 5, &h::hkGetStickerAttributeBySlotIndexInt);
 		//detour::GetStickerAttributeBySlotIndexInt.Create(MEM::GetVFunc(reinterpret_cast<void*>(econ_item_interface_wrapper), 5), &H::hkGetStickerAttributeBySlotIndexInt);
 }
+#endif
 
 CreateClientClassFn GetWearableCreateFn()
 {
@@ -94,7 +96,7 @@ void CSkinChanger::AgentChanger(EStage stage)
 	if (!cfg::skin::bEnableSkinChagner)
 		return;
 
-	if (!cfg::skin::iSkinId.at(36))
+	if ( !cfg::skin::iSkinId[ 36 ] )
 		return;
 
 	static int originalIdx = 0;
@@ -105,7 +107,7 @@ void CSkinChanger::AgentChanger(EStage stage)
 		return;
 	}
 
-	if (const auto model = cfg::skin::vecSkinsImgPaths.at(36).c_str())
+	if (const auto model = cfg::skin::szAgentModel )
 	{
 		if (stage == FRAME_RENDER_START)
 			originalIdx = i::ModelInfo->GetModelIndex(g::pLocal->GetModel()->szName);
@@ -150,7 +152,8 @@ void HandleGloves()
 			// the compiler does not know which release should it use
 			// if it's refcounted: ((CRefCounted*)(glove))->Release();
 			// if it's material: ((IMaterial*)(glove))->Release();
-			glove->Release();
+			// @Note: I renamed the function to ReleaseNetworkable to avoid confusion. ( it was neither material or CRef )
+			glove->ReleaseNetworkable();
 		}
 		return;
 	}
@@ -168,11 +171,11 @@ void HandleGloves()
 	if (glove)
 	{
 		ApplyGlove(glove, 
-			U::GetGloveIdFromMenu(cfg::skin::iGloveModel), 
-			cfg::skin::iSkinId.at(35),
-			i::ModelInfo->GetModelIndex(mapGloveList.at(U::GetGloveIdFromMenu(cfg::skin::iGloveModel))), 
+			skinChanger.GetGloveIdFromMenu(cfg::skin::iGloveModel),
+			cfg::skin::iSkinId[35],
+			i::ModelInfo->GetModelIndex(mapGloveList.at( skinChanger.GetGloveIdFromMenu(cfg::skin::iGloveModel))),
 			0, 
-			cfg::skin::flSkinWear.at(35));
+			cfg::skin::flSkinWear[ 35 ] );
 
 		glove->GetItemIDHigh() = -1;
 		glove->GetFallbackStatTrak() = -1;
@@ -233,7 +236,7 @@ void ForceItemUpdate(CBaseCombatWeapon* m_pWeapon)
 	if (i::ClientState->iDeltaTick == -1)
 		return;
 
-	//wpn->CustomMaterialInitialized( ) = wpn->GetFallbackPaintKit( ) <= 0;
+	m_pWeapon->CustomMaterialInitialized( ) = m_pWeapon->GetFallbackPaintKit( ) <= 0;
 	m_pWeapon->CustomMaterialInitialized() = false;
 
 	m_pWeapon->GetCustomMaterials().RemoveAll();
@@ -315,23 +318,23 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 			if (pWeaponData == nullptr || (pWeaponData->nWeaponType == WEAPONTYPE_GRENADE))
 				continue;
 
-			int menuId = U::GetMenuFromId(nDefinitionIndex);
+			int menuId = GetRemappedWeaponIndex(nDefinitionIndex);
 
 			for (size_t m{ 0 }; m < m_pItemSchematic->m_pPaintKits.lastAlloc; m++)
 			{
 				PaintKit_t* m_pPaintKit = m_pItemSchematic->m_pPaintKits.memory[m].value;
 
-				if (m_pPaintKit->m_nID == cfg::skin::iSkinId.at(menuId))
+				if (m_pPaintKit->m_nID == cfg::skin::iSkinId[ menuId ])
 				{
-					if (cfg::skin::bModifySkinColors.at(menuId))
+					if (cfg::skin::bModifySkinColors[ menuId ] )
 					{
 						// i dont even know what the hack is going on here
 						// I guess its 4 std::vector<Color> ??
 						// if yes, here's the code
-						m_pPaintKit->m_rgbaColor[0] = cfg::skin::colSkins1.at(menuId);
-						m_pPaintKit->m_rgbaColor[1] = cfg::skin::colSkins2.at(menuId);
-						m_pPaintKit->m_rgbaColor[2] = cfg::skin::colSkins3.at(menuId);
-						m_pPaintKit->m_rgbaColor[3] = cfg::skin::colSkins4.at(menuId);
+						m_pPaintKit->m_rgbaColor[0] = cfg::skin::colSkins1[ menuId ];
+						m_pPaintKit->m_rgbaColor[1] = cfg::skin::colSkins2[ menuId ];
+						m_pPaintKit->m_rgbaColor[2] = cfg::skin::colSkins3[ menuId ];
+						m_pPaintKit->m_rgbaColor[3] = cfg::skin::colSkins4[ menuId ];
 
 						// original here
 						/*m_pPaintKit->m_rgbaColor[0] = C::Get<std::vector<Color>>(Vars.colSkins1).at(menuId);
@@ -351,18 +354,18 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 
 			// Change knife model.
 			if (pWeapon->GetClientClass()->nClassID == EClassIndex::CKnife && cfg::skin::iKnifeModel > 0)
-				ApplyKnifeModel(pCurrentWeapon, mapItemList.at(U::GetIdFromMenu(0, cfg::skin::iKnifeModel)).szModel);
+				ApplyKnifeModel(pCurrentWeapon, mapItemList.at( GetRemappedWeaponIndex( cfg::skin::iKnifeModel ) ).szModel );
 
 			// Apply knife skin.
 			if (pCurrentWeapon->GetClientClass()->nClassID == EClassIndex::CKnife && cfg::skin::iKnifeModel > 0)
-				ApplyKnifeSkin(pCurrentWeapon, mapItemList.at(U::GetIdFromMenu(0, cfg::skin::iKnifeModel)).szModel, U::GetKnifeDefinitionIndex(cfg::skin::iKnifeModel));
+				ApplyKnifeSkin(pCurrentWeapon, mapItemList.at(GetRemappedWeaponIndex( cfg::skin::iKnifeModel ) ).szModel, GetKnifeDefinitionIndex(cfg::skin::iKnifeModel));
 
-			if (!cfg::skin::szSkinNametag.at(menuId).empty())
-				strcpy(pCurrentWeapon->GetCustomName(), cfg::skin::szSkinNametag.at(menuId).c_str());
+			if (!cfg::skin::szSkinNametag[ menuId ].empty())
+				strcpy(pCurrentWeapon->GetCustomName(), cfg::skin::szSkinNametag[ menuId ].c_str());
 
-			if (cfg::skin::iSkinStattrak.at(menuId))
+			if (cfg::skin::iSkinStattrak[ menuId ] )
 			{
-				pCurrentWeapon->GetFallbackStatTrak() = cfg::skin::iSkinStattrak.at(menuId);
+				pCurrentWeapon->GetFallbackStatTrak() = cfg::skin::iSkinStattrak[ menuId ];
 				pCurrentWeapon->GetEntityQuality() = 9;
 			}
 			else
@@ -373,8 +376,8 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 					pCurrentWeapon->GetEntityQuality() = 0;
 			}
 
-			pCurrentWeapon->GetFallbackPaintKit() = cfg::skin::iSkinId.at(menuId);
-			pCurrentWeapon->GetFallbackWear() = cfg::skin::flSkinWear.at(menuId) / 100.f;
+			pCurrentWeapon->GetFallbackPaintKit() = cfg::skin::iSkinId[ menuId ];
+			pCurrentWeapon->GetFallbackWear() = cfg::skin::flSkinWear[ menuId ] / 100.f;
 
 			pCurrentWeapon->GetOwnerXuidHigh() = 0;
 			pCurrentWeapon->GetOwnerXuidLow() = 0;
@@ -382,7 +385,7 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 			pCurrentWeapon->GetFallbackSeed() = 661;
 			pCurrentWeapon->GetItemIDHigh() = -1;
 
-			ApplyStickers(pCurrentWeapon);
+			//ApplyStickers(pCurrentWeapon);
 
 			// weapon that we own
 			pWeapons.push_back(pCurrentWeapon);
@@ -397,23 +400,23 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 		//for (auto& w : pWeapons)
 		//	ForceItemUpdate(w);
 
-		int menuId = U::GetMenuFromId(g::pLocal->GetWeapon()->GetItemDefinitionIndex());
+		int menuId = GetRemappedWeaponIndex(g::pLocal->GetWeapon()->GetItemDefinitionIndex());
 
 		for (size_t m{ 0 }; m < m_pItemSchematic->m_pPaintKits.lastAlloc; m++)
 		{
 			PaintKit_t* m_pPaintKit = m_pItemSchematic->m_pPaintKits.memory[m].value;
 
-			if (m_pPaintKit->m_nID == cfg::skin::iSkinId.at(menuId))
+			if (m_pPaintKit->m_nID == cfg::skin::iSkinId[ menuId ] )
 			{
-				if (cfg::skin::bModifySkinColors.at(menuId))
+				if (cfg::skin::bModifySkinColors[ menuId ] )
 				{
 					// i dont even know what the hack is going on here
 						// I guess its 4 std::vector<Color> ??
 						// if yes, here's the code
-					m_pPaintKit->m_rgbaColor[0] = cfg::skin::colSkins1.at(menuId);
-					m_pPaintKit->m_rgbaColor[1] = cfg::skin::colSkins2.at(menuId);
-					m_pPaintKit->m_rgbaColor[2] = cfg::skin::colSkins3.at(menuId);
-					m_pPaintKit->m_rgbaColor[3] = cfg::skin::colSkins4.at(menuId);
+					m_pPaintKit->m_rgbaColor[0] = cfg::skin::colSkins1[ menuId ];
+					m_pPaintKit->m_rgbaColor[1] = cfg::skin::colSkins2[ menuId ];
+					m_pPaintKit->m_rgbaColor[2] = cfg::skin::colSkins3[ menuId ];
+					m_pPaintKit->m_rgbaColor[3] = cfg::skin::colSkins4[ menuId ];
 
 					// original here
 					/*m_pPaintKit->m_rgbaColor[0] = C::Get<std::vector<Color>>(Vars.colSkins1).at(menuId);
@@ -461,7 +464,7 @@ void CSkinChanger::Event(IGameEvent* pEvent)
 
 	auto defIndex = pWeapon->GetItemDefinitionIndex();
 
-	auto menuId = U::GetMenuFromId(defIndex);
+	auto menuId = GetRemappedWeaponIndex(defIndex);
 
 	const std::string uNameHash = pEvent->GetName();
 
@@ -550,9 +553,9 @@ void CSkinChanger::Event(IGameEvent* pEvent)
 					}
 				}
 
-				if (cfg::skin::iSkinStattrak.at(menuId))
+				if (cfg::skin::iSkinStattrak[ menuId ] )
 				{
-					cfg::skin::iSkinStattrak.at(menuId)++;
+					cfg::skin::iSkinStattrak[ menuId ]++;
 					ForceItemUpdate(pWeapon);
 				}
 			}

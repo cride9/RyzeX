@@ -334,8 +334,8 @@ enum EDataUpdateType : int
 class IClientNetworkable
 {
 public:
-	virtual IClientUnknown* GetIClientUnknown() = 0;
-	virtual void					Release() = 0;
+	virtual IClientUnknown*			GetIClientUnknown() = 0;
+	virtual void					ReleaseNetworkable() = 0;
 	virtual CBaseClient*			GetClientClass() = 0;
 	virtual void					NotifyShouldTransmit(int iState) = 0;
 	virtual void					OnPreDataChanged(EDataUpdateType updateType) = 0;
@@ -346,7 +346,7 @@ public:
 	virtual bool					IsDormant() const = 0;
 	virtual int						EntIndex() const = 0;
 	virtual void					ReceiveMessage(EClassIndex classIndex, void* msg) = 0;
-	virtual void* GetDataTableBasePtr() = 0;
+	virtual void*					GetDataTableBasePtr() = 0;
 	virtual void					SetDestroyedOnRecreateEntities() = 0;
 };
 
@@ -1204,6 +1204,17 @@ public:
 	CCSWeaponInfo* GetCSWpnData() {
 		return i::WeaponSystem->GetWpnData(this->GetItemDefinitionIndex());
 		// i::WeaponSystem->GetWpnData(pWeapon->GetItemDefinitionIndex());
+	}
+
+	ADD_OFFSET( CustomMaterialInitialized, bool, 0x32DD );
+	ADD_OFFSET( GetCustomMaterials, CUtlVector<IRefCounted*>, 0x14 );
+	ADD_OFFSET( GetCustomMaterials2, CUtlVector<IRefCounted*>, 0x9dcu );
+
+	CUtlVector<CRefCounted*>& GetVisualsDataProcessors( )
+	{
+		// @xref: "Original material not found! Name: %s"
+		static const std::uintptr_t uVisualsDataProcessorsOffset = *reinterpret_cast< std::uintptr_t* >( util::FindSignature( "client.dll", "81 C7 ? ? ? ? 8B 4F 0C 8B 57 04 89 4C" ) + 0x2 );
+		return *reinterpret_cast< CUtlVector<CRefCounted*>* >( reinterpret_cast< std::uintptr_t >( this ) + uVisualsDataProcessorsOffset );
 	}
 };
 

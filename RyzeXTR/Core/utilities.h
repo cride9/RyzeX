@@ -201,4 +201,33 @@ namespace util {
 	{
 		return (T)(address + 4 + *reinterpret_cast<std::int32_t*>(address));
 	}
+
+	inline std::uintptr_t* FindHudElement2( const char* szName )
+	{
+		// @note: https://www.unknowncheats.me/forum/counterstrike-global-offensive/342743-finding-sigging-chud-pointer-chud-findelement.html
+
+		static auto pHud = *reinterpret_cast< void** >( util::FindSignature( "client.dll", "B9 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 89" ) + 0x1 );
+		// @xref: "CHudWeaponSelection"
+
+		using FindHudElementFn = std::uintptr_t* ( __thiscall* )( void*, const char* );
+		static auto oFindHudElement = reinterpret_cast< FindHudElementFn >( util::FindSignature( "client.dll", "55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28" ) ); // @xref: "[%d] Could not find Hud Element: %s\n"
+		assert( oFindHudElement != nullptr );
+
+		return oFindHudElement( pHud, szName );
+	}
+
+	void ForceFullUpdate( )
+	{
+		using ClearHudWeaponIconFn = int( __thiscall* )( void*, int );
+		static auto oClearHudWeaponIcon = reinterpret_cast< ClearHudWeaponIconFn >( util::FindSignature( "client.dll", "55 8B EC 51 53 56 8B 75 08 8B D9 57 6B" ) ); // @xref: "WeaponIcon--itemcount"
+		assert( oClearHudWeaponIcon != nullptr );
+
+		// get hud weapons
+		if ( const auto pHudWeapons = FindHudElement2( "CCSGO_HudWeaponSelection" ) - 0x28; pHudWeapons != nullptr )
+		{
+			// go through all weapons
+			for ( std::size_t i = 0; i < *( pHudWeapons + 0x20 ); i++ )
+				i = oClearHudWeaponIcon( pHudWeapons, i );
+		}
+	}
 }

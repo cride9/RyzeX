@@ -417,20 +417,20 @@ namespace cfg {
 
 		inline bool bEnableSkinChagner;
 
-		inline std::vector<bool> bModifySkinColors;
-		inline std::vector<int> iSkinId{};
-		inline std::vector<std::string> vecSkinsImgPaths{};
-		inline std::vector<float> flSkinWear{};
-		inline std::vector<int> iSkinStattrak{};
-		inline std::vector<std::string> szSkinNametag{};
+		inline bool bModifySkinColors[ 37 ];
+		inline int iSkinId[ 37 ];
+		inline float flSkinWear[ 37 ];
+		inline int iSkinStattrak[ 37 ];
+		inline std::string szSkinNametag[ 37 ];
 
-		inline std::vector<Color> colSkins1{};
-		inline std::vector<Color> colSkins2{};
-		inline std::vector<Color> colSkins3{};
-		inline std::vector<Color> colSkins4{};
+		inline Color colSkins1[ 37 ];
+		inline Color colSkins2[ 37 ];
+		inline Color colSkins3[ 37 ];
+		inline Color colSkins4[ 37 ];
 
 		inline int iGloveModel;
 		inline int iKnifeModel;
+		inline const char* szAgentModel;
 	}
 }
 
