@@ -613,6 +613,54 @@ public:
 		}
 	}
 
+	inline const int GetWeaponIndexFromKnifeDefinitionIndex(int knifeDefinitionIndex)
+	{
+		switch (knifeDefinitionIndex)
+		{
+		case WEAPON_KNIFE_BAYONET:
+			return 1;
+		case WEAPON_KNIFE_M9_BAYONET:
+			return 2;
+		case WEAPON_KNIFE_KARAMBIT:
+			return 3;
+		case WEAPON_KNIFE_SURVIVAL_BOWIE:
+			return 4;
+		case WEAPON_KNIFE_BUTTERFLY:
+			return 5;
+		case WEAPON_KNIFE_FALCHION:
+			return 6;
+		case WEAPON_KNIFE_FLIP:
+			return 7;
+		case WEAPON_KNIFE_GUT:
+			return 8;
+		case WEAPON_KNIFE_TACTICAL:
+			return 9;
+		case WEAPON_KNIFE_PUSH:
+			return 10;
+		case WEAPON_KNIFE_GYPSY_JACKKNIFE:
+			return 11;
+		case WEAPON_KNIFE_STILETTO:
+			return 12;
+		case WEAPON_KNIFE_WIDOWMAKER:
+			return 13;
+		case WEAPON_KNIFE_URSUS:
+			return 14;
+		case WEAPON_KNIFE_CORD:
+			return 15;
+		case WEAPON_KNIFE_CANIS:
+			return 16;
+		case WEAPON_KNIFE_OUTDOOR:
+			return 17;
+		case WEAPON_KNIFE_SKELETON:
+			return 18;
+		case WEAPON_KNIFE_CSS:
+			return 19;
+		}
+		// Handle an invalid knife definition index or missing case.
+		return -1;
+	}
+
+
 	bool bshouldFullUpdate = false;
 	float flUpdateTime = 0.0f;
 	// Get

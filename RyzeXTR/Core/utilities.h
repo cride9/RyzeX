@@ -216,7 +216,7 @@ namespace util {
 		return oFindHudElement( pHud, szName );
 	}
 
-	void ForceFullUpdate( )
+	inline void ForceFullUpdate( )
 	{
 		using ClearHudWeaponIconFn = int( __thiscall* )( void*, int );
 		static auto oClearHudWeaponIcon = reinterpret_cast< ClearHudWeaponIconFn >( util::FindSignature( "client.dll", "55 8B EC 51 53 56 8B 75 08 8B D9 57 6B" ) ); // @xref: "WeaponIcon--itemcount"

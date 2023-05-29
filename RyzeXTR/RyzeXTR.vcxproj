@@ -219,7 +219,6 @@
     <ClCompile Include="Core\Features\Changers\agentchanger.cpp" />
     <ClCompile Include="Core\Features\Changers\glovechanger.cpp" />
     <ClCompile Include="Core\Features\Changers\SkinChanger.cpp" />
-    <ClCompile Include="Core\Features\Changers\SkinParser.cpp" />
     <ClCompile Include="Core\Features\Misc\enginepred.cpp" />
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
     <ClCompile Include="Core\Features\Misc\serversounds.cpp" />
@@ -309,7 +308,7 @@
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />
     <ClInclude Include="Core\Features\Changers\glovechanger.h" />
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
-    <ClInclude Include="Core\Features\Changers\SkinParser.h" />
+    <ClInclude Include="Core\Features\Changers\wtf.h" />
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
     <ClInclude Include="Core\Features\Misc\misc.h" />
     <ClInclude Include="Core\Features\Misc\serversounds.h" />

@@ -417,16 +417,17 @@ namespace cfg {
 
 		inline bool bEnableSkinChagner;
 
-		inline bool bModifySkinColors[ 37 ];
-		inline int iSkinId[ 37 ];
-		inline float flSkinWear[ 37 ];
-		inline int iSkinStattrak[ 37 ];
-		inline std::string szSkinNametag[ 37 ];
+		inline bool bModifySkinColors[92];
+		inline int iSkinId[92];
+		inline float flSkinWear[92];
+		inline int iSkinStattrak[92];
+		inline int iFallbackSeed[92];
+		inline std::string szSkinNametag[92];
 
-		inline Color colSkins1[ 37 ];
-		inline Color colSkins2[ 37 ];
-		inline Color colSkins3[ 37 ];
-		inline Color colSkins4[ 37 ];
+		inline Color colSkins1[92];
+		inline Color colSkins2[92];
+		inline Color colSkins3[92];
+		inline Color colSkins4[92];
 
 		inline int iGloveModel;
 		inline int iKnifeModel;

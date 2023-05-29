@@ -589,23 +589,22 @@ void visual::WorldEsp() {
 		if (!pWeapon->GetClientClass())
 			continue;
 
-		DroppedWeapons(pWeapon, vecScreenPosition);
+		if (pWeapon->IsWeapon() && !i::EntityList->GetClientEntityFromHandle(pEntity->GetOwnerEntityHandle()))
+			DroppedWeapons(pWeapon, vecScreenPosition);
 		const EClassIndex iClientID = pWeapon->GetClientClass()->nClassID;
 
 		if (!cfg::misc::bProjectileESP)
 			return;
 
-		Color espColor = Color(cfg::misc::flProjectileESP[0] * 255.f, cfg::misc::flProjectileESP[1] * 255.f, cfg::misc::flProjectileESP[2] * 255.f, cfg::misc::flProjectileESP[3] * 255.f);
-
 		using enum EClassIndex;
 		if (iClientID == CDecoyProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Decoy");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Decoy");
 
 		else if (iClientID == CMolotovProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Molotov");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Molotov");
 
 		else if (iClientID == CSmokeGrenadeProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Smoke");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Smoke");
 
 		else if (iClientID == CBaseCSGrenadeProjectile) {
 
@@ -616,17 +615,17 @@ void visual::WorldEsp() {
 				std::string szName = pModel->szName;
 
 				if (szName.find("flashbang") != std::string::npos)
-					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Flashbang");
+					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Flashbang");
 				else if (szName.find("fraggrenade") != std::string::npos)
-					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Grenade");
+					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Grenade");
 			}
 		}
 
 		else if (iClientID == CInferno) 
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Fire");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Fire");
 		
 		else if (iClientID == CPlantedC4)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, espColor, g::fonts::FlagESP, true, "Bomb");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Bomb");
 	}
 }
 
@@ -655,8 +654,6 @@ void visual::DroppedWeapons(CBaseCombatWeapon* pWeapon, Vector& vecScreenPositio
 	if (pData->nWeaponType == 9) // grenade
 		return;
 
-	Color espColor = Color(cfg::misc::flDroppedWeaponESP[0] * 255.f, cfg::misc::flDroppedWeaponESP[1] * 255.f, cfg::misc::flDroppedWeaponESP[2] * 255.f, cfg::misc::flDroppedWeaponESP[3] * 255.f);
-
 	static std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
 	wchar_t* pName = i::Localize->Find(pData->szHudName);
 	std::string name = "";
@@ -665,5 +662,5 @@ void visual::DroppedWeapons(CBaseCombatWeapon* pWeapon, Vector& vecScreenPositio
 
 	std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-	i::Surface->DrawT(vecScreenPosition.x + 1, vecScreenPosition.y - -2, espColor, g::fonts::FlagESP, true, name.c_str());
+	i::Surface->DrawT(vecScreenPosition.x + 1, vecScreenPosition.y - -2, cfg::misc::flDroppedWeaponESP, g::fonts::FlagESP, true, name.c_str());
 }

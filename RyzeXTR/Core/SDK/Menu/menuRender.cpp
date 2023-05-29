@@ -8,6 +8,8 @@
 #pragma comment(lib, "winmm.lib")
 
 #include "../../SDK/InputSystem.h"
+#include "../../Features/Changers/SkinChanger.h"
+#include "../../Features/Changers/wtf.h"
 
 ETabs selectedTab = RAGE_TAB;
 EEntity selectedEsp = ENEMY;
@@ -1037,18 +1039,66 @@ void menu::Misctab() noexcept {
 
 void menu::Skintab() noexcept {
 
-#if _DEBUG
-    ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
-    {
-        ImGui::Checkbox("Debug button", &cfg::debugSwitch);
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            ImGui::SetTooltip("test tooltip");
+//#if _DEBUG
+//    ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
+//    {
+//        ImGui::Checkbox("Debug button", &cfg::debugSwitch);
+//        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+//            ImGui::SetTooltip("test tooltip");
+//
+//		ImGui::Checkbox("Gather AI information ##itsnot", &cfg::debugSwitch2);
+//		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 1000);
+//    }
+//    ImGui::EndChild();
+//#endif
+	using namespace cfg::skin;
+	ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove);
+	{
+		using namespace beforeIfuckUpEverything;
+		ImGui::Checkbox("Enable", &bEnableSkinChagner);
+		//static int currentSelected = 0;
 
-		ImGui::Checkbox("Gather AI information ##itsnot", &cfg::debugSwitch2);
-		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 1000);
-    }
-    ImGui::EndChild();
-#endif
+		static int weaponBackup = -1;
+		static std::vector<std::string> skinNames{""};
+		static std::vector<int> skinPaint{0};
+		static int selectedSkin[92]{-1};
+
+		if (weaponBackup != weaponInHand) {
+			skinNames.clear();
+			skinPaint.clear();
+
+			for (size_t i = 0; i < skinChanger.SkinKits.size(); i++)
+			{
+				auto& lmao = skinChanger.SkinKits.at(i);
+				if (lmao.m_iWeaponID == whatTheFuckBackward(weaponInHand)) {
+					skinPaint.push_back(i);
+					skinNames.push_back(lmao.m_szName);
+				}
+			}
+		}
+		
+		ImGui::ListBoxVector("##Skin list", &selectedSkin[weaponInHand], skinNames, 14);
+		ImGui::SliderFloat("Wear", &flSkinWear[weaponInHand], 0.f, 1.f);
+		ImGui::SliderInt("Stattrak", &iSkinStattrak[weaponInHand], 0, 1000);
+		ImGui::SliderInt("Seed", &iFallbackSeed[weaponInHand], 0, 1000);
+
+		if (skinPaint.size() > selectedSkin[weaponInHand]) {
+			iSkinId[weaponInHand] = skinPaint[selectedSkin[weaponInHand]];
+		}
+
+		weaponBackup = weaponInHand;
+	}
+	ImGui::EndChild();
+	ImGui::SameLine();
+	ImGui::BeginChild("right", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove); 
+	{
+		const char* knifemodels[] = { "Default", "Bayonet", "M9-Bayonet", "Karambit", "Bowie", "Butterfly", "Falchion", "Flip", "Gut", "Huntsman", "Shadow daggers", "Navaja", "Stiletto", "Talon", "Ursus", "Paracord", "Survival", "Nomad", "Skeleton", "Classic" };
+		const char* glovemodels[] = { "Default", "Bloodhound", "Sport", "Slick", "Handwraps", "Motorcycle", "Specialist", "Hydra", "Broken Fang" };
+
+		ImGui::Combo("Knife", &iKnifeModel, knifemodels, IM_ARRAYSIZE(knifemodels));
+		ImGui::Combo("Gloves", &iGloveModel, glovemodels, IM_ARRAYSIZE(glovemodels));
+	}
+	ImGui::EndChild();
 }
 
 void menu::HandleLogoDrawing() noexcept {

@@ -4,12 +4,15 @@
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../Features/Changers/SkinChanger.h"
+#include "../../Features/Changers/wtf.h"
 
 void hkPreFrameStageNotify(EStage& curStage) {
 
 	if (!g::pLocal)
 		return;
 
+	//skinChanger.AgentChanger(curStage);
 	switch (curStage) {
 
 	case FRAME_START:
@@ -38,6 +41,8 @@ void hkPreFrameStageNotify(EStage& curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
+		beforeIfuckUpEverything::SetSkin(g::pLocal);
+		//skinChanger.Run(g::pLocal); 
 		break;
 
 	default:

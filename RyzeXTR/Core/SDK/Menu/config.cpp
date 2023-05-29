@@ -890,6 +890,19 @@ void CConfig::Setup() {
 		SetupValue(cfg::m_iKeyStates, 256, 0, "misc", "keystates");
 
 	}
+
+	// skin
+	{
+		using namespace cfg::skin;
+		SetupValue(bEnableSkinChagner, false, "skin", "bEnableSkinChagner");
+		SetupValue(iSkinId, 92, 0, "skin", "iSkinId");
+		SetupValue(flSkinWear, 92.f, 0.f, "skin", "flSkinWear");
+		SetupValue(iSkinStattrak, 92, 0, "skin", "iSkinStattrak");
+		SetupValue(iFallbackSeed, 92, 0, "skin", "iFallbackSeed");
+
+		SetupValue(iGloveModel, 0, "skin", "iGloveModel");
+		SetupValue(iKnifeModel, 0, "skin", "iKnifeModel");
+	}
 }
 
 void CConfig::SetupValue(int& value, int def, std::string category, std::string name)

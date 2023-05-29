@@ -760,10 +760,14 @@ void C_LocalAnimations::InterpolateMatricies()
 }
 void C_LocalAnimations::TransformateMatricies()
 {
-	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal || i::ClientState->iDeltaTick < 0)
 		return;
 
-	Vector vecOriginDelta = g::pLocal->GetAbsOrigin() - m_LocalData.m_Real.m_vecMatriigin;
+	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
+	if (!pLocal)
+		return;
+
+	Vector vecOriginDelta = pLocal->GetAbsOrigin() - m_LocalData.m_Real.m_vecMatriigin;
 	for (auto& Matrix : m_LocalData.m_Real.m_Matrix)
 	{
 		Matrix[0][3] += vecOriginDelta.x;
@@ -800,27 +804,27 @@ void C_LocalAnimations::TransformateMatricies()
 			m_LocalData.m_Fake.m_Matrix[i][angle][0] = 0.1;
 			m_LocalData.m_Fake.m_Matrix[i][angle][1] = 0.1;
 			m_LocalData.m_Fake.m_Matrix[i][angle][2] = 0.1;
-			m_LocalData.m_Fake.m_Matrix[i][angle][3] = (angle == 0 ? g::pLocal->GetAbsOrigin().x : g::pLocal->GetAbsOrigin().y);
+			m_LocalData.m_Fake.m_Matrix[i][angle][3] = (angle == 0 ? pLocal->GetAbsOrigin().x : pLocal->GetAbsOrigin().y);
 
 			m_LocalData.m_Fake.m_Matrix[i][angle][0] = 0.1;
 			m_LocalData.m_Fake.m_Matrix[i][angle][1] = 0.1;
 			m_LocalData.m_Fake.m_Matrix[i][angle][2] = 0.1;
-			m_LocalData.m_Fake.m_Matrix[i][angle][3] = (angle == 0 ? g::pLocal->GetAbsOrigin().x : g::pLocal->GetAbsOrigin().y);
+			m_LocalData.m_Fake.m_Matrix[i][angle][3] = (angle == 0 ? pLocal->GetAbsOrigin().x : pLocal->GetAbsOrigin().y);
 
 			m_LocalData.m_Real.m_Matrix[i][angle][0] = 0.1;
 			m_LocalData.m_Real.m_Matrix[i][angle][1] = 0.1;
 			m_LocalData.m_Real.m_Matrix[i][angle][2] = 0.1;
-			m_LocalData.m_Real.m_Matrix[i][angle][3] = (angle == 0 ? g::pLocal->GetAbsOrigin().x : g::pLocal->GetAbsOrigin().y);
+			m_LocalData.m_Real.m_Matrix[i][angle][3] = (angle == 0 ? pLocal->GetAbsOrigin().x : pLocal->GetAbsOrigin().y);
 
 			m_LocalData.m_Real.m_Matrix[i][angle][0] = 0.1;
 			m_LocalData.m_Real.m_Matrix[i][angle][1] = 0.1;
 			m_LocalData.m_Real.m_Matrix[i][angle][2] = 0.1;
-			m_LocalData.m_Real.m_Matrix[i][angle][3] = (angle == 0 ? g::pLocal->GetAbsOrigin().x : g::pLocal->GetAbsOrigin().y);
+			m_LocalData.m_Real.m_Matrix[i][angle][3] = (angle == 0 ? pLocal->GetAbsOrigin().x : pLocal->GetAbsOrigin().y);
 		}
 
 	}
 
-	m_LocalData.m_Real.m_vecMatriigin = g::pLocal->GetAbsOrigin();
+	m_LocalData.m_Real.m_vecMatriigin = pLocal->GetAbsOrigin();
 }
 bool C_LocalAnimations::CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount)
 {

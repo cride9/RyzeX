@@ -41,8 +41,9 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 		serversound.Start();
 		visual::VisualRender();
-		visual::WorldEsp();
 		serversound.Finish();
+
+		visual::WorldEsp();
 
 		if (g::pLocal) {
 

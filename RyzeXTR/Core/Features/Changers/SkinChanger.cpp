@@ -172,7 +172,7 @@ void HandleGloves()
 	{
 		ApplyGlove(glove, 
 			skinChanger.GetGloveIdFromMenu(cfg::skin::iGloveModel),
-			cfg::skin::iSkinId[35],
+			skinChanger.SkinKits.at(cfg::skin::iSkinId[35]).m_nID,
 			i::ModelInfo->GetModelIndex(mapGloveList.at( skinChanger.GetGloveIdFromMenu(cfg::skin::iGloveModel))),
 			0, 
 			cfg::skin::flSkinWear[ 35 ] );
@@ -300,96 +300,93 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 
 	//--------------------------------------------weapon-changer-------------------------------------------- 
 
-	if (int* hWeapons = &pLocal->GetWeaponsHandle().at(0); hWeapons != nullptr)
+	// -1 to prevent double active weapon
+	for (auto nIndex : pLocal->GetWeaponsHandle())
 	{
-		// -1 to prevent double active weapon
-		for (int nIndex = MAX_WEAPONS - 1; hWeapons[nIndex]; nIndex--)
+		// get current weapon
+		CBaseCombatWeapon* pCurrentWeapon = static_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntityFromHandle(nIndex));
+
+		if (pCurrentWeapon == nullptr)
+			continue;
+
+		short& nDefinitionIndex = pCurrentWeapon->GetItemDefinitionIndex();
+
+		CCSWeaponData* pWeaponData = reinterpret_cast<CCSWeaponData*>(pCurrentWeapon->GetCSWpnData());
+
+		if (pWeaponData == nullptr || (pWeaponData->nWeaponType == WEAPONTYPE_GRENADE))
+			continue;
+
+		int menuId = GetRemappedWeaponIndex(nDefinitionIndex);
+
+		for (size_t m{ 0 }; m < m_pItemSchematic->m_pPaintKits.lastAlloc; m++)
 		{
-			// get current weapon
-			CBaseCombatWeapon* pCurrentWeapon = static_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntityFromHandle(hWeapons[nIndex]));
+			PaintKit_t* m_pPaintKit = m_pItemSchematic->m_pPaintKits.memory[m].value;
 
-			if (pCurrentWeapon == nullptr)
-				continue;
-
-			short& nDefinitionIndex = pCurrentWeapon->GetItemDefinitionIndex();
-
-			CCSWeaponData* pWeaponData = reinterpret_cast<CCSWeaponData*>(pCurrentWeapon->GetCSWpnData());
-
-			if (pWeaponData == nullptr || (pWeaponData->nWeaponType == WEAPONTYPE_GRENADE))
-				continue;
-
-			int menuId = GetRemappedWeaponIndex(nDefinitionIndex);
-
-			for (size_t m{ 0 }; m < m_pItemSchematic->m_pPaintKits.lastAlloc; m++)
+			if (m_pPaintKit->m_nID == cfg::skin::iSkinId[ menuId ])
 			{
-				PaintKit_t* m_pPaintKit = m_pItemSchematic->m_pPaintKits.memory[m].value;
-
-				if (m_pPaintKit->m_nID == cfg::skin::iSkinId[ menuId ])
+				if (cfg::skin::bModifySkinColors[ menuId ] )
 				{
-					if (cfg::skin::bModifySkinColors[ menuId ] )
-					{
-						// i dont even know what the hack is going on here
-						// I guess its 4 std::vector<Color> ??
-						// if yes, here's the code
-						m_pPaintKit->m_rgbaColor[0] = cfg::skin::colSkins1[ menuId ];
-						m_pPaintKit->m_rgbaColor[1] = cfg::skin::colSkins2[ menuId ];
-						m_pPaintKit->m_rgbaColor[2] = cfg::skin::colSkins3[ menuId ];
-						m_pPaintKit->m_rgbaColor[3] = cfg::skin::colSkins4[ menuId ];
+					// i dont even know what the hack is going on here
+					// I guess its 4 std::vector<Color> ??
+					// if yes, here's the code
+					m_pPaintKit->m_rgbaColor[0] = cfg::skin::colSkins1[ menuId ];
+					m_pPaintKit->m_rgbaColor[1] = cfg::skin::colSkins2[ menuId ];
+					m_pPaintKit->m_rgbaColor[2] = cfg::skin::colSkins3[ menuId ];
+					m_pPaintKit->m_rgbaColor[3] = cfg::skin::colSkins4[ menuId ];
 
-						// original here
-						/*m_pPaintKit->m_rgbaColor[0] = C::Get<std::vector<Color>>(Vars.colSkins1).at(menuId);
-						m_pPaintKit->m_rgbaColor[1] = C::Get<std::vector<Color>>(Vars.colSkins2).at(menuId);
-						m_pPaintKit->m_rgbaColor[2] = C::Get<std::vector<Color>>(Vars.colSkins3).at(menuId);
-						m_pPaintKit->m_rgbaColor[3] = C::Get<std::vector<Color>>(Vars.colSkins4).at(menuId);*/
-					}
-					else
-					{
-						m_pPaintKit->m_rgbaColor[0] = SkinColors[m].m_colColor[0];
-						m_pPaintKit->m_rgbaColor[1] = SkinColors[m].m_colColor[1];
-						m_pPaintKit->m_rgbaColor[2] = SkinColors[m].m_colColor[2];
-						m_pPaintKit->m_rgbaColor[3] = SkinColors[m].m_colColor[3];
-					}
+					// original here
+					/*m_pPaintKit->m_rgbaColor[0] = C::Get<std::vector<Color>>(Vars.colSkins1).at(menuId);
+					m_pPaintKit->m_rgbaColor[1] = C::Get<std::vector<Color>>(Vars.colSkins2).at(menuId);
+					m_pPaintKit->m_rgbaColor[2] = C::Get<std::vector<Color>>(Vars.colSkins3).at(menuId);
+					m_pPaintKit->m_rgbaColor[3] = C::Get<std::vector<Color>>(Vars.colSkins4).at(menuId);*/
+				}
+				else
+				{
+					m_pPaintKit->m_rgbaColor[0] = SkinColors[m].m_colColor[0];
+					m_pPaintKit->m_rgbaColor[1] = SkinColors[m].m_colColor[1];
+					m_pPaintKit->m_rgbaColor[2] = SkinColors[m].m_colColor[2];
+					m_pPaintKit->m_rgbaColor[3] = SkinColors[m].m_colColor[3];
 				}
 			}
-
-			// Change knife model.
-			if (pWeapon->GetClientClass()->nClassID == EClassIndex::CKnife && cfg::skin::iKnifeModel > 0)
-				ApplyKnifeModel(pCurrentWeapon, mapItemList.at( GetRemappedWeaponIndex( cfg::skin::iKnifeModel ) ).szModel );
-
-			// Apply knife skin.
-			if (pCurrentWeapon->GetClientClass()->nClassID == EClassIndex::CKnife && cfg::skin::iKnifeModel > 0)
-				ApplyKnifeSkin(pCurrentWeapon, mapItemList.at(GetRemappedWeaponIndex( cfg::skin::iKnifeModel ) ).szModel, GetKnifeDefinitionIndex(cfg::skin::iKnifeModel));
-
-			if (!cfg::skin::szSkinNametag[ menuId ].empty())
-				strcpy(pCurrentWeapon->GetCustomName(), cfg::skin::szSkinNametag[ menuId ].c_str());
-
-			if (cfg::skin::iSkinStattrak[ menuId ] )
-			{
-				pCurrentWeapon->GetFallbackStatTrak() = cfg::skin::iSkinStattrak[ menuId ];
-				pCurrentWeapon->GetEntityQuality() = 9;
-			}
-			else
-			{
-				if (pCurrentWeapon->GetClientClass()->nClassID == EClassIndex::CKnife)
-					pCurrentWeapon->GetEntityQuality() = 3;
-				else
-					pCurrentWeapon->GetEntityQuality() = 0;
-			}
-
-			pCurrentWeapon->GetFallbackPaintKit() = cfg::skin::iSkinId[ menuId ];
-			pCurrentWeapon->GetFallbackWear() = cfg::skin::flSkinWear[ menuId ] / 100.f;
-
-			pCurrentWeapon->GetOwnerXuidHigh() = 0;
-			pCurrentWeapon->GetOwnerXuidLow() = 0;
-			pCurrentWeapon->GetAccountID() = XUID;
-			pCurrentWeapon->GetFallbackSeed() = 661;
-			pCurrentWeapon->GetItemIDHigh() = -1;
-
-			//ApplyStickers(pCurrentWeapon);
-
-			// weapon that we own
-			pWeapons.push_back(pCurrentWeapon);
 		}
+
+		// Change knife model.
+		if (pWeapon->GetClientClass()->nClassID == EClassIndex::CKnife && cfg::skin::iKnifeModel > 0)
+			ApplyKnifeModel(pCurrentWeapon, mapItemList.at(GetKnifeDefinitionIndex( cfg::skin::iKnifeModel ) ).szModel );
+
+		// Apply knife skin.
+		if (pCurrentWeapon->GetClientClass()->nClassID == EClassIndex::CKnife && cfg::skin::iKnifeModel > 0)
+			ApplyKnifeSkin(pCurrentWeapon, mapItemList.at(GetKnifeDefinitionIndex( cfg::skin::iKnifeModel ) ).szModel, GetKnifeDefinitionIndex(cfg::skin::iKnifeModel));
+
+		if (!cfg::skin::szSkinNametag[ menuId ].empty())
+			strcpy(pCurrentWeapon->GetCustomName(), cfg::skin::szSkinNametag[ menuId ].c_str());
+
+		if (cfg::skin::iSkinStattrak[ menuId ] )
+		{
+			pCurrentWeapon->GetFallbackStatTrak() = cfg::skin::iSkinStattrak[ menuId ];
+			pCurrentWeapon->GetEntityQuality() = 9;
+		}
+		else
+		{
+			if (pCurrentWeapon->GetClientClass()->nClassID == EClassIndex::CKnife)
+				pCurrentWeapon->GetEntityQuality() = 3;
+			else
+				pCurrentWeapon->GetEntityQuality() = 0;
+		}
+
+		pCurrentWeapon->GetFallbackPaintKit() = SkinKits.at(cfg::skin::iSkinId[ menuId ]).m_nID;
+		pCurrentWeapon->GetFallbackWear() = cfg::skin::flSkinWear[ menuId ] / 100.f;
+
+		pCurrentWeapon->GetOwnerXuidHigh() = 0;
+		pCurrentWeapon->GetOwnerXuidLow() = 0;
+		pCurrentWeapon->GetAccountID() = XUID;
+		pCurrentWeapon->GetFallbackSeed() = 661;
+		pCurrentWeapon->GetItemIDHigh() = -1;
+
+		//ApplyStickers(pCurrentWeapon);
+
+		// weapon that we own
+		pWeapons.push_back(pCurrentWeapon);
 	}
 
 	//--------------------------------------------weapon-changer-------------------------------------------- 
@@ -567,4 +564,169 @@ void CSkinChanger::Event(IGameEvent* pEvent)
 	{
 		flUpdateTime = 0.0f;
 	}
+}
+
+void CSkinChanger::Dump()
+{
+	const auto V_UCS2ToUTF8 = static_cast<int(*)(const wchar_t* ucs2, char* utf8, int len)>(reinterpret_cast<void*>(util::GetExportAddress(util::GetModuleBaseHandle(("vstdlib.dll")), ("V_UCS2ToUTF8"))));
+	std::ifstream items = std::ifstream("csgo/scripts/items/items_game_cdn.txt");
+	std::string gameItems = std::string(std::istreambuf_iterator <char> { items }, std::istreambuf_iterator <char> { });
+
+	if (!items.is_open())
+		return;
+
+	items.close();
+
+	static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+	uintptr_t sig_address = util::FindSignature("client.dll", "E8 ?? ?? ?? ?? FF 76 0C 8D 48 04 E8");
+
+	// Skip the opcode, read rel32 address
+	int item_system_offset = *reinterpret_cast<int32_t*>(sig_address + 1);
+
+	// Add the offset to the end of the instruction
+	auto item_system_fn = reinterpret_cast<IItemSystem * (*)()>(sig_address + 5 + item_system_offset);
+
+	// Skip VTable, first member variable of ItemSystem is ItemSchema
+	m_pItemSchematic = reinterpret_cast<ItemSchema_t*>(uintptr_t(item_system_fn()) + sizeof(void*));
+
+	std::vector<std::pair<short, short>> kitsWeapons;
+	kitsWeapons.reserve(2000);
+
+	for (int i = 0; i < m_pItemSchematic->getLootListCount(); ++i)
+	{
+		const auto& contents = m_pItemSchematic->getLootList(i)->getLootListContents();
+
+		for (int j = 0; j < contents.size; ++j) {
+			if (contents[j].paintKit != 0)
+				kitsWeapons.emplace_back(contents[j].paintKit, contents[j].weaponId());
+		}
+	}
+
+	for (int i = 0; i < m_pItemSchematic->getItemSetCount(); ++i)
+	{
+		const auto set = m_pItemSchematic->getItemSet(i);
+
+		for (int j = 0; j < set->getItemCount(); ++j) {
+			const auto paintKit = set->getItemPaintKit(j);
+			if (paintKit != 0)
+				kitsWeapons.emplace_back(paintKit, set->getItemDef(j));
+		}
+	}
+
+	std::sort(kitsWeapons.begin(), kitsWeapons.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+
+	SkinKits.reserve(m_pItemSchematic->m_pPaintKits.lastAlloc);
+	GloveKits.reserve(m_pItemSchematic->m_pPaintKits.lastAlloc);
+
+	for (int i = 0; i <= m_pItemSchematic->m_pPaintKits.lastAlloc; i++)
+	{
+		const auto paintKit = m_pItemSchematic->m_pPaintKits.memory[i].value;
+
+		if (paintKit->m_nID == 0 || paintKit->m_nID == 9001) // ignore workshop_default
+			continue;
+
+		if (paintKit->m_nID >= 10000)
+		{
+			const std::string_view gloveName{ paintKit->m_szName.data() };
+			std::wstring name;
+
+			if (gloveName._Starts_with("bloodhound"))
+				name = i::Localize->Find("CSGO_Wearable_t_studdedgloves");
+			else if (gloveName._Starts_with("motorcycle"))
+				name = i::Localize->Find("CSGO_Wearable_v_motorcycle_glove");
+			else if (gloveName._Starts_with("slick"))
+				name = i::Localize->Find("CSGO_Wearable_v_slick_glove");
+			else if (gloveName._Starts_with("sporty"))
+				name = i::Localize->Find("CSGO_Wearable_v_sporty_glove");
+			else if (gloveName._Starts_with("specialist"))
+				name = i::Localize->Find("CSGO_Wearable_v_specialist_glove");
+			else if (gloveName._Starts_with("operation10"))
+				name = i::Localize->Find("CSGO_Wearable_t_studded_brokenfang_gloves");
+			else if (gloveName._Starts_with("handwrap"))
+				name = i::Localize->Find("CSGO_Wearable_v_leather_handwrap");
+			else
+				assert(false);
+
+			name += L" | ";
+			name += i::Localize->Find(paintKit->m_szDescriptionTag.data() + 1);
+
+			char nameStr[256];
+			V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
+
+			GloveKits.push_back({ paintKit->m_nID, nameStr, paintKit->m_szName.data(), paintKit->m_nRarity,0 });
+		}
+		else
+		{
+			std::unordered_set<short> weapons;
+
+			for (auto it = std::lower_bound(kitsWeapons.begin(), kitsWeapons.end(), paintKit->m_nID, [](const auto& p, auto id) { return p.first < id; }); it != kitsWeapons.end() && it->first == paintKit->m_nID; ++it)
+			{
+				weapons.insert(it->second);
+			}
+
+			for (short weapon : weapons)
+			{
+				const auto itemDef = m_pItemSchematic->getItemDefinitionInterface(weapon);
+				if (!itemDef)
+					continue;
+
+				std::wstring name = i::Localize->Find(itemDef->getItemBaseName());
+				name += L" | ";
+				name += i::Localize->Find(paintKit->m_szDescriptionTag.data() + 1);
+
+				char nameStr[256];
+				V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
+
+				SkinKits.push_back({ paintKit->m_nID, nameStr, paintKit->m_szName.data() ,std::clamp(itemDef->getRarity() + paintKit->m_nRarity - 1, 0, (paintKit->m_nRarity == 7) ? 7 : 6),(int)weapon });
+			}
+
+			if (weapons.empty() || weapons.size() > 1) // this paint kit fits more than one weapon
+			{
+				std::wstring name = i::Localize->Find(paintKit->m_szDescriptionTag.data() + 1);
+
+				char nameStr[256];
+				V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
+
+				SkinKits.push_back({ paintKit->m_nID, nameStr,paintKit->m_szName.data(), paintKit->m_nRarity, 0 });
+			}
+		}
+	}
+
+	std::sort(SkinKits.begin(), SkinKits.end());
+	SkinKits.shrink_to_fit();
+	std::sort(GloveKits.begin(), GloveKits.end());
+	GloveKits.shrink_to_fit();
+
+	//Handle stickers
+	StickerKits.reserve(m_pItemSchematic->stickerKits.lastAlloc);
+	for (int i = 0; i <= m_pItemSchematic->stickerKits.lastAlloc; i++)
+	{
+		const auto stickerKit = m_pItemSchematic->stickerKits.memory[i].value;
+		if (std::string_view name{ stickerKit->name.data() }; name._Starts_with("spray") || name._Starts_with("patch"))
+			continue;
+		std::wstring name = i::Localize->Find(stickerKit->id != 242 ? stickerKit->itemName.data() + 1 : "StickerKit_dhw2014_teamdignitas_gold");
+
+		char nameStr[256];
+		V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
+
+		StickerKits.push_back({ stickerKit->id, std::move(nameStr),stickerKit->inventoryImage.data(), stickerKit->rarity,0 });
+	}
+
+	StickerKits.insert(StickerKits.begin(), { 0, "None" });
+	std::sort(StickerKits.begin() + 1, StickerKits.end());
+	StickerKits.shrink_to_fit();
+
+	for (size_t m{ 0 }; m < m_pItemSchematic->m_pPaintKits.lastAlloc; m++)
+	{
+		PaintKit_t* m_pPaintKit = m_pItemSchematic->m_pPaintKits.memory[m].value;
+
+		SkinColors_t inf;
+		inf.m_colColor[0] = m_pPaintKit->m_rgbaColor[0];
+		inf.m_colColor[1] = m_pPaintKit->m_rgbaColor[1];
+		inf.m_colColor[2] = m_pPaintKit->m_rgbaColor[2];
+		inf.m_colColor[3] = m_pPaintKit->m_rgbaColor[3];
+		SkinColors.push_back(inf);
+	}
+	util::Print("Skins dumped");
 }

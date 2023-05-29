@@ -15,7 +15,7 @@
 #include "memeSounds.h"
 #include "SDK/InputSystem.h"
 #include "Features/Rage/Animations/LocalAnimation.h"
-#include "Features/Changers/SkinParser.h"
+#include "Features/Changers/SkinChanger.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -78,7 +78,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	SetupFonts();
 	n::SetupNetvars();
 	//PlaySound(reinterpret_cast<LPCSTR>(memeSound::BUWAWA), NULL, SND_MEMORY | SND_ASYNC);
-	SkinChanger::Dump();
+	skinChanger.Dump();
 	menu::Setup();
 	M::Setup();
 	h::SetupHooks();
