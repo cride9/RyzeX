@@ -9,6 +9,7 @@
 #include "../Rage/autowall.h"
 #include "../Visuals/ESP.h"
 #include "../Networking/networking.h"
+#include "../../Interface/Classes/CCSGameRulesProxy.h"
 #pragma comment(lib, "winmm.lib")
 
 #include "../../SDK/InputSystem.h"
@@ -967,6 +968,12 @@ void misc::FakeLag(bool& bSendPacket) {
 
 	int iMin = cfg::antiaim::fakelagmin;
 	int iMax = cfg::antiaim::fakelagmax;
+
+	if ((*GameRules)->m_bIsValveDS()) {
+
+		iMin = min(6, iMin);
+		iMax = min(6, iMax);
+	}
 
 	if (cfg::antiaim::fakelag) {
 

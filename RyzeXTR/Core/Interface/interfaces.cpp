@@ -1,4 +1,5 @@
 #include "interfaces.h"
+#include "Classes/CCSGameRulesProxy.h"
 #include <stdexcept>
 
 void i::SetupInterfaces() {
@@ -64,6 +65,10 @@ void i::SetupInterfaces() {
 	WeaponSystem = *(IWeaponSystem**)(util::FindSignature("client.dll", "8B 35 ? ? ? ? FF 10 0F B7 C0") + 2);
 	if (WeaponSystem == nullptr)
 		throw std::runtime_error("Failed to get IWeaponSystem");
+
+	GameRules = *(CCSGameRulesProxy***)((DWORD)(util::FindSignature("client.dll", "A1 ? ? ? ? 85 C0 0F 84 ? ? ? ? 80 B8 ? ? ? ? ? 74 7A")) + 0x1);
+	if (GameRules == nullptr)
+		throw std::runtime_error("Failed to get IGameRules");
 
 	//ItemSystem = util::GetAbsoluteAddress<decltype(ItemSystem)>(util::FindSignature("client.dll", "E8 ? ? ? ? 0F B7 0F") + 1);
 	//if (ItemSystem == nullptr)

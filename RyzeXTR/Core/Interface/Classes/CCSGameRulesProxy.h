@@ -1,9 +1,15 @@
 #pragma once
-#include "../../SDK/Entity.h"
+#include "../../SDK/NetVar/Netvar.h"
+
+#define ADD_NETVAR(name, type, netvar) type& name() { \
+	static auto offset = n::netvars[fnv::HashConst(netvar)]; \
+	return *reinterpret_cast<type*>(uint32_t(this) + offset); \
+}
 
 class CCSGameRulesProxy
 {
 public:
+
 	//[DT_CSGameRules]
 	ADD_NETVAR( m_bFreezePeriod, bool, "CCSGameRulesProxy->m_bFreezePeriod" );
 	ADD_NETVAR( m_bMatchWaitingForResume, bool, "CCSGameRulesProxy->m_bMatchWaitingForResume" );
@@ -76,3 +82,4 @@ public:
 	ADD_NETVAR( m_iNumConsecutiveCTLoses, int, "CCSGameRulesProxy->m_iNumConsecutiveCTLoses" );
 	ADD_NETVAR( m_iNumConsecutiveTerroristLoses, int, "CCSGameRulesProxy->m_iNumConsecutiveTerroristLoses" );
 };
+inline CCSGameRulesProxy** GameRules;

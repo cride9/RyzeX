@@ -218,6 +218,7 @@
     <ClCompile Include="Core\DLLMain.cpp" />
     <ClCompile Include="Core\Features\Changers\agentchanger.cpp" />
     <ClCompile Include="Core\Features\Changers\glovechanger.cpp" />
+    <ClCompile Include="Core\Features\Changers\SkinChanger.cpp" />
     <ClCompile Include="Core\Features\Changers\SkinParser.cpp" />
     <ClCompile Include="Core\Features\Misc\enginepred.cpp" />
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
@@ -307,6 +308,7 @@
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />
     <ClInclude Include="Core\Features\Changers\glovechanger.h" />
+    <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
     <ClInclude Include="Core\Features\Changers\SkinParser.h" />
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
     <ClInclude Include="Core\Features\Misc\misc.h" />
@@ -327,6 +329,7 @@
     <ClInclude Include="Core\Interface\Classes\CClientModeShared.h" />
     <ClInclude Include="Core\Interface\Classes\CClientState.h" />
     <ClInclude Include="Core\Interface\Classes\CConvar.h" />
+    <ClInclude Include="Core\Interface\Classes\CCSGameRulesProxy.h" />
     <ClInclude Include="Core\Interface\Classes\CGlobalVarsBase.h" />
     <ClInclude Include="Core\Interface\Classes\CInput.h" />
     <ClInclude Include="Core\Interface\Classes\CKeyValues.h" />

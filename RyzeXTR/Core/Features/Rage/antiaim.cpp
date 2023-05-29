@@ -5,6 +5,7 @@
 #include "Animations/LocalAnimation.h"
 #include "ragebot.h"
 #include "autowall.h"
+#include "../../Interface/Classes/CCSGameRulesProxy.h"
 
 #include "../../SDK/InputSystem.h"
 
@@ -23,6 +24,11 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		return;
 	}
 	int inverter = IPT::HandleInput(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
+
+	if ((*GameRules)->m_bFreezePeriod()) {
+		desyncValue = 0.f;
+		return;
+	}
 
 	// shooting checks
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {

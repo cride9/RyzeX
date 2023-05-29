@@ -89,6 +89,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkDispatchSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkSetText.cpp" />
     <ClCompile Include="Core\Features\Changers\SkinParser.cpp" />
+    <ClCompile Include="Core\Features\Changers\SkinChanger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -188,5 +189,7 @@
     <ClInclude Include="Core\Interface\Interfaces\IItemSystem.h" />
     <ClInclude Include="Core\SDK\pe.h" />
     <ClInclude Include="Core\Features\Changers\SkinParser.h" />
+    <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
+    <ClInclude Include="Core\Interface\Classes\CCSGameRulesProxy.h" />
   </ItemGroup>
 </Project>
