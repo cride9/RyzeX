@@ -2,6 +2,7 @@
 #include "../../SDK/Entity.h"
 #include "SkinChanger.h"
 #include "../../SDK/Menu/config.h"
+#include "../Rage/ragebot.h"
 
 namespace beforeIfuckUpEverything {
 
@@ -74,9 +75,9 @@ namespace beforeIfuckUpEverything {
 		case 33:
 			return WEAPON_SSG08;
 		case 34:
-			return WEAPON_KNIFE_GG;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 35:
-			return WEAPON_KNIFE;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 36:
 			return WEAPON_FLASHBANG;
 		case 37:
@@ -94,7 +95,7 @@ namespace beforeIfuckUpEverything {
 		case 43:
 			return WEAPON_HEALTHSHOT;
 		case 44:
-			return WEAPON_KNIFE_T;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 45:
 			return WEAPON_M4A1_SILENCER;
 		case 46:
@@ -120,7 +121,7 @@ namespace beforeIfuckUpEverything {
 		case 56:
 			return WEAPON_SPANNER;
 		case 57:
-			return WEAPON_KNIFE_GHOST;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 58:
 			return WEAPON_FIREBOMB;
 		case 59:
@@ -132,43 +133,43 @@ namespace beforeIfuckUpEverything {
 		case 62:
 			return WEAPON_BUMPMINE;
 		case 63:
-			return WEAPON_KNIFE_BAYONET;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 64:
-			return WEAPON_KNIFE_CSS;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 65:
-			return WEAPON_KNIFE_FLIP;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 66:
-			return WEAPON_KNIFE_GUT;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 67:
-			return WEAPON_KNIFE_KARAMBIT;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 68:
-			return WEAPON_KNIFE_M9_BAYONET;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 69:
-			return WEAPON_KNIFE_TACTICAL;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 70:
-			return WEAPON_KNIFE_FALCHION;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 71:
-			return WEAPON_KNIFE_SURVIVAL_BOWIE;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 72:
-			return WEAPON_KNIFE_BUTTERFLY;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 73:
-			return WEAPON_KNIFE_PUSH;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 74:
-			return WEAPON_KNIFE_CORD;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 75:
-			return WEAPON_KNIFE_CANIS;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 76:
-			return WEAPON_KNIFE_URSUS;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel); //
 		case 77:
-			return WEAPON_KNIFE_GYPSY_JACKKNIFE;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel);
 		case 78:
-			return WEAPON_KNIFE_OUTDOOR;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel);
 		case 79:
-			return WEAPON_KNIFE_STILETTO;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel);
 		case 80:
-			return WEAPON_KNIFE_WIDOWMAKER;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel);
 		case 81:
-			return WEAPON_KNIFE_SKELETON;
+			return (EItemDefinitionIndex)skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel);
 		case 82:
 			return GLOVE_STUDDED_BROKENFANG;
 		case 83:
@@ -385,10 +386,11 @@ namespace beforeIfuckUpEverything {
 	}
 
 	inline int weaponInHand = 0;
-	inline std::array<short, 37> iBackup{ 0 };
+	inline std::array<short, 92> iBackup{ 0 };
 
 	inline void UpdateSkins() {
 
+		g::bUpdatingSkins = true;
 		util::ForceFullUpdate();
 		typedef void(*fn) (void);
 		static fn update = (fn)util::FindSignature("engine.dll", "A1 ? ? ? ? B9 ? ? ? ? 56 FF 50 14 8B 34 85");
@@ -401,6 +403,7 @@ namespace beforeIfuckUpEverything {
 		// apply the timer
 		if (!update_time && !applied_update_time)
 		{
+
 			update_time = i::GlobalVars->flCurrentTime + 10.f;
 			applied_update_time = true;
 		}
@@ -413,6 +416,7 @@ namespace beforeIfuckUpEverything {
 			update_time = 0;
 			applied_update_time = false;
 		}
+		g::bUpdatingSkins = false;
 	}
 
 	inline bool ApplyKnifeModel(CBaseCombatWeapon* pWeapon)
@@ -433,18 +437,43 @@ namespace beforeIfuckUpEverything {
 			return false;
 
 		pViewmodel->GetModelIndex() = i::ModelInfo->GetModelIndex(mapItemList.at(skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel)).szModel);
-		pWeapon->GetItemDefinitionIndex() = skinChanger.GetWeaponIndexFromKnifeDefinitionIndex(skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel));
+		pWeapon->GetItemDefinitionIndex() = skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel);
+
+		return true;
+	}
+
+	inline bool ApplyKnifeSkin(CBaseCombatWeapon* pWeapon)
+	{
+		if (g::pLocal == nullptr)
+			return false;
+
+		pWeapon->GetItemDefinitionIndex() = skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel);
+		pWeapon->GetModelIndex() = i::ModelInfo->GetModelIndex(mapItemList.at(skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel)).szModel);
+
+		CBaseHandle pWorldModelHandle = pWeapon->GetWorldModelHandle();
+		if (!pWorldModelHandle)
+			return false;
+
+		CBaseCombatWeapon* pWorldModel = (CBaseCombatWeapon*)(i::EntityList->GetClientEntityFromHandle(pWorldModelHandle));
+		if (!pWorldModel)
+			return false;
+
+		pWorldModel->GetModelIndex() = i::ModelInfo->GetModelIndex(mapItemList.at(skinChanger.GetKnifeDefinitionIndex(cfg::skin::iKnifeModel)).szModel) + 1;
 
 		return true;
 	}
 
 	inline void SetSkin(CBaseEntity* pLocal) {
 
-		if (!pLocal || !pLocal->GetWeapon())
+		if (!pLocal || !pLocal->GetWeapon() || !cfg::skin::bEnableSkinChagner)
 			return;
 
+		auto pWeapon = pLocal->GetWeapon();
+
+		if (pWeapon)
+			weaponInHand = beforeIfuckUpEverything::whatTheFuck((EItemDefinitionIndex)pWeapon->GetItemDefinitionIndex());
+
 		bool bUpdate = false;
-		// -1 to prevent double active weapon
 		for (auto nIndex : pLocal->GetWeaponsHandle()) {
 
 			CBaseCombatWeapon* pWeapon = static_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntityFromHandle(nIndex));
@@ -454,11 +483,17 @@ namespace beforeIfuckUpEverything {
 
 			CCSWeaponData* pWeaponData = reinterpret_cast<CCSWeaponData*>(pWeapon->GetCSWpnData());
 
-			if (pWeaponData == nullptr || (pWeaponData->nWeaponType == WEAPONTYPE_GRENADE))
+			if (pWeaponData == nullptr || (pWeaponData->nWeaponType == WEAPONTYPE_GRENADE) || (pWeaponData->nWeaponType == WEAPONTYPE_C4) || (pWeaponData->nWeaponType == WEAPONTYPE_FISTS) || (pWeaponData->nWeaponType == WEAPONTYPE_BREACHCHARGE) || (pWeaponData->nWeaponType == WEAPONTYPE_BUMPMINE) || (pWeaponData->nWeaponType == WEAPONTYPE_HEALTHSHOT) || (pWeaponData->nWeaponType == WEAPONTYPE_TABLET))
+				continue;
+
+			if (pWeapon->GetItemDefinitionIndex() == WEAPON_TASER)
 				continue;
 
 			if (pWeapon->GetClientClass()->nClassID == EClassIndex::CKnife && cfg::skin::iKnifeModel > 0)
 				ApplyKnifeModel(pWeapon);
+
+			if (pWeapon->GetClientClass()->nClassID == EClassIndex::CKnife && cfg::skin::iKnifeModel > 0)
+				ApplyKnifeSkin(pWeapon);
 
 			auto weaponIndexMenu = beforeIfuckUpEverything::whatTheFuck((EItemDefinitionIndex)pWeapon->GetItemDefinitionIndex());;
 
@@ -467,7 +502,7 @@ namespace beforeIfuckUpEverything {
 			pWeapon->GetItemIDHigh() = -1;
 			pWeapon->GetFallbackWear() = cfg::skin::flSkinWear[weaponIndexMenu];
 			pWeapon->GetFallbackPaintKit() = selectedIndex;
-			pWeapon->GetFallbackStatTrak() = cfg::skin::iSkinStattrak[weaponIndexMenu];
+			//pWeapon->GetFallbackStatTrak() = cfg::skin::iSkinStattrak[weaponIndexMenu];
 			pWeapon->GetFallbackSeed() = cfg::skin::iFallbackSeed[weaponIndexMenu];
 			//if (!cfg::skin::szSkinNametag[weaponIndexMenu].empty())
 			//	strcpy(pWeapon->GetCustomName(), cfg::skin::szSkinNametag[weaponIndexMenu].c_str());
@@ -480,10 +515,5 @@ namespace beforeIfuckUpEverything {
 
 		if (bUpdate)
 			UpdateSkins();
-
-		auto pWeapon = pLocal->GetWeapon();
-
-		if (pWeapon)
-			weaponInHand = beforeIfuckUpEverything::whatTheFuck((EItemDefinitionIndex)pWeapon->GetItemDefinitionIndex());
 	}
 }

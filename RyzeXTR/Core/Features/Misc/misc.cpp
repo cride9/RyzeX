@@ -292,33 +292,38 @@ void misc::BulletImpactFrameStage() {
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return;
 
-	CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
-	//CUtlVector<ClientHitVerify_t>* pImpactList = reinterpret_cast<CUtlVector<ClientHitVerify_t>*>(g::pLocal + 0x11C50);
+	try {
+		CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
+		//CUtlVector<ClientHitVerify_t>* pImpactList = reinterpret_cast<CUtlVector<ClientHitVerify_t>*>(g::pLocal + 0x11C50);
 
-	if (!&pImpactList || pImpactList.Size() == 0 )
-		return;
+		if (!&pImpactList || pImpactList.Size() == 0)
+			return;
 
-	if (!cfg::misc::bulletImpact)
-		return;
+		if (!cfg::misc::bulletImpact)
+			return;
 
-	static int iLastCount = 0;
-	for (int i = pImpactList.Count(); i > iLastCount; --i) {
+		static int iLastCount = 0;
+		for (int i = pImpactList.Count(); i > iLastCount; --i) {
 
-		i::DebugOverlay->AddBoxOverlay(
-			Vector(pImpactList[i - 1].pos),
-			Vector(-2.0f, -2.0f, -2.0f),
-			Vector(2.0f, 2.0f, 2.0f),
-			Vector(0.0f, 0.0f, 0.0f),
-			cfg::misc::impactColor[1][0] * 255, // b
-			cfg::misc::impactColor[1][1] * 255, // g
-			cfg::misc::impactColor[1][2] * 255, // g
-			cfg::misc::impactColor[1][3] * 255, // a
-			4.f
-		);
+			i::DebugOverlay->AddBoxOverlay(
+				Vector(pImpactList[i - 1].pos),
+				Vector(-2.0f, -2.0f, -2.0f),
+				Vector(2.0f, 2.0f, 2.0f),
+				Vector(0.0f, 0.0f, 0.0f),
+				cfg::misc::impactColor[1][0] * 255, // b
+				cfg::misc::impactColor[1][1] * 255, // g
+				cfg::misc::impactColor[1][2] * 255, // g
+				cfg::misc::impactColor[1][3] * 255, // a
+				4.f
+			);
+		}
+
+		if (pImpactList.Count() != iLastCount)
+			iLastCount = pImpactList.Count();
 	}
-
-	if (pImpactList.Count() != iLastCount)
-		iLastCount = pImpactList.Count();
+	catch(std::exception) {
+		throw std::runtime_error(std::format("BulletImpactFrameStage crashed\nMemory at: {}\nLocalPlayer: {}\nEngine LocalPlayer: {}", uintptr_t(g::pLocal + 0x11C50), uintptr_t(g::pLocal), uintptr_t(CBaseEntity::GetLocalPlayer())).c_str());
+	}
 }
 
 void misc::BulletImpact(IGameEvent* pEvent) {
@@ -1666,8 +1671,19 @@ void misc::LeftHandKnife() {
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return;
 
+	static bool bSaveAgain = false;
+	if (!cfg::misc::bInvertKnife) {
+
+		bSaveAgain = true;
+		return;
+	}
+
 	static CConVar* convar = i::ConVar->FindVar("cl_righthand");
 	static int iBackupValue = convar->GetInt();
+	if (bSaveAgain) {
+		iBackupValue = convar->GetInt();
+		bSaveAgain = false;
+	}
 
 	if (CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon(); pWeapon)
 		convar->SetValue(pWeapon->IsKnife() ? iBackupValue ? 0 : 1 : iBackupValue);

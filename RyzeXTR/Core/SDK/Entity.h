@@ -513,7 +513,6 @@ public:
 	ADD_OFFSET(MaintainSequenceTransition, bool, 0x9F0);
 	ADD_OFFSET(InverseKinematics, LPVOID, 0x2670);
 	ADD_OFFSET(GeFinalPredictedTick, int, 0x3434);
-	ADD_OFFSET(m_nOcclusionMask, int, 0xA28);
 	//ADD_POFFSET(AnimState, CAnimState, 0x9960); You are fr a handicapped fuck, just fucking netvar it
 	//ADD_OFFSET(GetEFlags, int, 0xE8);
 

@@ -344,6 +344,9 @@ namespace cfg {
 		inline float flDrawCapsuleColorHit[4] = { 1.f, 1.f, 1.f, 1.f };
 
 		inline bool keyBindList = false;
+		inline bool bKeyBindListOldEnable = false;
+		inline bool bKeyBindListOld[10];
+
 		inline bool bunnyhop = false;
 		inline bool autoStrafe = false;
 		inline bool faststop = false;
@@ -351,6 +354,7 @@ namespace cfg {
 		inline bool blockbot = false;
 		inline int blockbotKey = 0;
 		inline bool clantag = false;
+		inline bool bInvertKnife = false;
 
 		inline bool m_bDrawServerHitbox = false;
 		inline bool m_bDrawServerHitboxOnAllEntities = false;
@@ -416,6 +420,7 @@ namespace cfg {
 	namespace skin {
 
 		inline bool bEnableSkinChagner;
+		inline bool bFilterByWeapon;
 
 		inline bool bModifySkinColors[92];
 		inline int iSkinId[92];

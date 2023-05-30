@@ -6,7 +6,7 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 
 	static auto original = detour::interpolateEntites.GetOriginal<decltype(&h::hkInterpolateServerEntites)>();
 
-	if (!g::pLocal || i::ClientState->iSignonState != SIGNONSTATE_FULL)
+	if (!g::pLocal || i::ClientState->iSignonState != SIGNONSTATE_FULL || g::bUpdatingSkins)
 		return original(ecx, edx);
 
 	lagcomp.SetInterpolationFlags();

@@ -799,6 +799,8 @@ void CConfig::Setup() {
 		using namespace cfg::misc;
 
 		SetupValue(keyBindList, true, "misc", "keybindList");
+		SetupValue(bKeyBindListOldEnable, "false", "misc", "bKeyBindListOldEnable");
+		SetupValue(bKeyBindListOld, false, 10, "misc", "bKeyBindListOld");
 		SetupValue(bunnyhop, false, "misc", "bunnyhop");
 		SetupValue(autoStrafe, false, "misc", "autoStrafe");
 		SetupValue(faststop, false, "misc", "faststop");
@@ -806,6 +808,7 @@ void CConfig::Setup() {
 		SetupValue(blockbot, false, "misc", "blockbot");
 		SetupValue(blockbotKey, 0, "misc", "blockbotKey");
 		SetupValue(clantag, false, "misc", "clantag");
+		SetupValue(bInvertKnife, false, "misc", "bInvertKnife");
 
 		SetupValue(nightmode, false, "misc", "nightmode");
 		SetupValue(nightmodeColor[0], 1.f, "visual", "nightmodeColorR");
@@ -895,6 +898,8 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::skin;
 		SetupValue(bEnableSkinChagner, false, "skin", "bEnableSkinChagner");
+		SetupValue(bFilterByWeapon, false, "skin", "bFilterByWeapon");
+
 		SetupValue(iSkinId, 92, 0, "skin", "iSkinId");
 		SetupValue(flSkinWear, 92.f, 0.f, "skin", "flSkinWear");
 		SetupValue(iSkinStattrak, 92, 0, "skin", "iSkinStattrak");

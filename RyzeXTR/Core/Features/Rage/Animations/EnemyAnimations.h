@@ -79,7 +79,6 @@ public:
 	void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
 	void SetGoalFeetYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious, float flServerVelocityXY, float flPlaybackrate = 0.f, int brutePhase = 0);
 
-
 	/* PASTED FUNTIONS */
 	float GetLocalCycleIncrement(CBaseEntity*, float);
 	void UpdateOnFeetYaw(CBaseEntity*, Lagcompensation::LagRecord_t*);
@@ -89,12 +88,13 @@ public:
 	void UpdateAnimLayer(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, int nSequence, float flPlaybackRate, float flWeight, float flCycle);
 	float BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	void RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog);
+	void SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* pMatrix, int nFlags);
 
 	/* resolver */
 	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);
 	bool CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount);
 	void TransformateMatrix(CBaseEntity* pPlayer);
-	void InterpolateMatricies();
+	void InterpolateMatricies(CBaseEntity* pEntity = nullptr);
 
 private:
 	void FakePitchResolver( CBaseEntity*, Lagcompensation::LagRecord_t* );

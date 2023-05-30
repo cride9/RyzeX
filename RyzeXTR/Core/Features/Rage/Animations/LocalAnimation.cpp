@@ -692,7 +692,7 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask)
 
 	// fix PVS occlusion
 	g::pLocal->GetOcclusionFrameCount() = -1;
-	g::pLocal->m_nOcclusionMask() &= ~2;
+	g::pLocal->GetOcclusionFlags() &= ~2;
 
 	// fix skipanimframe ( part 2 )
 	g::pLocal->GetLastSkipFrameCount() = 0;
@@ -711,7 +711,7 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask)
 	g::pLocal->GetEffects() = std::get < 1 >(m_PlayerData);
 	g::pLocal->GetClientEffects() = std::get < 2 >(m_PlayerData);
 	g::pLocal->GetOcclusionFrameCount() = std::get < 3 >(m_PlayerData);
-	g::pLocal->m_nOcclusionMask() = std::get < 4 >(m_PlayerData);
+	g::pLocal->GetOcclusionFlags() = std::get < 4 >(m_PlayerData);
 
 	// restore globals
 	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
@@ -828,6 +828,7 @@ void C_LocalAnimations::TransformateMatricies()
 }
 bool C_LocalAnimations::CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount)
 {
+	//TransformateMatricies();
 	std::memcpy(aInMatrix, m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * nBoneCount);
 	return true;
 }

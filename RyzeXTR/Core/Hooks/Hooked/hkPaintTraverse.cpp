@@ -44,6 +44,7 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		serversound.Finish();
 
 		visual::WorldEsp();
+		visual::CoolHackKeyBindList();
 
 		if (g::pLocal) {
 

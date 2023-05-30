@@ -87,7 +87,7 @@ void Lagcompensation::LagRecord_t::Restore(CBaseEntity* pEntity)
 
 void Lagcompensation::FrameStageNotify() {
 
-	if (!g::pLocal)
+	if (!g::pLocal || g::bUpdatingSkins)
 		return;
 
 	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++) {
@@ -362,16 +362,23 @@ void Lagcompensation::SetInterpolationFlags()
 		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity() || pEntity == g::pLocal)
 			continue;
 
-		VarMapping_t* pVarMap = pEntity->GetVarMap();
-
-		if (!pVarMap)
-			return;
-
-		for (int i = 0; i < pVarMap->m_nInterpolatedEntries; i++) {
-
-			VarMapEntry_t& pEntry = pVarMap->m_Entries[i];
-			pEntry.m_bNeedsToInterpolate = false;
+		void* m_VarMap = *(void**)((DWORD)(pEntity)+0x24);
+		if (m_VarMap)
+		{
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = i::GlobalVars->flIntervalPerTick;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = i::GlobalVars->flIntervalPerTick;
 		}
+
+		//VarMapping_t* pVarMap = pEntity->GetVarMap();
+
+		//if (!pVarMap)
+		//	return;
+
+		//for (int i = 0; i < pVarMap->m_nInterpolatedEntries; i++) {
+
+		//	VarMapEntry_t& pEntry = pVarMap->m_Entries[i];
+		//	pEntry.m_bNeedsToInterpolate = false;
+		//}
 	}
 }
 

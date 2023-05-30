@@ -3,8 +3,10 @@
 #include "../Misc/misc.h"
 #include "../Rage/Animations/EnemyAnimations.h"
 #include "../Rage/ragebot.h"
+#include "../Rage/exploits.h"
 #include "../../SDK/Menu/gui.h"
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
+#include "../../SDK/InputSystem.h"
 
 void SafepointDebug(CBaseEntity* pEnt) {
 
@@ -663,4 +665,71 @@ void visual::DroppedWeapons(CBaseCombatWeapon* pWeapon, Vector& vecScreenPositio
 	std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
 	i::Surface->DrawT(vecScreenPosition.x + 1, vecScreenPosition.y - -2, cfg::misc::flDroppedWeaponESP, g::fonts::FlagESP, true, name.c_str());
+}
+
+void visual::CoolHackKeyBindList() {
+
+	// static const char* options[] = { "Aimbot", "Doubletap", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping" };
+
+	// g::fonts::SkeetFont
+
+	if (!cfg::misc::bKeyBindListOld)
+		return;
+
+	int iWidth;
+	int iHeight;
+	i::EngineClient->GetScreenSize(iWidth, iHeight);
+
+	int spacing = 10;
+	if (IPT::HandleInput(cfg::rage::ragebotbind) && cfg::rage::enable && cfg::misc::bKeyBindListOld[0]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "AIMBOT");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::rage::doubletapkey) && cfg::rage::doubletap && cfg::misc::bKeyBindListOld[1]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, exploits::iTicksToStore ? Color(0, 255, 0) : Color(255, 0, 0), g::fonts::SkeetFont, false, "DT");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::rage::forceBaimKey) && cfg::rage::forceBaim && cfg::misc::bKeyBindListOld[2]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BAIM");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::rage::overrideBind) && cfg::misc::bKeyBindListOld[3]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "DMG");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::antiaim::fakewalkKey) && cfg::antiaim::fakewalkenable && cfg::misc::bKeyBindListOld[4]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "SLOW");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck && cfg::misc::bKeyBindListOld[5]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (i::ClientState->nChokedCommands * 8), 255), max(191 - i::ClientState->nChokedCommands * 8, 0), 61, 255), g::fonts::SkeetFont, false, "FD");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick && cfg::misc::bKeyBindListOld[6]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, misc::bRetreat ? Color(255, 0, 0) : Color(255, 255, 255), g::fonts::SkeetFont, false, "PEEK");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && cfg::misc::thirdperson && cfg::misc::bKeyBindListOld[7]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "TP");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::misc::blockbotKey) && cfg::misc::blockbot && cfg::misc::bKeyBindListOld[8]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BLOCK");
+		spacing += 30;
+	}
+	if (auto pNetChannelInfo = i::EngineClient->GetNetChannelInfo(); pNetChannelInfo && cfg::misc::bKeyBindListOld[9]) {
+
+		int outgoing = (pNetChannelInfo->GetLatency(FLOW_OUTGOING) + pNetChannelInfo->GetLatency(FLOW_INCOMING)) * 100;
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (outgoing), 255), max(191 - outgoing, 0), 61, 255), g::fonts::SkeetFont, false, "PING");
+		spacing += 30;
+	}
 }

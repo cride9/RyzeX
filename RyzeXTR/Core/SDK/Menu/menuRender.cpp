@@ -11,6 +11,16 @@
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Features/Changers/wtf.h"
 
+bool IsKnife(int idx) {
+
+	return idx == WEAPON_KNIFE || idx == WEAPON_KNIFE_BAYONET || idx == WEAPON_KNIFE_BUTTERFLY || idx == WEAPON_KNIFE_FALCHION
+		|| idx == WEAPON_KNIFE_FLIP || idx == WEAPON_KNIFE_GUT || idx == WEAPON_KNIFE_KARAMBIT || idx == WEAPON_KNIFE_M9_BAYONET
+		|| idx == WEAPON_KNIFE_PUSH || idx == WEAPON_KNIFE_SURVIVAL_BOWIE || idx == WEAPON_KNIFE_T || idx == WEAPON_KNIFE_TACTICAL
+		|| idx == WEAPON_KNIFE_GG || idx == WEAPON_KNIFE_GHOST || idx == WEAPON_KNIFE_GYPSY_JACKKNIFE || idx == WEAPON_KNIFE_STILETTO
+		|| idx == WEAPON_KNIFE_URSUS || idx == WEAPON_KNIFE_WIDOWMAKER || idx == WEAPON_KNIFE_CSS || idx == WEAPON_KNIFE_CANIS
+		|| idx == WEAPON_KNIFE_CORD || idx == WEAPON_KNIFE_OUTDOOR || idx == WEAPON_KNIFE_SKELETON;
+}
+
 ETabs selectedTab = RAGE_TAB;
 EEntity selectedEsp = ENEMY;
 void menu::HandleMenuElements() noexcept {
@@ -542,6 +552,11 @@ void menu::Visualtab() noexcept {
 				ImGui::SliderFloat("Hitsound volume", &m_flHitSoundVolume, 0.f, 100.f, "%.f");
             ImGui::Checkbox("Paper mode", &cfg::model::paperMode);
             ImGui::Checkbox("Keybind list", &keyBindList);
+			ImGui::Checkbox("Keybind list OLD", &bKeyBindListOldEnable);
+			if (bKeyBindListOldEnable) {
+				static const char* options[] = {"Aimbot", "Doubletap", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping"};
+				ImGui::MultiComboBox("Keybinds", options, cfg::misc::bKeyBindListOld, IM_ARRAYSIZE(options));
+			}
         }
         ImGui::EndChild();
 
@@ -979,6 +994,7 @@ void menu::Misctab() noexcept {
 		strcpy(bombCharBuffer, bombBuffer.c_str());
 		ImGui::InputText("Custom bomb text", bombCharBuffer, sizeof(bombCharBuffer));
 		bombBuffer = bombCharBuffer;
+		ImGui::Checkbox("Invert knife", &bInvertKnife);
 
 #if _DEBUG
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
@@ -1056,6 +1072,7 @@ void menu::Skintab() noexcept {
 	{
 		using namespace beforeIfuckUpEverything;
 		ImGui::Checkbox("Enable", &bEnableSkinChagner);
+		ImGui::Checkbox("Filter by weapon", &bFilterByWeapon);
 		//static int currentSelected = 0;
 
 		static int weaponBackup = -1;
@@ -1063,28 +1080,50 @@ void menu::Skintab() noexcept {
 		static std::vector<int> skinPaint{0};
 		static int selectedSkin[92]{-1};
 
-		if (weaponBackup != weaponInHand) {
-			skinNames.clear();
-			skinPaint.clear();
+		if (iSkinId[weaponInHand] != selectedSkin[weaponInHand] && selectedSkin[weaponInHand] == -1) {
+			selectedSkin[weaponInHand] = iSkinId[weaponInHand];
+		}
 
-			for (size_t i = 0; i < skinChanger.SkinKits.size(); i++)
-			{
-				auto& lmao = skinChanger.SkinKits.at(i);
-				if (lmao.m_iWeaponID == whatTheFuckBackward(weaponInHand)) {
+		if (bFilterByWeapon) {
+			if (weaponBackup != weaponInHand) {
+				skinNames.clear();
+				skinPaint.clear();
+
+				for (size_t i = 0; i < skinChanger.SkinKits.size(); i++)
+				{
+					auto& lmao = skinChanger.SkinKits.at(i);
+
+					if (lmao.m_iWeaponID == whatTheFuckBackward(weaponInHand) || (lmao.m_iWeaponID == 0 && IsKnife(whatTheFuckBackward(weaponInHand)))) {
+						skinPaint.push_back(i); 
+						skinNames.push_back(lmao.m_szName);
+					}
+				}
+			}
+		}
+		else {
+			if (skinNames.size() != skinChanger.SkinKits.size()) {
+				skinNames.clear();
+				skinPaint.clear();
+				for (size_t i = 0; i < skinChanger.SkinKits.size(); i++) {
+					auto& lmao = skinChanger.SkinKits.at(i);
+
 					skinPaint.push_back(i);
 					skinNames.push_back(lmao.m_szName);
 				}
 			}
 		}
 		
-		ImGui::ListBoxVector("##Skin list", &selectedSkin[weaponInHand], skinNames, 14);
+		ImGui::ListBoxVector("##Skin list", &iSkinId[weaponInHand], skinNames, 14);
 		ImGui::SliderFloat("Wear", &flSkinWear[weaponInHand], 0.f, 1.f);
-		ImGui::SliderInt("Stattrak", &iSkinStattrak[weaponInHand], 0, 1000);
+		//ImGui::SliderInt("Stattrak", &iSkinStattrak[weaponInHand], 0, 1000);
 		ImGui::SliderInt("Seed", &iFallbackSeed[weaponInHand], 0, 1000);
-
-		if (skinPaint.size() > selectedSkin[weaponInHand]) {
-			iSkinId[weaponInHand] = skinPaint[selectedSkin[weaponInHand]];
-		}
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
+		if (ImGui::Button("Force update", ImVec2(ImGui::GetContentRegionAvail().x, 20), false))
+			UpdateSkins();
+		ImGui::PopStyleVar();
+		//if (skinPaint.size() > selectedSkin[weaponInHand] && selectedSkin[weaponInHand] != iSkinId[weaponInHand]) {
+		//	iSkinId[weaponInHand] = skinPaint[selectedSkin[weaponInHand]];
+		//}
 
 		weaponBackup = weaponInHand;
 	}

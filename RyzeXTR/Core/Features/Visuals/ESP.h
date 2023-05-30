@@ -15,6 +15,7 @@ namespace visual {
 	inline std::array<Vector, 65> vecDormatPosition{};
 
 	void VisualRender();
+	void CoolHackKeyBindList();
 
 	void BoxEsp(int&, float&, int&, float&, Color);
 	void HealthEsp(int&, float&, int&, float&, float&, float&, int&, Color, Color, size_t&);

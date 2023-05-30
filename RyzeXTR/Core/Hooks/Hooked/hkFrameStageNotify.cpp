@@ -35,6 +35,7 @@ void hkPreFrameStageNotify(EStage& curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
+		lagcomp.FrameStageNotify();
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:
@@ -73,7 +74,6 @@ void hkPostFrameStageNotify(EStage& curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
-		lagcomp.FrameStageNotify();
 		break;
 
 	case FRAME_RENDER_START:

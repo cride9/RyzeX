@@ -15,6 +15,7 @@ namespace g {
 	inline bool bAllowAnimations[65];
 	inline bool bWaiting;
 	inline bool bNewTick[65];
+	inline bool bUpdatingSkins = false;
 
 	inline std::tuple<bool, int> bSettingUpBones[65];
 
@@ -22,5 +23,6 @@ namespace g {
 		inline HFont HealthESP;
 		inline HFont NameESP;
 		inline HFont FlagESP;
+		inline HFont SkeetFont;
 	}
 }

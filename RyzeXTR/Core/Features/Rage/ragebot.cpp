@@ -1030,7 +1030,7 @@ bool CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, 
 	if (bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[CENTER]))
 		bHit[2] = true;
 
-	if (bHit[RIGHT] && bHit[LEFT] && bHit[CENTER])
+	if (bHit[0] && bHit[1] && bHit[2])
 		return true;
 
 	///* Just decleare a static enum so we can make it look cleaner */
