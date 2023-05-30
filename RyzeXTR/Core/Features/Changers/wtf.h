@@ -386,7 +386,7 @@ namespace beforeIfuckUpEverything {
 	}
 
 	inline int weaponInHand = 0;
-	inline std::array<short, 92> iBackup{ 0 };
+	inline std::array<int, 92> iBackup{ 0 };
 
 	inline void UpdateSkins() {
 
@@ -513,7 +513,9 @@ namespace beforeIfuckUpEverything {
 			}
 		}
 
-		if (bUpdate)
+		if (bUpdate) {
 			UpdateSkins();
+			bUpdate = false;
+		}
 	}
 }

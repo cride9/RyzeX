@@ -1115,10 +1115,9 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (pLog->pRecord.empty())
 		return false;
 
-	if (pLog->pEntity->IsDormant() || pLog->pRecord.front().bDormant || !pLog->pCachedMatrix || pLog->pCachedMatrix->GetOrigin().IsZero())
+	if (pLog->pEntity->IsDormant() || pLog->pRecord.front().bDormant)
 		return false;
 
-	//pEnt->GetBoneAccessor()->matBones = pLog->pRecord.front().pMatricies[VISUAL];
 	std::memcpy(pMatrix, pLog->pCachedMatrix, sizeof(matrix3x4_t) * nBoneCount);
 
 	return true;
@@ -1133,7 +1132,7 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 			continue;
 
 		auto pPlayerData = &lagcomp.GetLog(nPlayerID);
-		if (!pPlayerData || !pPlayerData->pCachedMatrix)
+		if (!pPlayerData || pPlayerData->pEntity != pPlayer)
 			continue;
 
 		// get bone count
@@ -1156,20 +1155,20 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 
 void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 
-	auto& pRecord = lagcomp.GetLog(pEnt->EntIndex());
-	if (!pRecord.pCachedMatrix || pRecord.pCachedMatrix->GetOrigin().IsZero())
-		return;
+	auto pRecord = &lagcomp.GetLog(pEnt->EntIndex());
+	if (!pRecord || pRecord->pEntity != pEnt)
+		return;	
 
-	static Vector vecLastOrigin = pEnt->GetAbsOrigin();
-	Vector vecOriginDelta = pEnt->GetAbsOrigin() - vecLastOrigin;
+	static Vector vecLastOrigin[65];
+	Vector vecOriginDelta = pEnt->GetAbsOrigin() - vecLastOrigin[pEnt->EntIndex()];
 
-	for (auto& Matrix : pRecord.pCachedMatrix)
+	for (auto& Matrix : pRecord->pCachedMatrix)
 	{
 		Matrix[0][3] += vecOriginDelta.x;
 		Matrix[1][3] += vecOriginDelta.y;
 		Matrix[2][3] += vecOriginDelta.z;
 	}
-	vecLastOrigin = pEnt->GetAbsOrigin();
+	vecLastOrigin[pEnt->EntIndex()] = pEnt->GetAbsOrigin();
 }
 
 void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer) {
