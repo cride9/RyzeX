@@ -21,21 +21,23 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		return;
 
 	/* If we're not connected to a server clear every pointer to not crash */
-	if (i::ClientState->iSignonState != SIGNONSTATE_FULL && g::pLocal && !i::EngineClient->IsConnected() && !i::EngineClient->IsInGame()) {
-		for (size_t index = 0; index < 65; index++) {
-			if (auto pCurrentRecord = &lagcomp.GetLog(index); !pCurrentRecord->pRecord.empty() || pCurrentRecord->pEntity) {
-				pCurrentRecord->pRecord.clear();
-				pCurrentRecord->pEntity = nullptr;
-			}
-		}
-		misc::bResetNightMode = true;
-		h::UnHookClientState();
-		prediction.pLastCmd = nullptr;
-		g::pLocal = nullptr;
-		ragebot.rageBotData.pAimbotTarget = nullptr;
-		ragebot.rageBotData.pTargetMatrix = nullptr;
-		ragebot.rageBotData.iCommand = 0;
-	}
+	//if (i::ClientState->iSignonState != SIGNONSTATE_FULL && g::pLocal && !i::EngineClient->IsConnected() && !i::EngineClient->IsInGame()) {
+	//	for (size_t index = 0; index < 65; index++) {
+	//		if (auto pCurrentRecord = &lagcomp.GetLog(index); !pCurrentRecord->pRecord.empty() || pCurrentRecord->pEntity) {
+	//			pCurrentRecord->pRecord.clear();
+	//			pCurrentRecord->pEntity = nullptr;
+	//		}
+	//		g::bAllowAnimations[index] = false;
+	//		g::bSettingUpBones[index] = std::make_tuple(false, 0);
+	//	}
+	//	misc::bResetNightMode = true;
+	//	h::UnHookClientState();
+	//	prediction.pLastCmd = nullptr;
+	//	g::pLocal = nullptr;
+	//	ragebot.rageBotData.pAimbotTarget = nullptr;
+	//	ragebot.rageBotData.pTargetMatrix = nullptr;
+	//	ragebot.rageBotData.iCommand = 0;
+	//}
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 

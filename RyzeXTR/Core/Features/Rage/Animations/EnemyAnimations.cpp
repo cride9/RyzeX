@@ -1,6 +1,7 @@
 #include "EnemyAnimations.h"
 #include "../ragebot.h"
 #include "../../../SDK/Menu/config.h"
+#include "../autowall.h"
 
 float flOldLowerbodyYaw[65];
 float flOldPlaybackrateYaw[65];
@@ -101,10 +102,10 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious)
+	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious || !cfg::rage::resolver)
 		return;
 
-	Vector vecEyePosition = pLocal->GetEyePosition();
+	Vector vecEyePosition = pLocal->GetEyePosition(false);
 	Vector vecLHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]);
 	Vector vecRHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]);
 
@@ -112,29 +113,26 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	Trace_t traceLData;
 	Trace_t traceRData;
 
-	float flResolveYaw = 0.f;
+	float flResolveYaw = 58.f;
 	static int iFoundSide = 0;
+
 	pRecord->ApplyMatrix(pEntity, LEFT);
-	i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecLHitboxPosition), MASK_SHOT, &traceFilter, &traceLData);
+	float bHitLeft = autowall.GetDamage(pLocal, vecEyePosition, vecLHitboxPosition, pLocal->GetWeapon());
 	pRecord->ApplyMatrix(pEntity, RIGHT);
-	i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecRHitboxPosition), MASK_SHOT, &traceFilter, &traceRData);
+	float bHitRight = autowall.GetDamage(pLocal, vecEyePosition, vecRHitboxPosition, pLocal->GetWeapon());
 
-	bool bHitLeft = traceLData.pHitEntity == pEntity;
-	bool bHitRight = traceRData.pHitEntity == pEntity;
-
-	if (bHitLeft && bHitRight) {
-		if (!iFoundSide) {
+	if (bHitLeft > 1 && bHitRight > 1) {
+		if (!iFoundSide) 
 			iFoundSide = RIGHT;
-		}
 	}
-	else if (!bHitLeft && !bHitRight)
+	else if (bHitLeft == -1.0f && bHitRight == -1.0f)
 		iFoundSide = 0;
-	else if (!bHitLeft && bHitRight && !iFoundSide)
+	else if (bHitLeft > bHitRight && !iFoundSide)
 		iFoundSide = RIGHT;
-	else if (bHitLeft && !bHitRight && !iFoundSide)
+	else if (bHitLeft < bHitRight && !iFoundSide)
 		iFoundSide = LEFT;
 	
-	if (iFoundSide)
+	if (iFoundSide != 0)
 		flResolveYaw = iFoundSide == RIGHT ? 58 : -58;
 	
 	switch (missedShots[pEntity->EntIndex()] % 3) {
@@ -145,7 +143,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 		break;
 	}
 
-	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y) + flResolveYaw;
+	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + flResolveYaw);
 }
 
 // removed resolver from Integral, do your own one here ;)
@@ -1118,7 +1116,7 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (pLog->pEntity->IsDormant() || pLog->pRecord.front().bDormant)
 		return false;
 
-	std::memcpy(pMatrix, pLog->pCachedMatrix, sizeof(matrix3x4_t) * nBoneCount);
+	std::memcpy(pMatrix, pLog->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
 
 	return true;
 }
@@ -1132,7 +1130,7 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 			continue;
 
 		auto pPlayerData = &lagcomp.GetLog(nPlayerID);
-		if (!pPlayerData || pPlayerData->pEntity != pPlayer)
+		if (!pPlayerData || pPlayerData->pEntity != pPlayer || !pPlayerData->pCachedMatrix.data())
 			continue;
 
 		// get bone count
@@ -1144,12 +1142,12 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 		TransformateMatrix(pPlayer);
 
 		// copy the entire matrix
-		std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->pCachedMatrix, sizeof(matrix3x4_t) * nBoneCount);
+		//std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
 
 		// build attachments
-		pPlayer->GetBoneAccessor()->matBones = pPlayerData->pCachedMatrix;
+		pPlayer->GetBoneAccessor()->matBones = pPlayerData->pCachedMatrix.data();
 		pPlayer->SetupBones_AttachmentHelper();
-		pPlayer->GetBoneAccessor()->matBones = pPlayerData->pCachedMatrix;
+		pPlayer->GetBoneAccessor()->matBones = pPlayerData->pCachedMatrix.data();
 	}
 }
 
@@ -1792,7 +1790,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	Resolver(pEntity, pRecord, pPrevious);
 
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
-	std::memcpy(pLog->pCachedMatrix, pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
+	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
 
 	if (cfg::rage::enable) {
 		//pRecord->pEntity->SetupBonesFix(pRecord->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pRecord->pMatricies[RESOLVE]);
@@ -1882,9 +1880,9 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	pEntity->GetOcclusionFlags() &= ~2;
 	pEntity->GetLastSkipFrameCount() = 0;
 
-	g::bSettingUpBones[pEntity->EntIndex()] = std::make_tuple(true, nBoneMask);
+	g::bSettingUpBones[pEntity->EntIndex()] = true;
 	pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, nBoneMask, 0.0f);
-	g::bSettingUpBones[pEntity->EntIndex()] = std::make_tuple(false, 0);
+	g::bSettingUpBones[pEntity->EntIndex()] = false;
 
 	pEntity->GetLastSkipFrameCount() = iLastSkipFrameCount;
 	pEntity->GetEffects() = iEffect;

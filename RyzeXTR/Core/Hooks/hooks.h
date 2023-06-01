@@ -79,6 +79,8 @@ namespace detour {
 	inline CDetourHook dispatchSound;
 	inline CDetourHook installStringTableCallback;
 	inline CDetourHook setText;
+	inline CDetourHook levelShutDown;
+	inline CDetourHook viewmodelSequenceProxy;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -154,6 +156,7 @@ namespace h {
 	void __fastcall     hkInstallStringTableCallback(const char* tableName);
 	void __cdecl		hkDispatchSound(SoundInfoSOURCESDK_t*);
 	void __fastcall		hkSetText(void* ecx, void* edx, const char* tokenName);
+	void __fastcall		hkLevelShutDownClient(void* ecx, void* edx);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

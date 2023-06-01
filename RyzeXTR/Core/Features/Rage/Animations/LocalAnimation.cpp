@@ -105,9 +105,12 @@ end
 }
 
 /* New stuff */
-void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
+void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 {
-	g_LocalAnimations->StoreAnimationRecord();
+	if (!pLocal->IsAlive())
+		return;
+
+	g_LocalAnimations->StoreAnimationRecord(pLocal);
 
 	if (!bSendPacket) 
 		return;
@@ -127,23 +130,23 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 	this->m_LocalData.m_nSimulationTicks = i::ClientState->nChokedCommands + 1;
 	std::tuple < Vector, Vector, float, float, Vector, Vector, Vector, Vector, int, int, int, float, float > m_Data = std::make_tuple
 	(
-		g::pLocal->m_angVisualAngles(),
-		g::pLocal->GetEyeAngles(),
-		g::pLocal->GetDuckAmount(),
-		g::pLocal->GetDuckSpeed(),
-		g::pLocal->GetAbsOrigin(),
-		g::pLocal->GetVecOrigin(),
-		g::pLocal->GetVecAbsVelocity(),
-		g::pLocal->GetVelocity(),
-		g::pLocal->GetEFlags(),
-		g::pLocal->GetFlags(),
-		g::pLocal->GetMoveType(),
-		g::pLocal->GetThirdpersonRecoil(),
-		g::pLocal->GetLowerBodyYaw()
+		pLocal->m_angVisualAngles(),
+		pLocal->GetEyeAngles(),
+		pLocal->GetDuckAmount(),
+		pLocal->GetDuckSpeed(),
+		pLocal->GetAbsOrigin(),
+		pLocal->GetVecOrigin(),
+		pLocal->GetVecAbsVelocity(),
+		pLocal->GetVelocity(),
+		pLocal->GetEFlags(),
+		pLocal->GetFlags(),
+		pLocal->GetMoveType(),
+		pLocal->GetThirdpersonRecoil(),
+		pLocal->GetLowerBodyYaw()
 	);
 
 	/* set localplayer entity's flags */
-	g::pLocal->GetEFlags() &= ~(EFL_DIRTY_ABSVELOCITY | EFL_DIRTY_ABSTRANSFORM);
+	pLocal->GetEFlags() &= ~(EFL_DIRTY_ABSVELOCITY | EFL_DIRTY_ABSTRANSFORM);
 
 	/* remove interpolation amount */
 	i::GlobalVars->flInterpolationAmount = 0.0f;
@@ -152,13 +155,13 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 	std::tuple < Vector, bool > m_ShotData = std::make_tuple < Vector, bool >(Vector(0, 0, 0), false);
 
 	/* copy data */
-	g_LocalAnimations->CopyPlayerAnimationData(false);
+	g_LocalAnimations->CopyPlayerAnimationData(false, pLocal);
 
 	/* UpdatePlayerAnimations */
 	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.m_nSimulationTicks; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int GetTickBase = g::pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
+		int GetTickBase = pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -170,27 +173,27 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 		if (m_Record)
 		{
 			/* set player data from the animation record */ 
-			g::pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
-			g::pLocal->GetVelocity() = m_Record->m_vecVelocity;
-			g::pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
-			g::pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
-			g::pLocal->GetDuckSpeed() = m_Record->m_flDuckSpeed;
-			g::pLocal->m_angVisualAngles() = m_Record->m_angRealAngles;
-			g::pLocal->GetEyeAngles() = m_Record->m_angRealAngles;
-			g::pLocal->GetFlags() = m_Record->m_nFlags;
-			g::pLocal->GetMoveType() = m_Record->m_nMoveType;
+			pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			pLocal->GetVelocity() = m_Record->m_vecVelocity;
+			pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
+			pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
+			pLocal->GetDuckSpeed() = m_Record->m_flDuckSpeed;
+			pLocal->m_angVisualAngles() = m_Record->m_angRealAngles;
+			pLocal->GetEyeAngles() = m_Record->m_angRealAngles;
+			pLocal->GetFlags() = m_Record->m_nFlags;
+			pLocal->GetMoveType() = m_Record->m_nMoveType;
 
 			/* fix localplayer strafe and sequences */
-			g_LocalAnimations->SimulateStrafe(m_Record->m_nButtons);
-			g_LocalAnimations->DoAnimationEvent(m_Record->m_nButtons);
+			g_LocalAnimations->SimulateStrafe(m_Record->m_nButtons, pLocal);
+			g_LocalAnimations->DoAnimationEvent(m_Record->m_nButtons, pLocal);
 
 			/* set shot angle */
 			if (nSimulationTick == m_LocalData.m_nSimulationTicks)
 			{
 				if (std::get < 1 >(m_ShotData))
 				{
-					g::pLocal->m_angVisualAngles() = std::get < 0 >(m_ShotData);
-					g::pLocal->GetEyeAngles() = std::get < 0 >(m_ShotData);
+					pLocal->m_angVisualAngles() = std::get < 0 >(m_ShotData);
+					pLocal->GetEyeAngles() = std::get < 0 >(m_ShotData);
 				}
 			}
 			else
@@ -204,35 +207,34 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 		}
 
 		/* Fix framecount and time */
-		g::pLocal->AnimState()->iLastUpdateFrame = 0;
-		g::pLocal->AnimState()->flLastUpdateTime = i::GlobalVars->flCurrentTime - i::GlobalVars->flIntervalPerTick;
+		pLocal->AnimState()->iLastUpdateFrame = 0;
+		pLocal->AnimState()->flLastUpdateTime = i::GlobalVars->flCurrentTime - i::GlobalVars->flIntervalPerTick;
 
 		/* set player and weapon */
-		g::pLocal->AnimState()->pEntity = g::pLocal;
-		g::pLocal->AnimState()->pActiveWeapon = g::pLocal->GetWeapon();
+		pLocal->AnimState()->pEntity = pLocal;
+		pLocal->AnimState()->pActiveWeapon = pLocal->GetWeapon();
 
 		/* force client-side animation */
-		bool IsClientSideAnimation = g::pLocal->IsClientSideAnimation();
-		g::pLocal->IsClientSideAnimation() = true;
+		bool IsClientSideAnimation = pLocal->IsClientSideAnimation();
+		pLocal->IsClientSideAnimation() = true;
 
 		/* update localplayer animations */
-		g::bAllowAnimations[g::pLocal->EntIndex()] = true;
-		g::pLocal->UpdateClientSideAnimations();
-		g::bAllowAnimations[g::pLocal->EntIndex()] = false;
+		g::bAllowAnimations[pLocal->EntIndex()] = true;
+		pLocal->UpdateClientSideAnimations();
+		g::bAllowAnimations[pLocal->EntIndex()] = false;
 
 		/* restore client-side animation */
-		g::pLocal->IsClientSideAnimation() = IsClientSideAnimation;
+		pLocal->IsClientSideAnimation() = IsClientSideAnimation;
 	}
 
 	/* copy layers */
-	std::memcpy(m_LocalData.m_Real.m_Layers.data(), g::pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
-	std::memcpy(m_LocalData.m_Real.m_PoseParameters.data(), g::pLocal->GetPoseParameter().data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
-	AnimationBreaker(m_LocalData.m_Real.m_PoseParameters.data());
+	std::memcpy(m_LocalData.m_Real.m_Layers.data(), pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+	std::memcpy(m_LocalData.m_Real.m_PoseParameters.data(), pLocal->GetPoseParameter().data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
 
-	g::pLocal->SetAbsOrigin(m_LocalData.m_vecAbsOrigin);
+	pLocal->SetAbsOrigin(m_LocalData.m_vecAbsOrigin);
 	//if ( !g_Globals->m_Packet.m_bSkipMatrix )
-	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Real.m_Matrix.data(), BONE_USED_BY_ANYTHING);
-	g_LocalAnimations->UpdateDesyncAnimations();
+	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Real.m_Matrix.data(), BONE_USED_BY_ANYTHING, pLocal);
+	g_LocalAnimations->UpdateDesyncAnimations(pLocal);
 
 	/* restore globals */
 	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
@@ -244,20 +246,20 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket)
 	i::GlobalVars->iTickCount = std::get < 6 >(m_Globals);
 
 	/* restore changed localplayer's data */
-	g::pLocal->m_angVisualAngles() = std::get < 0 >(m_Data);
-	g::pLocal->GetEyeAngles() = std::get < 1 >(m_Data);
-	g::pLocal->GetDuckAmount() = std::get < 2 >(m_Data);
-	g::pLocal->GetDuckSpeed() = std::get < 3 >(m_Data);
-	g::pLocal->GetVecOrigin() = std::get < 5 >(m_Data);
-	g::pLocal->GetVecAbsVelocity() = std::get < 6 >(m_Data);
-	g::pLocal->GetVelocity() = std::get < 7 >(m_Data);
-	g::pLocal->GetEFlags() = std::get < 8 >(m_Data);
-	g::pLocal->GetFlags() = std::get < 9 >(m_Data);
-	g::pLocal->GetMoveType() = std::get < 10 >(m_Data);
-	g::pLocal->GetThirdpersonRecoil() = std::get < 11 >(m_Data);
-	g::pLocal->GetLowerBodyYaw() = std::get < 12 >(m_Data);
+	pLocal->m_angVisualAngles() = std::get < 0 >(m_Data);
+	pLocal->GetEyeAngles() = std::get < 1 >(m_Data);
+	pLocal->GetDuckAmount() = std::get < 2 >(m_Data);
+	pLocal->GetDuckSpeed() = std::get < 3 >(m_Data);
+	pLocal->GetVecOrigin() = std::get < 5 >(m_Data);
+	pLocal->GetVecAbsVelocity() = std::get < 6 >(m_Data);
+	pLocal->GetVelocity() = std::get < 7 >(m_Data);
+	pLocal->GetEFlags() = std::get < 8 >(m_Data);
+	pLocal->GetFlags() = std::get < 9 >(m_Data);
+	pLocal->GetMoveType() = std::get < 10 >(m_Data);
+	pLocal->GetThirdpersonRecoil() = std::get < 11 >(m_Data);
+	pLocal->GetLowerBodyYaw() = std::get < 12 >(m_Data);
 }
-void C_LocalAnimations::CopyPlayerAnimationData(bool bFake)
+void C_LocalAnimations::CopyPlayerAnimationData(bool bFake, CBaseEntity* pLocal)
 {
 	std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_Layers = m_LocalData.m_Real.m_Layers;
 	if (bFake)
@@ -265,49 +267,49 @@ void C_LocalAnimations::CopyPlayerAnimationData(bool bFake)
 
 	std::memcpy
 	(
-		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
+		&pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
 		&m_Layers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
 		sizeof(CAnimationLayer)
 	);
 	std::memcpy
 	(
-		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
+		&pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
 		&m_Layers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
 		sizeof(CAnimationLayer)
 	);
 	std::memcpy
 	(
-		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_ALIVELOOP],
+		&pLocal->GetAnimationOverlays()[ANIMATION_LAYER_ALIVELOOP],
 		&m_Layers[ANIMATION_LAYER_ALIVELOOP],
 		sizeof(CAnimationLayer)
 	);
 }
-void C_LocalAnimations::UpdateDesyncAnimations()
+void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 {
 	CAnimState m_AnimationState;
-	std::memcpy(&m_AnimationState, g::pLocal->AnimState(), sizeof(CAnimState));
+	std::memcpy(&m_AnimationState, pLocal->AnimState(), sizeof(CAnimState));
 
 	std::memcpy
 	(
-		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
+		&pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
 		&m_LocalData.m_Fake.m_Layers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
 		sizeof(CAnimationLayer)
 	);
 	std::memcpy
 	(
-		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
+		&pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
 		&m_LocalData.m_Fake.m_Layers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
 		sizeof(CAnimationLayer)
 	);
 	std::memcpy
 	(
-		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_ALIVELOOP],
+		&pLocal->GetAnimationOverlays()[ANIMATION_LAYER_ALIVELOOP],
 		&m_LocalData.m_Fake.m_Layers[ANIMATION_LAYER_ALIVELOOP],
 		sizeof(CAnimationLayer)
 	);
 
-	std::memcpy(g::pLocal->AnimState(), &m_LocalData.m_Fake.m_AnimationState, sizeof(CAnimState));
-	std::memcpy(g::pLocal->GetPoseParameter().data(), m_LocalData.m_Fake.m_PoseParameters.data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
+	std::memcpy(pLocal->AnimState(), &m_LocalData.m_Fake.m_AnimationState, sizeof(CAnimState));
+	std::memcpy(pLocal->GetPoseParameter().data(), m_LocalData.m_Fake.m_PoseParameters.data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
 
 	std::tuple < Vector, bool > m_ShotData = std::make_tuple < Vector, bool >(Vector(0, 0, 0), false);
 
@@ -315,7 +317,7 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.m_nSimulationTicks; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int GetTickBase = g::pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
+		int GetTickBase = pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -327,27 +329,27 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 		if (m_Record)
 		{
 			/* set player data from the animation record */
-			g::pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
-			g::pLocal->GetVelocity() = m_Record->m_vecVelocity;
-			g::pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
-			g::pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
-			g::pLocal->GetDuckSpeed() = m_Record->m_flDuckSpeed;
-			g::pLocal->m_angVisualAngles() = m_Record->m_angFakeAngles;
-			g::pLocal->GetEyeAngles() = m_Record->m_angFakeAngles;
-			g::pLocal->GetFlags() = m_Record->m_nFlags;
-			g::pLocal->GetMoveType() = m_Record->m_nMoveType;
+			pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			pLocal->GetVelocity() = m_Record->m_vecVelocity;
+			pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
+			pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
+			pLocal->GetDuckSpeed() = m_Record->m_flDuckSpeed;
+			pLocal->m_angVisualAngles() = m_Record->m_angFakeAngles;
+			pLocal->GetEyeAngles() = m_Record->m_angFakeAngles;
+			pLocal->GetFlags() = m_Record->m_nFlags;
+			pLocal->GetMoveType() = m_Record->m_nMoveType;
 
 			/* fix localplayer strafe and sequences */
-			g_LocalAnimations->SimulateStrafe(m_Record->m_nButtons);
-			g_LocalAnimations->DoAnimationEvent(m_Record->m_nButtons, true);
+			g_LocalAnimations->SimulateStrafe(m_Record->m_nButtons, pLocal);
+			g_LocalAnimations->DoAnimationEvent(m_Record->m_nButtons, pLocal, true);
 
 			/* set shot angle */
 			if (nSimulationTick == m_LocalData.m_nSimulationTicks)
 			{
 				if (std::get < 1 >(m_ShotData))
 				{
-					g::pLocal->m_angVisualAngles() = std::get < 0 >(m_ShotData);
-					g::pLocal->GetEyeAngles() = std::get < 0 >(m_ShotData);
+					pLocal->m_angVisualAngles() = std::get < 0 >(m_ShotData);
+					pLocal->GetEyeAngles() = std::get < 0 >(m_ShotData);
 				}
 			}
 			else
@@ -361,89 +363,87 @@ void C_LocalAnimations::UpdateDesyncAnimations()
 		}
 
 		/* Fix framecount */
-		g::pLocal->AnimState()->iLastUpdateFrame = 0;
+		pLocal->AnimState()->iLastUpdateFrame = 0;
 
 		/* set player and weapon */
-		g::pLocal->AnimState()->pEntity = g::pLocal;
-		g::pLocal->AnimState()->pActiveWeapon = g::pLocal->GetWeapon();
+		pLocal->AnimState()->pEntity = pLocal;
+		pLocal->AnimState()->pActiveWeapon = pLocal->GetWeapon();
 
 		/* force client-side animation */
-		bool IsClientSideAnimation = g::pLocal->IsClientSideAnimation();
-		g::pLocal->IsClientSideAnimation() = true;
+		bool IsClientSideAnimation = pLocal->IsClientSideAnimation();
+		pLocal->IsClientSideAnimation() = true;
 
 		/* update localplayer animations */
-		g::bAllowAnimations[g::pLocal->EntIndex()] = true;
-		g::pLocal->UpdateClientSideAnimations();
-		g::bAllowAnimations[g::pLocal->EntIndex()] = false;
+		g::bAllowAnimations[pLocal->EntIndex()] = true;
+		pLocal->UpdateClientSideAnimations();
+		g::bAllowAnimations[pLocal->EntIndex()] = false;
 
 		/* restore client-side animation */
-		g::pLocal->IsClientSideAnimation() = IsClientSideAnimation;
+		pLocal->IsClientSideAnimation() = IsClientSideAnimation;
 	}
 
-	std::memcpy(&m_LocalData.m_Fake.m_AnimationState, g::pLocal->AnimState(), sizeof(CAnimState));
-	std::memcpy(m_LocalData.m_Fake.m_Layers.data(), g::pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
-	std::memcpy(m_LocalData.m_Fake.m_PoseParameters.data(), g::pLocal->GetPoseParameter().data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
+	std::memcpy(&m_LocalData.m_Fake.m_AnimationState, pLocal->AnimState(), sizeof(CAnimState));
+	std::memcpy(m_LocalData.m_Fake.m_Layers.data(), pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+	std::memcpy(m_LocalData.m_Fake.m_PoseParameters.data(), pLocal->GetPoseParameter().data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
 
 	std::memcpy
 	(
-		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
+		&pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
 		&m_LocalData.m_Fake.m_Layers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL],
 		sizeof(CAnimationLayer)
 	);
 	std::memcpy
 	(
-		&g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
+		&pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
 		&m_LocalData.m_Fake.m_Layers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB],
 		sizeof(CAnimationLayer)
 	);
 
-	g::pLocal->GetPoseParameter()[1] = m_LocalData.m_Fake.m_PoseParameters[1];
-	std::memcpy(&g::pLocal->GetAnimationOverlays()[7], &m_LocalData.m_Fake.m_Layers[7], sizeof(CAnimationLayer));
+	pLocal->GetPoseParameter()[1] = m_LocalData.m_Fake.m_PoseParameters[1];
+	std::memcpy(&pLocal->GetAnimationOverlays()[7], &m_LocalData.m_Fake.m_Layers[7], sizeof(CAnimationLayer));
 
-	if (!(g::pLocal->GetFlags() & FL_ONGROUND))
-		g::pLocal->GetPoseParameter()[JUMP_FALL] = 1.f;
+	if (!(pLocal->GetFlags() & FL_ONGROUND))
+		pLocal->GetPoseParameter()[JUMP_FALL] = 1.f;
 
-	AnimationBreaker(m_LocalData.m_Fake.m_PoseParameters.data());
+	m_LocalData.m_flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(m_AnimationState.flGoalFeetYaw)));
 
-	m_LocalData.m_flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(g::pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(m_AnimationState.flGoalFeetYaw)));
+	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Fake.m_Matrix.data(), 0, pLocal);
 
-	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Fake.m_Matrix.data(), 0);
-
-	std::memcpy(g::pLocal->AnimState(), &m_AnimationState, sizeof(CAnimState));
-	std::memcpy(g::pLocal->GetAnimationOverlays(), m_LocalData.m_Fake.m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
-	std::memcpy(g::pLocal->GetPoseParameter().data(), m_LocalData.m_Fake.m_PoseParameters.data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
+	std::memcpy(pLocal->AnimState(), &m_AnimationState, sizeof(CAnimState));
+	std::memcpy(pLocal->GetAnimationOverlays(), m_LocalData.m_Fake.m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+	std::memcpy(pLocal->GetPoseParameter().data(), m_LocalData.m_Fake.m_PoseParameters.data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
 }
-void C_LocalAnimations::SimulateStrafe(int nButtons)
+void C_LocalAnimations::SimulateStrafe(int nButtons, CBaseEntity* pLocal)
 {
 	Vector vecForward;
 	Vector vecRight;
 	Vector vecUp;
 
-	M::AngleVectors(Vector(0, g::pLocal->AnimState()->flGoalFeetYaw, 0), &vecForward, &vecRight, &vecUp);
+	M::AngleVectors(Vector(0, pLocal->AnimState()->flGoalFeetYaw, 0), &vecForward, &vecRight, &vecUp);
 	vecRight.NormalizeInPlace();
 
-	float flVelToRightDot = M::DotProduct(g::pLocal->AnimState()->vecVelocityNormalizedNonZero, vecRight);
-	float flVelToForwardDot = M::DotProduct(g::pLocal->AnimState()->vecVelocityNormalizedNonZero, vecForward);
+	float flVelToRightDot = M::DotProduct(pLocal->AnimState()->vecVelocityNormalizedNonZero, vecRight);
+	float flVelToForwardDot = M::DotProduct(pLocal->AnimState()->vecVelocityNormalizedNonZero, vecForward);
 
 	bool bMoveRight = (nButtons & (IN_MOVERIGHT)) != 0;
 	bool bMoveLeft = (nButtons & (IN_MOVELEFT)) != 0;
 	bool bMoveForward = (nButtons & (IN_FORWARD)) != 0;
 	bool bMoveBackward = (nButtons & (IN_BACK)) != 0;
 
-	bool bStrafeRight = (g::pLocal->AnimState()->flRunningSpeed >= 0.73f && bMoveRight && !bMoveLeft && flVelToRightDot < -0.63f);
-	bool bStrafeLeft = (g::pLocal->AnimState()->flRunningSpeed >= 0.73f && bMoveLeft && !bMoveRight && flVelToRightDot > 0.63f);
-	bool bStrafeForward = (g::pLocal->AnimState()->flRunningSpeed >= 0.65f && bMoveForward && !bMoveBackward && flVelToForwardDot < -0.55f);
-	bool bStrafeBackward = (g::pLocal->AnimState()->flRunningSpeed >= 0.65f && bMoveBackward && !bMoveForward && flVelToForwardDot > 0.55f);
+	bool bStrafeRight = (pLocal->AnimState()->flRunningSpeed >= 0.73f && bMoveRight && !bMoveLeft && flVelToRightDot < -0.63f);
+	bool bStrafeLeft = (pLocal->AnimState()->flRunningSpeed >= 0.73f && bMoveLeft && !bMoveRight && flVelToRightDot > 0.63f);
+	bool bStrafeForward = (pLocal->AnimState()->flRunningSpeed >= 0.65f && bMoveForward && !bMoveBackward && flVelToForwardDot < -0.55f);
+	bool bStrafeBackward = (pLocal->AnimState()->flRunningSpeed >= 0.65f && bMoveBackward && !bMoveForward && flVelToForwardDot > 0.55f);
 
-	g::pLocal->m_bStrafing() = (bStrafeRight || bStrafeLeft || bStrafeForward || bStrafeBackward);
+	pLocal->m_bStrafing() = (bStrafeRight || bStrafeLeft || bStrafeForward || bStrafeBackward);
 }
-void C_LocalAnimations::DoAnimationEvent(int nButtons, bool bIsFakeAnimations)
+void C_LocalAnimations::DoAnimationEvent(int nButtons, CBaseEntity* pLocal, bool bIsFakeAnimations)
 {
-	CAnimationLayer* pLandOrClimbLayer = &g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	CAnimationLayer* pLandOrClimbLayer = &pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
 	if (!pLandOrClimbLayer)
 		return;
 
-	CAnimationLayer* pJumpOrFallLayer = &g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	CAnimationLayer* pJumpOrFallLayer = &pLocal->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
 	if (!pJumpOrFallLayer)
 		return;
 
@@ -455,61 +455,61 @@ void C_LocalAnimations::DoAnimationEvent(int nButtons, bool bIsFakeAnimations)
 	if (bIsFakeAnimations)
 		nCurrentMoveType = m_LocalData.m_Fake.m_nMoveType;
 
-	if (nCurrentMoveType != MOVETYPE_LADDER && g::pLocal->GetMoveType() == MOVETYPE_LADDER)
-		g::pLocal->AnimState()->SetLayerSequence(pLandOrClimbLayer, ACT_CSGO_CLIMB_LADDER);
-	else if (nCurrentMoveType == MOVETYPE_LADDER && g::pLocal->GetMoveType() != MOVETYPE_LADDER)
-		g::pLocal->AnimState()->SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_FALL);
+	if (nCurrentMoveType != MOVETYPE_LADDER && pLocal->GetMoveType() == MOVETYPE_LADDER)
+		pLocal->AnimState()->SetLayerSequence(pLandOrClimbLayer, ACT_CSGO_CLIMB_LADDER);
+	else if (nCurrentMoveType == MOVETYPE_LADDER && pLocal->GetMoveType() != MOVETYPE_LADDER)
+		pLocal->AnimState()->SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_FALL);
 	else
 	{
-		if (g::pLocal->GetFlags() & FL_ONGROUND)
+		if (pLocal->GetFlags() & FL_ONGROUND)
 		{
 			if (!(nCurrentFlags & FL_ONGROUND))
-				g::pLocal->AnimState()->SetLayerSequence
+				pLocal->AnimState()->SetLayerSequence
 				(
 					pLandOrClimbLayer,
-					g::pLocal->AnimState()->flDurationInAir > 1.0f ? ACT_CSGO_LAND_HEAVY : ACT_CSGO_LAND_LIGHT
+					pLocal->AnimState()->flDurationInAir > 1.0f ? ACT_CSGO_LAND_HEAVY : ACT_CSGO_LAND_LIGHT
 				);
 		}
 		else if (nCurrentFlags & FL_ONGROUND)
 		{
-			if (g::pLocal->GetVelocity().z > 0.0f)
-				g::pLocal->AnimState()->SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_JUMP);
+			if (pLocal->GetVelocity().z > 0.0f)
+				pLocal->AnimState()->SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_JUMP);
 			else
-				g::pLocal->AnimState()->SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_FALL);
+				pLocal->AnimState()->SetLayerSequence(pJumpOrFallLayer, ACT_CSGO_FALL);
 		}
 	}
 
 	if (bIsFakeAnimations)
 	{
-		m_LocalData.m_Fake.m_nMoveType = g::pLocal->GetMoveType();
-		m_LocalData.m_Fake.m_nFlags = g::pLocal->GetFlags();
+		m_LocalData.m_Fake.m_nMoveType = pLocal->GetMoveType();
+		m_LocalData.m_Fake.m_nFlags = pLocal->GetFlags();
 	}
 	else
 	{
-		m_LocalData.m_Real.m_nMoveType = g::pLocal->GetMoveType();
-		m_LocalData.m_Real.m_nFlags = g::pLocal->GetFlags();
+		m_LocalData.m_Real.m_nMoveType = pLocal->GetMoveType();
+		m_LocalData.m_Real.m_nFlags = pLocal->GetFlags();
 	}
 }
-void C_LocalAnimations::StoreAnimationRecord()
+void C_LocalAnimations::StoreAnimationRecord(CBaseEntity* pLocal)
 {
-	if (!g::pLocal->IsAlive())
+	if (!pLocal->IsAlive())
 		return;
 
 	AnimationRecord_t m_AnimRecord;
 
 	// store record data
 	m_AnimRecord.m_nFlags = m_LocalData.m_nFlags;
-	m_AnimRecord.m_vecOrigin = g::pLocal->GetVecOrigin();
-	m_AnimRecord.m_vecVelocity = g::pLocal->GetVelocity();
-	m_AnimRecord.m_flDuckAmount = g::pLocal->GetDuckAmount();
-	m_AnimRecord.m_flDuckSpeed = g::pLocal->GetDuckSpeed();
+	m_AnimRecord.m_vecOrigin = pLocal->GetVecOrigin();
+	m_AnimRecord.m_vecVelocity = pLocal->GetVelocity();
+	m_AnimRecord.m_flDuckAmount = pLocal->GetDuckAmount();
+	m_AnimRecord.m_flDuckSpeed = pLocal->GetDuckSpeed();
 	m_AnimRecord.m_angRealAngles = g::pCmd->angViewPoint;
 	m_AnimRecord.m_angFakeAngles = localanim.localdata.vecViewAngle;
-	m_AnimRecord.m_angAimPunch = g::pLocal->GetAimPunch();
+	m_AnimRecord.m_angAimPunch = pLocal->GetAimPunch();
 	m_AnimRecord.m_nButtons = g::pCmd->iButtons;
-	m_AnimRecord.m_nMoveType = g::pLocal->GetMoveType();
+	m_AnimRecord.m_nMoveType = pLocal->GetMoveType();
 
-	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
+	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
 	if (pWeapon)
 	{
 		if (pWeapon->IsGrenade())
@@ -536,37 +536,37 @@ void C_LocalAnimations::StoreAnimationRecord()
 	/* proper roll aa display */
 	m_LocalData.m_AnimRecords[g::pCmd->iCommandNumber % 150] = m_AnimRecord;
 }
-void C_LocalAnimations::BeforePrediction()
+void C_LocalAnimations::BeforePrediction(CBaseEntity* pLocal)
 {
-	m_LocalData.m_nFlags = g::pLocal->GetFlags();
-	m_LocalData.m_vecAbsOrigin = g::pLocal->GetAbsOrigin();
+	m_LocalData.m_nFlags = pLocal->GetFlags();
+	m_LocalData.m_vecAbsOrigin = pLocal->GetAbsOrigin();
 
-	if (m_LocalData.m_flSpawnTime != g::pLocal->GetSpawnTime())
+	if (m_LocalData.m_flSpawnTime != pLocal->GetSpawnTime())
 	{
-		std::memcpy(&m_LocalData.m_Fake.m_AnimationState, g::pLocal->AnimState(), sizeof(CAnimState));
-		std::memcpy(m_LocalData.m_Fake.m_Layers.data(), g::pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
-		std::memcpy(m_LocalData.m_Fake.m_PoseParameters.data(), g::pLocal->GetPoseParameter().data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
+		std::memcpy(&m_LocalData.m_Fake.m_AnimationState, pLocal->AnimState(), sizeof(CAnimState));
+		std::memcpy(m_LocalData.m_Fake.m_Layers.data(), pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+		std::memcpy(m_LocalData.m_Fake.m_PoseParameters.data(), pLocal->GetPoseParameter().data(), sizeof(float) * MAXSTUDIOPOSEPARAM);
 	}
-	m_LocalData.m_flSpawnTime = g::pLocal->GetSpawnTime();
+	m_LocalData.m_flSpawnTime = pLocal->GetSpawnTime();
 }
-void C_LocalAnimations::SetupShootPosition()
+void C_LocalAnimations::SetupShootPosition(CBaseEntity* pLocal)
 {
 	/* fix view offset */
-	Vector GetViewOffset = g::pLocal->GetViewOffset();
+	Vector GetViewOffset = pLocal->GetViewOffset();
 	if (GetViewOffset.z <= 46.05f)
 		GetViewOffset.z = 46.0f;
 	else if (GetViewOffset.z > 64.0f)
 		GetViewOffset.z = 64.0f;
 
 	/* calculate default shoot position */
-	m_LocalData.m_vecShootPosition = g::pLocal->GetVecOrigin() + GetViewOffset;
+	m_LocalData.m_vecShootPosition = pLocal->GetVecOrigin() + GetViewOffset;
 
 	/* backup data */
-	std::tuple < Vector, Vector > m_Backup = std::make_tuple(g::pLocal->GetAbsOrigin(), g::pLocal->GetEyeAngles());
+	std::tuple < Vector, Vector > m_Backup = std::make_tuple(pLocal->GetAbsOrigin(), pLocal->GetEyeAngles());
 
 	/* force LocalPlayer data */
-	g::pLocal->SetAbsOrigin(g::pLocal->GetVecOrigin());
-	g::pLocal->GetEyeAngles() = g::pCmd->angViewPoint;
+	pLocal->SetAbsOrigin(pLocal->GetVecOrigin());
+	pLocal->GetEyeAngles() = g::pCmd->angViewPoint;
 
 	/* normalize angles */
 	M::NormalizeYaw(g::pCmd->angViewPoint.y);
@@ -578,17 +578,17 @@ void C_LocalAnimations::SetupShootPosition()
 		bool bModifyEyePosition = false;
 
 		/* modify eye pos on land */
-		static int Flags = g::pLocal->GetFlags();
-		if (Flags != g::pLocal->GetFlags())
+		static int Flags = pLocal->GetFlags();
+		if (Flags != pLocal->GetFlags())
 		{
-			if (!(Flags & FL_ONGROUND) && (g::pLocal->GetFlags() & FL_ONGROUND))
+			if (!(Flags & FL_ONGROUND) && (pLocal->GetFlags() & FL_ONGROUND))
 				bModifyEyePosition = true;
 
-			Flags = g::pLocal->GetFlags();
+			Flags = pLocal->GetFlags();
 		}
 
 		/* modify eye pos on duck */
-		if (g::pLocal->GetDuckAmount() != 0.0f)
+		if (pLocal->GetDuckAmount() != 0.0f)
 			bModifyEyePosition = true;
 
 		/* modify eye pos on FD */
@@ -599,19 +599,19 @@ void C_LocalAnimations::SetupShootPosition()
 		if (bModifyEyePosition)
 		{
 			/* store old body pitch */
-			const float m_flOldBodyPitch = g::pLocal->GetPoseParameter()[12];
+			const float m_flOldBodyPitch = pLocal->GetPoseParameter()[12];
 
 			/* determine m_flThirdpersonRecoil */
-			const float m_flThirdpersonRecoil = g::pLocal->GetAimPunch().x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			const float m_flThirdpersonRecoil = pLocal->GetAimPunch().x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
 
 			/* set body pitch */
-			g::pLocal->GetPoseParameter()[12] = std::clamp(M::AngleDiff(M::NormalizeAngle(m_flThirdpersonRecoil), 0.0f), 0.0f, 1.0f);
+			pLocal->GetPoseParameter()[12] = std::clamp(M::AngleDiff(M::NormalizeAngle(m_flThirdpersonRecoil), 0.0f), 0.0f, 1.0f);
 
 			/* build matrix */
-			g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Shoot.m_Matrix.data(), BONE_USED_BY_HITBOX);
+			g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Shoot.m_Matrix.data(), BONE_USED_BY_HITBOX, pLocal);
 
 			/* reset body pitch */
-			g::pLocal->GetPoseParameter()[12] = m_flOldBodyPitch;
+			pLocal->GetPoseParameter()[12] = m_flOldBodyPitch;
 
 			/* CAnimState::ModifyEyePosition rebuild */
 			g_LocalAnimations->ModifyEyePosition(m_LocalData.m_vecShootPosition, m_LocalData.m_Shoot.m_Matrix.data());
@@ -619,10 +619,10 @@ void C_LocalAnimations::SetupShootPosition()
 	}
 
 	/* restore LocalPlayer data */
-	g::pLocal->SetAbsOrigin(std::get < 0 >(m_Backup));
-	g::pLocal->GetEyeAngles() = std::get < 1 >(m_Backup);
+	pLocal->SetAbsOrigin(std::get < 0 >(m_Backup));
+	pLocal->GetEyeAngles() = std::get < 1 >(m_Backup);
 }
-void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask)
+void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask, CBaseEntity* pLocal)
 {
 	// save globals
 	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
@@ -642,26 +642,26 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask)
 	// save player data
 	std::tuple < int, int, int, int, int, bool > m_PlayerData = std::make_tuple
 	(
-		g::pLocal->GetLastSkipFrameCount(),
-		g::pLocal->GetEffects(),
-		g::pLocal->GetClientEffects(),
-		g::pLocal->GetOcclusionFrameCount(),
-		g::pLocal->GetOcclusionFlags(),
+		pLocal->GetLastSkipFrameCount(),
+		pLocal->GetEffects(),
+		pLocal->GetClientEffects(),
+		pLocal->GetOcclusionFrameCount(),
+		pLocal->GetOcclusionFlags(),
 		false
 	);
 
 	// backup animation layers
 	std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_Layers;
-	std::memcpy(m_Layers.data(), g::pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+	std::memcpy(m_Layers.data(), pLocal->GetAnimationOverlays(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
 
 	/* set owners */
 	for (int nLayer = 0; nLayer < ANIMATION_LAYER_COUNT; nLayer++)
 	{
-		CAnimationLayer* m_Layer = &g::pLocal->GetAnimationOverlays()[nLayer];
+		CAnimationLayer* m_Layer = &pLocal->GetAnimationOverlays()[nLayer];
 		if (!m_Layer)
 			continue;
 
-		m_Layer->pOwner = g::pLocal;
+		m_Layer->pOwner = pLocal;
 	}
 
 	// get simulation time
@@ -679,39 +679,39 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask)
 	i::GlobalVars->iFrameCount = INT_MAX;
 
 	// invalidate bone cache
-	g::pLocal->InvalidateBoneCache();
+	pLocal->InvalidateBoneCache();
 
 	// disable ugly lean animation
-	g::pLocal->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.0f;
+	pLocal->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.0f;
 
 	// force client effects
-	g::pLocal->GetClientEffects() |= 2; // disable ik
+	pLocal->GetClientEffects() |= 2; // disable ik
 
 	// force effects to disable interp
-	g::pLocal->GetEffects() |= EF_NOINTERP;
+	pLocal->GetEffects() |= EF_NOINTERP;
 
 	// fix PVS occlusion
-	g::pLocal->GetOcclusionFrameCount() = -1;
-	g::pLocal->GetOcclusionFlags() &= ~2;
+	pLocal->GetOcclusionFrameCount() = -1;
+	pLocal->GetOcclusionFlags() &= ~2;
 
 	// fix skipanimframe ( part 2 )
-	g::pLocal->GetLastSkipFrameCount() = 0;
+	pLocal->GetLastSkipFrameCount() = 0;
 
 	// setup bones
-	g::bSettingUpBones[g::pLocal->EntIndex()] = std::make_tuple(true, 0);
-	g::pLocal->SetupBones(aMatrix, MAXSTUDIOBONES, nMask, 0.0f);
-	g::bSettingUpBones[g::pLocal->EntIndex()] = std::make_tuple(false, 0);
+	g::bSettingUpBones[pLocal->EntIndex()] = true;
+	pLocal->SetupBones(aMatrix, MAXSTUDIOBONES, nMask, 0.0f);
+	g::bSettingUpBones[pLocal->EntIndex()] = false;
 
 
 	// restore animation layers
-	std::memcpy(g::pLocal->GetAnimationOverlays(), m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
+	std::memcpy(pLocal->GetAnimationOverlays(), m_Layers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
 
 	// restore player data
-	g::pLocal->GetLastSkipFrameCount() = std::get < 0 >(m_PlayerData);
-	g::pLocal->GetEffects() = std::get < 1 >(m_PlayerData);
-	g::pLocal->GetClientEffects() = std::get < 2 >(m_PlayerData);
-	g::pLocal->GetOcclusionFrameCount() = std::get < 3 >(m_PlayerData);
-	g::pLocal->GetOcclusionFlags() = std::get < 4 >(m_PlayerData);
+	pLocal->GetLastSkipFrameCount() = std::get < 0 >(m_PlayerData);
+	pLocal->GetEffects() = std::get < 1 >(m_PlayerData);
+	pLocal->GetClientEffects() = std::get < 2 >(m_PlayerData);
+	pLocal->GetOcclusionFrameCount() = std::get < 3 >(m_PlayerData);
+	pLocal->GetOcclusionFlags() = std::get < 4 >(m_PlayerData);
 
 	// restore globals
 	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
@@ -746,21 +746,22 @@ void C_LocalAnimations::ModifyEyePosition(Vector& vecInputEyePos, matrix3x4_t* a
 }
 void C_LocalAnimations::InterpolateMatricies()
 {
-	if (!g::pLocal || !g::pLocal->IsAlive() || !i::EngineClient->IsInGame())
+	auto pLocal = CBaseEntity::GetLocalPlayer();
+	if (!pLocal || !pLocal->IsAlive())
 		return;
 
 	// correct matrix
 	g_LocalAnimations->TransformateMatricies();
 
 	// copy bones
-	std::memcpy(g::pLocal->GetCachedBoneData().Base(), m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * g::pLocal->GetCachedBoneData().Count());
-	g::pLocal->GetBoneAccessor()->matBones = m_LocalData.m_Real.m_Matrix.data();
+	std::memcpy(pLocal->GetCachedBoneData().Base(), m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * pLocal->GetCachedBoneData().Count());
+	pLocal->GetBoneAccessor()->matBones = m_LocalData.m_Real.m_Matrix.data();
 
-	return g::pLocal->SetupBones_AttachmentHelper();
+	return pLocal->SetupBones_AttachmentHelper();
 }
 void C_LocalAnimations::TransformateMatricies()
 {
-	if (i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal || i::ClientState->iDeltaTick < 0)
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
 		return;
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();

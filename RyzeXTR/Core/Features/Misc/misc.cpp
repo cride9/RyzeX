@@ -186,9 +186,9 @@ void misc::Security() {
 		showerror->SetValue(0);
 }
 
-void misc::IdealTick(CUserCmd* pCmd) {
+void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
-	if (!pCmd || !g::pLocal)
+	if (!pCmd || !pLocal)
 		return;
 
 	if (!cfg::antiaim::idealTick)
@@ -205,9 +205,9 @@ void misc::IdealTick(CUserCmd* pCmd) {
 		if (!bPositionSet) {
 
 			bPositionSet = true;
-			vecOrigin = g::pLocal->GetVecOrigin();
+			vecOrigin = pLocal->GetVecOrigin();
 			vecRecord = vecOrigin;
-			g::pLocal->SetupBones(matrixRecord, 256, 0, i::GlobalVars->flCurrentTime);
+			pLocal->SetupBones(matrixRecord, 128, 0, i::GlobalVars->flCurrentTime);
 		}
 
 		if (pCmd->iButtons & IN_ATTACK)
@@ -222,30 +222,19 @@ void misc::IdealTick(CUserCmd* pCmd) {
 
 	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && IPT::HandleInput(cfg::antiaim::idealTickBind) && bRetreat) {
 
-		if ((vecOrigin - g::pLocal->GetVecOrigin()).Length2D() > 3.29217472f) {
+		if ((vecOrigin - pLocal->GetVecOrigin()).Length2D() > 3.29217472f) {
 
 			Vector vecAngle;
-			M::VectorAngles(vecOrigin - g::pLocal->GetEyePosition(), vecAngle);
+			M::VectorAngles(vecOrigin - pLocal->GetEyePosition(), vecAngle);
 
 			g::vecOriginalViewAngle.y = vecAngle.y;
 			g::pCmd->flForwardMove += 450.f;
 			g::pCmd->flSideMove = 0.f;
 		}
 
-		if ((vecOrigin - g::pLocal->GetVecOrigin()).Length2D() < 2.f) {
+		if ((vecOrigin - pLocal->GetVecOrigin()).Length2D() < 2.f) {
 			bRetreat = false;
 		}
-		/*vecOriginDelta = vecOrigin - g::pLocal->GetAbsOrigin();
-
-		auto flSideMove = ((cos(M_DEG2RAD(pCmd->angViewPoint.y)) * -vecOriginDelta.y) + (sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
-		auto flForwardMove = ((sin(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.y) + (cos(M_DEG2RAD(pCmd->angViewPoint.y)) * vecOriginDelta.x));
-
-		pCmd->flSideMove = std::clamp(flSideMove * 500.f, -450.f, 450.f);
-		pCmd->flForwardMove = std::clamp(flForwardMove * 500.f, -450.f, 450.f);
-
-		if ((vecOrigin - g::pLocal->GetAbsOrigin()).LengthSqr() < 1.f) {
-			bRetreat = false;
-		}*/
 	}
 }
 
@@ -287,13 +276,13 @@ void misc::SlideFix() {
 	g::pCmd->iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVERIGHT | IN_MOVELEFT);
 }
 
-void misc::BulletImpactFrameStage() {
+void misc::BulletImpactFrameStage(CBaseEntity* pLocal) {
 
-	if (!g::pLocal || !g::pLocal->IsAlive())
+	if (!pLocal || !pLocal->IsAlive())
 		return;
 
 	try {
-		CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)g::pLocal + 0x11C50);
+		CUtlVector<ClientHitVerify_t>& pImpactList = *(CUtlVector<ClientHitVerify_t>*)((uintptr_t)pLocal + 0x11C50);
 		//CUtlVector<ClientHitVerify_t>* pImpactList = reinterpret_cast<CUtlVector<ClientHitVerify_t>*>(g::pLocal + 0x11C50);
 
 		if (!&pImpactList || pImpactList.Size() == 0)
@@ -322,13 +311,15 @@ void misc::BulletImpactFrameStage() {
 			iLastCount = pImpactList.Count();
 	}
 	catch(std::exception) {
-		throw std::runtime_error(std::format("BulletImpactFrameStage crashed\nMemory at: {}\nLocalPlayer: {}\nEngine LocalPlayer: {}", uintptr_t(g::pLocal + 0x11C50), uintptr_t(g::pLocal), uintptr_t(CBaseEntity::GetLocalPlayer())).c_str());
+		throw std::runtime_error(std::format("BulletImpactFrameStage crashed\nMemory at: {}\nLocalPlayer: {}\nEngine LocalPlayer: {}", uintptr_t(pLocal + 0x11C50), uintptr_t(pLocal), uintptr_t(CBaseEntity::GetLocalPlayer())).c_str());
 	}
 }
 
 void misc::BulletImpact(IGameEvent* pEvent) {
 
-	if (!g::pLocal || !g::pLocal->IsAlive())
+	auto pLocal = CBaseEntity::GetLocalPlayer();
+
+	if (!pLocal || !pLocal->IsAlive())
 		return;
 
 	if (!cfg::misc::bulletImpact)
@@ -838,23 +829,25 @@ void misc::BunnyHop(CUserCmd* pCmd) {
 
 void misc::ThirdPerson() {
 
+	auto pLocal = CBaseEntity::GetLocalPlayer();
+
+	if (!pLocal)
+		return;
+
 	Vector offset;
 	Vector vecEyePosition, forward;
-	static CTraceFilter filter(g::pLocal, TRACE_WORLD_ONLY);
+	static CTraceFilter filter(pLocal, TRACE_WORLD_ONLY);
 	Trace_t tr;
 
-	if (!CBaseEntity::GetLocalPlayer())
-		return;
-
 	// for whatever reason override_view also gets called from the main menu.
-	if (!i::EngineClient->IsInGame() || i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal)
+	if (!i::EngineClient->IsInGame() || i::ClientState->iSignonState != SIGNONSTATE_FULL || !pLocal)
 		return;
 
-	if (g::pLocal->GetTeam() == TEAM_UNASSIGNED)
+	if (pLocal->GetTeam() == TEAM_UNASSIGNED)
 		return;
 
 	// check if we have a local player and it is alive.
-	bool alive = g::pLocal && g::pLocal->IsAlive();
+	bool alive = pLocal && pLocal->IsAlive();
 
 	// camera should be in thirdperson.
 	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && cfg::misc::thirdperson)
@@ -864,7 +857,7 @@ void misc::ThirdPerson() {
 			i::Input->ToThirdPerson();
 
 		// if dead and spectating in firstperson switch to thirdperson.
-		else if (g::pLocal->GetObserverMode() == 4)
+		else if (pLocal->GetObserverMode() == 4)
 		{
 			// if in thirdperson, switch to firstperson.
 			// we need to disable thirdperson to spectate properly.
@@ -874,7 +867,7 @@ void misc::ThirdPerson() {
 				i::Input->vecCameraOffset.z = 0.f;
 			}
 
-			g::pLocal->GetObserverMode() = 5;
+			pLocal->GetObserverMode() = 5;
 		}
 	}
 
@@ -897,7 +890,7 @@ void misc::ThirdPerson() {
 		offset.z = (float)cfg::misc::thirdpersonDistance;
 
 		// start pos.
-		vecEyePosition = g::pLocal->GetEyePosition();
+		vecEyePosition = pLocal->GetEyePosition(false);
 
 		// setup trace filter and trace.
 		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecEyePosition - (forward * offset.z), { -16.f, -16.f, -16.f }, { 16.f, 16.f, 16.f }), MASK_SOLID, &filter, &tr);
@@ -948,6 +941,9 @@ void misc::FakeLag(bool& bSendPacket) {
 		JITTER
 	};
 
+	if ((*GameRules)->m_bFreezePeriod())
+		return;
+	
 	if (i::EngineClient->IsVoiceRecording())
 		return;
 

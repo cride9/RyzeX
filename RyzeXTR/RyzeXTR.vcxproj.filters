@@ -89,6 +89,8 @@
     <ClCompile Include="Core\Hooks\Hooked\hkDispatchSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkSetText.cpp" />
     <ClCompile Include="Core\Features\Changers\SkinChanger.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkLevelShutDownClient.cpp" />
+    <ClCompile Include="Core\Hooks\Proxies\ProxyHooks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -190,5 +192,6 @@
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
     <ClInclude Include="Core\Interface\Classes\CCSGameRulesProxy.h" />
     <ClInclude Include="Core\Features\Changers\wtf.h" />
+    <ClInclude Include="Core\Hooks\Proxies\ProxyHooks.h" />
   </ItemGroup>
 </Project>

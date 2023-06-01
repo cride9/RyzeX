@@ -173,27 +173,27 @@ static void EndChamsMDL() {
 
 static void chams::PrepareMaterial() {
 
-	if (!materials[DEFAULT])
+	if (!materials[DEFAULT] || materials[DEFAULT]->IsErrorMaterial())
 		materials[DEFAULT] = CreateMaterial("ryzextr_players", "VertexLitGeneric");
 	else
 		materials[DEFAULT]->IncrementReferenceCount();
 
-	if (!materials[FLAT])
+	if (!materials[FLAT] || materials[FLAT]->IsErrorMaterial())
 		materials[FLAT] = CreateMaterial("ryzextr_playersflat", "UnlitGeneric");
 	else
 		materials[FLAT]->IncrementReferenceCount();
 
-	if (!materials[GLOW])
+	if (!materials[GLOW] || materials[GLOW]->IsErrorMaterial())
 		materials[GLOW] = RyzeCreateMaterial("ryzextr_glow", "VertexLitGeneric", GlowChams);
 	else
 		materials[GLOW]->IncrementReferenceCount();
 
-	if (!materials[THINGLOW])
+	if (!materials[THINGLOW] || materials[THINGLOW]->IsErrorMaterial())
 		materials[THINGLOW] = i::MaterialSystem->FindMaterial("dev/glow_armsrace", nullptr, true, nullptr);
 	else
 		materials[THINGLOW]->IncrementReferenceCount();
 
-	if (!materials[ANIMATED])
+	if (!materials[ANIMATED] || materials[ANIMATED]->IsErrorMaterial())
 		materials[ANIMATED] = RyzeCreateMaterial("ryzextr_animated", "VertexLitGeneric", AnimatedChams); 
 	else
 		materials[ANIMATED]->IncrementReferenceCount();
@@ -219,7 +219,10 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 	const std::string_view& szModelName = info.pStudioHdr->szName;
 
 	PrepareMaterial();
-
+	for (auto pCurrent : materials)
+		if (pCurrent->IsErrorMaterial())
+			return false;
+	
 	if (szModelName.find("player\\contactshadow") != std::string_view::npos) {
 		static float reset[4] = { 0, 0, 0, 0 };
 		BeginChams(materials[0], reset, false, false);

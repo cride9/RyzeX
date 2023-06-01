@@ -189,3 +189,10 @@ void CNetworking::FinishNetworking() {
 		pNetChannel->iChokedPackets = nChokedCommands;
 	}
 }
+
+void CNetworking::ResetNetwork() {
+
+	iLastCommandNumber = 0;
+	data = networkData_t();
+	pCompressData = std::array < CNetvarData, 150 >();
+}

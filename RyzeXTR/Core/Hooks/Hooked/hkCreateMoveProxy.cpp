@@ -59,8 +59,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
-		g_LocalAnimations->CopyPlayerAnimationData(false);
-		g_LocalAnimations->SetupShootPosition( );
+		g_LocalAnimations->CopyPlayerAnimationData(false, pLocal);
+		g_LocalAnimations->SetupShootPosition(pLocal );
 
 		antiaim::AntiAim(pCmd, bSendPacket);
 
@@ -68,7 +68,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
 		exploits::HandleBreakLagcomp(pCmd);
-		misc::IdealTick(pCmd);
+		misc::IdealTick(pCmd, pLocal);
 		if (pCmd->iButtons & IN_ATTACK)
 			misc::vecEyePosition = pLocal->GetEyePosition();
 		antiaim::InvertOnShoot(pCmd);
@@ -116,7 +116,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (bSendPacket)
 		localanim.localdata.vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
 
-	g_LocalAnimations->OnCreateMove(bSendPacket);
+	g_LocalAnimations->OnCreateMove(bSendPacket, pLocal);
 	lagcomp.FinishLagcompensation(pLocal);
 	anims.ResolverLogic();
 }

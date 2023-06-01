@@ -17,7 +17,7 @@ namespace g {
 	inline bool bNewTick[65];
 	inline bool bUpdatingSkins = false;
 
-	inline std::tuple<bool, int> bSettingUpBones[65];
+	inline bool bSettingUpBones[65];
 
 	namespace fonts {
 		inline HFont HealthESP;

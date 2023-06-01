@@ -9,7 +9,8 @@
 
 void hkPreFrameStageNotify(EStage& curStage) {
 
-	if (!g::pLocal)
+	auto pLocal = CBaseEntity::GetLocalPlayer();
+	if (!pLocal)
 		return;
 
 	//skinChanger.AgentChanger(curStage);
@@ -27,11 +28,11 @@ void hkPreFrameStageNotify(EStage& curStage) {
 		misc::ServerHitboxes();
 
 		if (cfg::misc::removals[1])
-			g::pLocal->GetFlashMaxAlpha() = 0.f;
+			pLocal->GetFlashMaxAlpha() = 0.f;
 		else
-			g::pLocal->GetFlashMaxAlpha() = 255.f;
+			pLocal->GetFlashMaxAlpha() = 255.f;
 
-		misc::BulletImpactFrameStage();
+		misc::BulletImpactFrameStage(pLocal);
 		break;
 
 	case FRAME_NET_UPDATE_END:
@@ -42,8 +43,7 @@ void hkPreFrameStageNotify(EStage& curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
-		beforeIfuckUpEverything::SetSkin(g::pLocal);
-		//skinChanger.Run(g::pLocal); 
+		beforeIfuckUpEverything::SetSkin(pLocal);
 		break;
 
 	default:
@@ -52,12 +52,6 @@ void hkPreFrameStageNotify(EStage& curStage) {
 }
 
 void hkPostFrameStageNotify(EStage& curStage) {
-
-	if (!(i::ClientState->iDeltaTick > 0))
-		return;
-
-	if (!g::pLocal)
-		return;
 
 	switch (curStage) {
 
@@ -90,6 +84,6 @@ void __fastcall h::hkFrameStageNotify(IBaseClientDLL* ecx, int edx, EStage curSt
 	static auto original = detour::frameStageNotify.GetOriginal<decltype(&h::hkFrameStageNotify)>();
 
 	hkPreFrameStageNotify(curStage);
-	original(ecx, edx, curStage);
+	original(i::ClientDll, edx, curStage);
 	hkPostFrameStageNotify(curStage);
 }

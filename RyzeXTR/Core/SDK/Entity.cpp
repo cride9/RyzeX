@@ -559,9 +559,9 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 
 bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut)
 {
-	g::bSettingUpBones[target->EntIndex()] = std::make_tuple(true, boneMask);
+	g::bSettingUpBones[target->EntIndex()] = true;
 	bool bReturnValue = target->SetupBones(pBoneToWorldOut, MAXSTUDIOBONES, boneMask, 0.f);
-	g::bSettingUpBones[target->EntIndex()] = std::make_tuple(false, 0);
+	g::bSettingUpBones[target->EntIndex()] = false;
 
 	return bReturnValue;
 	//alignas(16) matrix3x4_t bone_out[128];

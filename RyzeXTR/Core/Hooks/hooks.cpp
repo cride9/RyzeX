@@ -59,6 +59,7 @@ void h::SetupHooks() {
 	HookSignature(detour::clampBonesInBBox, "client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38", &hkClampBonesInBBox);
 	HookSignature(detour::getColorModulation, "materialsystem.dll", "55 8B EC 83 EC ? 56 8B F1 8A 46", &hkGetColorModulation);
 	HookSignature(detour::setText, "client.dll", "55 8B EC 8B 45 08 85 C0 53", &hkSetText);
+	HookSignature(detour::levelShutDown, "client.dll", "55 8B EC 83 E4 F8 83 EC 30 C6", &hkLevelShutDownClient);
 	//HookSignature(detour::dispatchSound, "engine.dll", "55 8B EC 81 EC ?? ?? ?? ?? 56 8B F1 8D 4D 98 E8", &hkDispatchSound);
 	//HookSignature(detour::startSound, "engine.dll", "55 8B EC 81 ? ? ? ? ? 53 56 8B F1 57 8B 7E", &hkStartSound);
 

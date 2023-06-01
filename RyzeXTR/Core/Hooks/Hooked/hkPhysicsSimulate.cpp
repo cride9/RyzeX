@@ -40,8 +40,8 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
 		
-	if ( pCommandContext->pCmd.iCommandNumber == ( i::ClientState->iCommandAck + 1 ) )
-		pEntity->GetVelocityModifier( ) = localanim.localdata.flVelocityModifier;
+	//if ( pCommandContext->pCmd.iCommandNumber == ( i::ClientState->iCommandAck + 1 ) )
+	//	pEntity->GetVelocityModifier( ) = localanim.localdata.flVelocityModifier;
 
 	networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
 

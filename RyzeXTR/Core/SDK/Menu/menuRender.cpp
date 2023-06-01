@@ -1080,10 +1080,8 @@ void menu::Skintab() noexcept {
 		static std::vector<int> skinPaint{0};
 		static int selectedSkin[92]{-1};
 
-		if (iSkinId[weaponInHand] != selectedSkin[weaponInHand] && selectedSkin[weaponInHand] == -1) {
-			selectedSkin[weaponInHand] = iSkinId[weaponInHand];
-		}
-
+		selectedSkin[weaponInHand] = iSkinId[weaponInHand];
+		int backup = weaponInHand;
 		if (bFilterByWeapon) {
 			if (weaponBackup != weaponInHand) {
 				skinNames.clear();
@@ -1113,7 +1111,7 @@ void menu::Skintab() noexcept {
 			}
 		}
 		
-		ImGui::ListBoxVector("##Skin list", &iSkinId[weaponInHand], skinNames, 14);
+		ImGui::ListBoxVector("##Skin list", &selectedSkin[weaponInHand], skinNames, 14);
 		ImGui::SliderFloat("Wear", &flSkinWear[weaponInHand], 0.f, 1.f);
 		//ImGui::SliderInt("Stattrak", &iSkinStattrak[weaponInHand], 0, 1000);
 		ImGui::SliderInt("Seed", &iFallbackSeed[weaponInHand], 0, 1000);
@@ -1121,9 +1119,9 @@ void menu::Skintab() noexcept {
 		if (ImGui::Button("Force update", ImVec2(ImGui::GetContentRegionAvail().x, 20), false))
 			UpdateSkins();
 		ImGui::PopStyleVar();
-		//if (skinPaint.size() > selectedSkin[weaponInHand] && selectedSkin[weaponInHand] != iSkinId[weaponInHand]) {
-		//	iSkinId[weaponInHand] = skinPaint[selectedSkin[weaponInHand]];
-		//}
+		if (backup == weaponInHand && skinPaint.size() > selectedSkin[weaponInHand] && selectedSkin[weaponInHand] != iSkinId[weaponInHand]) {
+			iSkinId[weaponInHand] = skinPaint[selectedSkin[weaponInHand]];
+		}
 
 		weaponBackup = weaponInHand;
 	}

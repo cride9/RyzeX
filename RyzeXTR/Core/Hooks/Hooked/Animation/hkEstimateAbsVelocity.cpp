@@ -13,7 +13,7 @@ void __fastcall h::hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector
 		return;
 
 	// setting up bones, we dont want to estimate abs velocity
-	if (std::get<0>(g::bSettingUpBones[pPlayer->EntIndex()]))
+	if (g::bSettingUpBones[pPlayer->EntIndex()])
 		return;
 
 	// player is abusing tickbase, we dont want to estimate abs velocity

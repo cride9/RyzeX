@@ -200,6 +200,10 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 		pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue));
 		
+		if (float yawDelta = (pCmd->angViewPoint.y - g::pLocal->AnimState()->flGoalFeetYaw); fabs(yawDelta) < desyncValue) {
+			pCmd->angViewPoint.y += desyncValue - yawDelta;
+		}
+
 		oldValue = desyncValue;
 	}
 }

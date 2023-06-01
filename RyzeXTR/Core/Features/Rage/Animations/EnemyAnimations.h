@@ -54,7 +54,6 @@ public:
 	};
 
 	AnimationData_t pAnimationData[65];
-	Lagcompensation::AnimationInfo_t pLogs[65];
 	std::array<bool, HANDLERCOUNT> bResolverHandler{false};
 
 	bool NewDataRecievedFromServer(CBaseEntity* pPlayer);

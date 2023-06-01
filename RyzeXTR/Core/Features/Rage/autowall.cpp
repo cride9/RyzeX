@@ -3,6 +3,9 @@
 
 float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, FireBulletData_t* pDataOut, CBaseEntity* pTarget)
 {
+	if (!pWeapon)
+		return -1.0f;
+
 	// setup data
 	FireBulletData_t data = { };
 	data.vecPosition = vecEyePosition;

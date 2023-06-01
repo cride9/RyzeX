@@ -476,7 +476,7 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 
 	auto skeleton_position = [=](const size_t idx)
 	{
-		auto child = bNotLagcompensated ? pEntity->GetCachedBoneData().Base()[idx].GetOrigin() : pLog->pRecord.front().pMatricies[VISUAL][idx].GetOrigin();
+		auto child = bNotLagcompensated ? pEntity->GetCachedBoneData().Base()[idx].GetOrigin() : pLog->pCachedMatrix[idx].GetOrigin();
 		return child;
 	};
 	auto skeleton_position_desync = [=](const size_t idx)

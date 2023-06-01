@@ -180,7 +180,15 @@ void Lagcompensation::FrameStageNotify() {
 
 		pLog->bLeftDormancy = false;
 
-		FilterRecords();
+		//FilterRecords();
+		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
+
+			if (pLog->pRecord.front().bValid = lagcomp.IsValidRecord(pLog->pRecord.front().flSimulationTime))
+				pPlayerLogs[i].iLastValid = j;
+
+			if (pLog->pRecord.front().bValid && pPlayerLogs[i].iFirstValid > j)
+				pPlayerLogs[i].iFirstValid = j;
+		}
 	}
 }
 
@@ -410,7 +418,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	if ((i::GlobalVars->flCurrentTime - mflSimulationTime) < 0.f)
 		return false;
 
-	//static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
+	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
 
 	//float m_flCorrect = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) + i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_OUTGOING) /*+ GetClientInterpAmount()*/;
 	//m_flCorrect = std::clamp(m_flCorrect, 0.f, sv_maxunlag->GetFloat());

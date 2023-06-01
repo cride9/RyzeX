@@ -263,6 +263,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkGetColorModulation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetViewModelFov.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkINetchannelHandler.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkLevelShutDownClient.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkListLeavesInBox.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkLockCursor.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkNetChannel.cpp" />
@@ -277,6 +278,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkWriteUserCmdDeltaToBuffer.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\ImGui\ImGuiHooks.cpp" />
     <ClCompile Include="Core\Hooks\hooks.cpp" />
+    <ClCompile Include="Core\Hooks\Proxies\ProxyHooks.cpp" />
     <ClCompile Include="Core\Interface\Classes\CConvar.cpp" />
     <ClCompile Include="Core\Interface\Classes\CKeyValues.cpp" />
     <ClCompile Include="Core\Interface\interfaces.cpp" />
@@ -324,6 +326,7 @@
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
     <ClInclude Include="Core\globals.h" />
     <ClInclude Include="Core\Hooks\hooks.h" />
+    <ClInclude Include="Core\Hooks\Proxies\ProxyHooks.h" />
     <ClInclude Include="Core\hungarians.h" />
     <ClInclude Include="Core\Interface\Classes\CClientModeShared.h" />
     <ClInclude Include="Core\Interface\Classes\CClientState.h" />

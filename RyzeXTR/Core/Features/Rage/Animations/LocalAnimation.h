@@ -67,20 +67,20 @@ struct AnimationRecord_t
 class C_LocalAnimations
 {
 public:
-	virtual void OnCreateMove(bool& bSendPacket);
-	virtual void BeforePrediction();
-	virtual void StoreAnimationRecord();
+	virtual void OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal);
+	virtual void BeforePrediction(CBaseEntity* pLocal);
+	virtual void StoreAnimationRecord(CBaseEntity* pLocal);
 	virtual void ModifyEyePosition(Vector& vecInputEyePos, matrix3x4_t* aMatrix);
-	virtual void SetupPlayerBones(matrix3x4_t* aMatrix, int nMask);
+	virtual void SetupPlayerBones(matrix3x4_t* aMatrix, int nMask, CBaseEntity* pLocal);
 	virtual void InterpolateMatricies();
-	virtual void DoAnimationEvent(int nButtons, bool bIsFakeAnimations = false);
-	virtual void SimulateStrafe(int nButtons);
-	virtual void UpdateDesyncAnimations();
+	virtual void DoAnimationEvent(int nButtons, CBaseEntity* pLocal, bool bIsFakeAnimations = false);
+	virtual void SimulateStrafe(int nButtons, CBaseEntity* pLocal);
+	virtual void UpdateDesyncAnimations(CBaseEntity* pLocal);
 	virtual void TransformateMatricies();
 	virtual void CleanSnapshots();
 	virtual bool CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount);
-	virtual void SetupShootPosition();
-	virtual void CopyPlayerAnimationData(bool bFake);
+	virtual void SetupShootPosition(CBaseEntity* pLocal);
+	virtual void CopyPlayerAnimationData(bool bFake, CBaseEntity* pLocal);
 	virtual void AnimationBreaker(float*);
 
 	virtual float GetYawDelta()

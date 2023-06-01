@@ -19,7 +19,7 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 	if (!g::pLocal || !pEnt->IsAlive() || (pEnt->GetTeam() == g::pLocal->GetTeam() && pEnt != g::pLocal) || !pEnt->IsPlayer() || g::bUpdatingSkins)
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
-	if (std::get<0>(g::bSettingUpBones[pEnt->EntIndex()]))
+	if (g::bSettingUpBones[pEnt->EntIndex()])
 		return original(ecx, edx, matrix, maxbones, bonemask, curtime);
 
 	if (matrix) {

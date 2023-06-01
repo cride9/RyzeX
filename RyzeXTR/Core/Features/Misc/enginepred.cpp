@@ -8,7 +8,7 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	if (!pLocal->IsAlive() || i::MoveHelper == nullptr)
 		return;
 
-	g_LocalAnimations->BeforePrediction();
+	g_LocalAnimations->BeforePrediction(pLocal);
 
 	// start command
 	*pLocal->GetCurrentCommand() = pCmd;
@@ -29,9 +29,9 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 
 	// the big ol tb fixer upper
 	if ( !pLastCmd || pLastCmd->bHasBeenPredicted )
-		SeqDiff = SequenceNumber - g::pLocal->GetTickBase( );
+		SeqDiff = SequenceNumber - pLocal->GetTickBase( );
 
-	TickBase = max( g::pLocal->GetTickBase( ),
+	TickBase = max(pLocal->GetTickBase( ),
 		SequenceNumber - SeqDiff );
 
 	pLastCmd = g::pCmd;

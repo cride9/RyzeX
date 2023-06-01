@@ -199,7 +199,15 @@ public:
 
 		Lagcompensation::EResolverMode iAntiAimType;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
-		matrix3x4_t pCachedMatrix[128];
+		std::array<matrix3x4_t, 128> pCachedMatrix;
+
+		void ClearData() {
+
+			pEntity = nullptr;
+			iLastUpdateTick = 0;
+			pCachedMatrix = std::array<matrix3x4_t, 128>();
+			pRecord.clear();
+		}
 	};
 
 	/* Everything will be ran inside this */

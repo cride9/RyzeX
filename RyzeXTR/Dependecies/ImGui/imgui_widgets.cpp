@@ -3584,9 +3584,7 @@ bool ImGui::Keybind(const char* str_id, int* current_key, int* key_style) {
     }
 
     char buf_display[64] = "[-]";
-    std::string active = "[";
-    active += KeyNames[*current_key];
-    active += "]";
+	std::string active = std::format("[{}]", KeyNames[*current_key]);
 
     if (*current_key != 0 && g.ActiveId != id)
         strcpy_s(buf_display, active.c_str());

@@ -90,5 +90,5 @@ namespace chams {
 	bool DrawChamsMDL(IMatRenderContext*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4_t*);
 	void PrepareMaterial();
 
-	inline IMaterial* materials[5] = { nullptr, nullptr, nullptr, nullptr, nullptr };
+	inline std::array<IMaterial*, 5> materials;
 }
