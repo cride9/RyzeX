@@ -36,7 +36,7 @@ struct DataVariant_t
 class CRecvProxyData
 {
 public:
-	const RecvProp_t* pRecvProp;	// the property it's receiving
+	const RecvProp_t*	pRecvProp;	// the property it's receiving
 	DataVariant_t		Value;		// the value given to you to store
 	int					iElement;	// which array element you're getting
 	int					nObjectID;	// the object being referred to
@@ -60,10 +60,10 @@ public:
 // receive data table
 struct RecvTable_t
 {
-	RecvProp_t* pProps;
+	RecvProp_t*		pProps;
 	int				nProps;
-	void* pDecoder;
-	char* szNetTableName;
+	void*			pDecoder;
+	char*			szNetTableName;
 	bool			bInitialized;
 	bool			bInMainList;
 };
@@ -71,19 +71,19 @@ struct RecvTable_t
 // receive prop comes from the receive data table
 struct RecvProp_t
 {
-	char* szVarName;
+	char*				szVarName;
 	ESendPropType		iRecvType;
 	int					iFlags;
 	int					nStringBufferSize;
 	bool				bInsideArray;
-	const void* pExtraData;
-	RecvProp_t* pArrayProp;
+	const void*			pExtraData;
+	RecvProp_t*			pArrayProp;
 	ArrayLengthProxyFn* oArrayLengthProxyFn;
 	RecvVarProxyFn		oProxyFn;
-	DataTableProxyFn* oDataTableProxyFn;
-	RecvTable_t* pDataTable;
+	DataTableProxyFn*	oDataTableProxyFn;
+	RecvTable_t*		pDataTable;
 	int					iOffset;
 	int					iElementStride;
 	int					iElements;
-	const char* szParentArrayPropName;
+	const char*			szParentArrayPropName;
 };

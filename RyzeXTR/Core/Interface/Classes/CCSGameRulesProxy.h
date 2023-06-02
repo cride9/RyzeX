@@ -2,7 +2,7 @@
 #include "../../SDK/NetVar/Netvar.h"
 
 #define ADD_NETVAR(name, type, netvar) type& name() { \
-	static auto offset = n::netvars[fnv::HashConst(netvar)]; \
+	static auto offset = n::netvars[fnv::HashConst(netvar)].uOffset; \
 	return *reinterpret_cast<type*>(uint32_t(this) + offset); \
 }
 

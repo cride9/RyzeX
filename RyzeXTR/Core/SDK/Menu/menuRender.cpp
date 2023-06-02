@@ -27,6 +27,8 @@ void menu::HandleMenuElements() noexcept {
 
     ImGui::Begin("RyzeX", NULL, ImGuiWindowFlags_NoTitleBar);
     {
+		ImGui::SetScrollX( 0 );
+
         ImGui::GetBackgroundDrawList( )->AddRectFilled( ImVec2( 0.f, 0.f ), ImGui::GetIO( ).DisplaySize, IM_COL32( 0, 0, 0, 100 ) );
 
         if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {

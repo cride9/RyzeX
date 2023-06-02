@@ -436,22 +436,22 @@ public:
 }
 
 #define ADD_NETVAR(name, type, netvar) type& name() { \
-	static auto offset = n::netvars[fnv::HashConst(netvar)]; \
+	static auto offset = n::netvars[fnv::HashConst(netvar)].uOffset; \
 	return *reinterpret_cast<type*>(uint32_t(this) + offset); \
 }
 
 #define ADD_PNETVAR(name, type, netvar) type* name() { \
-	static auto offset = n::netvars[fnv::HashConst(netvar)]; \
+	static auto offset = n::netvars[fnv::HashConst(netvar)].uOffset; \
 	return reinterpret_cast<type*>(uint32_t(this) + offset); \
 }
 
 #define ADD_NETVAROFFSET(name, type, netvar, address) type& name() { \
-	static auto offset = n::netvars[fnv::HashConst(netvar)]; \
+	static auto offset = n::netvars[fnv::HashConst(netvar)].uOffset; \
 	return *reinterpret_cast<type*>(uint32_t(this) + offset + address); \
 }
 
 #define ADD_PNETVAROFFSET(name, type, netvar, address) type* name() { \
-	static auto offset = n::netvars[fnv::HashConst(netvar)]; \
+	static auto offset = n::netvars[fnv::HashConst(netvar)].uOffset; \
 	return reinterpret_cast<type*>(uint32_t(this) + offset + address); \
 }
 
@@ -601,7 +601,7 @@ public:
 
 	CBaseEntity* GetGroundEntity() {
 
-		static auto offset = n::netvars[fnv::HashConst("CBasePlayer->m_hGroundEntity")];
+		static auto offset = n::netvars[fnv::HashConst("CBasePlayer->m_hGroundEntity")].uOffset;
 		return reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(*reinterpret_cast<CBaseHandle*>(uint32_t(this) + offset)));
 	}
 
@@ -832,7 +832,7 @@ public:
 
 	__forceinline std::array<int, 64>& GetWeaponsHandle()
 	{
-		static auto offset = n::netvars[fnv::HashConst("CBaseCombatCharacter->m_hMyWeapons")];
+		static auto offset = n::netvars[fnv::HashConst("CBaseCombatCharacter->m_hMyWeapons")].uOffset;
 		return *reinterpret_cast<std::array<int, 64>*>(uint32_t(this) + offset);
 	}
 	//ADD_PNETVAR(GetWeaponsHandle, CBaseHandle, "CBaseCombatCharacter->m_hMyWeapons");
@@ -854,7 +854,7 @@ public:
 
 	std::array<float, 24>& GetPoseParameter() {
 
-		static int _m_flPoseParameter = n::netvars[fnv::HashConst("CBaseAnimating->m_flPoseParameter")];
+		static int _m_flPoseParameter = n::netvars[fnv::HashConst("CBaseAnimating->m_flPoseParameter")].uOffset;
 		return *(std::array<float, 24>*)((uintptr_t)this + _m_flPoseParameter);
 	}
 

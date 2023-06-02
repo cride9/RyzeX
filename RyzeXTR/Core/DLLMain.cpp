@@ -16,6 +16,7 @@
 #include "SDK/InputSystem.h"
 #include "Features/Rage/Animations/LocalAnimation.h"
 #include "Features/Changers/SkinChanger.h"
+#include "Hooks/Proxies/ProxyHooks.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -86,6 +87,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	h::SetupHooks();
 	g::entityListener.Setup();
 	IPT::Setup();
+	p::Setup();
 
 #if NDEBUG
 	//util::LogConsole("[RELEASE] Built date: " __DATE__ " at " __TIME__ "\n");
@@ -108,6 +110,8 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	menu::Destroy();
 	i::EngineClient->ClientCmdUnrestricted("cl_fullupdate");
 	IPT::Restore( );
+	p::Destroy();
+
 	delete Config2;
 	delete g_LocalAnimations;
 

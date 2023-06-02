@@ -29,9 +29,10 @@ void n::DumpNetvars(const char* szBase, RecvTable_t* cTable, uint32_t offset) {
 		if (prop->iRecvType == ESendPropType::DPT_DATATABLE && prop->pDataTable && prop->pDataTable->szNetTableName[0] == 'D')
 			DumpNetvars(szBase, prop->pDataTable, offset + prop->iOffset);
 
-		const auto netvarname = std::format("{}->{}", szBase, prop->szVarName);
+		// concat to our netvar format just by hash
+		const uint32_t uTotalHash = fnv::Hash( prop->szVarName, fnv::Hash( "->", fnv::Hash( szBase ) ) );
 
-		netvars[fnv::Hash(netvarname.c_str())] = offset + prop->iOffset;
+		netvars[ uTotalHash ] = { prop, offset + prop->iOffset };
 	}
 }
 

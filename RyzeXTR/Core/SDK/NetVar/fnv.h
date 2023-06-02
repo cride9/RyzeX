@@ -14,16 +14,14 @@ namespace fnv
 	}
 
 	// Runtime hash
-	inline uint32_t Hash(const char* data) noexcept {
-
-		uint32_t hashed = base;
+	inline uint32_t Hash(const char* data, uint32_t value = base ) noexcept {
 
 		for (size_t i = 0U; i < strlen(data); ++i) {
 
-			hashed ^= data[i];
-			hashed *= prime;
+			value ^= data[i];
+			value *= prime;
 		}
 
-		return hashed;
+		return value;
 	}
 }

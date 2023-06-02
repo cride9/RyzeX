@@ -5,9 +5,12 @@
 
 bool p::Setup()
 {
-	// @note: as example
-	if (!hkBaseViewModelSequence.Create(nullptr, &BaseViewModelSequence))
+	// get viewmodel m_nSequence Netvar prop
+	RecvProp_t* pViewModelSequence = n::netvars[ fnv::HashConst( "CBaseViewModel->m_nSequence", 0x811C9DC5 ) ].pRecvProp;
+	if ( pViewModelSequence == nullptr )
 		return false;
+
+	hkBaseViewModelSequence = std::make_shared<CRecvPropHook>( pViewModelSequence, BaseViewModelSequence );
 
 	return true;
 }
@@ -15,12 +18,12 @@ bool p::Setup()
 void p::Destroy()
 {
 	// @note: as example
-	hkBaseViewModelSequence.Restore();
+	hkBaseViewModelSequence->Restore();
 }
 
 void p::BaseViewModelSequence(const CRecvProxyData* pData, void* pStruct, void* pOut)
 {
-	const auto oSequence = hkBaseViewModelSequence.GetOriginal();
+	const auto oSequence = hkBaseViewModelSequence->GetOriginal();
 
 	// sanity checks
 	if (g::pLocal == nullptr || !g::pLocal->IsAlive())
@@ -44,9 +47,9 @@ void p::BaseViewModelSequence(const CRecvProxyData* pData, void* pStruct, void* 
 			const Model_t* KnifeModel = i::ModelInfo->GetModel(ViewModel->GetModelIndex());
 			const char* ModelName = i::ModelInfo->GetModelName(KnifeModel);
 			// set proxy data
-			ProxyData->Value.Int = beforeIfuckUpEverything::GetNewAnimation(ModelName, ProxyData->Value.Int);
+			ProxyData->Value.Int = beforeIfuckUpEverything::GetNewAnimation( FNV1A::hash_runtime( ModelName ), ProxyData->Value.Int);
 		}
 	}
 
-	oSequence(pData, pStruct, pOut);
+	oSequence( ProxyData, pStruct, pOut );
 }

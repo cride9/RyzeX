@@ -1,5 +1,6 @@
 #pragma once
 #include "../../SDK/NetVar/datatable.h"
+#include <memory>
 
 class CRecvProxyData;
 using RecvVarProxyFn_t = void(__cdecl*)(const CRecvProxyData*, void*, void*);
@@ -9,42 +10,43 @@ using DataTableProxyFn_t = void(__cdecl*)(const RecvProp_t*, void**, void*, int)
 class CRecvPropHook
 {
 public:
-	bool Create(RecvProp_t* pRecvProp, const RecvVarProxyFn_t pNewProxyFn)
-	{
-		if (pRecvProp == nullptr)
-			return false;
+    CRecvPropHook( RecvProp_t* pRecvProp, const RecvVarProxyFn pNewProxyFn ) :
+        pRecvProp( pRecvProp ), pOriginalFn( pRecvProp->oProxyFn )
+    {
+        SetProxy( pNewProxyFn );
+    }
 
-		pProperty = pRecvProp;
-		fnOriginal = pRecvProp->oProxyFn;
+    // Get
+    /* replace with our function */
+    void Replace( RecvProp_t* pRecvProp )
+    {
+        this->pRecvProp = pRecvProp;
+        this->pOriginalFn = pRecvProp->oProxyFn;
+    }
 
-		Replace(pNewProxyFn);
-		return true;
-	}
+    /* restore original function */
+    void Restore( ) const
+    {
+        if ( this->pOriginalFn != nullptr )
+            this->pRecvProp->oProxyFn = this->pOriginalFn;
+    }
 
-	// replace property proxy with our function
-	void Replace(const RecvVarProxyFn_t pNewProxyFn) const
-	{
-		pProperty->oProxyFn = pNewProxyFn;
-	}
+    void SetProxy( const RecvVarProxyFn pNewProxyFn ) const
+    {
+        this->pRecvProp->oProxyFn = pNewProxyFn;
+    }
 
-	// restore original property proxy function
-	void Restore() const
-	{
-		if (fnOriginal != nullptr)
-			pProperty->oProxyFn = fnOriginal;
-	}
-
-	/// @returns: original property proxy function
-	[[nodiscard]] RecvVarProxyFn_t GetOriginal() const
-	{
-		return this->fnOriginal;
-	}
+    RecvVarProxyFn GetOriginal( ) const
+    {
+        return this->pOriginalFn;
+    }
 
 private:
-	// current property
-	RecvProp_t* pProperty = nullptr;
-	// original proxy function to have ability to restore it later
-	RecvVarProxyFn_t fnOriginal = nullptr;
+    // Values
+    /* in future that is being modified and replace the original prop */
+    RecvProp_t* pRecvProp = nullptr;
+    /* original proxy function to make able to restore it later */
+    RecvVarProxyFn pOriginalFn = nullptr;
 };
 
 namespace p {
@@ -56,5 +58,5 @@ namespace p {
 	void BaseViewModelSequence(const CRecvProxyData* pData, void* pStruct, void* pOut);
 
 	/* @section: managers */
-	inline CRecvPropHook hkBaseViewModelSequence;
+    inline std::shared_ptr<CRecvPropHook> hkBaseViewModelSequence;
 }
