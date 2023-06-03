@@ -365,6 +365,11 @@ namespace cfg {
 		inline int iSkybox = 0;
 		inline float flSkyboxColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
+		inline bool bEnableRadio = false;
+		inline int iRadioStation = 0;
+		inline float flRadioVolume = 0.f;
+		inline int iRadioMuteHotKey = 0;
+
 		inline bool aspectRatio = false;
 		inline int aspectRatioValue = 0;
 		inline bool preserveKillfeed = false;

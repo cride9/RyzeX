@@ -293,6 +293,8 @@
     <ClCompile Include="Core\SDK\NetVar\Netvar.cpp" />
     <ClCompile Include="Core\SDK\RayTracer rebuilt\CRayTrace.cpp" />
     <ClCompile Include="Core\SDK\WavParser.cpp" />
+    <ClCompile Include="Dependecies\BASS\dll.cpp" />
+    <ClCompile Include="Dependecies\BASS\dll_image.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui_demo.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui_draw.cpp" />
@@ -390,6 +392,11 @@
     <ClInclude Include="Core\SDK\RayTracer rebuilt\CRayTrace.h" />
     <ClInclude Include="Core\SDK\WavParser.h" />
     <ClInclude Include="Core\utilities.h" />
+    <ClInclude Include="Dependecies\BASS\API.h" />
+    <ClInclude Include="Dependecies\BASS\bass.h" />
+    <ClInclude Include="Dependecies\BASS\dll.h" />
+    <ClInclude Include="Dependecies\BASS\random.h" />
+    <ClInclude Include="Dependecies\BASS\string_obfuscation.h" />
     <ClInclude Include="Dependecies\ImGui\imconfig.h" />
     <ClInclude Include="Dependecies\ImGui\imgui.h" />
     <ClInclude Include="Dependecies\ImGui\imgui_impl_dx9.h" />

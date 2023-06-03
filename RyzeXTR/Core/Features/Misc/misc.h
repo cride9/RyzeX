@@ -23,6 +23,8 @@ namespace misc {
 	inline Vector vecEyePosition = Vector(0.f, 0.f, 0.f);
 	inline matrix3x4_t matrixRecord[128];
 
+	void SetupRadio( );
+
 	void CreateMove(CUserCmd*, Vector&, bool&);
 
 	void BunnyHop(CUserCmd* pCmd);

@@ -91,6 +91,8 @@
     <ClCompile Include="Core\Features\Changers\SkinChanger.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkLevelShutDownClient.cpp" />
     <ClCompile Include="Core\Hooks\Proxies\ProxyHooks.cpp" />
+    <ClCompile Include="Dependecies\BASS\dll.cpp" />
+    <ClCompile Include="Dependecies\BASS\dll_image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -193,5 +195,10 @@
     <ClInclude Include="Core\Interface\Classes\CCSGameRulesProxy.h" />
     <ClInclude Include="Core\Features\Changers\wtf.h" />
     <ClInclude Include="Core\Hooks\Proxies\ProxyHooks.h" />
+    <ClInclude Include="Dependecies\BASS\API.h" />
+    <ClInclude Include="Dependecies\BASS\bass.h" />
+    <ClInclude Include="Dependecies\BASS\dll.h" />
+    <ClInclude Include="Dependecies\BASS\random.h" />
+    <ClInclude Include="Dependecies\BASS\string_obfuscation.h" />
   </ItemGroup>
 </Project>

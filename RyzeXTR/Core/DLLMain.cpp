@@ -17,6 +17,8 @@
 #include "Features/Rage/Animations/LocalAnimation.h"
 #include "Features/Changers/SkinChanger.h"
 #include "Hooks/Proxies/ProxyHooks.h"
+#include "Features/Misc/misc.h"
+#include "../Dependecies/BASS/API.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -89,6 +91,8 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	IPT::Setup();
 	p::Setup();
 
+	misc::SetupRadio( );
+
 #if NDEBUG
 	//util::LogConsole("[RELEASE] Built date: " __DATE__ " at " __TIME__ "\n");
 #endif
@@ -103,6 +107,12 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 
 	while (!GetAsyncKeyState(VK_DELETE))
 		Sleep(200);
+
+	// destroy radio
+	BASS::bass_init = FALSE;
+	BASS_Stop( );
+	BASS_StreamFree( BASS::stream_handle );
+	BASS_Free( );
 
 	g::entityListener.Destroy();
 	menu::open = false;

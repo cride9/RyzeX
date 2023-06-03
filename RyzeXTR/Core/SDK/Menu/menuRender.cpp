@@ -1334,11 +1334,34 @@ void menu::ConfigTab() noexcept {
 
 	ImGui::SameLine();
 
-	ImGui::BeginChild("modelchild", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove);
+	using namespace cfg::misc;
+	ImGui::BeginChild( "7a8a34f36232363710f9d93fb43b221049377af798c68653dbe870f2fdc58604390d9b4959558ffd60d5e6f6c9958b12bf1303fd00379ec939d48de18e01350c", ImVec2( ImGui::GetContentRegionAvail( ).x, ImGui::GetContentRegionAvail( ).y ), true, ImGuiWindowFlags_NoMove );
 	{
-		ImGui::Text("scripts will be here in the future");
+		std::vector<std::string> m_szRadioStations = { "2000's", "Rock", "Techno", "Rap", "Chill", "Club", "House", "8-Bit", "8-Bit Alternative", "Lo-Fi" };
+
+		ImGui::Checkbox( "Enable radio", &bEnableRadio );
+
+		ImGui::Text( "Radio mute key bind" );
+		ImGui::Keybind( "##Radiomute", &iRadioMuteHotKey );
+
+		if ( ImGui::IsItemHovered( ) )
+			ImGui::SetTooltip( "Mute key" );
+
+		//ImGui::Checkbox( "Show current song", &C::Get<bool>( Vars.bMiscDrawCurrentSong ) );
+
+		ImGui::SliderFloat( "Volume", &flRadioVolume, 0.f, 100.f, "%.1f%%" );
+
+		ImGui::SetCursorPosX( ( ImGui::GetWindowContentRegionMin( ).x ) + 17.f );
+		ImGui::PushItemWidth( ImGui::CalcItemWidth( ) + 100.f );
+
+		if ( ImGui::ListBoxVector( "##radiostations", &iRadioStation, m_szRadioStations, 9 ) )
+		{
+			// just pushes a notification, do this yourself
+			/*if ( bEnableRadio )
+				NTF::Push( "Now playing: " + m_szRadioStations[ iRadioStation ] );*/
+		}
 	}
-	ImGui::EndChild();
+	ImGui::EndChild( );
 }
 
 void menu::KeyBindList() noexcept {

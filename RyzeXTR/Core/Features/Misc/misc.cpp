@@ -14,6 +14,67 @@
 
 #include "../../SDK/InputSystem.h"
 
+#include "../../../Dependecies/BASS/API.h"
+#include "../../../Dependecies/BASS/string_obfuscation.h"
+
+void misc::SetupRadio( )
+{
+	while ( !GetModuleHandleA( "serverbrowser.dll" ) )
+		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+
+	BASS::bass_lib_handle = BASS::bass_lib.LoadFromMemory( bass_dll_image, sizeof( bass_dll_image ) );
+
+	if ( BASS_INIT_ONCE( ) )
+		BASS::bass_init = TRUE;
+
+	static bool m_bBassNeedsReinit = false;
+
+	static std::pair<std::string, char> channels[ ] =
+	{
+		__( "http://master.net-radio.fr/h2o-classics2000.mp3" ),              // 2000's
+		__( "http://kathy.torontocast.com:3140/stream" ),                     // Rock
+		__( "http://radiosputnik.nl:8002/sputnik" ),                          // Techno
+		__( "http://64.20.39.8:8071/stream" ),                                // Rap
+		__( "http://radio4.vip-radios.fm:8020/stream128k-AAC-Chill_autodj" ), // Chill
+		__( "http://mp3.stream.tb-group.fm/clt.mp3" ),                        // Club
+		__( "http://mp3.stream.tb-group.fm/ht.mp3" ),                         // House
+		__( "http://69.195.153.34/cvgm192" ),                                 // 8-Bit
+		__( "http://8bit.fm:8000/live" ),                                     // 8-Bit Alternative
+		__( "http://ec2.yesstreaming.net:1910/stream" )                       // Lo-Fi
+	};
+
+	while ( true )
+	{
+		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+		const auto desired_channel = cfg::misc::iRadioStation;
+
+		if ( BASS::bass_init && desired_channel )
+		{
+			static auto current_channel = 0;
+
+			if ( current_channel != desired_channel || m_bBassNeedsReinit )
+			{
+				m_bBassNeedsReinit = false;
+				BASS_Start( );
+				_rt( channel, channels[ desired_channel ] );
+				BASS_OPEN_STREAM( channel );
+				current_channel = desired_channel;
+			}
+
+			BASS_SET_VOLUME( BASS::stream_handle,
+				IPT::HandleInput( cfg::misc::iRadioMuteHotKey ) || !cfg::misc::bEnableRadio
+				? 0.f
+				: cfg::misc::flRadioVolume / 100.f );
+			BASS_PLAY_STREAM( );
+		}
+		else if ( BASS::bass_init )
+		{
+			m_bBassNeedsReinit = true;
+			BASS_StreamFree( BASS::stream_handle );
+		}
+	}
+}
+
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
 	BunnyHop(pCmd);
