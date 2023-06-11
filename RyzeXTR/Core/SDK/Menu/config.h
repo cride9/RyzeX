@@ -96,30 +96,30 @@ namespace cfg {
 	}
 	namespace antiaim {
 
-		inline bool bEnabled = false;
-		inline int iPitch = 2;
-		inline int iYawBase = 1;
-		inline int iYaw = 1;
-		inline bool bSlideWalk = false;
-		inline bool bInvertOnShoot = false;
-		inline bool bAntiJitter = false;
+		inline bool bEnabled[3];
+		inline int iPitch[3];
+		inline int iYawBase[3];
+		inline int iYaw[3];
+		inline bool bSlideWalk;
+		inline bool bInvertOnShoot[3];
+		inline bool bAntiJitter[3];
 
-		inline int iDesyncType = 0;
-		inline int iDesyncValue = 100;
+		inline int iDesyncType[3];
+		inline int iDesyncValue[3];
 		inline int iInverterBind = 0;
 
-		inline float bodyLean[2];
+		inline float bodyLean[2][3];
 
-		inline int iFlickOffset = 0;
-		inline int flickAngleSwitch = 0;
+		inline int iFlickOffset[3];
+		inline int flickAngleSwitch[3];
 
-		inline bool m_bSwayDesync = false;
+		inline bool m_bSwayDesync[3];
 
-		inline int modifier = 0;
-		inline int desyncModifier = 0;
-		inline int desyncModifierValue = 0;
-		inline int jittervalue = 0;
-		inline float invertangle = 0.f;
+		inline int modifier[3];
+		inline int desyncModifier[3];
+		inline int desyncModifierValue[3];
+		inline int jittervalue[3];
+		inline float invertangle[3];
 
 		inline bool enableFakelag = false;
 		inline int fakelag = 0;
@@ -138,7 +138,7 @@ namespace cfg {
 		inline bool idealTick = false;
 		inline int idealTickBind = 0;
 
-		inline int freestand = 0;
+		inline int freestand[3];
 	}
 	namespace visual {
 

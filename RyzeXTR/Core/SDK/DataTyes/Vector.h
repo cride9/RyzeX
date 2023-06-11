@@ -297,7 +297,10 @@ public:
 
 	[[nodiscard]] constexpr Vector CrossProduct(const Vector& vecCross) const
 	{
-		return Vector(this->y * vecCross.z - this->z * vecCross.y, this->z * vecCross.x - this->x * vecCross.z, this->x * vecCross.y - this->y * vecCross.x);
+		return Vector(
+			this->y * vecCross.z - this->z * vecCross.y, 
+			this->z * vecCross.x - this->x * vecCross.z, 
+			this->x * vecCross.y - this->y * vecCross.x);
 	}
 
 public:

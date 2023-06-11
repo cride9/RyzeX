@@ -134,7 +134,7 @@ namespace h {
 
 	void* __fastcall	hkAllocKeyValuesMemory(CKeyValuesSystem*, int, int);
 	void __fastcall		hkCreateMoveProxy(IBaseClientDLL*, int, int, float, bool);
-	void __fastcall		hkFrameStageNotify(IBaseClientDLL*, int, EStage);
+	void __fastcall		hkFrameStageNotify(IBaseClientDLL*, void*, EStage);
 	void __fastcall		hkPaintTraverse(uintptr_t, int, unsigned int, bool, bool);
 	void __cdecl		hkClMove(float, bool);
 	void __fastcall		hkOverrideView(void*, void*, CViewSetup*);

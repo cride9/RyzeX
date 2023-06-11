@@ -7,7 +7,7 @@
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Features/Changers/wtf.h"
 
-void hkPreFrameStageNotify(EStage& curStage) {
+void hkPreFrameStageNotify(EStage curStage) {
 
 	auto pLocal = CBaseEntity::GetLocalPlayer();
 	if (!pLocal)
@@ -25,7 +25,7 @@ void hkPreFrameStageNotify(EStage& curStage) {
 
 	case FRAME_RENDER_START:
 
-		misc::ServerHitboxes();
+		//misc::ServerHitboxes();
 
 		if (cfg::misc::removals[1])
 			pLocal->GetFlashMaxAlpha() = 0.f;
@@ -51,7 +51,11 @@ void hkPreFrameStageNotify(EStage& curStage) {
 	}
 }
 
-void hkPostFrameStageNotify(EStage& curStage) {
+void hkPostFrameStageNotify(EStage curStage) {
+
+	auto pLocal = CBaseEntity::GetLocalPlayer();
+	if (!pLocal)
+		return;
 
 	switch (curStage) {
 
@@ -79,11 +83,11 @@ void hkPostFrameStageNotify(EStage& curStage) {
 	}
 }
 
-void __fastcall h::hkFrameStageNotify(IBaseClientDLL* ecx, int edx, EStage curStage) {
+void __fastcall h::hkFrameStageNotify(IBaseClientDLL* ecx, void* edx, EStage curStage) {
 
 	static auto original = detour::frameStageNotify.GetOriginal<decltype(&h::hkFrameStageNotify)>();
 
 	hkPreFrameStageNotify(curStage);
-	original(i::ClientDll, edx, curStage);
+	original(ecx, edx, curStage);
 	hkPostFrameStageNotify(curStage);
 }

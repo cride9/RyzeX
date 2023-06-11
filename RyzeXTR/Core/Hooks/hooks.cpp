@@ -17,7 +17,7 @@ void h::SetupHooks() {
 	HookTable(detour::D3DReset, menu::device, table::D3DReset, &Reset);
 	HookTable(detour::D3DEndScene, menu::device, table::D3DEndScene, &EndScene);
 
-	// CSGO Hooks
+	// CSGO vtable Hooks
 	HookTable(detour::allocKeyValues, i::KeyValuesSystem, table::allocKeyValues, &hkAllocKeyValuesMemory);
 	HookTable(detour::createMove, i::ClientDll, table::createMove, &hkCreateMoveProxy);
 
@@ -42,13 +42,14 @@ void h::SetupHooks() {
 	HookSignature(detour::buildTransform, "client.dll", "55 8B EC 83 E4 F0 81 ? ? ? ? ? 56 57 8B F9 8B ? ? ? ? ? 89 7C 24 28", &hkBuildTransformation);
 	HookSignature(detour::calculateView, "client.dll", "55 8B EC 83 EC 14 53 56 57 FF 75 18", &hkCalculateView);
 	HookSignature(detour::sequenceChange, "client.dll", "55 8B EC 51 53 8B 5D 08 56 8B F1 57 85", &hkCheckForSequenceChange);
-	HookSignature(detour::procedrualFoot, "client.dll", "55 8B EC 83 E4 F0 83 EC 78 56 8B F1 57 8B", &hkDoProceduralFootPlant);
+	//HookSignature(detour::procedrualFoot, "client.dll", "55 8B EC 83 E4 F0 83 EC 78 56 8B F1 57 8B", &hkDoProceduralFootPlant);
 	HookSignature(detour::isHltv, "engine.dll", "A1 ? ? ? ? 80 ? ? ? ? ? ? 75 0C", &hkIsHltv);
 	HookSignature(detour::modifyEyePosition, "client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 14", &hkModifyEyePosition);
 	HookSignature(detour::skipAnimation, "client.dll", "57 8B F9 8B 07 8B 80 ? ? ? ? FF D0 84 C0 75 02", &hkShouldSkipAnimationFrame);
 	HookSignature(detour::blendingRules, "client.dll", "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 8B 75 08 57 8B F9 85 F6", &hkStandardBlendingRules);
 	//HookSignature(detour::animationState, "client.dll", "55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3", &hkUpdateAnimationState);
 	HookSignature(detour::clientAnimation, "client.dll", "55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74", &hkUpdateClientSideAnimations);
+												//   55 8B EC 56 8B F1 51 8D old: 55 8B EC 83 E4 F0 B8 D8
 	HookSignature(detour::setupBones, "client.dll", "55 8B EC 83 E4 F0 B8 D8", &hkSetupBones);
 	HookSignature(detour::extraBoneProcessing, "client.dll", "55 8B EC 83 E4 F8 81 ? ? ? ? ? 53 56 8B F1 57 89 74 24 1C", &hkDoExtraBoneProcessing);
 	HookSignature(detour::physicsSimulate, "client.dll", "56 8B F1 8B 8E ? ? ? ? 83 F9 FF 74 23", &hkPhysicsSimulate);
@@ -71,7 +72,6 @@ void h::SetupHooks() {
 	//i::EngineClient->ExecuteClientCmd("clear");
 	//util::LogConsole("Hooks Initialized!\n", Color(255, 255, 255));
 }
-
 
 void __fastcall h::hkInstallStringTableCallback(const char* tableName) {
 

@@ -10,34 +10,8 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	static auto original = detour::paintTraverse.GetOriginal<decltype(&h::hkPaintTraverse)>();
 
-	// TimerLabel
-	//if (!strcmp("TimerLabel", i::Panel->GetName(vguiPanel))) {
-
-
-	//	return;
-	//}
-
 	if (cfg::misc::removals[3] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
-
-	/* If we're not connected to a server clear every pointer to not crash */
-	//if (i::ClientState->iSignonState != SIGNONSTATE_FULL && g::pLocal && !i::EngineClient->IsConnected() && !i::EngineClient->IsInGame()) {
-	//	for (size_t index = 0; index < 65; index++) {
-	//		if (auto pCurrentRecord = &lagcomp.GetLog(index); !pCurrentRecord->pRecord.empty() || pCurrentRecord->pEntity) {
-	//			pCurrentRecord->pRecord.clear();
-	//			pCurrentRecord->pEntity = nullptr;
-	//		}
-	//		g::bAllowAnimations[index] = false;
-	//		g::bSettingUpBones[index] = std::make_tuple(false, 0);
-	//	}
-	//	misc::bResetNightMode = true;
-	//	h::UnHookClientState();
-	//	prediction.pLastCmd = nullptr;
-	//	g::pLocal = nullptr;
-	//	ragebot.rageBotData.pAimbotTarget = nullptr;
-	//	ragebot.rageBotData.pTargetMatrix = nullptr;
-	//	ragebot.rageBotData.iCommand = 0;
-	//}
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
@@ -47,6 +21,19 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 		visual::WorldEsp();
 		visual::CoolHackKeyBindList();
+		visual::DrawRadioInformation();
+
+		for (Vector& drawPos : g::drawList)
+		{
+			Vector screenPosition;
+			if (i::DebugOverlay->ScreenPosition(drawPos, screenPosition))
+				continue;
+
+			i::Surface->DrawOutlinedCircle(screenPosition.x, screenPosition.y, 20, 64);
+		}
+
+		if (g::drawList.size() > 4)
+			g::drawList.clear();
 
 		if (g::pLocal) {
 

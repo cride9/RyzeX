@@ -7,6 +7,7 @@
 #include "../../SDK/Menu/gui.h"
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
 #include "../../SDK/InputSystem.h"
+#include "../../../Dependecies/BASS/dll.h"
 
 void SafepointDebug(CBaseEntity* pEnt) {
 
@@ -315,8 +316,8 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 
 		spacing += 10;
-		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[MONEY], g::fonts::FlagESP, false, std::format("{} brueforce", anims.missedShots[pEnt->EntIndex()]).c_str());
-		spacing += 10;
+		//i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[MONEY], g::fonts::FlagESP, false, std::format("{} brueforce", anims.missedShots[pEnt->EntIndex()]).c_str());
+		//spacing += 10;
 	}
 
 	/*if (true) {
@@ -332,13 +333,13 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		}
 	}*/
 
-#if NO
+#if _NO
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
-	
+		
 		static auto something = [](int right, int top, int& spacing, const char* print) {
 
-			i::Surface->DrawT(right + 2, top + spacing, Color(184, 203, 131, 255), g::fonts::FlagESP, false, print);
+			i::Surface->DrawT(right + 2, (top + spacing) - 80, RYZEXCOLOR, g::fonts::FlagESP, false, print);
 			spacing += 10;
 		};
 
@@ -346,17 +347,30 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		if (iLastValid >= pLog->pRecord.size())
 			return;
 
-		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[0].flPlaybackRate * 10000000).c_str());
-		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[1].flPlaybackRate * 10000000).c_str());
-		//something(right, top, spacing, std::to_string(pLog->pRecord.front().LayerData[2].flPlaybackRate * 10000000).c_str());
-		//something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate * 10000000).c_str());
-		//something(right, top, spacing, std::to_string(pLog->pRecord.front().pLayers[ANIMATION_LAYER_ADJUST].flPlaybackRate * 10000000).c_str());
+		auto pRecord = &pLog->pRecord.front();
 
-		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[0].flPlaybackRate)).c_str());
-		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[1].flPlaybackRate)).c_str());
-		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().LayerData[2].flPlaybackRate)).c_str());
-		//something(right, top, spacing, std::to_string(anims.GetLocalCycleIncrement(pLog->pEntity, pLog->pRecord.front().pLayers[6].flPlaybackRate)).c_str());
+		something(right, top, spacing, "[Layer 3]");
+		something(right, top, spacing, std::format("flWeight: {}", pRecord->pLayers[3].flWeight).c_str());
+		something(right, top, spacing, std::format("flCycle: {}", pRecord->pLayers[3].flCycle).c_str());
+		something(right, top, spacing, std::format("flPlaybackrate: {}", pRecord->pLayers[3].flPlaybackRate).c_str());
+		something(right, top, spacing, "");
 
+		something(right, top, spacing, "[Layer 6]");
+		something(right, top, spacing, std::format("flWeight: {}", pRecord->pLayers[6].flWeight).c_str());
+		something(right, top, spacing, std::format("flCycle: {}", pRecord->pLayers[6].flCycle).c_str());
+		something(right, top, spacing, std::format("flPlaybackrate: {}", pRecord->pLayers[6].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("flLeftPlaybackrate: {}", pRecord->pSideLayers[LEFT][6].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("flRightPlaybackrate: {}", pRecord->pSideLayers[RIGHT][6].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("flPlaybackRateDelta1: {}", pRecord->pSideLayers[LEFT][6].flPlaybackRate - pRecord->pLayers[6].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("flPlaybackRateDelta2: {}", pRecord->pSideLayers[RIGHT][6].flPlaybackRate - pRecord->pLayers[6].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("flNormalizedPlaybackRate1: {}", M::NormalizeYaw(pRecord->pSideLayers[LEFT][6].flPlaybackRate)).c_str());
+		something(right, top, spacing, std::format("flNormalizedPlaybackRate2: {}", M::NormalizeYaw(pRecord->pSideLayers[RIGHT][6].flPlaybackRate)).c_str());
+
+		something(right, top, spacing, "");
+		something(right, top, spacing, "[Layer 12]");
+		something(right, top, spacing, std::format("flWeight: {}", pRecord->pLayers[12].flWeight).c_str());
+		something(right, top, spacing, std::format("flCycle: {}", pRecord->pLayers[12].flCycle).c_str());
+		something(right, top, spacing, std::format("flPlaybackrate: {}", pRecord->pLayers[12].flPlaybackRate).c_str());
 	}
 #endif
 }
@@ -731,5 +745,32 @@ void visual::CoolHackKeyBindList() {
 		int outgoing = (pNetChannelInfo->GetLatency(FLOW_OUTGOING) + pNetChannelInfo->GetLatency(FLOW_INCOMING)) * 100;
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (outgoing), 255), max(191 - outgoing, 0), 61, 255), g::fonts::SkeetFont, false, "PING");
 		spacing += 30;
+	}
+}
+
+void visual::DrawRadioInformation() {
+
+	int iWidth;
+	int iHeight;
+	i::EngineClient->GetScreenSize(iWidth, iHeight);
+	auto position = (iHeight / 2) - 20;
+
+	if (strlen(BASS::bass_metadata) > 0 && cfg::misc::bEnableRadio)
+	{
+		if (!IPT::HandleInput(cfg::misc::iRadioMuteHotKey))
+			i::Surface->DrawT(10, position, RYZEXCOLOR, g::fonts::FlagESP, false, "Now playing:");
+		else
+			i::Surface->DrawT(10, position, RYZEXCOLOR, g::fonts::FlagESP, false, "Now playing: [MUTED]");
+		i::Surface->DrawT(10, position + 16, Color(238, 238, 238, 255), g::fonts::FlagESP, false, BASS::bass_metadata);
+	}
+	else if (cfg::misc::iRadioStation == 12 && cfg::misc::bEnableRadio) {
+
+		if (!IPT::HandleInput(cfg::misc::iRadioMuteHotKey))
+			i::Surface->DrawT(10, position, RYZEXCOLOR, g::fonts::FlagESP, false, "Now playing:");
+		else 
+			i::Surface->DrawT(10, position, RYZEXCOLOR, g::fonts::FlagESP, false, "Now playing: [MUTED]");
+		
+		static std::string radio1lmao = "Radio 1 - Csak igazi mai slager megy";
+		i::Surface->DrawT(10, position + 16, Color(238, 238, 238, 255), g::fonts::FlagESP, false, radio1lmao.c_str());
 	}
 }

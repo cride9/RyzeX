@@ -26,11 +26,17 @@ enum EDESYNC : int {
 	FLICK
 };
 
+enum AATYPE : int {
+
+	STANDING,
+	MOVING,
+	INAIR
+};
+
 namespace antiaim {
 
 	inline bool needMicromovement = false;
 	inline bool flickJitter = false;
-	inline bool bHideFlick = false;
 
 	inline float desyncValue = 0.f;
 	inline bool shotInvert = false;
@@ -55,4 +61,8 @@ namespace antiaim {
     void InvertOnShoot(CUserCmd* pCmd);
 	int ClosestToLocal();
 	void AtTarget(CUserCmd*, Vector&);
+
+	void Standing(CUserCmd* pCmd, bool& bSendPacket);
+	void Moving(CUserCmd* pCmd, bool& bSendPacket);
+	void InAir(CUserCmd* pCmd, bool& bSendPacket);
 }

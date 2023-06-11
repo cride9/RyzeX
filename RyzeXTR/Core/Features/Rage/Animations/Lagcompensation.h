@@ -57,7 +57,7 @@ public:
 	bool bDataFilled = false;
 };
 
-enum EMatrixType {
+enum EMatrixType : int {
 
 	VISUAL,
 	RESOLVE,
@@ -99,10 +99,12 @@ public:
 
 		// 0 - Visual, 1 - Resolve, 2 - Left, 3 - Right, 4 - Center
 		matrix3x4_t pMatricies[MAX][128];
+		CAnimationLayer pSideLayers[MAX][13];
+		LayerData_t LayerData[MAX];
 
 		bool bBreakingLagcompensation{};
 		bool bFakewalking{};
-		bool bValid{};
+		bool bValid = true;
 		bool bDormant{};
 		bool bBackwards{};
 		bool bSideways{};
@@ -110,6 +112,7 @@ public:
 		bool bDidShot{};
 		bool bRestoreData{};
 		bool bFirstAfterDormant{};
+		bool bSafeResolve = false;
 
 		Vector vecVelocity{};
 		Vector vecAbsVelocity{};
@@ -123,9 +126,6 @@ public:
 		Vector vecAbsAngles{};
 
 		float pResolverPlaybackrate[3];
-		CAnimationLayer pResolverLayers[3][13];
-		CAnimationLayer pResolverLayers2[3][13];
-		LayerData_t LayerData[3];
 
 		CAnimationLayer pLayers[13];
 		float flPoses[24];
@@ -211,7 +211,7 @@ public:
 	};
 
 	/* Everything will be ran inside this */
-	void FrameStageNotify();
+	void FrameStageNotify() noexcept;
 
 	/* Those functions will run in createmove */
 	void StartLagcompensation(CBaseEntity*);
@@ -235,14 +235,15 @@ public:
 	void SetInterpolationFlags();
 
 	// check if record is valid
-	static bool IsValidRecord(float m_flSimulationTime, float m_flRange = 0.19f);
+	static bool IsValidRecord(float m_flSimulationTime, float m_flRange = 0.199f);
+
+	// extrapolate players breaking lagcomp
+	void ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious) const;
 
 private:
 	// filter records after updating them
 	void FilterRecords();
 
-	// extrapolate players breaking lagcomp
-	void ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious) const;
 
 	// Values
 	/* animation info */

@@ -27,6 +27,7 @@ namespace visual {
 	void MoneyEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
 	void SkeletonEsp(CBaseEntity*, Color);
+	void DrawRadioInformation();
 	
 	void WorldEsp();
 	void DroppedWeapons(CBaseCombatWeapon*, Vector&);

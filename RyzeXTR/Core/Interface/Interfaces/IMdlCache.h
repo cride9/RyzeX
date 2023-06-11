@@ -44,76 +44,165 @@ public:
 class IMDLCache
 {
 public:
-	virtual void SetCacheNotify(IMDLCacheNotify* pNotify) = 0;
-	virtual MDLHandle_t FindMDL(const char* szMDLRelativePath) = 0;
-	virtual int AddReference(MDLHandle_t hModel) = 0;
-	virtual int Release(MDLHandle_t hModel) = 0;
-	virtual int GetReference(MDLHandle_t hModel) = 0;
-	virtual studiohdr_t* GetStudioHdr(MDLHandle_t hModel) = 0;
-	virtual studiohwdata_t* GetHardwareData(MDLHandle_t hModel) = 0;
-	virtual vcollide_t* GetVCollide(MDLHandle_t hModel) = 0;
-	virtual vcollide_t* GetVCollide(MDLHandle_t hModel, float flScale) = 0;
-	virtual unsigned char* GetAnimBlock(MDLHandle_t hModel, int nBlock, bool bPreloadIfMissing) = 0;
-	virtual bool HasAnimBlockBeenPreloaded(MDLHandle_t hModel, int nBlock) = 0;
-	virtual virtualmodel_t* GetVirtualModel(MDLHandle_t hModel) = 0;
-	virtual int GetAutoplayList(MDLHandle_t hModel, unsigned short** pOut) = 0;
-	virtual vertexfileheader_t* GetVertexData(MDLHandle_t hModel) = 0;
-	virtual void TouchAllData(MDLHandle_t hModel) = 0;
-	virtual void SetUserData(MDLHandle_t hModel, void* pData) = 0;
-	virtual void* GetUserData(MDLHandle_t hModel) = 0;
-	virtual bool IsErrorModel(MDLHandle_t hModel) = 0;
-	virtual bool IsOverBudget(MDLHandle_t hModel) = 0;
-	virtual void Flush(MDLCacheFlush_t nFlushFlags = MDLCACHE_FLUSH_ALL) = 0;
-	virtual void Flush(MDLHandle_t hModel, MDLCacheFlush_t nFlushFlags = MDLCACHE_FLUSH_ALL) = 0;
-	virtual const char* GetModelName(MDLHandle_t hModel) = 0;
-	virtual void* GetCacheSection(MDLCacheDataType_t nType) = 0;
-	virtual virtualmodel_t* GetVirtualModelFast(const studiohdr_t* pStudioHdr, MDLHandle_t hModel) = 0;
-	virtual void BeginLock() = 0;
-	virtual void EndLock() = 0;
-	virtual int* GetFrameUnlockCounterPtrOLD() = 0;
-	virtual void FinishPendingLoads() = 0;
-	virtual vcollide_t* GetVCollideEx(MDLHandle_t hModel, bool bSynchronousLoad = true) = 0;
-	virtual bool GetVCollideSize(MDLHandle_t hModel, int* pVCollideSize) = 0;
-	virtual bool GetAsyncLoad(MDLCacheDataType_t nType) = 0;
-	virtual bool SetAsyncLoad(MDLCacheDataType_t nType, bool bAsync) = 0;
-	virtual void BeginMapLoad() = 0;
-	virtual void EndMapLoad() = 0;
-	virtual void MarkAsLoaded(MDLHandle_t hModel) = 0;
-	virtual void InitPreloadData(bool bRebuild) = 0;
-	virtual void ShutdownPreloadData() = 0;
-	virtual bool IsDataLoaded(MDLHandle_t hModel, MDLCacheDataType_t nType) = 0;
-	virtual int* GetFrameUnlockCounterPtr(MDLCacheDataType_t nType) = 0;
-	virtual studiohdr_t* LockStudioHdr(MDLHandle_t hModel) = 0;
-	virtual void UnlockStudioHdr(MDLHandle_t hModel) = 0;
-	virtual bool PreloadModel(MDLHandle_t hModel) = 0;
-	virtual void ResetErrorModelStatus(MDLHandle_t hModel) = 0;
-	virtual void MarkFrame() = 0;
-	virtual void BeginCoarseLock() = 0;
-	virtual void EndCoarseLock() = 0;
-	virtual void ReloadVCollide(MDLHandle_t hModel) = 0;
-	virtual bool ReleaseAnimBlockAllocator() = 0;
-	virtual bool RestoreHardwareData(MDLHandle_t hModel, void* pAsyncVTXControl, void* pAsyncVVDControl) = 0;
-	virtual void DisableVCollideLoad() = 0;
-	virtual void EnableVCollideLoad() = 0;
-	virtual void DisableFileNotFoundWarnings() = 0;
-	virtual void EnableFileNotFoundWarnings() = 0;
-	virtual bool ProcessPendingHardwareRestore() = 0;
-	virtual void UnloadQueuedHardwareData() = 0;
-	virtual void DumpDictionaryState() = 0;
-	virtual MDLHandle_t	CreateCombinedModel(const char* szModelName) = 0;
-	virtual bool CreateCombinedModel(MDLHandle_t hModel) = 0;
-	virtual bool SetCombineModels(MDLHandle_t hModel, const CUtlVector<void*>& vecModelsToCombine) = 0;
-	virtual bool FinishCombinedModel(MDLHandle_t hModel, void* pFunction, void* pUserData = nullptr) = 0;
-	virtual bool IsCombinedPlaceholder(MDLHandle_t hModel) = 0;
-	virtual bool IsCombinedModel(MDLHandle_t hModel) = 0;
-	virtual int GetNumCombinedSubModels(MDLHandle_t hModel) = 0;
-	virtual void GetCombinedSubModelFilename(MDLHandle_t hModel, int nSubModelIndex, char* szResult, int nResultSize) = 0;
-	virtual CKeyValues* GetCombinedMaterialKV(MDLHandle_t hModel, int nAtlasGroup = 0) = 0;
-	virtual void UpdateCombiner() = 0;
-	virtual void* GetCombinedInternalAsset(int nAssetType, const char* szAssetID = nullptr, int* nSize = nullptr) = 0;
-	virtual void SetCombinerFlags(unsigned int nFlags) = 0;
-	virtual void ClearCombinerFlags(unsigned int nFlags) = 0;
-	virtual void DebugCombinerInfo() = 0;
+	void SetCacheNotify(IMDLCacheNotify* pNotify)
+	{
+		util::CallVFunc<void>(this, 9, pNotify);
+	}
+
+	[[nodiscard]] MDLHandle_t FindMDL(const char* szMDLRelativePath)
+	{
+		return util::CallVFunc<MDLHandle_t>(this, 1, szMDLRelativePath);
+	}
+
+	[[nodiscard]] int AddReference(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<int>(this, 11U, hModel);
+	}
+
+	[[nodiscard]] int Release(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<int>(this, 12U, hModel);
+	}
+
+	[[nodiscard]] int GetReference(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<int>(this, 13U, hModel);
+	}
+
+	[[nodiscard]] studiohdr_t* GetStudioHdr(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<studiohdr_t*>(this, 14U, hModel);
+	}
+
+	[[nodiscard]] studiohwdata_t* GetHardwareData(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<studiohwdata_t*>(this, 15U, hModel);
+	}
+
+	[[nodiscard]] vcollide_t* GetVCollide(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<vcollide_t*>(this, 16U, hModel);
+	}
+
+	[[nodiscard]] vcollide_t* GetVCollide(MDLHandle_t hModel, float flScale)
+	{
+		return util::CallVFunc<vcollide_t*>(this, 17U, hModel, flScale);
+	}
+
+	[[nodiscard]] unsigned char* GetAnimBlock(MDLHandle_t hModel, int nBlock, bool bPreloadIfMissing)
+	{
+		return util::CallVFunc<unsigned char*>(this, 18U, hModel, nBlock, bPreloadIfMissing);
+	}
+
+	[[nodiscard]] bool HasAnimBlockBeenPreloaded(MDLHandle_t hModel, int nBlock)
+	{
+		return util::CallVFunc<bool>(this, 19U, hModel, nBlock);
+	}
+
+	[[nodiscard]] virtualmodel_t* GetVirtualModel(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<virtualmodel_t*>(this, 20U, hModel);
+	}
+
+	[[nodiscard]] int GetAutoplayList(MDLHandle_t hModel, unsigned short** pOut)
+	{
+		return util::CallVFunc<int>(this, 21U, hModel, pOut);
+	}
+
+	[[nodiscard]] vertexfileheader_t* GetVertexData(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<vertexfileheader_t*>(this, 22U, hModel);
+	}
+
+	[[nodiscard]] bool IsErrorModel(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<bool>(this, 26U, hModel);
+	}
+
+	void Flush(int nFlushFlags = MDLCACHE_FLUSH_ALL)
+	{
+		util::CallVFunc<void>(this, 28U, nFlushFlags);
+	}
+
+	void Flush(MDLHandle_t hModel, int nFlushFlags = MDLCACHE_FLUSH_ALL)
+	{
+		util::CallVFunc<void>(this, 29U, hModel, nFlushFlags);
+	}
+
+	[[nodiscard]] const char* GetModelName(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<const char*>(this, 30U, hModel);
+	}
+
+	[[nodiscard]] void* GetCacheSection(int nType)
+	{
+		return util::CallVFunc<void*>(this, 31U, nType);
+	}
+
+	[[nodiscard]] virtualmodel_t* GetVirtualModelFast(const studiohdr_t* pStudioHdr, MDLHandle_t hModel)
+	{
+		return util::CallVFunc<virtualmodel_t*>(this, 32U, pStudioHdr, hModel);
+	}
+
+	void BeginLock()
+	{
+		util::CallVFunc<void>(this, 33U);
+	}
+
+	void EndLock()
+	{
+		util::CallVFunc<void>(this, 34U);
+	}
+
+	[[nodiscard]] vcollide_t* GetVCollideEx(MDLHandle_t hModel, bool bSynchronousLoad = true)
+	{
+		return util::CallVFunc<vcollide_t*>(this, 37U, hModel, bSynchronousLoad);
+	}
+
+	[[nodiscard]] bool GetVCollideSize(MDLHandle_t hModel, int* pVCollideSize)
+	{
+		return util::CallVFunc<bool>(this, 38U, hModel, pVCollideSize);
+	}
+
+	[[nodiscard]] studiohdr_t* LockStudioHdr(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<studiohdr_t*>(this, 48U, hModel);
+	}
+
+	void UnlockStudioHdr(MDLHandle_t hModel)
+	{
+		util::CallVFunc<void>(this, 49U, hModel);
+	}
+
+	[[nodiscard]] bool PreloadModel(MDLHandle_t hModel)
+	{
+		return util::CallVFunc<bool>(this, 50U, hModel);
+	}
+
+	void BeginCoarseLock()
+	{
+		util::CallVFunc<void>(this, 53U);
+	}
+
+	void EndCoarseLock()
+	{
+		util::CallVFunc<void>(this, 54U);
+	}
+
+	void ReloadVCollide(MDLHandle_t hModel)
+	{
+		util::CallVFunc<void>(this, 55U, hModel);
+	}
+
+	void DisableVCollideLoad()
+	{
+		util::CallVFunc<void>(this, 58U);
+	}
+
+	void EnableVCollideLoad()
+	{
+		util::CallVFunc<void>(this, 59U);
+	}
 };
 
 class CMDLCacheCriticalSection

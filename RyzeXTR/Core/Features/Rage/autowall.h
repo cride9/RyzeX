@@ -21,17 +21,17 @@ class CAutoWall
 public:
 	// Get
 	/* returns damage at point and simulated bullet data (if given) */
-	static float GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, FireBulletData_t* pDataOut = nullptr, CBaseEntity* pTarget = nullptr);
+	static float GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, FireBulletData_t* pDataOut = nullptr);
 	/* calculates damage factor */
 	static void ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const float flWeaponArmorRatio, const float flWeaponHeadShotMultiplier, float& flDamage );
 	/* simulates fire bullet to penetrate up to 4 walls, return true when hitting player */
-	static bool SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data, CBaseEntity* pTarget = nullptr);
+	static bool SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data);
 	/* I need this exlo trust me this will be fun*/
 	static bool CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSource);
 
 private:
 	// Main
-	static void ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, ITraceFilter* pFilter, Trace_t* pTrace, const float flMinRange = 0.0f, CBaseEntity* pTarget = nullptr );
+	static void ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, ITraceFilter* pFilter, Trace_t* pTrace, const float flMinRange = 0.0f );
 	static bool TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vector& vecPosition, const Vector& vecDirection, const CBaseEntity* pClipPlayer );
 	static bool HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInfo* pWeaponData, const surfacedata_t* pEnterSurfaceData, FireBulletData_t& data );
 };

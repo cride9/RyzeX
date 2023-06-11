@@ -317,6 +317,7 @@
     <ClInclude Include="Core\Features\Misc\misc.h" />
     <ClInclude Include="Core\Features\Misc\serversounds.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
+    <ClInclude Include="Core\Features\Rage\Animations\BoneSetup.h" />
     <ClInclude Include="Core\Features\Rage\Animations\EnemyAnimations.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\LocalAnimation.h" />
@@ -372,6 +373,7 @@
     <ClInclude Include="Core\SDK\CRC32.h" />
     <ClInclude Include="Core\SDK\CUserCmd.h" />
     <ClInclude Include="Core\SDK\datamap.h" />
+    <ClInclude Include="Core\SDK\DataTyes\BitVec.h" />
     <ClInclude Include="Core\SDK\DataTyes\Color.h" />
     <ClInclude Include="Core\SDK\DataTyes\Matrix.h" />
     <ClInclude Include="Core\SDK\DataTyes\UtlMemory.h" />

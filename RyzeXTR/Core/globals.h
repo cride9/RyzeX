@@ -19,6 +19,8 @@ namespace g {
 
 	inline bool bSettingUpBones[65];
 
+	inline std::vector<Vector> drawList{};
+
 	namespace fonts {
 		inline HFont HealthESP;
 		inline HFont NameESP;

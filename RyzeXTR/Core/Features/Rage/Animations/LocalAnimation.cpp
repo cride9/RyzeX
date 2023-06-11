@@ -755,7 +755,9 @@ void C_LocalAnimations::InterpolateMatricies()
 
 	// copy bones
 	std::memcpy(pLocal->GetCachedBoneData().Base(), m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * pLocal->GetCachedBoneData().Count());
-	pLocal->GetBoneAccessor()->matBones = m_LocalData.m_Real.m_Matrix.data();
+	std::memcpy(pLocal->GetBoneAccessor().matBones, m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * pLocal->GetCachedBoneData().Count());
+
+	//pLocal->GetBoneAccessor().matBones = m_LocalData.m_Real.m_Matrix.data();
 
 	return pLocal->SetupBones_AttachmentHelper();
 }

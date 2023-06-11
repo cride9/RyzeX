@@ -78,6 +78,7 @@ namespace beforeIfuckUpEverything {
 			default:
 				return sequence - 1;
 			}
+
 		}
 		case FNV( "models/weapons/v_knife_css.mdl" ):
 		{

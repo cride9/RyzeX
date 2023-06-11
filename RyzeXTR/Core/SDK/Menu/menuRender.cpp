@@ -184,7 +184,12 @@ void menu::Ragetab() noexcept {
     }
     ImGui::EndChild();
 }
+enum AATYPE : int {
 
+	STANDING,
+	MOVING,
+	INAIR
+};
 void menu::Antiaimtab() noexcept {
 
     using namespace cfg::antiaim;
@@ -199,39 +204,132 @@ void menu::Antiaimtab() noexcept {
 
     ImGui::BeginChild("LeftChild", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
     {
-        ImGui::Checkbox("Enabled", &bEnabled);
-        ImGui::Combo("Pitch", &iPitch, pitchList, IM_ARRAYSIZE(pitchList));
-        ImGui::Combo("Yaw base", &iYawBase, yawBaseList, IM_ARRAYSIZE(yawBaseList));
-        ImGui::Combo("Yaw", &iYaw, yawList, IM_ARRAYSIZE(yawList));
-        ImGui::Combo("Modifier", &modifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
-		if (modifier != 0) {
-			ImGui::SliderInt("Modifier value", &jittervalue, 0, 90);
-			ImGui::Checkbox("Anti jitter prediction", &bAntiJitter);
+		static int selectedAAType = 0;
+		if (ImGui::Button("Standing", ImVec2(ImGui::GetContentRegionAvail().x / 3, 15.f), selectedAAType == STANDING))
+			selectedAAType = STANDING;
+		ImGui::SameLine();
+		if (ImGui::Button("Moving", ImVec2(ImGui::GetContentRegionAvail().x / 2, 15.f), selectedAAType == MOVING))
+			selectedAAType = MOVING;
+		ImGui::SameLine();
+		if (ImGui::Button("Jumping", ImVec2(ImGui::GetContentRegionAvail().x, 15.f), selectedAAType == INAIR))
+			selectedAAType = INAIR;
+
+
+		if (selectedAAType == STANDING) {
+			ImGui::Checkbox("Enabled", &bEnabled[STANDING]);
+			ImGui::Combo("Pitch", &iPitch[STANDING], pitchList, IM_ARRAYSIZE(pitchList));
+			ImGui::Combo("Yaw base", &iYawBase[STANDING], yawBaseList, IM_ARRAYSIZE(yawBaseList));
+			ImGui::Combo("Yaw", &iYaw[STANDING], yawList, IM_ARRAYSIZE(yawList));
+			ImGui::Combo("Modifier", &modifier[STANDING], yawModifierList, IM_ARRAYSIZE(yawModifierList));
+			if (modifier[STANDING] != 0) {
+				ImGui::SliderInt("Modifier value", &jittervalue[STANDING], 0, 90);
+				ImGui::Checkbox("Anti jitter prediction", &bAntiJitter[STANDING]);
+			}
+			ImGui::Combo("Lower body yaw target", &iDesyncType[STANDING], desyncList, IM_ARRAYSIZE(desyncList));
+			if (iDesyncType[STANDING] != 0) {
+
+				ImGui::SliderFloat("Body lean", &cfg::antiaim::bodyLean[0][STANDING], -58.f, 58.f, "%.f");
+				ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1][STANDING], -58.f, 58.f, "%.f");
+
+				if (iDesyncType[STANDING] == 4) {
+					ImGui::SliderInt("Yaw desync angle", &iDesyncValue[STANDING], 0, 100);
+					ImGui::Keybind("invertButton", &iInverterBind);
+					ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset[STANDING], 0, 180.f);
+					ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch[STANDING], 0, cfg::antiaim::fakelagmax);
+				}
+				else {
+					if (iDesyncType[STANDING] == 2)
+						ImGui::Checkbox("Sway LBY", &m_bSwayDesync[STANDING]);
+
+					ImGui::SliderInt("Yaw desync angle", &iDesyncValue[STANDING], 0, 100);
+					ImGui::Keybind("invertButton", &iInverterBind);
+					ImGui::Combo("Yaw target modifier", &desyncModifier[STANDING], yawModifierList, IM_ARRAYSIZE(yawModifierList));
+					if (desyncModifier[STANDING] != 0)
+						ImGui::SliderInt("Modifier value ##2", &desyncModifierValue[STANDING], 0, 58);
+				}
+			}
+			ImGui::Checkbox("Invert on shoot", &bInvertOnShoot[STANDING]);
+			ImGui::Combo("Fresstanding", &freestand[STANDING], freestandList, IM_ARRAYSIZE(freestandList));
 		}
-        ImGui::Combo("Lower body yaw target", &iDesyncType, desyncList, IM_ARRAYSIZE(desyncList));
-        if (iDesyncType != 0) {
+		else if (selectedAAType == MOVING) {
+			ImGui::Checkbox("Enabled", &bEnabled[MOVING]);
 
-			ImGui::SliderFloat("Body lean", &cfg::antiaim::bodyLean[0], -58.f, 58.f, "%.f");
-			ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1], -58.f, 58.f, "%.f");
+			if (bEnabled[MOVING]) {
 
-			if (iDesyncType == 4) {
-				ImGui::SliderInt("Yaw desync angle", &iDesyncValue, 0, 100);
-				ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset, 0, 180.f);
-				ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch, 0, cfg::antiaim::fakelagmax);
+				ImGui::Combo("Pitch", &iPitch[MOVING], pitchList, IM_ARRAYSIZE(pitchList));
+				ImGui::Combo("Yaw base", &iYawBase[MOVING], yawBaseList, IM_ARRAYSIZE(yawBaseList));
+				ImGui::Combo("Yaw", &iYaw[MOVING], yawList, IM_ARRAYSIZE(yawList));
+				ImGui::Combo("Modifier", &modifier[MOVING], yawModifierList, IM_ARRAYSIZE(yawModifierList));
+				if (modifier[MOVING] != 0) {
+					ImGui::SliderInt("Modifier value", &jittervalue[MOVING], 0, 90);
+					ImGui::Checkbox("Anti jitter prediction", &bAntiJitter[MOVING]);
+				}
+				ImGui::Combo("Lower body yaw target", &iDesyncType[MOVING], desyncList, IM_ARRAYSIZE(desyncList));
+				if (iDesyncType[MOVING] != 0) {
+
+					ImGui::SliderFloat("Body lean", &cfg::antiaim::bodyLean[0][MOVING], -58.f, 58.f, "%.f");
+					ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1][MOVING], -58.f, 58.f, "%.f");
+
+					if (iDesyncType[MOVING] == 4) {
+						ImGui::SliderInt("Yaw desync angle", &iDesyncValue[MOVING], 0, 100);
+						ImGui::Keybind("invertButton", &iInverterBind);
+						ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset[MOVING], 0, 180.f);
+						ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch[MOVING], 0, cfg::antiaim::fakelagmax);
+					}
+					else {
+						if (iDesyncType[MOVING] == 2)
+							ImGui::Checkbox("Sway LBY", &m_bSwayDesync[MOVING]);
+
+						ImGui::SliderInt("Yaw desync angle", &iDesyncValue[MOVING], 0, 100);
+						ImGui::Keybind("invertButton", &iInverterBind);
+						ImGui::Combo("Yaw target modifier", &desyncModifier[MOVING], yawModifierList, IM_ARRAYSIZE(yawModifierList));
+						if (desyncModifier[MOVING] != 0)
+							ImGui::SliderInt("Modifier value ##2", &desyncModifierValue[MOVING], 0, 58);
+					}
+				}
+				ImGui::Checkbox("Invert on shoot", &bInvertOnShoot[MOVING]);
+				ImGui::Combo("Fresstanding", &freestand[MOVING], freestandList, IM_ARRAYSIZE(freestandList));
 			}
-			else {
-				if (iDesyncType == 2)
-					ImGui::Checkbox("Sway LBY", &m_bSwayDesync);
+		}
+		else if (selectedAAType == INAIR) {
+			ImGui::Checkbox("Enabled", &bEnabled[INAIR]);
 
-				ImGui::SliderInt("Yaw desync angle", &iDesyncValue, 0, 100);
-				ImGui::Keybind("invertButton", &iInverterBind);
-				ImGui::Combo("Yaw target modifier", &desyncModifier, yawModifierList, IM_ARRAYSIZE(yawModifierList));
-				if (desyncModifier != 0)
-					ImGui::SliderInt("Modifier value ##2", &desyncModifierValue, 0, 58);
+			if (bEnabled[INAIR]) {
+				ImGui::Combo("Pitch", &iPitch[INAIR], pitchList, IM_ARRAYSIZE(pitchList));
+				ImGui::Combo("Yaw base", &iYawBase[INAIR], yawBaseList, IM_ARRAYSIZE(yawBaseList));
+				ImGui::Combo("Yaw", &iYaw[INAIR], yawList, IM_ARRAYSIZE(yawList));
+				ImGui::Combo("Modifier", &modifier[INAIR], yawModifierList, IM_ARRAYSIZE(yawModifierList));
+				if (modifier[INAIR] != 0) {
+					ImGui::SliderInt("Modifier value", &jittervalue[INAIR], 0, 90);
+					ImGui::Checkbox("Anti jitter prediction", &bAntiJitter[INAIR]);
+				}
+				ImGui::Combo("Lower body yaw target", &iDesyncType[INAIR], desyncList, IM_ARRAYSIZE(desyncList));
+				if (iDesyncType[INAIR] != 0) {
+
+					ImGui::SliderFloat("Body lean", &cfg::antiaim::bodyLean[0][INAIR], -58.f, 58.f, "%.f");
+					ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1][INAIR], -58.f, 58.f, "%.f");
+
+					if (iDesyncType[INAIR] == 4) {
+						ImGui::SliderInt("Yaw desync angle", &iDesyncValue[INAIR], 0, 100);
+						ImGui::Keybind("invertButton", &iInverterBind);
+						ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset[INAIR], 0, 180.f);
+						ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch[INAIR], 0, cfg::antiaim::fakelagmax);
+					}
+					else {
+						if (iDesyncType[INAIR] == 2)
+							ImGui::Checkbox("Sway LBY", &m_bSwayDesync[INAIR]);
+
+						ImGui::SliderInt("Yaw desync angle", &iDesyncValue[INAIR], 0, 100);
+						ImGui::Keybind("invertButton", &iInverterBind);
+						ImGui::Combo("Yaw target modifier", &desyncModifier[INAIR], yawModifierList, IM_ARRAYSIZE(yawModifierList));
+						if (desyncModifier[INAIR] != 0)
+							ImGui::SliderInt("Modifier value ##2", &desyncModifierValue[INAIR], 0, 58);
+					}
+				}
+				ImGui::Checkbox("Invert on shoot", &bInvertOnShoot[INAIR]);
+				ImGui::Combo("Fresstanding", &freestand[INAIR], freestandList, IM_ARRAYSIZE(freestandList));  
 			}
-        }
-		ImGui::Checkbox("Invert on shoot", &bInvertOnShoot);
-		ImGui::Combo("Fresstanding", &freestand, freestandList, IM_ARRAYSIZE(freestandList));
+		}
     }
     ImGui::EndChild();
 
@@ -1337,7 +1435,7 @@ void menu::ConfigTab() noexcept {
 	using namespace cfg::misc;
 	ImGui::BeginChild( "7a8a34f36232363710f9d93fb43b221049377af798c68653dbe870f2fdc58604390d9b4959558ffd60d5e6f6c9958b12bf1303fd00379ec939d48de18e01350c", ImVec2( ImGui::GetContentRegionAvail( ).x, ImGui::GetContentRegionAvail( ).y ), true, ImGuiWindowFlags_NoMove );
 	{
-		std::vector<std::string> m_szRadioStations = { "2000's", "Rock", "Techno", "Rap", "Chill", "Club", "House", "8-Bit", "8-Bit Alternative", "Lo-Fi" };
+		std::vector<std::string> m_szRadioStations = { "2000's", "Rock", "Techno", "Rap", "Chill", "Club", "House", "8-Bit", "8-Bit Alternative", "Lo-Fi", "Eurobeat", "Nightcore", "Radio 1", "Phonk" };
 
 		ImGui::Checkbox( "Enable radio", &bEnableRadio );
 

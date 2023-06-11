@@ -6801,11 +6801,22 @@ bool ImGui::ListBox(const char* label, int* current_item, bool (*items_getter)(v
 
             PushID(i);
             const bool item_selected = (i == *current_item);
-            if (Selectable(item_text, item_selected))
-            {
-                *current_item = i;
-                value_changed = true;
-            }
+			if (item_selected) {
+				ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(64.f / 255.f, 64.f / 255.f, 64.f / 255.f, 1.f));
+				if (Selectable(item_text, item_selected))
+				{
+					*current_item = i;
+					value_changed = true;
+				}
+				ImGui::PopStyleColor();
+			}
+			else {
+				if (Selectable(item_text, item_selected))
+				{
+					*current_item = i;
+					value_changed = true;
+				}
+			}
             if (item_selected)
                 SetItemDefaultFocus();
             PopID();

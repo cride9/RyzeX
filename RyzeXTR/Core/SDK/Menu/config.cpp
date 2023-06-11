@@ -134,31 +134,31 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::antiaim;
 
-		SetupValue(bEnabled, false, "antiaim", "Antiaimenabled");
+		SetupValue(bEnabled, false, 3, "antiaim", "Antiaimenabled");
 
-		SetupValue(iPitch, 0, "antiaim", "pitch");
-		SetupValue(iYaw, 0, "antiaim", "yaw");
-		SetupValue(iYawBase, 0, "antiaim", "yawbase");
+		SetupValue(iPitch, 3, 0, "antiaim", "pitch");
+		SetupValue(iYaw, 3, 0, "antiaim", "yaw");
+		SetupValue(iYawBase, 3, 0, "antiaim", "yawbase");
 		SetupValue(bSlideWalk, 0, "antiaim", "slidewalk");
-		SetupValue(bInvertOnShoot, false, "antiaim", "bInvertOnShoot");
-		SetupValue(bodyLean[0], 0.f, "antiaim", "bodyLean1");
-		SetupValue(bodyLean[1], 0.f, "antiaim", "bodyLean2");
-		SetupValue(bAntiJitter, false, "antiaim", "bAntiJitter");
+		SetupValue(bInvertOnShoot, false, 3, "antiaim", "bInvertOnShoot");
+		SetupValue(bodyLean[0], 3, 0.f, "antiaim", "bodyLean1");
+		SetupValue(bodyLean[1], 3, 0.f, "antiaim", "bodyLean2");
+		SetupValue(bAntiJitter, false, 3, "antiaim", "bAntiJitter");
 
-		SetupValue(modifier, 0, "antiaim", "modifier");
-		SetupValue(desyncModifier, 0, "antiaim", "desyncModifier");
-		SetupValue(desyncModifierValue, 0, "antiaim", "desyncModifierValue");
+		SetupValue(modifier,3, 0, "antiaim", "modifier");
+		SetupValue(desyncModifier, 3, 0, "antiaim", "desyncModifier");
+		SetupValue(desyncModifierValue, 3, 0, "antiaim", "desyncModifierValue");
 
-		SetupValue(jittervalue, 0, "antiaim", "jittervalue");
-		SetupValue(invertangle, 0, "antiaim", "invertangle");
+		SetupValue(jittervalue, 3, 0, "antiaim", "jittervalue");
+		SetupValue(invertangle, 3, 0.f, "antiaim", "invertangle");
 
-		SetupValue(iDesyncType, 0, "antiaim", "desynctype");
-		SetupValue(iDesyncValue, 0, "antiaim", "desyncvalue");
+		SetupValue(iDesyncType, 3, 0, "antiaim", "desynctype");
+		SetupValue(iDesyncValue, 3, 0, "antiaim", "desyncvalue");
 		SetupValue(iInverterBind, 0, "antiaim", "desyncinverter");
-		SetupValue(iFlickOffset, 0, "antiaim", "flickOffset");
-		SetupValue(flickAngleSwitch, 0, "antiaim", "flickAngleSwitch");
+		SetupValue(iFlickOffset, 3, 0, "antiaim", "flickOffset");
+		SetupValue(flickAngleSwitch, 3, 0, "antiaim", "flickAngleSwitch");
 
-		SetupValue( m_bSwayDesync, false, "antiaim", "swaylby" );
+		SetupValue( m_bSwayDesync, false, 3, "antiaim", "swaylby" );
 		
 		SetupValue(enableFakelag, false, "antiaim", "fakelagswitch");
 		SetupValue(fakelag, 0, "antiaim", "fakelag");
@@ -178,7 +178,7 @@ void CConfig::Setup() {
 		SetupValue(fakewalk, 0, "antiaim", "fakewalkspeed");
 		SetupValue(fakewalkKey, 0, "antiaim", "fakewalkbind");
 
-		SetupValue(freestand, 0, "antiaim", "freestand");
+		SetupValue(freestand, 3, 0, "antiaim", "freestand");
 	}
 
 	// visual

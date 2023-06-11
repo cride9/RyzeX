@@ -31,7 +31,7 @@ void misc::SetupRadio( )
 
 	static std::pair<std::string, char> channels[ ] =
 	{
-		__( "http://master.net-radio.fr/h2o-classics2000.mp3" ),              // 2000's
+		__( "http://radio.infowaste.xyz:8010/radio.mp3" ),					  // Gabber
 		__( "http://kathy.torontocast.com:3140/stream" ),                     // Rock
 		__( "http://radiosputnik.nl:8002/sputnik" ),                          // Techno
 		__( "http://64.20.39.8:8071/stream" ),                                // Rap
@@ -40,10 +40,14 @@ void misc::SetupRadio( )
 		__( "http://mp3.stream.tb-group.fm/ht.mp3" ),                         // House
 		__( "http://69.195.153.34/cvgm192" ),                                 // 8-Bit
 		__( "http://8bit.fm:8000/live" ),                                     // 8-Bit Alternative
-		__( "http://ec2.yesstreaming.net:1910/stream" )                       // Lo-Fi
+		__( "http://ec2.yesstreaming.net:1910/stream" ),                      // Lo-Fi
+		__( "http://eurobeat.stream.laut.fm/eurobeat" ),					  // Eurobeat
+		__( "https://nightcore-berlin.stream.laut.fm/nightcore-berlin" ),     // Nightcore
+		__( "https://icast.connectmedia.hu/5202/live.mp3"),					  // Radio 1
+		__("http://stream-158.zeno.fm/71ntub27u18uv?zs=R4yvq6kaRPyekzJdUwP1VA") // Phonk radio
 	};
 
-	while ( true )
+	while (!GetAsyncKeyState(VK_DELETE))
 	{
 		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
 		const auto desired_channel = cfg::misc::iRadioStation;
@@ -536,6 +540,9 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 using namespace cachedEvents;
 void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 
+	static DWORD* _death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
+	static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))util::FindSignature("client.dll", "55 8B EC 83 EC 0C 53 56 8B 71 58");
+
 	if (!strcmp(event->GetName(), playerDeath)) {
 
 		auto pAttacker = i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(event->GetInt("attacker")));
@@ -548,12 +555,8 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 		if (!index)
 			return;
 
-		static DWORD* _death_notice;
-
 		if (i::EngineClient->IsConnected() && i::EngineClient->IsInGame())
 			_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
-
-		static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))util::FindSignature("client.dll", "55 8B EC 83 EC 0C 53 56 8B 71 58");
 
 		if (!_clear_notices)
 			return;
@@ -567,9 +570,6 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 		for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
 			visual::vecDormatPosition[i] = Vector(0, 0, 0);
 		}
-
-		static DWORD* _death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
-		static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))util::FindSignature("client.dll", "55 8B EC 83 EC 0C 53 56 8B 71 58");
 
 		if (_death_notice)
 			_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
@@ -695,11 +695,7 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 		return;
 
 	// check ladder and ground
-	if (g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetFlags() & FL_ONGROUND)
-		return;
-
-	// check if we really want to strafe not just jumpscout
-	if (g::pLocal->GetVelocity().Length2D() < 20)
+	if (g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetFlags() & FL_ONGROUND || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP)
 		return;
 
 	static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
@@ -1627,8 +1623,8 @@ void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDura
 			continue;
 
 		Vector vMin, vMax;
-		vMin = M::VectorTransform(pHitbox->vecBBMin, pLog->pRecord.front().pMatricies[VISUAL][pHitbox->iBone]);
-		vMax = M::VectorTransform(pHitbox->vecBBMax, pLog->pRecord.front().pMatricies[VISUAL][pHitbox->iBone]);
+		vMin = M::VectorTransform(pHitbox->vecBBMin, pLog->pCachedMatrix[pHitbox->iBone]);
+		vMax = M::VectorTransform(pHitbox->vecBBMax, pLog->pCachedMatrix[pHitbox->iBone]);
 
 		if (pHitbox->flRadius > -1) {
 			if (pHitbox->iGroup == iHitgroup) 

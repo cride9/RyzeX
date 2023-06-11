@@ -8,22 +8,504 @@
 #include "../../Interface/Classes/CCSGameRulesProxy.h"
 
 #include "../../SDK/InputSystem.h"
+#include "../Networking/networking.h"
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
 
 static bool jitter = false;
+
+void HandleJitter() {
+
+	int tickbase = networking.GetCorrectedTickbase();
+	static int last_tick = 0;
+	static float flCurtime = i::GlobalVars->flCurrentTime;
+	if (last_tick + (i::ClientState->nChokedCommands + 1) < tickbase || last_tick > tickbase)
+	{
+		last_tick = tickbase;
+
+		if (cfg::antiaim::bAntiJitter) {
+			if (flCurtime + 0.7f < i::GlobalVars->flCurrentTime) {
+				flCurtime = i::GlobalVars->flCurrentTime;
+				return;
+			}
+		}
+		jitter = !jitter;
+	}
+}
+
+void antiaim::Standing(CUserCmd* pCmd, bool& bSendPacket) {
+
+	int inverter = IPT::HandleInput(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
+	static float oldValue;
+	HandleJitter();
+	// pitch
+	switch (cfg::antiaim::iPitch[STANDING]) {
+
+	case UP:
+		pCmd->angViewPoint.x = -89.f;
+		break;
+
+	case ZERO:
+		pCmd->angViewPoint.x = 0.f;
+		break;
+
+	case DOWN:
+		pCmd->angViewPoint.x = 89.f;
+		break;
+	}
+
+	bool bInitializedFreestand = false;
+	if (cfg::antiaim::freestand[STANDING] == 1)
+		bInitializedFreestand = FreeStandingDistance(pCmd, pCmd->angViewPoint);
+	if (cfg::antiaim::freestand[STANDING] == 2)
+		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
+
+	if (cfg::antiaim::iYawBase[STANDING] == 1 && !bInitializedFreestand)
+		AtTarget(pCmd, pCmd->angViewPoint);
+
+	if (!bInitializedFreestand) {
+		// yaw
+		switch (cfg::antiaim::iYaw[STANDING]) {
+
+		case FORWARD:
+			pCmd->angViewPoint.y += 0.f;
+			break;
+
+		case BACKWARD:
+			pCmd->angViewPoint.y += 180.f;
+			break;
+		}
+	}
+
+	float flBaseYawOrigin = M::NormalizeYaw(pCmd->angViewPoint.y);
+
+	if (cfg::antiaim::modifier[STANDING] == 1)
+		pCmd->angViewPoint.y += jitter ? -(cfg::antiaim::jittervalue[STANDING]) : (cfg::antiaim::jittervalue[STANDING]);
+	else if (cfg::antiaim::modifier[STANDING] == 2)
+		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue[STANDING], cfg::antiaim::jittervalue[STANDING]);
+
+	if (exploits::bCharged || exploits::bIsRecharging)
+		needMicromovement = true;
+	else
+		needMicromovement = false;
+
+	bool dontApply = false;
+	static int iChangeOnTick = 0;
+
+	float flMaxDesync = g::pLocal->AnimState()->GetMaxDesync() * (cfg::antiaim::iDesyncValue[STANDING] * 0.01f);
+
+	switch (cfg::antiaim::iDesyncType[STANDING]) {
+
+	case STATIC:
+	{
+		needMicromovement = true;
+		desyncValue = flMaxDesync;
+		break;
+	case EXTENDED:
+	{
+		needMicromovement = false;
+		// time to break the lowerbody.
+		if (NextLBYUpdate(pCmd))
+		{
+			desyncValue = -120.f;
+
+			if (cfg::antiaim::m_bSwayDesync)
+			{
+				// lby amount.
+				switch (iCountUpdates % 2)
+				{
+				case 0: desyncValue = 120.f; break;
+				case 1: desyncValue = -120.f; break;
+				default: desyncValue = 120.f; break;
+				}
+			}
+
+			// set lby angle.
+			pCmd->angViewPoint.y += desyncValue * inverter;
+
+			// set bSendPacket to false.
+			bSendPacket = false;
+		}
+		else if (!bSendPacket) {
+			pCmd->angViewPoint.y -= desyncValue * inverter;
+		}
+	}
+	break;
+	case JITTER:
+		needMicromovement = true;
+		desyncValue = jitter ? -(flMaxDesync) : (flMaxDesync);
+		break;
+
+	case FLICK:
+
+		needMicromovement = true;
+
+		desyncValue = flMaxDesync;
+		if (flickJitter) {
+
+			iChangeOnTick++;
+
+			if (iChangeOnTick >= cfg::antiaim::flickAngleSwitch[STANDING]) {
+
+				dontApply = true;
+				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[STANDING] * inverter);
+				iChangeOnTick = 0;
+			}
+		}
+
+		break;
+
+	default:
+		needMicromovement = false;
+		desyncValue = 0.f;
+		break;
+	}
+	}
+	if (bSendPacket && !dontApply)
+		pCmd->angViewPoint.y += cfg::antiaim::bodyLean[inverter == 1 ? 0 : 1][STANDING];
+
+	// no lby break sry its 2022 nobody stands still and breaks lby
+	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
+		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
+
+	if (cfg::antiaim::iDesyncType) {
+		if (cfg::antiaim::desyncModifier[STANDING] == 1)
+			desyncValue += jitter ? -(cfg::antiaim::desyncModifierValue[STANDING]) : (cfg::antiaim::desyncModifierValue[STANDING]);
+		else if (cfg::antiaim::desyncModifier[STANDING] == 2)
+			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue[STANDING], cfg::antiaim::desyncModifierValue[STANDING]);
+	}
+
+	desyncValue *= inverter;
+
+	if (!bSendPacket && cfg::antiaim::iDesyncType[STANDING] != EXTENDED && cfg::antiaim::iDesyncType[STANDING] != FLICK) {
+
+		pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue));
+
+		if (float yawDelta = (pCmd->angViewPoint.y - g::pLocal->AnimState()->flGoalFeetYaw); fabs(yawDelta) < desyncValue) {
+			pCmd->angViewPoint.y += desyncValue - yawDelta;
+		}
+
+		oldValue = desyncValue;
+	}
+}
+
+void antiaim::Moving(CUserCmd* pCmd, bool& bSendPacket) {
+
+	int inverter = IPT::HandleInput(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
+	static float oldValue;
+	HandleJitter();
+	// pitch
+	switch (cfg::antiaim::iPitch[MOVING]) {
+
+	case UP:
+		pCmd->angViewPoint.x = -89.f;
+		break;
+
+	case ZERO:
+		pCmd->angViewPoint.x = 0.f;
+		break;
+
+	case DOWN:
+		pCmd->angViewPoint.x = 89.f;
+		break;
+	}
+
+	bool bInitializedFreestand = false;
+	if (cfg::antiaim::freestand[MOVING] == 1)
+		bInitializedFreestand = FreeStandingDistance(pCmd, pCmd->angViewPoint);
+	if (cfg::antiaim::freestand[MOVING] == 2)
+		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
+
+	if (cfg::antiaim::iYawBase[MOVING] == 1 && !bInitializedFreestand)
+		AtTarget(pCmd, pCmd->angViewPoint);
+
+	if (!bInitializedFreestand) {
+		// yaw
+		switch (cfg::antiaim::iYaw[MOVING]) {
+
+		case FORWARD:
+			pCmd->angViewPoint.y += 0.f;
+			break;
+
+		case BACKWARD:
+			pCmd->angViewPoint.y += 180.f;
+			break;
+		}
+	}
+
+	float flBaseYawOrigin = M::NormalizeYaw(pCmd->angViewPoint.y);
+
+	if (cfg::antiaim::modifier[MOVING] == 1)
+		pCmd->angViewPoint.y += jitter ? -(cfg::antiaim::jittervalue[MOVING]) : (cfg::antiaim::jittervalue[MOVING]);
+	else if (cfg::antiaim::modifier[MOVING] == 2)
+		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue[MOVING], cfg::antiaim::jittervalue[MOVING]);
+
+	if (exploits::bCharged || exploits::bIsRecharging)
+		needMicromovement = true;
+	else
+		needMicromovement = false;
+
+	bool dontApply = false;
+	static int iChangeOnTick = 0;
+
+	float flMaxDesync = g::pLocal->AnimState()->GetMaxDesync() * (cfg::antiaim::iDesyncValue[MOVING] * 0.01f);
+
+	switch (cfg::antiaim::iDesyncType[MOVING]) {
+
+	case STATIC:
+	{
+		needMicromovement = true;
+		desyncValue = flMaxDesync;
+		break;
+	case EXTENDED:
+	{
+		needMicromovement = false;
+		// time to break the lowerbody.
+		if (NextLBYUpdate(pCmd))
+		{
+			desyncValue = -120.f;
+
+			if (cfg::antiaim::m_bSwayDesync)
+			{
+				// lby amount.
+				switch (iCountUpdates % 2)
+				{
+				case 0: desyncValue = 120.f; break;
+				case 1: desyncValue = -120.f; break;
+				default: desyncValue = 120.f; break;
+				}
+			}
+
+			// set lby angle.
+			pCmd->angViewPoint.y += desyncValue * inverter;
+
+			// set bSendPacket to false.
+			bSendPacket = false;
+		}
+		else if (!bSendPacket) {
+			pCmd->angViewPoint.y -= desyncValue * inverter;
+		}
+	}
+	break;
+	case JITTER:
+		needMicromovement = true;
+		desyncValue = jitter ? -(flMaxDesync) : (flMaxDesync);
+		break;
+
+	case FLICK:
+
+		needMicromovement = true;
+
+		desyncValue = flMaxDesync;
+		if (flickJitter) {
+			iChangeOnTick++;
+			if (iChangeOnTick >= cfg::antiaim::flickAngleSwitch[MOVING]) {
+				dontApply = true;
+				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[MOVING] * inverter);
+				iChangeOnTick = 0;
+			}
+		}
+
+		break;
+
+	default:
+		needMicromovement = false;
+		desyncValue = 0.f;
+		break;
+	}
+	}
+	if (bSendPacket && !dontApply)
+		pCmd->angViewPoint.y += cfg::antiaim::bodyLean[inverter == 1 ? 0 : 1][MOVING];
+
+	// no lby break sry its 2022 nobody stands still and breaks lby
+	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
+		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
+
+	if (cfg::antiaim::iDesyncType) {
+		if (cfg::antiaim::desyncModifier[MOVING] == 1)
+			desyncValue += jitter ? -(cfg::antiaim::desyncModifierValue[MOVING]) : (cfg::antiaim::desyncModifierValue[MOVING]);
+		else if (cfg::antiaim::desyncModifier[MOVING] == 2)
+			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue[MOVING], cfg::antiaim::desyncModifierValue[MOVING]);
+	}
+
+	desyncValue *= inverter;
+
+	if (!bSendPacket && cfg::antiaim::iDesyncType[MOVING] != EXTENDED && cfg::antiaim::iDesyncType[MOVING] != FLICK) {
+
+		pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue));
+
+		if (float yawDelta = (pCmd->angViewPoint.y - g::pLocal->AnimState()->flGoalFeetYaw); fabs(yawDelta) < desyncValue) {
+			pCmd->angViewPoint.y += desyncValue - yawDelta;
+		}
+
+		oldValue = desyncValue;
+	}
+}
+
+void antiaim::InAir(CUserCmd* pCmd, bool& bSendPacket) {
+
+
+	int inverter = IPT::HandleInput(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
+	static float oldValue;
+	HandleJitter();
+	// pitch
+	switch (cfg::antiaim::iPitch[INAIR]) {
+
+	case UP:
+		pCmd->angViewPoint.x = -89.f;
+		break;
+
+	case ZERO:
+		pCmd->angViewPoint.x = 0.f;
+		break;
+
+	case DOWN:
+		pCmd->angViewPoint.x = 89.f;
+		break;
+	}
+
+	bool bInitializedFreestand = false;
+	if (cfg::antiaim::freestand[INAIR] == 1)
+		bInitializedFreestand = FreeStandingDistance(pCmd, pCmd->angViewPoint);
+	if (cfg::antiaim::freestand[INAIR] == 2)
+		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
+
+	if (cfg::antiaim::iYawBase[INAIR] == 1 && !bInitializedFreestand)
+		AtTarget(pCmd, pCmd->angViewPoint);
+
+	if (!bInitializedFreestand) {
+		// yaw
+		switch (cfg::antiaim::iYaw[INAIR]) {
+
+		case FORWARD:
+			pCmd->angViewPoint.y += 0.f;
+			break;
+
+		case BACKWARD:
+			pCmd->angViewPoint.y += 180.f;
+			break;
+		}
+	}
+
+	float flBaseYawOrigin = M::NormalizeYaw(pCmd->angViewPoint.y);
+
+	if (cfg::antiaim::modifier[INAIR] == 1)
+		pCmd->angViewPoint.y += jitter ? -(cfg::antiaim::jittervalue[INAIR]) : (cfg::antiaim::jittervalue[INAIR]);
+	else if (cfg::antiaim::modifier[INAIR] == 2)
+		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue[INAIR], cfg::antiaim::jittervalue[INAIR]);
+
+	if (exploits::bCharged || exploits::bIsRecharging)
+		needMicromovement = true;
+	else
+		needMicromovement = false;
+
+	bool dontApply = false;
+	static int iChangeOnTick = 0;
+
+	float flMaxDesync = g::pLocal->AnimState()->GetMaxDesync() * (cfg::antiaim::iDesyncValue[INAIR] * 0.01f);
+
+	switch (cfg::antiaim::iDesyncType[INAIR]) {
+
+	case STATIC:
+	{
+		needMicromovement = true;
+		desyncValue = flMaxDesync;
+		break;
+	case EXTENDED:
+	{
+		needMicromovement = false;
+		// time to break the lowerbody.
+		if (NextLBYUpdate(pCmd))
+		{
+			desyncValue = -120.f;
+
+			if (cfg::antiaim::m_bSwayDesync)
+			{
+				// lby amount.
+				switch (iCountUpdates % 2)
+				{
+				case 0: desyncValue = 120.f; break;
+				case 1: desyncValue = -120.f; break;
+				default: desyncValue = 120.f; break;
+				}
+			}
+
+			// set lby angle.
+			pCmd->angViewPoint.y += desyncValue * inverter;
+
+			// set bSendPacket to false.
+			bSendPacket = false;
+		}
+		else if (!bSendPacket) {
+			pCmd->angViewPoint.y -= desyncValue * inverter;
+		}
+	}
+	break;
+	case JITTER:
+		needMicromovement = true;
+		desyncValue = jitter ? -(flMaxDesync) : (flMaxDesync);
+		break;
+
+	case FLICK:
+
+		needMicromovement = true;
+
+		desyncValue = flMaxDesync;
+		if (flickJitter) {
+			iChangeOnTick++;
+			if (iChangeOnTick >= cfg::antiaim::flickAngleSwitch[INAIR]) {
+				dontApply = true;
+				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[INAIR] * inverter);
+				iChangeOnTick = 0;
+			}
+		}
+
+		break;
+
+	default:
+		needMicromovement = false;
+		desyncValue = 0.f;
+		break;
+	}
+	}
+	if (bSendPacket && !dontApply)
+		pCmd->angViewPoint.y += cfg::antiaim::bodyLean[inverter == 1 ? 0 : 1][INAIR];
+
+	// no lby break sry its 2022 nobody stands still and breaks lby
+	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
+		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
+
+	if (cfg::antiaim::iDesyncType) {
+		if (cfg::antiaim::desyncModifier[INAIR] == 1)
+			desyncValue += jitter ? -(cfg::antiaim::desyncModifierValue[INAIR]) : (cfg::antiaim::desyncModifierValue[INAIR]);
+		else if (cfg::antiaim::desyncModifier[INAIR] == 2)
+			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue[INAIR], cfg::antiaim::desyncModifierValue[INAIR]);
+	}
+
+	desyncValue *= inverter;
+
+	if (!bSendPacket && cfg::antiaim::iDesyncType[INAIR] != EXTENDED && cfg::antiaim::iDesyncType[INAIR] != FLICK) {
+
+		pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue));
+
+		if (float yawDelta = (pCmd->angViewPoint.y - g::pLocal->AnimState()->flGoalFeetYaw); fabs(yawDelta) < desyncValue) {
+			pCmd->angViewPoint.y += desyncValue - yawDelta;
+		}
+
+		oldValue = desyncValue;
+	}
+}
 
 void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 	static float oldValue = 0;
 
 	// sanity checks
-	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() || !cfg::antiaim::bEnabled) {
+	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive() /*|| (!cfg::antiaim::bEnabled[STANDING] && !cfg::antiaim::bEnabled[MOVING] && cfg::antiaim::bEnabled[INAIR])*/) {
 
 		desyncValue = 0.f;
 		return;
 	}
-	int inverter = IPT::HandleInput(cfg::antiaim::iInverterBind) ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
 
 	if ((*GameRules)->m_bFreezePeriod()) {
 		desyncValue = 0.f;
@@ -55,157 +537,12 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	// Update lower body yaw
 	Update( pCmd );
 
-	if (cfg::antiaim::bAntiJitter) {
-		if (M::RandomInt(0, 1)) {
-			jitter = !jitter;
-		}
-	}
-	else
-		jitter = !jitter;
-
-	// pitch
-	switch (cfg::antiaim::iPitch) {
-
-	case UP:
-		pCmd->angViewPoint.x = -89.f;
-		break;
-
-	case ZERO:
-		pCmd->angViewPoint.x = 0.f;
-		break;
-
-	case DOWN:
-		pCmd->angViewPoint.x = 89.f;
-		break;
-	}
-
-	bool bInitializedFreestand = false;
-	if (cfg::antiaim::freestand == 1)
-		bInitializedFreestand = FreeStandingDistance(pCmd, pCmd->angViewPoint);
-	if (cfg::antiaim::freestand == 2)
-		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
-
-	if (cfg::antiaim::iYawBase == 1 && !bInitializedFreestand)
-		AtTarget(pCmd, pCmd->angViewPoint);
-
-	if (!bInitializedFreestand) {
-		// yaw
-		switch (cfg::antiaim::iYaw) {
-
-		case FORWARD:
-			pCmd->angViewPoint.y += 0.f;
-			break;
-
-		case BACKWARD:
-			pCmd->angViewPoint.y += 180.f;
-			break;
-		}
-	}
-
-	if (cfg::antiaim::modifier == 1)
-		pCmd->angViewPoint.y += jitter ? -(cfg::antiaim::jittervalue) : (cfg::antiaim::jittervalue);
-	else if (cfg::antiaim::modifier == 2)
-		pCmd->angViewPoint.y += M::GenerateRandom(-cfg::antiaim::jittervalue, cfg::antiaim::jittervalue);
-
-	if ( exploits::bCharged || exploits::bIsRecharging )
-		needMicromovement = true;
-	else
-		needMicromovement = false;
-
-	bHideFlick = false;
-	static int iChangeOnTick = 0;
-
-	float flMaxDesync = g::pLocal->AnimState()->GetMaxDesync() * (cfg::antiaim::iDesyncValue * 0.01f);
-
-	switch (cfg::antiaim::iDesyncType) {
-
-		case STATIC:
-		{
-			needMicromovement = true;
-			desyncValue = flMaxDesync;
-			break;
-		case EXTENDED:
-		{
-			needMicromovement = false;
-			// time to break the lowerbody.
-			if ( NextLBYUpdate( pCmd ) )
-			{
-				desyncValue = -120.f;
-
-				if ( cfg::antiaim::m_bSwayDesync )
-				{
-					// lby amount.
-					switch ( iCountUpdates % 2 )
-					{
-					case 0: desyncValue = 120.f; break;
-					case 1: desyncValue = -120.f; break;
-					default: desyncValue = 120.f; break;
-					}
-				}
-
-				// set lby angle.
-				pCmd->angViewPoint.y += desyncValue * inverter;
-
-				// set bSendPacket to false.
-				bSendPacket = false;
-			}
-			else if (!bSendPacket) {
-				pCmd->angViewPoint.y -= desyncValue * inverter;
-			}
-		}
-			break;
-		case JITTER:
-			needMicromovement = true;
-				desyncValue = jitter ? -(flMaxDesync) : (flMaxDesync);
-			break;
-
-		case FLICK:
-
-			needMicromovement = true;
-
-			if (flickJitter) {
-				iChangeOnTick++;
-				if (iChangeOnTick >= cfg::antiaim::flickAngleSwitch) {
-					bHideFlick = true;
-					pCmd->angViewPoint.y -= (cfg::antiaim::iFlickOffset * inverter);
-					iChangeOnTick = 0;
-				}
-			}
-
-			break;
-
-		default:
-			needMicromovement = false;
-			desyncValue = 0.f;
-			break;
-		}
-	}
-	if (bSendPacket)
-		pCmd->angViewPoint.y += cfg::antiaim::bodyLean[inverter == 1 ? 0 : 1];
-
-	// no lby break sry its 2022 nobody stands still and breaks lby
-	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
-		pCmd->flForwardMove += g::pCmd->iCommandNumber % 2 ? pCmd->iButtons & IN_DUCK ? -3.f : -1.1f : pCmd->iButtons & IN_DUCK ? 3.f : 1.1f;
-
-	if (cfg::antiaim::iDesyncType) {
-		if (cfg::antiaim::desyncModifier == 1)
-			desyncValue += jitter ? -(cfg::antiaim::desyncModifierValue) : (cfg::antiaim::desyncModifierValue);
-		else if (cfg::antiaim::desyncModifier == 2)
-			desyncValue += M::GenerateRandom(-cfg::antiaim::desyncModifierValue, cfg::antiaim::desyncModifierValue);
-	}	
-
-	desyncValue *= inverter;
-
-	if ( !bSendPacket && cfg::antiaim::iDesyncType != EXTENDED && cfg::antiaim::iDesyncType != FLICK ) {
-
-		pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + M::NormalizeYaw(oldValue != desyncValue ? (desyncValue < 0.f ? -g::pLocal->AnimState()->GetMaxDesync() : g::pLocal->AnimState()->GetMaxDesync()) + desyncValue : desyncValue));
-		
-		if (float yawDelta = (pCmd->angViewPoint.y - g::pLocal->AnimState()->flGoalFeetYaw); fabs(yawDelta) < desyncValue) {
-			pCmd->angViewPoint.y += desyncValue - yawDelta;
-		}
-
-		oldValue = desyncValue;
-	}
+	if (!(g::pLocal->GetFlags() & FL_ONGROUND) && cfg::antiaim::bEnabled[INAIR])
+		InAir(pCmd, bSendPacket);
+	else if (g::pLocal->GetVelocity().Length2D() > 5.f && cfg::antiaim::bEnabled[MOVING])
+		Moving(pCmd, bSendPacket);
+	else if (cfg::antiaim::bEnabled[STANDING])
+		Standing(pCmd, bSendPacket);
 }
 
 float GetCorrectedCurrentTime( CUserCmd* cmd )

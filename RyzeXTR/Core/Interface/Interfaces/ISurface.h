@@ -49,7 +49,6 @@ struct Vertex_t
 };
 
 typedef unsigned long HScheme, HPanel, HTexture, HCursor, HFont;
-
 class ISurface {
 
 public:
@@ -63,7 +62,7 @@ public:
 			text = converter.from_bytes(_Input);
 		}
 		catch (std::range_error){
-			util::LogConsole(std::format("Name: {} cannot be converted (not utf-8)", _Input).c_str());
+			util::LogConsole(std::format("Name: {} cannot be converted (not utf-8)\n", _Input).c_str());
 			return;
 		}
 

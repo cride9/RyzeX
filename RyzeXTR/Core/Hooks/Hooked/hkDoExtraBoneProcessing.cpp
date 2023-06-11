@@ -12,15 +12,15 @@ void __fastcall h::hkDoExtraBoneProcessing(void* ecx, void* edx, CStudioHdr* hdr
 
 	if (pEnt->IsPlayer() && pEnt->IsAlive()) {
 
-		auto pAnimlayerOwner = pEnt->GetAnimationOverlays()->pOwner;
+		//auto pAnimlayerOwner = pEnt->GetAnimationOverlays()->pOwner;
 
-		for (int i = 13; i; --i) {
+		//for (int i = 13; i; --i) {
 
-			if (pAnimlayerOwner != pEnt)
-				pAnimlayerOwner = pEnt;
+		//	if (pAnimlayerOwner != pEnt)
+		//		pAnimlayerOwner = pEnt;
 
-			pAnimlayerOwner += 14;
-		}
+		//	pAnimlayerOwner += 14;
+		//}
 
 		const auto bOnGround = pEnt->AnimState()->bOnGround;
 		pEnt->AnimState()->bOnGround = false;

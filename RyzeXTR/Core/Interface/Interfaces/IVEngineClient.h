@@ -4,7 +4,7 @@
 #include "../../SDK/DataTyes/Matrix.h"
 #include "../../SDK/CRC32.h"
 
-enum EStage : int
+enum EStage : int32_t
 {
 	FRAME_UNDEFINED = -1,
 	FRAME_START,

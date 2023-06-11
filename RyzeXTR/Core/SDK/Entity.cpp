@@ -501,7 +501,7 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 	if (!hdr)
 		return false;
 
-	const auto oldBones = target->GetBoneAccessor()->matBones;
+	const auto oldBones = target->GetBoneAccessor().matBones;
 	const auto o_abs = target->GetAbsAngles();
 	const auto o_origin = target->GetAbsOrigin();
 
@@ -533,7 +533,7 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 	uint8_t boneComputed[0x100];
 	std::memset(boneComputed, 0, 0x100);
 
-	target->GetBoneAccessor()->matBones = pBoneToWorldOut;
+	target->GetBoneAccessor().matBones = pBoneToWorldOut;
 	target->StandardBlendingRules(hdr, pos, q, currentTime, boneMask);
 
 	if (IK_context)
@@ -552,7 +552,7 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 	target->SetPoseParameters(poses);
 	target->SetAbsOrigin(o_origin);
 	target->SetAbsAngles(o_abs);
-	target->GetBoneAccessor()->matBones = oldBones;
+	target->GetBoneAccessor().matBones = oldBones;
 
 	return true;
 }

@@ -1,5 +1,6 @@
 #include "Lagcompensation.h"
 #include "EnemyAnimations.h"
+#include "../../Networking/networking.h"
 
 Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 {
@@ -40,7 +41,7 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 	iEFlags = pEntity->GetEFlags();
 	iEffects = pEntity->GetEffects();
 	iChoked = TIME_TO_TICKS(flSimulationTime - flOldSimulationTime);
-	std::clamp(iChoked, 0, 16);
+	iChoked = std::clamp(iChoked, 1, 16);
 }
 
 void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity, bool Backup)
@@ -85,7 +86,7 @@ void Lagcompensation::LagRecord_t::Restore(CBaseEntity* pEntity)
 	pEntity->SetAbsOrigin(vecAbsOrigin);
 }
 
-void Lagcompensation::FrameStageNotify() {
+void Lagcompensation::FrameStageNotify() noexcept {
 
 	if (!g::pLocal || g::bUpdatingSkins)
 		return;
@@ -96,15 +97,23 @@ void Lagcompensation::FrameStageNotify() {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || pEntity->GetTeam() == g::pLocal->GetTeam() || pEntity == g::pLocal) {
+			anims.missedShots[i] = 0;
+			pLog->iLastValid = 0;
+			pLog->iFirstValid = 32;
 			pLog->bLeftDormancy = true;
+			pLog->flExploitTime = 0.f;
 			if (pEntity != g::pLocal)
 				g::bAllowAnimations[i] = true;
 			
 			continue;
 		}
 
-		if (pEntity != pLog->pEntity)
+		if (pEntity != pLog->pEntity) {
+			pLog->flExploitTime = 0.f;
+			pLog->iLastValid = 0;
+			pLog->iFirstValid = 32;
 			pLog->pRecord.clear();
+		}
 
 		pLog->pEntity = pEntity;
 
@@ -112,6 +121,9 @@ void Lagcompensation::FrameStageNotify() {
 			continue;
 
 		if (pEntity->IsDormant()) {
+			pLog->flExploitTime = 0.f;
+			pLog->iLastValid = 0;
+			pLog->iFirstValid = 32;
 			pLog->bLeftDormancy = true;
 			continue;
 		}
@@ -126,7 +138,7 @@ void Lagcompensation::FrameStageNotify() {
 		Lagcompensation::LagRecord_t pRecord(pPlayerLogs[i].pEntity);
 		if (pPrevious.bRestoreData) {
 			if (pPrevious.pLayers[11].flCycle == pRecord.pLayers[11].flCycle){
-				pEntity->GetSimulationTime() == pPrevious.flSimulationTime;
+				//pEntity->GetSimulationTime() = pPrevious.flSimulationTime;
 				continue;
 			}
 		}
@@ -134,27 +146,27 @@ void Lagcompensation::FrameStageNotify() {
 		if (pPrevious.flSimulationTime > pRecord.flSimulationTime) {
 
 			pLog->flExploitTime = pEntity->GetSimulationTime();
-			pLog->pRecord.clear();
+			//pLog->pRecord.clear();
 		}
 
 		if (pLog->bLeftDormancy) 
 			pLog->pRecord.clear();
 		
 		if (pRecord.flSimulationTime <= pLog->flExploitTime) {
-			pRecord.bValid = false;
+			//pRecord.bValid = false;
 			pRecord.bBreakingLagcompensation = true;
 		}
 
 		if (pPrevious.bRestoreData) {
 			if ((pRecord.vecOrigin - pPrevious.vecOrigin).Length2DSqr() > 4096.0f) {
 				pRecord.bBreakingLagcompensation = true;
-				pLog->pRecord.clear();
+				//pLog->pRecord.clear();
 			}
 		}
 
 		if (pRecord.flSimulationTime < pPrevious.flSimulationTime) {
 
-			pRecord.bValid = false;
+			//pRecord.bValid = false;
 			pRecord.bBreakingLagcompensation = true;
 
 			if (pPrevious.bRestoreData)
@@ -172,7 +184,7 @@ void Lagcompensation::FrameStageNotify() {
 		if (pLog->bLeftDormancy)
 			pRecord.bFirstAfterDormant = true;
 
-		pLog->pRecord.emplace_front(pRecord);
+		pLog->pRecord.push_front(pRecord);
 		while (pLog->pRecord.size() > 32)
 			pLog->pRecord.pop_back();
 
@@ -181,12 +193,13 @@ void Lagcompensation::FrameStageNotify() {
 		pLog->bLeftDormancy = false;
 
 		//FilterRecords();
+		pPlayerLogs[i].iFirstValid = 32;
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
-			if (pLog->pRecord.front().bValid = lagcomp.IsValidRecord(pLog->pRecord.front().flSimulationTime))
+			if (pLog->pRecord.at(j).bValid = lagcomp.IsValidRecord(pLog->pRecord.at(j).flSimulationTime))
 				pPlayerLogs[i].iLastValid = j;
 
-			if (pLog->pRecord.front().bValid && pPlayerLogs[i].iFirstValid > j)
+			if (pLog->pRecord.at(j).bValid && pPlayerLogs[i].iFirstValid > j)
 				pPlayerLogs[i].iFirstValid = j;
 		}
 	}
@@ -415,7 +428,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 		return false;
 
 	/* Lagcomp breaking = invalid */
-	if ((i::GlobalVars->flCurrentTime - mflSimulationTime) < 0.f)
+	if ((TICKS_TO_TIME(networking.GetCorrectedTickbase()) - mflSimulationTime) < 0.f)
 		return false;
 
 	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
@@ -423,7 +436,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	//float m_flCorrect = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) + i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_OUTGOING) /*+ GetClientInterpAmount()*/;
 	//m_flCorrect = std::clamp(m_flCorrect, 0.f, sv_maxunlag->GetFloat());
 
-	return (i::GlobalVars->flCurrentTime - mflSimulationTime) <= flRange;
+	return (TICKS_TO_TIME(networking.GetCorrectedTickbase()) - mflSimulationTime) < flRange;
 }
 
 int Lagcompensation::FixTickCount(const float& flSimulationTime)

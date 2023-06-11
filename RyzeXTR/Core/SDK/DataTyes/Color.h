@@ -46,6 +46,15 @@ public:
 		a = arrColor[COLOR_A];
 	}
 
+	Color lerpColor(const Color& startColor, const Color& endColor, float t) {
+		int r = static_cast<int>((1 - t) * startColor[0] + t * endColor[0]);
+		int g = static_cast<int>((1 - t) * startColor[1] + t * endColor[1]);
+		int b = static_cast<int>((1 - t) * startColor[2] + t * endColor[2]);
+		int a = static_cast<int>((1 - t) * startColor[3] + t * endColor[3]);
+
+		return Color(r, g, b, a);
+	}
+
 	/* convert color to directx argb */
 	[[nodiscard]] D3DCOLOR GetD3D() const
 	{

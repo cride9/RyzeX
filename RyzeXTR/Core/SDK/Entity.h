@@ -717,6 +717,12 @@ public:
 		return ((void(__thiscall*)(void*, void*))(sig))(this, this->GetStudioHdr());
 	}
 
+	static unsigned long& GetModelBoneCounter()
+	{
+		static std::uint8_t* uModelBoneCounterOffset = reinterpret_cast<std::uint8_t*>(util::FindSignature("client.dll", "3B 05 ? ? ? ? 0F 84 ? ? ? ? 8B 47") + 0x2);
+		return *reinterpret_cast<unsigned long*>(uModelBoneCounterOffset);
+	}
+
 	void UpdateIKLocks( float curtime ) {
 		using o_fn = void( __thiscall* )( void*, float );
 		util::CallVFunc<o_fn>( this, 191, curtime );
@@ -737,12 +743,27 @@ public:
 
 	CStudioHdr* GetModelPtr( )
 	{
+		if (CStudioHdr* pStudioHdr = this->GetStudioHdr(); pStudioHdr == nullptr)
+		{
+			using LockStudioHdr_t = void(__thiscall*)(decltype(this));
+			if (this->GetModel() != nullptr)
+				reinterpret_cast<LockStudioHdr_t>(util::FindSignature("client.dll", "55 8B EC 51 53 8B D9 56 57 8D B3"));
+			else
+				return nullptr;
+		}
+		else if (pStudioHdr != nullptr)
+			return pStudioHdr;
+
+		return nullptr;
+
+		/*
 		using LockStudioHdr_t = void( __thiscall* )( decltype( this ) );
 
 		if ( !GetStudioHdr( ) )
 			reinterpret_cast< LockStudioHdr_t >( util::FindSignature( "client.dll", "55 8B EC 51 53 8B D9 56 57 8D B3" ) );
 
 		return GetStudioHdr( );
+		*/
 	}
 
 	// normal netvars
@@ -839,10 +860,15 @@ public:
 	ADD_PNETVAR(GetWearablesHandle, CBaseHandle, "CBaseCombatCharacter->m_hMyWearables");
 
 	ADD_NETVAR(GetSequence, int, "CBaseAnimating->m_nSequence");
-	ADD_PNETVAROFFSET(GetBoneAccessor, CBoneAccessor, "CBaseAnimating->m_nForceBone", 0x1C);
+	ADD_NETVAROFFSET(GetBoneAccessor, CBoneAccessor, "CBaseAnimating->m_nForceBone", 0x18);
 	ADD_NETVAR(GetHitboxSet, int, "CBaseAnimating->m_nHitboxSet");
 	ADD_NETVAR(IsClientSideAnimation, bool, "CBaseAnimating->m_bClientSideAnimation");
 	ADD_NETVAR(GetCycle, float, "CBaseAnimating->m_flCycle");
+
+	ADD_NETVAROFFSET(GetCustomBlendingRuleMask, int, "DT_BaseAnimating->m_nBody", 0x4);
+	ADD_NETVAROFFSET(GetAnimationLODFlags, unsigned int, "DT_BaseAnimating->m_nBody", 0x8);
+	ADD_NETVAROFFSET(GetOldAnimationLODFlags, unsigned int, "DT_BaseAnimating->m_nBody", 0xC);
+	ADD_NETVAROFFSET(GetComputedAnimationLODFrame, unsigned int, "DT_BaseAnimating->m_nBody", 0x10);
 
 	ADD_NETVAROFFSET( GetPrevBoneMask, int, "CBaseAnimating->m_nForceBone", 0x10 );
 	ADD_NETVAROFFSET( GetAccumulatedBoneMask, int, "CBaseAnimating->m_iAccumulatedBoneMask", 0x14 );
@@ -978,6 +1004,9 @@ public:
 
 		using PhysicsRunThinkFn = bool(__thiscall*)(void*, int);
 		static auto oPhysicsRunThink = reinterpret_cast<PhysicsRunThinkFn>(util::FindSignature("client.dll", "55 8B EC 83 EC 10 53 56 57 8B F9 8B 87"));
+		if (!oPhysicsRunThink)
+			return false;
+		
 		return oPhysicsRunThink(this, nThinkMethod);
 	}
 
