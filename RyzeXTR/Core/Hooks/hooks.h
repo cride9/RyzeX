@@ -8,6 +8,8 @@
 #include "../../Dependecies/Minhook/trampoline.h"
 #include "../Features/Rage/Animations/LocalAnimation.h"
 #include "../SDK/Menu/config.h"
+#include "../SDK/X86RetSpoof.h"
+#include "../SDK/PatternFinder.h"
 
 namespace table {
 

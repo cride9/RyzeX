@@ -169,6 +169,9 @@ namespace cfg {
 		inline bool bSkeleton[3] = { false, false, false };
 		inline float flSkeletonColor[3][4];
 
+		inline bool bBulletTracer[3] = { false, false, false };
+		inline float flBulletTracerColor[3][4];
+
 		inline bool bFlags[3][6];
 		inline float flFlagsColor[3][6][4];
 	}
@@ -370,6 +373,11 @@ namespace cfg {
 		inline float flRadioVolume = 0.f;
 		inline int iRadioMuteHotKey = 0;
 
+		inline bool bOOF = false;
+		inline float flOOF[4];
+		inline int iOOFDistance;
+		inline int iOOFSize;
+
 		inline bool aspectRatio = false;
 		inline int aspectRatioValue = 0;
 		inline bool preserveKillfeed = false;
@@ -387,9 +395,6 @@ namespace cfg {
 		inline float flProjectileESP[4];
 
 		inline bool onlyCheatLogs = false;
-
-		inline bool bulletTracer = false;
-		inline float bulletTracerColor[4] = { 1.f ,1.f, 1.f, 1.f };
 
 		inline bool bWorldCrosshair = false;
 		inline float flWorldCrosshairColor[4] = { 1.f ,1.f, 1.f, 1.f };

@@ -26,7 +26,7 @@ void SafepointDebug(CBaseEntity* pEnt) {
 			return;
 
 		Vector LocalEyePos;
-		if (i::DebugOverlay->ScreenPosition(g::pLocal->GetEyePosition(), LocalEyePos))
+		if (i::DebugOverlay->ScreenPosition(g::vecEyePosition, LocalEyePos))
 			return;
 
 		switch (i)
@@ -70,7 +70,7 @@ void visual::VisualRender() {
 		}
 
 		if (!pEnt->IsAlive()) {
-			iHealth[i] = -1;
+			iHealth[i] = 100;
 			vecDormatPosition[i] = Vector(0, 0, 0);
 			continue;
 		}
@@ -96,6 +96,9 @@ void visual::VisualRender() {
 			vecAbsOrigin = pEnt->GetAbsOrigin();
 			vecDormatPosition[i] = vecAbsOrigin;
 		}
+
+		if (pEnt->GetTeam() != g::pLocal->GetTeam())
+			OutOfFov(pEnt);
 
 		Vector bot;
 		if (i::DebugOverlay->ScreenPosition(vecAbsOrigin - Vector{ 0.f, 0.f, 9.f }, bot))
@@ -694,6 +697,13 @@ void visual::CoolHackKeyBindList() {
 	int iHeight;
 	i::EngineClient->GetScreenSize(iWidth, iHeight);
 
+	//std::vector<std::pair<const char*, Color>> vecIndicators;
+	//vecIndicators.push_back(std::make_pair("DT", Color(255, 255, 255)));
+
+	//for (auto& current : vecIndicators) {
+
+	//}
+
 	int spacing = 10;
 	if (IPT::HandleInput(cfg::rage::ragebotbind) && cfg::rage::enable && cfg::misc::bKeyBindListOld[0]) {
 
@@ -702,12 +712,12 @@ void visual::CoolHackKeyBindList() {
 	}
 	if (IPT::HandleInput(cfg::rage::doubletapkey) && cfg::rage::doubletap && cfg::misc::bKeyBindListOld[1]) {
 
-		i::Surface->DrawT(10, iHeight / 2 + spacing, exploits::iTicksToStore ? Color(0, 255, 0) : Color(255, 0, 0), g::fonts::SkeetFont, false, "DT");
+		i::Surface->DrawT(10, iHeight / 2 + spacing, exploits::iTicksToStore ? Color(255, 255, 255) : Color(255, 0, 0), g::fonts::SkeetFont, false, "DT");
 		spacing += 30;
 	}
 	if (IPT::HandleInput(cfg::rage::forceBaimKey) && cfg::rage::forceBaim && cfg::misc::bKeyBindListOld[2]) {
 
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BAIM");
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BODY");
 		spacing += 30;
 	}
 	if (IPT::HandleInput(cfg::rage::overrideBind) && cfg::misc::bKeyBindListOld[3]) {
@@ -722,7 +732,7 @@ void visual::CoolHackKeyBindList() {
 	}
 	if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck && cfg::misc::bKeyBindListOld[5]) {
 
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (i::ClientState->nChokedCommands * 8), 255), max(191 - i::ClientState->nChokedCommands * 8, 0), 61, 255), g::fonts::SkeetFont, false, "FD");
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (i::ClientState->nChokedCommands * 8), 255), max(191 - i::ClientState->nChokedCommands * 8, 0), 61, 255), g::fonts::SkeetFont, false, "DUCK");
 		spacing += 30;
 	}
 	if (IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick && cfg::misc::bKeyBindListOld[6]) {
@@ -773,4 +783,87 @@ void visual::DrawRadioInformation() {
 		static std::string radio1lmao = "Radio 1 - Csak igazi mai slager megy";
 		i::Surface->DrawT(10, position + 16, Color(238, 238, 238, 255), g::fonts::FlagESP, false, radio1lmao.c_str());
 	}
+}
+
+void visual::OutOfFov(CBaseEntity* pEntity) {
+
+	if (g::bUpdatingSkins || i::ClientState->iDeltaTick < 0)
+		return;
+
+	auto pLog = &lagcomp.GetLog(pEntity->EntIndex());
+	if (!pLog || pLog->pRecord.empty() || !cfg::misc::bOOF || g::bUpdatingSkins || i::ClientState->iDeltaTick < 0)
+		return;
+
+	Vector vecWorldPosition;
+	if (pEntity->IsDormant())
+		vecWorldPosition = vecDormatPosition[pEntity->EntIndex()];
+	else
+		vecWorldPosition = pEntity->GetVecOrigin();
+
+	Vector& vecEyePosition = g::vecEyePosition;
+
+	Vector vecScreenPosition;
+	if (!i::DebugOverlay->ScreenPosition(vecWorldPosition, vecScreenPosition))
+		return;
+
+	Vector vecViewAngles;
+	std::pair<int, int> iScreenSize;
+
+	i::EngineClient->GetViewAngles(vecViewAngles);
+	i::EngineClient->GetScreenSize(iScreenSize.first, iScreenSize.second);
+
+	const Vector2D vecScreenCenter = Vector2D(iScreenSize.first * .5f, iScreenSize.second * .5f);
+
+	const float flRotation = vecViewAngles.y - M::CalcAngle(vecEyePosition, vecWorldPosition).y - 90;
+	const float flAngleYawRad = M_DEG2RAD(flRotation);
+
+	int iRadius = cfg::misc::iOOFDistance;
+	int iSize = cfg::misc::iOOFSize;
+
+	const auto flNewPointX = vecScreenCenter.x + ((((iScreenSize.first - (iSize * 3)) * .5f) * (iRadius * 0.01f)) * cos(flAngleYawRad)) + (int)(6.0f * (((float)iSize - 4.f) / 16.0f));
+	const auto flNewPointY = vecScreenCenter.y + ((((iScreenSize.second - (iSize * 3)) * .5f) * (iRadius * 0.01f)) * sin(flAngleYawRad));
+
+	std::array< Vector2D, 3 >arrPoints{ 
+		Vector2D(flNewPointX - iSize, flNewPointY - iSize),
+		Vector2D(flNewPointX + iSize, flNewPointY),
+		Vector2D(flNewPointX - iSize, flNewPointY + iSize) 
+	};
+
+	const auto vecPointsCenter = (arrPoints.at(0) + arrPoints.at(1) + arrPoints.at(2)) / 3;
+	for (auto& currentPoint : arrPoints) {
+
+		currentPoint -= vecPointsCenter;
+
+		const float flTempX = currentPoint.x;
+		const float flTempY = currentPoint.y;
+
+		const float theta = M_DEG2RAD(flRotation);
+		const float c = cos(theta);
+		const float s = sin(theta);
+
+		currentPoint.x = flTempX * c - flTempY * s;
+		currentPoint.y = flTempX * s + flTempY * c;
+
+		currentPoint += vecPointsCenter;
+	}
+
+	std::array< Vertex_t, 3 >vertices{ Vertex_t(arrPoints.at(0)), Vertex_t(arrPoints.at(1)), Vertex_t(arrPoints.at(2)) };
+
+	static int iTextureID = i::Surface->CreateNewTextureID(true);
+
+	
+	Color drawColor; 
+	if (!pEntity->IsDormant())
+		drawColor = Color(cfg::misc::flOOF);
+	else
+		drawColor = Color(vecDormantColor);
+
+	i::Surface->DrawSetColor(drawColor * 2);
+	i::Surface->DrawLine(arrPoints.at(0).x, arrPoints.at(0).y, arrPoints.at(1).x, arrPoints.at(1).y);
+	i::Surface->DrawLine(arrPoints.at(1).x, arrPoints.at(1).y, arrPoints.at(2).x, arrPoints.at(2).y);
+	i::Surface->DrawLine(arrPoints.at(2).x, arrPoints.at(2).y, arrPoints.at(0).x, arrPoints.at(0).y);
+
+	i::Surface->DrawSetColor(drawColor);
+	i::Surface->DrawSetTexture(iTextureID);
+	i::Surface->DrawTexturedPolygon(3, vertices.data());
 }

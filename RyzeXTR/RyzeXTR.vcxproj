@@ -315,6 +315,7 @@
     <ClInclude Include="Core\Features\Changers\wtf.h" />
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
     <ClInclude Include="Core\Features\Misc\misc.h" />
+    <ClInclude Include="Core\Features\Misc\Playerlist.h" />
     <ClInclude Include="Core\Features\Misc\serversounds.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
     <ClInclude Include="Core\Features\Rage\Animations\BoneSetup.h" />
@@ -390,9 +391,11 @@
     <ClInclude Include="Core\SDK\NetVar\datatable.h" />
     <ClInclude Include="Core\SDK\NetVar\fnv.h" />
     <ClInclude Include="Core\SDK\NetVar\Netvar.h" />
+    <ClInclude Include="Core\SDK\PatternFinder.h" />
     <ClInclude Include="Core\SDK\pe.h" />
     <ClInclude Include="Core\SDK\RayTracer rebuilt\CRayTrace.h" />
     <ClInclude Include="Core\SDK\WavParser.h" />
+    <ClInclude Include="Core\SDK\X86RetSpoof.h" />
     <ClInclude Include="Core\utilities.h" />
     <ClInclude Include="Dependecies\BASS\API.h" />
     <ClInclude Include="Dependecies\BASS\bass.h" />

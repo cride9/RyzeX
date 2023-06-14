@@ -278,6 +278,12 @@ void CConfig::Setup() {
 		SetupValue(flSkeletonColor[ENEMY][2], 1.f, "visual", "flSkeletonColorENEMYB");
 		SetupValue(flSkeletonColor[ENEMY][3], 1.f, "visual", "flSkeletonColorENEMYA");
 
+		SetupValue(bBulletTracer[ENEMY], false, "visual", "bBulletTracerENEMY");
+		SetupValue(flBulletTracerColor[ENEMY][0], 1.f, "visual", "flBulletTracerColorENEMYR");
+		SetupValue(flBulletTracerColor[ENEMY][1], 1.f, "visual", "flBulletTracerColorENEMYG");
+		SetupValue(flBulletTracerColor[ENEMY][2], 1.f, "visual", "flBulletTracerColorENEMYB");
+		SetupValue(flBulletTracerColor[ENEMY][3], 1.f, "visual", "flBulletTracerColorENEMYA");
+
 		// teammate
 		SetupValue(bEnable[TEAM], false, "visual", "teamEsp");
 
@@ -371,6 +377,12 @@ void CConfig::Setup() {
 		SetupValue(flSkeletonColor[TEAM][2], 1.f, "visual", "flSkeletonColorTEAMB");
 		SetupValue(flSkeletonColor[TEAM][3], 1.f, "visual", "flSkeletonColorTEAMA");
 
+		SetupValue(bBulletTracer[TEAM], false, "visual", "bBulletTracerTEAM");
+		SetupValue(flBulletTracerColor[TEAM][0], 1.f, "visual", "flBulletTracerColorTEAMR");
+		SetupValue(flBulletTracerColor[TEAM][1], 1.f, "visual", "flBulletTracerColorTEAMG");
+		SetupValue(flBulletTracerColor[TEAM][2], 1.f, "visual", "flBulletTracerColorTEAMB");
+		SetupValue(flBulletTracerColor[TEAM][3], 1.f, "visual", "flBulletTracerColorTEAMA");
+
 		// local
 		SetupValue(bEnable[LOCAL], false, "visual", "localEsp");
 
@@ -463,6 +475,12 @@ void CConfig::Setup() {
 		SetupValue(flSkeletonColor[LOCAL][1], 1.f, "visual", "flSkeletonColorLOCALG");
 		SetupValue(flSkeletonColor[LOCAL][2], 1.f, "visual", "flSkeletonColorLOCALB");
 		SetupValue(flSkeletonColor[LOCAL][3], 1.f, "visual", "flSkeletonColorLOCALA");
+	
+		SetupValue(bBulletTracer[LOCAL], false, "visual", "bBulletTracerLOCAL");
+		SetupValue(flBulletTracerColor[LOCAL][0], 1.f, "visual", "flBulletTracerColorLOCALR");
+		SetupValue(flBulletTracerColor[LOCAL][1], 1.f, "visual", "flBulletTracerColorLOCALG");
+		SetupValue(flBulletTracerColor[LOCAL][2], 1.f, "visual", "flBulletTracerColorLOCALB");
+		SetupValue(flBulletTracerColor[LOCAL][3], 1.f, "visual", "flBulletTracerColorLOCALA");
 	}
 
 	// model
@@ -816,6 +834,14 @@ void CConfig::Setup() {
 		SetupValue(nightmodeColor[2], 1.f, "visual", "nightmodeColorB");
 		SetupValue(nightmodeColor[3], 1.f, "visual", "nightmodeColorA");
 
+		SetupValue(bOOF, false, "misc", "bOOF");
+		SetupValue(flOOF[0], 1.f, "visual", "flOOFR");
+		SetupValue(flOOF[1], 1.f, "visual", "flOOFG");
+		SetupValue(flOOF[2], 1.f, "visual", "flOOFB");
+		SetupValue(flOOF[3], 1.f, "visual", "flOOFA");
+		SetupValue(iOOFDistance, 100, "visual", "iOOFDistance");
+		SetupValue(iOOFSize, 30, "visual", "iOOFSize");
+
 		SetupValue(iSkybox, 0, "misc", "skyboxchanger");
 		SetupValue(flSkyboxColor[0], 1.f, "visual", "flSkyboxColorR");
 		SetupValue(flSkyboxColor[1], 1.f, "visual", "flSkyboxColorG");
@@ -837,12 +863,6 @@ void CConfig::Setup() {
 		SetupValue(flProjectileESP, 4, 1.f, "misc", "flProjectileESP");
 
 		SetupValue(onlyCheatLogs, true, "misc", "onlyCheatLogs");
-
-		SetupValue(bulletTracer, false, "misc", "bulletTracer");
-		SetupValue(bulletTracerColor[0], 0.000f, "visual", "bulletTracerColorR"); // (0.000f, 0.246f, 0.646f, 1.000f)
-		SetupValue(bulletTracerColor[1], 0.246f, "visual", "bulletTracerColorG");
-		SetupValue(bulletTracerColor[2], 0.646f, "visual", "bulletTracerColorB");
-		SetupValue(bulletTracerColor[3], 1.f, "visual", "bulletTracerColorA");
 
 		SetupValue(bDrawCapsule, false, "misc", "bDrawCapsule");
 		SetupValue(flDrawCapsuleColor[0], 1.f, "visual", "flDrawCapsuleColorR"); // (0.000f, 0.246f, 0.646f, 1.000f)

@@ -16,6 +16,7 @@
 
 #include "../../../Dependecies/BASS/API.h"
 #include "../../../Dependecies/BASS/string_obfuscation.h"
+#include "../../SDK/Menu/gui.h"
 
 void misc::SetupRadio( )
 {
@@ -1106,18 +1107,27 @@ void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
 
 void misc::BulletTracer(IGameEvent* pEvent) {
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bulletTracer)
+	if (!g::pLocal)
 		return;
 
 	/* Get this once, so the beams won't deform bcs of multiple impact -> multiple position */
 	auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iUser));
 
-	if (iUser != i::EngineClient->GetLocalPlayer())
+	if (!pEntity)
 		return;
 
 	Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
 
-	DrawBream(vecEyePosition, vecImpact, cfg::misc::bulletTracerColor);
+	if (pEntity == g::pLocal && cfg::visual::bBulletTracer[LOCAL])
+		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[LOCAL]);
+	
+	else if (pEntity->GetTeam() == g::pLocal->GetTeam() && cfg::visual::bBulletTracer[TEAM])
+		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[TEAM]);
+	
+	else if (pEntity->GetTeam() != g::pLocal->GetTeam() && cfg::visual::bBulletTracer[ENEMY])
+		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[ENEMY]);
+	
 }
 
 void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
@@ -1740,6 +1750,65 @@ void misc::LeftHandKnife() {
 
 	if (CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon(); pWeapon)
 		convar->SetValue(pWeapon->IsKnife() ? iBackupValue ? 0 : 1 : iBackupValue);
+}
+
+static __declspec(naked) void __cdecl Invoke_NET_SetConVar(void* pfn, const char* cvar, const char* value)
+{
+	__asm
+	{
+		push    ebp
+		mov     ebp, esp
+		and esp, 0FFFFFFF8h
+		sub     esp, 44h
+		push    ebx
+		push    esi
+		push    edi
+		mov     edi, cvar
+		mov     esi, value
+		jmp     pfn
+	}
+}
+void DECLSPEC_NOINLINE NET_SetConVar(const char* value, const char* cvar)
+{
+	// "\x8D\x4C\x24\x1C\xE8\x00\x00\x00\x00\x56"
+	static DWORD setaddr = util::FindSignature("engine.dll", "8D 4C 24 1C E8 ? ? ? ? 56");
+	if (setaddr != 0)
+	{
+		void* pvSetConVar = (char*)setaddr;
+		Invoke_NET_SetConVar(pvSetConVar, cvar, value);
+	}
+}
+
+void change_name(const char* name)
+{
+	if (i::EngineClient->IsInGame() && i::EngineClient->IsConnected())
+		NET_SetConVar(name, "name");
+}
+
+bool misc::ChangeName(bool bReconnect, const char* szName) {
+
+	static auto exploitInitialized{ false };
+
+	if (!exploitInitialized && i::EngineClient->IsInGame()) {
+		if (PlayerInfo_t playerInfo; g::pLocal && i::EngineClient->GetPlayerInfo(i::EngineClient->GetLocalPlayer(), &playerInfo) && (!strcmp(playerInfo.szName, "?empty") || !strcmp(playerInfo.szName, "\n\xAD\xAD\xAD"))) {
+			exploitInitialized = true;
+		}
+		else {
+			change_name("\n\xAD\xAD\xAD");
+			return false;
+		}
+	}
+	change_name(szName);
+
+	return true;
+}
+
+bool misc::ResetName(bool bReconnect, const char* szName) {
+
+	static CConVar* pNameVar = i::ConVar->FindVar("name");
+
+	ChangeName(false, pNameVar->GetString());
+	return true;
 }
 
 #pragma runtime_checks( "", off )

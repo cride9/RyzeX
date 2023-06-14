@@ -2,6 +2,7 @@
 #include "../ragebot.h"
 #include "../../../SDK/Menu/config.h"
 #include "../autowall.h"
+#include "../../Misc/Playerlist.h"
 
 float flOldLowerbodyYaw[65];
 float flOldPlaybackrateYaw[65];
@@ -119,10 +120,19 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious || !cfg::rage::resolver)
+	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious)
 		return;
 
-	Vector vecEyePosition = pLocal->GetEyePosition();
+	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
+	if (playerListData.bOverrideResolver) {
+
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw + playerListData.flOverrideYaw);
+		return;
+	}
+	if (!cfg::rage::resolver)
+		return;
+
+	Vector vecEyePosition = g::vecEyePosition;
 	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
 	Vector vecLHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]);
 	Vector vecRHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]);
@@ -135,15 +145,23 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	float flResolveYaw = 58.f;
 	static int iFoundSide = 0;
 
+	switch (missedShots[pEntity->EntIndex()] % 3) {
+
+	case 1: flResolveYaw *= 0;
+		break;
+	case 2: flResolveYaw *= -1;
+		break;
+	}
+
 	float& vecEyeYaw = pEntity->AnimState()->flEyeYaw;
 	if (pWeapon) {
 		if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecLHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw - 58.f);
+			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw - flResolveYaw);
 			pRecord->bSafeResolve = true;
 			return;
 		}
 		else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecRHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw + 58.f);
+			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw + flResolveYaw);
 			pRecord->bSafeResolve = true; 
 			return;
 		}
@@ -172,14 +190,6 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	
 	if (iFoundSide != 0)
 		flResolveYaw = iFoundSide == RIGHT ? 58 : -58;
-	
-	switch (missedShots[pEntity->EntIndex()] % 3) {
-
-	case 1: flResolveYaw *= 0;
-		break;
-	case 2: flResolveYaw *= -1;
-		break;
-	}
 
 	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw + flResolveYaw);
 }
@@ -377,14 +387,12 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 		TransformateMatrix(pPlayer);
 
 		// copy the entire matrix
-		//std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
+		std::memcpy(pPlayer->GetCachedBoneData().Base(), pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
 
 		// build attachments
 		std::memcpy(pPlayer->GetBoneAccessor().matBones, pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
-		//pPlayer->GetBoneAccessor().matBones = pPlayerData->pCachedMatrix.data();
 		pPlayer->SetupBones_AttachmentHelper();
 		std::memcpy(pPlayer->GetBoneAccessor().matBones, pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
-		//pPlayer->GetBoneAccessor().matBones = pPlayerData->pCachedMatrix.data();
 	}
 }
 
@@ -1095,7 +1103,7 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	}
 
 	/* Remove interpolation if required */
-	if (!(nFlags & EMatrixFlags::Interpolated))
+	if (!(nFlags & EMatrixFlags::Interpolated) && pRecord->vecOrigin.IsValid())
 		pEntity->SetAbsOrigin(pRecord->vecOrigin);
 
 	/* Compute bone mask */

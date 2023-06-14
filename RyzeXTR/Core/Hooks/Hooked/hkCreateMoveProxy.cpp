@@ -5,6 +5,7 @@
 #include "../../SDK/Menu/gui.h"
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Misc/misc.h"
+#include "../../Features/Misc/Playerlist.h"
 #include "../../Features/Rage/antiaim.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Rage/exploits.h"
@@ -35,6 +36,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	bSendPacket = true;
 	CBaseEntity* pLocal = g::pLocal = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	g::pCmd = pCmd;
+	g::vecEyePosition = pLocal->GetEyePosition();
 
 	lagcomp.StartLagcompensation(pLocal);
 
@@ -48,6 +50,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		pCmd->iButtons |= IN_BULLRUSH;
 
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
+	playerList::InitializePlayerList(pLocal);
 
 	//if (i::ClientState->iDeltaTick > 0)
 	//	i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
@@ -69,8 +72,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
 		exploits::HandleBreakLagcomp(pCmd);
 		misc::IdealTick(pCmd, pLocal);
-		if (pCmd->iButtons & IN_ATTACK)
-			misc::vecEyePosition = pLocal->GetEyePosition();
 		antiaim::InvertOnShoot(pCmd);
 	}
 	prediction.End(pCmd, pLocal);
@@ -95,10 +96,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		bSendPacket = true;
 		ragebot.bSendPacketThisTick = false;
 	}
-	if (ragebot.bSetTickCount) {
-		ragebot.bSetTickCount = false;
-		pCmd->iTickCount = TIME_TO_TICKS(ragebot.rageBotData.flTargetSimulation + lagcomp.GetClientInterpAmount());
-	}
 
 	static auto maxusercmd = i::ConVar->FindVar("sv_maxusrcmdprocessticks");
 	if (i::ClientState->nChokedCommands >= maxusercmd->GetInt() - 1)
@@ -107,6 +104,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (bSendPacket)
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
 
+	//misc::ChangeName(false, "kurvaanyad");
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();
 

@@ -7,6 +7,7 @@
 #include "../Misc/misc.h"
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
 #include "Animations/EnemyAnimations.h"
+#include "../Misc/Playerlist.h"
 
 #include "../../SDK/InputSystem.h"
 
@@ -111,7 +112,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 				pCmd->iButtons |= IN_ATTACK;
 
 				bSetTickCount = true;
-				iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
+				pCmd->iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
 				bSendPacketThisTick = ShouldSendPacket(bSendPacket);
 			}
 			else {
@@ -147,6 +148,10 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
 		bool bAdded = false;
+		bool bPriority = playerList::arrPlayers[i].iPriority == RAGE;
+		if (playerList::arrPlayers[i].iPriority == FRIEND)
+			continue;
+
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
 		CBaseEntity* pEntity = pLog->pEntity;
 		CBaseEntity* pEntityByIndex = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
@@ -166,6 +171,8 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 				{
 					i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecPoint), MASK_SHOT, &traceFilter, &traceData);
 					if (traceData.pHitEntity != nullptr) {
+						if (bPriority)
+							return std::make_pair(pEntity, iAppliedRecord);
 						vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
 						bAdded = true;
 					}
@@ -176,7 +183,8 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 				float flDamage = autowall.GetDamage(g::pLocal, vecEyePosition, vecHitboxPosition, pWeapon);
 
 				if (flDamage >= ConfigMinimumDamage(pWeapon) || flDamage > pEntity->GetHealth() + 15) {
-
+					if (bPriority)
+						return std::make_pair(pEntity, iAppliedRecord);
 					vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
 					bAdded = true;
 					break;
@@ -207,6 +215,8 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 
 							i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecPoint), MASK_SHOT, &traceFilter, &traceData);
 							if (traceData.pHitEntity != nullptr) {
+								if (bPriority)
+									return std::make_pair(pEntity, iAppliedRecord); 
 								vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
 								bAdded = true;
 							}
@@ -217,7 +227,8 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 						float flDamage = autowall.GetDamage(g::pLocal, vecEyePosition, vecHitboxPosition, pWeapon);
 
 						if (flDamage >= ConfigMinimumDamage(pWeapon) || flDamage > pEntity->GetHealth() + 15) {
-
+							if (bPriority)
+								return std::make_pair(pEntity, iAppliedRecord);
 							vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
 							bAdded = true;
 							break;
@@ -233,7 +244,7 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 
 	if (vecIndexes.empty())
 		return std::make_pair(nullptr, -1);
-
+	
 	if (vecIndexes.size() >= 2) 
 		std::sort(vecIndexes.begin(), vecIndexes.end(), LowestFov);
 	
@@ -900,12 +911,19 @@ std::vector<Vector> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity *
 	int* pBodyPoints = &multiPoints.second;
 	float flHitboxDistance = flRadius * ( (iHitbox == HITBOX_HEAD ? *pHeadPoints : *pBodyPoints ) * 0.01f );
 
+	if (!(pTarget->GetFlags() & FL_ONGROUND) && iHitbox == HITBOX_HEAD)
+		flHitboxDistance = 0.7f;
+
 	//bool bGenerateMore = (iHitbox == HITBOX_HEAD ? *pHeadPoints > 50.f ? true : false : *pBodyPoints > 50.f ? true : false);
 
 	if (bBuildSideOnly) {
 		if (iHitbox == HITBOX_HEAD) {
 			output.push_back(vecAngle + Vector(0.f, 0.f, flHitboxDistance));
-			output.push_back(vecAngle - Vector(0.f, 0.f, flHitboxDistance));
+			output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
+			output.push_back(vecAngle - Vector(flHitboxDistance, 0.f, 0.f));
+			output.push_back(vecAngle + Vector(0.f, flHitboxDistance, 0.f));
+			output.push_back(vecAngle - Vector(0.f, flHitboxDistance, 0.f));
+			//output.push_back(vecAngle - Vector(0.f, 0.f, flHitboxDistance));
 		}
 		else {
 			output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
@@ -918,7 +936,10 @@ std::vector<Vector> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity *
 		if (iHitbox == HITBOX_HEAD) {
 			output.push_back(vecAngle);
 			output.push_back(vecAngle + Vector(0.f, 0.f, flHitboxDistance));
-			output.push_back(vecAngle - Vector(0.f, 0.f, flHitboxDistance));
+			output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
+			output.push_back(vecAngle - Vector(flHitboxDistance, 0.f, 0.f));
+			output.push_back(vecAngle + Vector(0.f, flHitboxDistance, 0.f));
+			output.push_back(vecAngle - Vector(0.f, flHitboxDistance, 0.f));
 		}
 		else {
 			output.push_back(vecAngle);
@@ -928,41 +949,6 @@ std::vector<Vector> CRageBot::CreatePoints( CBaseEntity * pTarget, CBaseEntity *
 			output.push_back(vecAngle - Vector(0.f, flHitboxDistance, 0.f));
 		}
 	}
-	//switch (iMultiOptimization[iHitbox] % 5)
-	//{
-	//case 0:
-	//	output[2] = (vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
-	//	if (bGenerateMore)
-	//		output[1] = (vecAngle + Vector(flHitboxDistance * 0.5f, 0.f, 0.f));
-	//	break;
-	//case 1:
-	//	output[2] = (vecAngle + Vector(0.f, flHitboxDistance, 0.f));
-	//	if (bGenerateMore)
-	//		output[1] = (vecAngle + Vector(0.f, flHitboxDistance * 0.5f, 0.f));
-	//	break;
-	//case 2:
-	//	output[2] = (vecAngle + Vector(0.f, 0.f, flHitboxDistance));
-	//	if (bGenerateMore)
-	//		output[1] = (vecAngle + Vector(0.f, 0.f, flHitboxDistance * 0.5f));
-	//	break;
-	//case 3:
-	//	output[2] = (vecAngle + Vector(0.f, -flHitboxDistance, 0.f));
-	//	if (bGenerateMore)
-	//		output[1] = (vecAngle + Vector(0.f, -flHitboxDistance * 0.5f, 0.f));
-	//	break;
-	//case 4:
-	//	output[2] = (vecAngle + Vector(-flHitboxDistance, 0.f, 0.f));
-	//	if (bGenerateMore)
-	//		output[1] = (vecAngle + Vector(-flHitboxDistance * 0.5f, 0.f, 0.f));
-	//	break;
-	//}
-	//if (!bGenerateMore)
-	//	output[1] = Vector(0, 0, 0);
-
-	//iMultiOptimization[iHitbox]++;
-
-	//if (iMultiOptimization[iHitbox] >= 5)
-	//	iMultiOptimization[iHitbox] = 0;
 
 	return output;
 }

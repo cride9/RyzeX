@@ -202,5 +202,8 @@
     <ClInclude Include="Dependecies\BASS\string_obfuscation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\BoneSetup.h" />
     <ClInclude Include="Core\SDK\DataTyes\BitVec.h" />
+    <ClInclude Include="Core\SDK\PatternFinder.h" />
+    <ClInclude Include="Core\SDK\X86RetSpoof.h" />
+    <ClInclude Include="Core\Features\Misc\Playerlist.h" />
   </ItemGroup>
 </Project>

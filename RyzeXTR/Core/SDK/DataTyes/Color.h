@@ -83,6 +83,15 @@ public:
 		return this->arrColor[i];
 	}
 
+	Color operator*(const float& muliply) const
+	{
+		Color temp{};
+		for (int i = 0; i < arrColor.size(); i++) {
+			temp[i] = min(arrColor[i] * muliply, 255);
+		}
+		return temp;
+	}
+
 	bool operator==(const Color& colSecond) const
 	{
 		return this->arrColor == colSecond.arrColor;

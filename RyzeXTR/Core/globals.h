@@ -11,6 +11,7 @@ namespace g {
 	inline CBaseEntity* pLocal;
 	inline CEntityListener entityListener;
 	inline Vector vecOriginalViewAngle;
+	inline Vector vecEyePosition;
 
 	inline bool bAllowAnimations[65];
 	inline bool bWaiting;

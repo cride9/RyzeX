@@ -26,6 +26,10 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
 	if (fdwReason == DLL_PROCESS_ATTACH) {
 
+		/*static auto InitSafeModuleFn = (void(__fastcall*)(void*, void*))util::FindSignature("client.dll", "56 8B 71 3C B8");
+		if (InitSafeModuleFn)
+			InitSafeModuleFn((void*)hinstDLL, nullptr);*/
+
 		DisableThreadLibraryCalls(hinstDLL);
 
 		auto thread = CreateThread(nullptr, 0, CheatThread, hinstDLL, 0, nullptr);

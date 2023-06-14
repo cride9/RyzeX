@@ -230,4 +230,60 @@ namespace util {
 				i = oClearHudWeaponIcon( pHudWeapons, i );
 		}
 	}
+
+	inline uintptr_t FindByteSequenceInModule(HMODULE hModule, const BYTE* sequence, size_t sequenceSize)
+	{
+		MODULEINFO moduleInfo;
+		if (!GetModuleInformation(GetCurrentProcess(), hModule, &moduleInfo, sizeof(MODULEINFO)))
+		{
+			// Failed to get module information
+			return 0;
+		}
+
+		BYTE* codeBase = reinterpret_cast<BYTE*>(moduleInfo.lpBaseOfDll);
+		const size_t codeSize = moduleInfo.SizeOfImage;
+
+		for (size_t i = 0; i < codeSize - sequenceSize; ++i)
+		{
+			bool found = true;
+
+			for (size_t j = 0; j < sequenceSize; ++j)
+			{
+				if (codeBase[i + j] != sequence[j])
+				{
+					found = false;
+					break;
+				}
+			}
+
+			if (found)
+			{
+				// Found the byte sequence
+				return reinterpret_cast<uintptr_t>(&codeBase[i]);
+			}
+		}
+
+		// Byte sequence not found
+		return 0;
+	}
+
+	inline void CopyToClipboard(const std::string& text) {
+
+		if (OpenClipboard(nullptr)) {
+			EmptyClipboard();
+			HGLOBAL hClipboardData;
+			const char* charArray = text.c_str();
+			const size_t dataSize = (text.length() + 1) * sizeof(char);
+			hClipboardData = GlobalAlloc(GMEM_MOVEABLE, dataSize);
+			if (hClipboardData != nullptr) {
+				void* data = GlobalLock(hClipboardData);
+				if (data != nullptr) {
+					memcpy(data, charArray, dataSize);
+					GlobalUnlock(hClipboardData);
+					SetClipboardData(CF_TEXT, hClipboardData);
+				}
+			}
+			CloseClipboard();
+		}
+	}
 }

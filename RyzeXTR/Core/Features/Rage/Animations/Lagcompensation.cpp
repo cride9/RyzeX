@@ -96,7 +96,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		auto pLog = &pPlayerLogs[i];
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || pEntity->GetTeam() == g::pLocal->GetTeam() || pEntity == g::pLocal) {
+		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || /*pEntity->GetTeam() == g::pLocal->GetTeam() ||*/ pEntity == g::pLocal) {
 			anims.missedShots[i] = 0;
 			pLog->iLastValid = 0;
 			pLog->iFirstValid = 32;
@@ -428,7 +428,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 		return false;
 
 	/* Lagcomp breaking = invalid */
-	if ((TICKS_TO_TIME(networking.GetCorrectedTickbase()) - mflSimulationTime) < 0.f)
+	if ((i::GlobalVars->flCurrentTime - mflSimulationTime) < 0.f)
 		return false;
 
 	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
@@ -436,7 +436,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	//float m_flCorrect = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) + i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_OUTGOING) /*+ GetClientInterpAmount()*/;
 	//m_flCorrect = std::clamp(m_flCorrect, 0.f, sv_maxunlag->GetFloat());
 
-	return (TICKS_TO_TIME(networking.GetCorrectedTickbase()) - mflSimulationTime) < flRange;
+	return (i::GlobalVars->flCurrentTime - mflSimulationTime) < flRange;
 }
 
 int Lagcompensation::FixTickCount(const float& flSimulationTime)

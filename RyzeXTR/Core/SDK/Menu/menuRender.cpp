@@ -10,6 +10,7 @@
 #include "../../SDK/InputSystem.h"
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Features/Changers/wtf.h"
+#include "../../Features/Misc/Playerlist.h"
 
 bool IsKnife(int idx) {
 
@@ -41,6 +42,7 @@ void menu::HandleMenuElements() noexcept {
         if (pressedSave && cfg::configID != -1)
             SaveWarning(pressedSave, warningMethod);
 
+		playerList::DrawPlayerList();
         HandleLogoDrawing();
 
         Tabselection();
@@ -435,7 +437,10 @@ void menu::Visualtab() noexcept {
 			bFlags[ENEMY],
 			flFlagsColor[ENEMY],
 			bSkeleton[ENEMY],
-			flSkeletonColor[ENEMY]);
+			flSkeletonColor[ENEMY],
+			bBulletTracer[ENEMY],
+			flBulletTracerColor[ENEMY]);
+
         break;
 
     case TEAM:
@@ -459,7 +464,9 @@ void menu::Visualtab() noexcept {
 			bFlags[TEAM],
 			flFlagsColor[TEAM],
 			bSkeleton[TEAM],
-			flSkeletonColor[TEAM]);
+			flSkeletonColor[TEAM],
+			bBulletTracer[TEAM],
+			flBulletTracerColor[TEAM]);
         break;
 
     case LOCAL:
@@ -483,7 +490,9 @@ void menu::Visualtab() noexcept {
 			bFlags[LOCAL],
 			flFlagsColor[LOCAL],
 			bSkeleton[LOCAL],
-			flSkeletonColor[LOCAL]);
+			flSkeletonColor[LOCAL],
+			bBulletTracer[LOCAL],
+			flBulletTracerColor[LOCAL]);
         break;
 
     case WORLD:
@@ -527,6 +536,11 @@ void menu::Visualtab() noexcept {
 			ImGui::Combo("Skybox", &cfg::misc::iSkybox, szSkyboxes, IM_ARRAYSIZE(szSkyboxes));
 			ImGui::ColorEdit4("##skyboxcolor", flSkyboxColor);
 
+			ImGui::Checkbox("Out of fov", &cfg::misc::bOOF);
+			ImGui::ColorEdit4("##oofcolor", cfg::misc::flOOF);
+			ImGui::SliderInt("Distance##2", &cfg::misc::iOOFDistance, 1, 100);
+			ImGui::SliderInt("Size", &cfg::misc::iOOFSize, 1, 30);
+
 			ImGui::Checkbox("Dropped weapons", &cfg::misc::bDroppedWeaponESP);
 			ImGui::ColorEdit4("##droppedcolor", cfg::misc::flDroppedWeaponESP);
 
@@ -562,8 +576,6 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Show impact", &bulletImpact);
 			ImGui::ColorEdit4("##impactColor1", impactColor[0], true);
 			ImGui::ColorEdit4("##impactColor2", impactColor[1]);
-            ImGui::Checkbox( "Bullet tracer", &bulletTracer );
-			ImGui::ColorEdit4("##tracerColor", bulletTracerColor);
 			ImGui::Checkbox("Draw capsule", &bDrawCapsule);
 			ImGui::ColorEdit4("##capsuleCOlor", flDrawCapsuleColor, true);
 			ImGui::ColorEdit4("##capsuleColorHit", flDrawCapsuleColorHit);
@@ -1299,7 +1311,10 @@ void menu::HandleVisualTypeGeneration(
 	float flFlagsColor[5][4],
 
 	bool& bSkeleton,
-	float* flSkeletonColor
+	float* flSkeletonColor,
+
+	bool& bBulletTracer,
+	float* flBulletTracerColor
 ) 
 noexcept {
 
@@ -1327,6 +1342,9 @@ noexcept {
 
         ImGui::Checkbox("Ammo", &ammo);
         ImGui::ColorEdit4("##ammocolor", ammoColor);
+
+		ImGui::Checkbox("Bullet Tracer", &bBulletTracer);
+		ImGui::ColorEdit4("##bulletTracerColor", flBulletTracerColor);
 
 		ImGui::Checkbox("Skeleton", &bSkeleton);
 		ImGui::ColorEdit4("##skeletoncolor", flSkeletonColor);
@@ -1435,7 +1453,7 @@ void menu::ConfigTab() noexcept {
 	using namespace cfg::misc;
 	ImGui::BeginChild( "7a8a34f36232363710f9d93fb43b221049377af798c68653dbe870f2fdc58604390d9b4959558ffd60d5e6f6c9958b12bf1303fd00379ec939d48de18e01350c", ImVec2( ImGui::GetContentRegionAvail( ).x, ImGui::GetContentRegionAvail( ).y ), true, ImGuiWindowFlags_NoMove );
 	{
-		std::vector<std::string> m_szRadioStations = { "2000's", "Rock", "Techno", "Rap", "Chill", "Club", "House", "8-Bit", "8-Bit Alternative", "Lo-Fi", "Eurobeat", "Nightcore", "Radio 1", "Phonk" };
+		std::vector<std::string> m_szRadioStations = { "2000's", "Rock", "Techno", "Rap", "Chill", "Club", "House", "8-Bit", "8-Bit Alternative", "Lo-Fi", "Eurobeat", "Nightcore", "Radio 1", "Phonk"};
 
 		ImGui::Checkbox( "Enable radio", &bEnableRadio );
 
@@ -1450,8 +1468,8 @@ void menu::ConfigTab() noexcept {
 		ImGui::SliderFloat( "Volume", &flRadioVolume, 0.f, 100.f, "%.1f%%" );
 
 		ImGui::SetCursorPosX( ( ImGui::GetWindowContentRegionMin( ).x ) + 17.f );
-		ImGui::PushItemWidth( ImGui::CalcItemWidth( ) + 100.f );
-
+		//ImGui::PushItemWidth( ImGui::CalcItemWidth( ) + 100.f );
+		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
 		if ( ImGui::ListBoxVector( "##radiostations", &iRadioStation, m_szRadioStations, 9 ) )
 		{
 			// just pushes a notification, do this yourself

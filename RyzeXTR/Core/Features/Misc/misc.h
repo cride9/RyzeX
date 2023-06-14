@@ -54,6 +54,8 @@ namespace misc {
 	void CapsuleHandler(IGameEvent*);
 	void CapsuleOnHit(int, int, Color, float);
 	void LeftHandKnife();
+	bool ChangeName(bool, const char*);
+	bool ResetName(bool, const char*);
 
 	void DrawBream(Vector, Vector, Color);
 	void WorldCrosshairHandler(IGameEvent*);

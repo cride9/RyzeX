@@ -10,5 +10,6 @@ void* __fastcall h::hkAllocKeyValuesMemory(CKeyValuesSystem* thisptr, int edx, i
 	if (const std::uintptr_t uReturnAddress = reinterpret_cast<std::uintptr_t>(_ReturnAddress()); uReturnAddress == uAllocKeyValuesEngine || uReturnAddress == uAllocKeyValuesClient)
 		return nullptr;
 
+	//x86RetSpoof::invokeFastcall<void*>(thisptr, edx, (uintptr_t)original, (uintptr_t)util::FindSignature("client.dll", "1B FF 23 F8 F6 87"));
 	return original(thisptr, edx, iSize);
 }
