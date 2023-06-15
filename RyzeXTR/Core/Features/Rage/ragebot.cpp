@@ -208,11 +208,6 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 						multiPointed = CreatePoints(pCurrentRecord->pEntity, g::pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, true);
 						for (Vector& vecPoint : multiPointed)
 						{
-							//int iSafePoint = SafePoint(vecEyePosition, pWeapon, pCurrentRecord, vecPoint, iHitbox);
-
-							//if (iSafePoint < 2)
-							//	continue;
-
 							i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecPoint), MASK_SHOT, &traceFilter, &traceData);
 							if (traceData.pHitEntity != nullptr) {
 								if (bPriority)
@@ -318,7 +313,11 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 					continue;
 			}
 
-			if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon); flDamage > iMinimumDamage || flDamage > pEntity.first->GetHealth() + 15) {
+			FireBulletData_t data;
+			if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &data); flDamage > iMinimumDamage || flDamage > pEntity.first->GetHealth() + 15) {
+
+				if (playerList::IsFriendly(data.enterTrace.pHitEntity))
+					continue;
 
 				//g::drawList.push_back(vecPoint);
 				rageBotData.SetTarget(pCurrentApplied, iHitbox);

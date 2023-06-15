@@ -104,6 +104,8 @@ void Lagcompensation::FrameStageNotify() noexcept {
 			pLog->flExploitTime = 0.f;
 			if (pEntity != g::pLocal)
 				g::bAllowAnimations[i] = true;
+			if (pEntity == g::pLocal && !pEntity->IsAlive())
+				g::bAllowAnimations[i] = true;
 			
 			continue;
 		}

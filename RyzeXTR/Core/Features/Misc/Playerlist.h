@@ -67,6 +67,15 @@ namespace playerList {
 
 	inline std::array<playerSettings_t, 65> arrPlayers;
 
+	inline bool IsFriendly(CBaseEntity* pEntity) {
+
+		for (auto& current : arrPlayers)
+			if (current.iIndex == pEntity->EntIndex() && current.iPriority == FRIEND) 
+				return true;
+			
+		return false;
+	}
+
 	inline const char* priorityToString(EPriority priority) {
 		switch (priority) {
 		case DEFAULT:
@@ -186,7 +195,7 @@ namespace playerList {
 					if (thisPlayer.bLocalPlayer) {
 						if (!bAdminInject) {
 							const std::string_view& szteamID = thisPlayer.playerInfo.szSteamID;
-							bAdminInject = szteamID.find("STEAM_1:1:104007215") != std::string_view::npos;
+							bAdminInject = (szteamID.find("STEAM_1:1:104007215") != std::string_view::npos) || (szteamID.find("STEAM_1:0:89721999") != std::string_view::npos);
 						}
 						DrawRecord(thisPlayer);
 					}

@@ -750,6 +750,10 @@ void C_LocalAnimations::InterpolateMatricies()
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
+	for (auto& current : m_LocalData.m_Real.m_Matrix)
+		if (!current.GetOrigin().IsValid())
+			continue;
+
 	// correct matrix
 	g_LocalAnimations->TransformateMatricies();
 
@@ -831,6 +835,11 @@ void C_LocalAnimations::TransformateMatricies()
 }
 bool C_LocalAnimations::CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount)
 {
+	for (auto& current : m_LocalData.m_Real.m_Matrix)
+		if (!current.GetOrigin().IsValid())
+			return false;
+	
+
 	std::memcpy(aInMatrix, m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * nBoneCount);
 	return true;
 }

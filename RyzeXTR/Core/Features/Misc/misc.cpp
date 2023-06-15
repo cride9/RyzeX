@@ -699,106 +699,122 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 	if (g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetFlags() & FL_ONGROUND || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP)
 		return;
 
-	static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
-	auto side_speed = cl_sidespeed->GetFloat();
-
-	static auto old_yaw = 0.0f;
-
-	auto m_pcmd = pCmd;
-
-	auto velocity = g::pLocal->GetVelocity();
-	//velocity.z = 0.0f;
-
-	auto forwardmove = m_pcmd->flForwardMove;
-	auto sidemove = m_pcmd->flSideMove;
-
-	if (velocity.Length2D() < 5.0f && !forwardmove && !sidemove)
+	if (g::pLocal->GetVelocity().Length2D() < 5.0f && !pCmd->flForwardMove && !pCmd->flSideMove)
 		return;
 
-	static auto flip = false;
-	flip = !flip;
+	static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
+	float flSideSpeed = cl_sidespeed->GetFloat();
+	Vector vecVelocity = g::pLocal->GetVelocity();
+	static auto flOldYaw = 0.0f;
 
-	auto turn_direction_modifier = flip ? 1.0f : -1.0f;
-	auto viewangles = vecView;
-
-	if (forwardmove || sidemove)
+	auto flGetVelocityDegree = [](float velocity)
 	{
-		m_pcmd->flForwardMove = 0.0f;
-		m_pcmd->flSideMove = 0.0f;
+		auto tmp = M_RAD2DEG(atan(15.0f / velocity));
 
-		auto turn_angle = atan2(-sidemove, forwardmove);
-		viewangles.y += turn_angle * M_RADPI;
+		if (CheckIfNonValidNumber(tmp) || tmp > 90.0f)
+			return 90.0f;
+
+		else if (tmp < 0.0f)
+			return 0.0f;
+		else
+			return tmp;
+	};
+
+	if (g::pLocal->GetMoveType() != MOVETYPE_WALK)
+		return;
+
+	vecVelocity.z = 0.0f;
+
+	auto flForwardMove = pCmd->flForwardMove;
+	auto flSidemove = pCmd->flSideMove;
+
+	if (vecVelocity.Length2D() < 15.0f && !flForwardMove && !flSidemove)
+		return;
+
+	static auto bFlip = false;
+	bFlip = !bFlip;
+
+	auto flTurnDirectionModifier = bFlip ? 1.0f : -1.0f;
+	auto vecViewAngles = pCmd->angViewPoint;
+
+	if (flForwardMove || flSidemove)
+	{
+		pCmd->flForwardMove = 0.0f;
+		pCmd->flSideMove = 0.0f;
+
+		auto flTurnAngle = atan2(-flSidemove, flForwardMove);
+		vecViewAngles.y += flTurnAngle * M_RADPI;
 	}
-	else if (forwardmove) //-V550
-		m_pcmd->flForwardMove = 0.0f;
+	else if (flForwardMove) //-V550
+		pCmd->flForwardMove = 0.0f;
 
-	auto strafe_angle = M_RAD2DEG(atan(15.0f / velocity.Length2D()));
+	auto flStrafeAngle = M_RAD2DEG(atan(15.0f / vecVelocity.Length2D()));
 
-	if (strafe_angle > 90.0f)
-		strafe_angle = 90.0f;
-	else if (strafe_angle < 0.0f)
-		strafe_angle = 0.0f;
+	if (flStrafeAngle > 90.0f)
+		flStrafeAngle = 90.0f;
+	else if (flStrafeAngle < 0.0f)
+		flStrafeAngle = 0.0f;
 
-	auto temp = Vector(0.0f, viewangles.y - old_yaw, 0.0f);
-	temp.y = M::NormalizeYaw(temp.y);
+	auto vecTemp = Vector(0.0f, vecViewAngles.y - flOldYaw, 0.0f);
+	vecTemp.y = M::NormalizeYaw(vecTemp.y);
 
-	auto yaw_delta = temp.y;
-	old_yaw = viewangles.y;
+	auto flYawDelta = vecTemp.y;
+	flOldYaw = vecViewAngles.y;
 
-	auto abs_yaw_delta = fabs(yaw_delta);
+	auto flAbsYawDelta = fabs(flYawDelta);
 
-	if (abs_yaw_delta <= strafe_angle || abs_yaw_delta >= 30.0f)
+	if (flAbsYawDelta <= flStrafeAngle || flAbsYawDelta >= 15.0f)
 	{
-		Vector velocity_angles;
-		M::VectorAngles(velocity, velocity_angles);
+		Vector vecVelocityAngles;
+		M::VectorAngles(vecVelocity, vecVelocityAngles);
 
-		temp = Vector(0.0f, viewangles.y - velocity_angles.y, 0.0f);
-		temp.y = M::NormalizeYaw(temp.y);
+		vecTemp = Vector(0.0f, vecViewAngles.y - vecVelocityAngles.y, 0.0f);
+		vecTemp.y = M::NormalizeYaw(vecTemp.y);
 
-		auto velocityangle_yawdelta = temp.y;
-		auto velocity_degree = M::GetVelocityDegree(velocity.Length2D());
+		auto flVelocityAngleYawDelta = vecTemp.y;
+		auto flVelocityDegree = flGetVelocityDegree(vecVelocity.Length2D());
 
-		if (velocityangle_yawdelta <= velocity_degree || velocity.Length2D() <= 15.0f)
+		if (flVelocityAngleYawDelta <= flVelocityDegree || vecVelocity.Length2D() <= 15.0f)
 		{
-			if (-velocity_degree <= velocityangle_yawdelta || velocity.Length2D() <= 15.0f)
+			if (-flVelocityDegree <= flVelocityAngleYawDelta || vecVelocity.Length2D() <= 15.0f)
 			{
-				viewangles.y += strafe_angle * turn_direction_modifier;
-				m_pcmd->flSideMove = side_speed * turn_direction_modifier;
+				vecViewAngles.y += flStrafeAngle * flTurnDirectionModifier;
+				pCmd->flSideMove = flSideSpeed * flTurnDirectionModifier;
 			}
 			else
 			{
-				viewangles.y = velocity_angles.y - velocity_degree;
-				m_pcmd->flSideMove = side_speed;
+				vecViewAngles.y = vecVelocityAngles.y - flVelocityDegree;
+				pCmd->flSideMove = flSideSpeed;
 			}
 		}
 		else
 		{
-			viewangles.y = velocity_angles.y + velocity_degree;
-			m_pcmd->flSideMove = -side_speed;
+			vecViewAngles.y = vecVelocityAngles.y + flVelocityDegree;
+			pCmd->flSideMove = -flSideSpeed;
 		}
 	}
-	else if (yaw_delta > 0.0f)
-		m_pcmd->flSideMove = -side_speed;
-	else if (yaw_delta < 0.0f)
-		m_pcmd->flSideMove = side_speed;
+	else if (flYawDelta > 0.0f)
+		pCmd->flSideMove = -flSideSpeed;
+	else if (flYawDelta < 0.0f)
+		pCmd->flSideMove = flSideSpeed;
 
-	auto move = Vector(m_pcmd->flForwardMove, m_pcmd->flSideMove, 0.0f);
-	auto speed = move.Length();
+	auto vecMove = Vector(pCmd->flForwardMove, pCmd->flSideMove, 0.0f);
+	auto flSpeed = vecMove.Length();
 
 	Vector angles_move;
-	M::VectorAngles(move, angles_move);
+	M::VectorAngles(vecMove, angles_move);
 
-	auto normalized_x = fmod(vecView.x + 180.0f, 360.0f) - 180.0f;
-	auto normalized_y = fmod(vecView.y + 180.0f, 360.0f) - 180.0f;
+	auto flNormalizedX = fmod(pCmd->angViewPoint.x + 180.0f, 360.0f) - 180.0f;
+	auto flNormalizedY = fmod(pCmd->angViewPoint.y + 180.0f, 360.0f) - 180.0f;
 
-	auto yaw = M_DEG2RAD(normalized_y - viewangles.y + angles_move.y);
+	auto flYaw = M_DEG2RAD(flNormalizedY - vecViewAngles.y + angles_move.y);
 
-	if (normalized_x >= 90.0f || normalized_x <= -90.0f || m_pcmd->angViewPoint.x >= 90.0f && m_pcmd->angViewPoint.x <= 200.0f || m_pcmd->angViewPoint.x <= -90.0f && m_pcmd->angViewPoint.x <= 200.0f)
-		m_pcmd->flForwardMove = -cos(yaw) * speed;
+	if (flNormalizedX >= 90.0f || flNormalizedX <= -90.0f || pCmd->angViewPoint.x >= 90.0f && pCmd->angViewPoint.x <= 200.0f || pCmd->angViewPoint.x <= -90.0f && pCmd->angViewPoint.x <= 200.0f) //-V648
+		pCmd->flForwardMove = -cos(flYaw) * flSpeed;
 	else
-		m_pcmd->flForwardMove = cos(yaw) * speed;
+		pCmd->flForwardMove = cos(flYaw) * flSpeed;
 
-	m_pcmd->flSideMove = sin(yaw) * speed;
+	pCmd->flSideMove = sin(flYaw) * flSpeed;
 }
 
 void misc::MovementFix(CUserCmd* pCmd, Vector& oldang) {

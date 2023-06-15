@@ -27,10 +27,10 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 		misc::ServerHitboxes();
 
-		//if (cfg::misc::removals[1])
-		//	pLocal->GetFlashMaxAlpha() = 0.f;
-		//else
-		//	pLocal->GetFlashMaxAlpha() = 255.f;
+		if (cfg::misc::removals[1])
+			pLocal->GetFlashMaxAlpha() = 0.f;
+		else
+			pLocal->GetFlashMaxAlpha() = 255.f;
 
 		misc::BulletImpactFrameStage(pLocal);
 		break;

@@ -222,7 +222,7 @@ void Animations::UpdateClientSideAnimations(CBaseEntity* pEntity, Lagcompensatio
 	g::bAllowAnimations[pEntity->EntIndex()] = false;
 
 	pEntity->IsClientSideAnimation() = bClientSideAnimation;
-	pEntity->InvalidatePhysicsRecursive(ANIMATION_CHANGED | ANGLES_CHANGED | POSITION_CHANGED);
+	//pEntity->InvalidatePhysicsRecursive(ANIMATION_CHANGED | ANGLES_CHANGED | POSITION_CHANGED | SEQUENCE_CHANGED | BOUNDS_CHANGED);
 
 	//// don't let the server update animation state.
 	//FixAnimatingInSameFrame(pEntity);
@@ -361,6 +361,10 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (pLog->pEntity->IsDormant() || pLog->pRecord.front().bDormant)
 		return false;
 
+	for (auto& current : pLog->pCachedMatrix)
+		if (!current.GetOrigin().IsValid())
+			return false;
+
 	std::memcpy(pMatrix, pLog->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
 
 	return true;
@@ -371,12 +375,16 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++)
 	{
 		CBaseEntity* pPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));
-		if (!pPlayer || !pPlayer->IsPlayer() || pPlayer == g::pLocal || pPlayer->IsDormant() || !pPlayer->IsAlive() || pPlayer->GetTeam() == g::pLocal->GetTeam())
+		if (!pPlayer || !pPlayer->IsPlayer() || pPlayer == g::pLocal || pPlayer->IsDormant() || !pPlayer->IsAlive())
 			continue;
 
 		auto pPlayerData = &lagcomp.GetLog(nPlayerID);
 		if (!pPlayerData || pPlayerData->pEntity != pPlayer || !pPlayerData->pCachedMatrix.data())
 			continue;
+
+		for (auto& current : pPlayerData->pCachedMatrix)
+			if (!current.GetOrigin().IsValid())
+				continue;
 
 		// get bone count
 		int nBoneCount = pPlayer->GetCachedBoneData().Count();
