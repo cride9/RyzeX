@@ -329,6 +329,7 @@
     <ClInclude Include="Core\Features\Visuals\chams.h" />
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
     <ClInclude Include="Core\globals.h" />
+    <ClInclude Include="Core\xorstr.h" />
     <ClInclude Include="Core\Hooks\hooks.h" />
     <ClInclude Include="Core\Hooks\Proxies\ProxyHooks.h" />
     <ClInclude Include="Core\hungarians.h" />

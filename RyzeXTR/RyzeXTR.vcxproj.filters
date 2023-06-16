@@ -205,5 +205,6 @@
     <ClInclude Include="Core\SDK\PatternFinder.h" />
     <ClInclude Include="Core\SDK\X86RetSpoof.h" />
     <ClInclude Include="Core\Features\Misc\Playerlist.h" />
+    <ClInclude Include="Core\xorstr.h" />
   </ItemGroup>
 </Project>
