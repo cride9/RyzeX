@@ -93,6 +93,9 @@ void h::HookNetChannel(INetChannel* pNetChannel) {
 		if (!detour::sendNetMsg.IsHooked())
 			h::HookTable(detour::sendNetMsg, pNetChannel, table::sendNetMsg, &h::hkSendNetMsg);
 
+		if ( !detour::voiceData.IsHooked( ) )
+			HookSignature( detour::voiceData, "engine.dll", "55 8B EC 83 E4 F8 A1 ? ? ? ? 81 EC 84 01 00", &hkSVCMsg_VoiceData );
+
 		//if ( !detour::setChoked.IsHooked( ) )
 		//	h::HookTable(detour::setChoked, pNetChannel, table::setChoked, &h::hkSetChoked);
 

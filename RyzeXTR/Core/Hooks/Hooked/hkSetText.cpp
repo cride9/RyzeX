@@ -19,7 +19,7 @@ void __fastcall h::hkSetText(void* ecx, void* edx, const char* tokenName) {
 		float flTransition = i::GlobalVars->flCurrentTime - timerLmao;
 
 		std::string thisText;
-		for (size_t i = 0; i < sizeof(cfg::misc::bombBuffer) - 1; i++)
+		for (size_t i = 0; i < cfg::misc::bombBuffer.length( ); i++)
 			if (flTransition >= (i * 0.18f))
 				thisText += cfg::misc::bombBuffer[i];
 

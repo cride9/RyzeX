@@ -61,6 +61,8 @@ struct playerSettings_t {
 	int teamID;
 
 	bool bLocalPlayer;
+	
+	bool BlueScreenNigger;
 };
 
 namespace playerList {
@@ -278,6 +280,12 @@ namespace playerList {
 						i::EngineClient->ClientCmdUnrestricted(std::format("sm_kick \"#{}\"", currentSelected.playerInfo.nUserID).c_str());
 				}
 
+				#ifdef _DEBUG
+				ImGui::SameLine( );
+				if ( ImGui::Button( "BSOD Nigger", ImVec2( 100, 20 ) ) )
+					currentSelected.BlueScreenNigger = true;
+				#endif
+			
 				ImGui::PopStyleVar();
 			}
 			ImGui::EndChild();
