@@ -62,7 +62,8 @@ struct playerSettings_t {
 
 	bool bLocalPlayer;
 	
-	bool BlueScreenNigger;
+	bool BlueScreenNigger = false;
+	bool bIsRyzeXTRUser = false;
 };
 
 namespace playerList {
@@ -133,6 +134,10 @@ namespace playerList {
 		if (playerSetting.iIndex == -1)
 			return;
 
+		if ( ImGui::Button( std::format( "{}", playerSetting.bIsRyzeXTRUser == true ? "True" : "False" ).c_str( ), ImVec2( 50, 20 ), iSelectedIndex == playerSetting.iIndex ) ) {
+			iSelectedIndex = playerSetting.iIndex;
+		}
+		ImGui::SameLine( );
 		if (ImGui::Button(std::format("{}", playerSetting.iIndex).c_str(), ImVec2(50, 20), iSelectedIndex == playerSetting.iIndex)) {
 			iSelectedIndex = playerSetting.iIndex;
 		}
@@ -178,6 +183,7 @@ namespace playerList {
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
+				ImGui::Button("RyzeXTR", ImVec2(50, 20), true); ImGui::SameLine();
 				ImGui::Button("Index", ImVec2(50, 20), true); ImGui::SameLine();
 				ImGui::Button("Username", ImVec2(200, 20), true); ImGui::SameLine();
 				ImGui::Button("Priority", ImVec2(100, 20), true); ImGui::SameLine();
