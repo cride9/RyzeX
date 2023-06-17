@@ -93,6 +93,8 @@
     <ClCompile Include="Core\Hooks\Proxies\ProxyHooks.cpp" />
     <ClCompile Include="Dependecies\BASS\dll.cpp" />
     <ClCompile Include="Dependecies\BASS\dll_image.cpp" />
+    <ClCompile Include="Core\Lua\Lua.cpp" />
+    <ClCompile Include="Core\SDK\Memory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
@@ -205,6 +207,13 @@
     <ClInclude Include="Core\SDK\PatternFinder.h" />
     <ClInclude Include="Core\SDK\X86RetSpoof.h" />
     <ClInclude Include="Core\Features\Misc\Playerlist.h" />
+<<<<<<< Updated upstream
     <ClInclude Include="Core\xorstr.h" />
+=======
+    <ClInclude Include="Core\Lua\Lua.h" />
+    <ClInclude Include="Core\SDK\Memory.h" />
+    <ClInclude Include="Core\SDK\win.h" />
+    <ClInclude Include="Core\SDK\crt.h" />
+>>>>>>> Stashed changes
   </ItemGroup>
 </Project>

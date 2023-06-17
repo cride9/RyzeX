@@ -150,7 +150,7 @@ void antiaim::Standing(CUserCmd* pCmd, bool& bSendPacket) {
 				dontApply = true;
 				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[STANDING] * inverter);
 				iChangeOnTick = 0;
-				antiaim::shotInvert = !antiaim::shotInvert;
+				//antiaim::shotInvert = !antiaim::shotInvert;
 			}
 		}
 
@@ -304,7 +304,7 @@ void antiaim::Moving(CUserCmd* pCmd, bool& bSendPacket) {
 				dontApply = true;
 				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[MOVING] * inverter);
 				iChangeOnTick = 0;
-				antiaim::shotInvert = !antiaim::shotInvert;
+				//antiaim::shotInvert = !antiaim::shotInvert;
 			}
 		}
 
@@ -459,7 +459,7 @@ void antiaim::InAir(CUserCmd* pCmd, bool& bSendPacket) {
 				dontApply = true;
 				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[INAIR] * inverter);
 				iChangeOnTick = 0;
-				antiaim::shotInvert = !antiaim::shotInvert;
+				//antiaim::shotInvert = !antiaim::shotInvert;
 			}
 		}
 

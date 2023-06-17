@@ -179,6 +179,7 @@ public:
 
 		bool bLeftDormancy{};
 
+		bool bSafeRecord;
 		int iLastUpdateTick;
 		int iLastValid;
 		int iFirstValid = 32;

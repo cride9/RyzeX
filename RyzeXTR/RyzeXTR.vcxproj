@@ -283,10 +283,12 @@
     <ClCompile Include="Core\Interface\Classes\CKeyValues.cpp" />
     <ClCompile Include="Core\Interface\interfaces.cpp" />
     <ClCompile Include="Core\Interface\Interfaces\entityListener.cpp" />
+    <ClCompile Include="Core\Lua\Lua.cpp" />
     <ClCompile Include="Core\SDK\CRC32.cpp" />
     <ClCompile Include="Core\SDK\Entity.cpp" />
     <ClCompile Include="Core\SDK\InputSystem.cpp" />
     <ClCompile Include="Core\SDK\math.cpp" />
+    <ClCompile Include="Core\SDK\Memory.cpp" />
     <ClCompile Include="Core\SDK\Menu\config.cpp" />
     <ClCompile Include="Core\SDK\Menu\gui.cpp" />
     <ClCompile Include="Core\SDK\Menu\menuRender.cpp" />
@@ -371,8 +373,10 @@
     <ClInclude Include="Core\Interface\Interfaces\IVModelRender.h" />
     <ClInclude Include="Core\Interface\interfaces.h" />
     <ClInclude Include="Core\Interface\Interfaces\IWeaponSystem.h" />
+    <ClInclude Include="Core\Lua\Lua.h" />
     <ClInclude Include="Core\memeSounds.h" />
     <ClInclude Include="Core\SDK\CRC32.h" />
+    <ClInclude Include="Core\SDK\crt.h" />
     <ClInclude Include="Core\SDK\CUserCmd.h" />
     <ClInclude Include="Core\SDK\datamap.h" />
     <ClInclude Include="Core\SDK\DataTyes\BitVec.h" />
@@ -386,6 +390,7 @@
     <ClInclude Include="Core\SDK\Enums.h" />
     <ClInclude Include="Core\SDK\InputSystem.h" />
     <ClInclude Include="Core\SDK\math.h" />
+    <ClInclude Include="Core\SDK\Memory.h" />
     <ClInclude Include="Core\SDK\Menu\config.h" />
     <ClInclude Include="Core\SDK\Menu\fontBytes.h" />
     <ClInclude Include="Core\SDK\Menu\gui.h" />
@@ -396,6 +401,7 @@
     <ClInclude Include="Core\SDK\pe.h" />
     <ClInclude Include="Core\SDK\RayTracer rebuilt\CRayTrace.h" />
     <ClInclude Include="Core\SDK\WavParser.h" />
+    <ClInclude Include="Core\SDK\win.h" />
     <ClInclude Include="Core\SDK\X86RetSpoof.h" />
     <ClInclude Include="Core\utilities.h" />
     <ClInclude Include="Dependecies\BASS\API.h" />

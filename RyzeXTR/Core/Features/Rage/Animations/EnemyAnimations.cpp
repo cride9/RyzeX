@@ -375,7 +375,7 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++)
 	{
 		CBaseEntity* pPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));
-		if (!pPlayer || !pPlayer->IsPlayer() || pPlayer == g::pLocal || pPlayer->IsDormant() || !pPlayer->IsAlive())
+		if (!pPlayer || !pPlayer->IsPlayer() || pPlayer == g::pLocal || pPlayer->IsDormant() || !pPlayer->IsAlive() || pPlayer->GetTeam() == g::pLocal->GetTeam())
 			continue;
 
 		auto pPlayerData = &lagcomp.GetLog(nPlayerID);
@@ -410,7 +410,10 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 	if (!pRecord || pRecord->pEntity != pEnt)
 		return;	
 
-	static Vector vecLastOrigin[65];
+	static std::array<Vector, 65> vecLastOrigin = {Vector(0, 0, 0)};
+	if (vecLastOrigin[pEnt->EntIndex()] == Vector(0, 0, 0))
+		vecLastOrigin[pEnt->EntIndex()] = pEnt->GetAbsOrigin();
+
 	Vector vecOriginDelta = pEnt->GetAbsOrigin() - vecLastOrigin[pEnt->EntIndex()];
 
 	for (auto& Matrix : pRecord->pCachedMatrix)

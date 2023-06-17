@@ -1175,7 +1175,7 @@ void menu::Skintab() noexcept {
 //            ImGui::SetTooltip("test tooltip");
 //
 //		ImGui::Checkbox("Gather AI information ##itsnot", &cfg::debugSwitch2);
-//		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 1000);
+//		ImGui::SliderFloat("Debug slider speed", &cfg::debugSlider, 0, 1000);
 //    }
 //    ImGui::EndChild();
 //#endif

@@ -11,7 +11,7 @@ namespace cfg {
 	inline int configID = -1;
 
 	inline bool debugSwitch = false;
-	inline int debugSlider = 1;
+	inline float debugSlider = 1;
 	inline bool debugSwitch2 = false;
 
 	inline int m_iKeyStates[ 256 ] = { 0 };

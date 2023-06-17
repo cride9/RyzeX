@@ -57,6 +57,7 @@ void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity, bool Backup)
 	pEntity->GetVecAbsVelocity() = Backup ? vecAbsVelocity : vecVelocity;
 	pEntity->GetVecOrigin() = vecOrigin;
 	pEntity->SetAbsOrigin(Backup ? vecAbsOrigin : vecOrigin);
+	ApplyMatrix(pEntity, RESOLVE);
 }
 
 void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity)
@@ -96,7 +97,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		auto pLog = &pPlayerLogs[i];
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || /*pEntity->GetTeam() == g::pLocal->GetTeam() ||*/ pEntity == g::pLocal) {
+		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || pEntity->GetTeam() == g::pLocal->GetTeam() || pEntity == g::pLocal) {
 			anims.missedShots[i] = 0;
 			pLog->iLastValid = 0;
 			pLog->iFirstValid = 32;
@@ -196,13 +197,19 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 		//FilterRecords();
 		pPlayerLogs[i].iFirstValid = 32;
+		pPlayerLogs[i].bSafeRecord = false;
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
-			if (pLog->pRecord.at(j).bValid = lagcomp.IsValidRecord(pLog->pRecord.at(j).flSimulationTime))
+			auto& pCurrentRecord = pLog->pRecord.at(j);
+
+			if (pCurrentRecord.bValid = lagcomp.IsValidRecord(pCurrentRecord.flSimulationTime))
 				pPlayerLogs[i].iLastValid = j;
 
-			if (pLog->pRecord.at(j).bValid && pPlayerLogs[i].iFirstValid > j)
+			if (pCurrentRecord.bValid && pPlayerLogs[i].iFirstValid > j)
 				pPlayerLogs[i].iFirstValid = j;
+
+			if (pCurrentRecord.bValid && pCurrentRecord.bSafeResolve)
+				pPlayerLogs[i].bSafeRecord = true;
 		}
 	}
 }
@@ -434,9 +441,10 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 		return false;
 
 	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
+	constexpr float flMagicNumber = 0.00075f;
 
-	//float m_flCorrect = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) + i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_OUTGOING) /*+ GetClientInterpAmount()*/;
-	//m_flCorrect = std::clamp(m_flCorrect, 0.f, sv_maxunlag->GetFloat());
+	if (cfg::misc::fakePing && cfg::misc::fakePingFactor)
+		flRange += min(cfg::misc::fakePingFactor, 199) * flMagicNumber;
 
 	return (i::GlobalVars->flCurrentTime - mflSimulationTime) < flRange;
 }
@@ -491,6 +499,9 @@ void Lagcompensation::AddLatencyToNetChannel(INetChannel* pNetChannel, float flL
 
 void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType iType) {
 
+	if (!pMatricies[iType]->GetOrigin().IsValid())
+		return;
+	
 	switch (iType)
 	{
 	case VISUAL: pEntity->SetBoneCache(pMatricies[VISUAL]);
@@ -506,8 +517,10 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 	default:
 		break;
 	}
-	pEntity->SetCollisionBounds(vecMins, vecMaxs);
-	return pEntity->InvalidateBoneCache();
+
+	//if (vecMins.IsValid() && vecMaxs.IsValid())
+	//	pEntity->SetCollisionBounds(vecMins, vecMaxs);
+	//return pEntity->InvalidateBoneCache();
 }
 
 void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
