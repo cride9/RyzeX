@@ -1182,6 +1182,7 @@ void menu::Skintab() noexcept {
 	using namespace cfg::skin;
 	ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove);
 	{
+		//ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 16);
 		using namespace beforeIfuckUpEverything;
 		ImGui::Checkbox("Enable", &bEnableSkinChagner);
 		ImGui::Checkbox("Filter by weapon", &bFilterByWeapon);

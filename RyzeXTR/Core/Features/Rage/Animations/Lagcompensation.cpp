@@ -1,6 +1,8 @@
 #include "Lagcompensation.h"
 #include "EnemyAnimations.h"
 #include "../../Networking/networking.h"
+#include "../../../SDK/InputSystem.h"
+#include "../exploits.h"
 
 Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 {
@@ -188,7 +190,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 			pRecord.bFirstAfterDormant = true;
 
 		pLog->pRecord.push_front(pRecord);
-		while (pLog->pRecord.size() > 32)
+		while (pLog->pRecord.size() > 64)
 			pLog->pRecord.pop_back();
 
 		anims.RebuildEnemyAnimations(pEntity, &pLog->pRecord.front(), pLog);
@@ -196,7 +198,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		pLog->bLeftDormancy = false;
 
 		//FilterRecords();
-		pPlayerLogs[i].iFirstValid = 32;
+		pPlayerLogs[i].iFirstValid = 64;
 		pPlayerLogs[i].bSafeRecord = false;
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
@@ -436,6 +438,8 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	if (!i::EngineClient->GetNetChannelInfo())
 		return false;
 
+	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
+
 	/* Lagcomp breaking = invalid */
 	if ((i::GlobalVars->flCurrentTime - mflSimulationTime) < 0.f)
 		return false;
@@ -443,8 +447,13 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
 	constexpr float flMagicNumber = 0.00075f;
 
-	if (cfg::misc::fakePing && cfg::misc::fakePingFactor)
-		flRange += min(cfg::misc::fakePingFactor, 199) * flMagicNumber;
+	if (cfg::misc::fakePing) {
+		float flIncoming = NetChannelInfo->GetLatency(FLOW_INCOMING) * 1000.f;
+		flRange += min(flIncoming, 199) * flMagicNumber;
+	}
+
+	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::bCharged)
+		flRange += TICKS_TO_TIME(15);
 
 	return (i::GlobalVars->flCurrentTime - mflSimulationTime) < flRange;
 }

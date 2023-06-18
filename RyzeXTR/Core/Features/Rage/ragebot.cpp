@@ -135,6 +135,9 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 	static std::array<int, 4> arrHitboxChecks = { HITBOX_HEAD, HITBOX_STOMACH, HITBOX_LEFT_FOOT, HITBOX_RIGHT_FOOT };
 	static std::vector<std::pair<CBaseEntity*, int>> vecIndexes = {};
 	static std::vector<Vector> multiPointed = { Vector(0, 0, 0) };
+	float flMinDmg = ConfigMinimumDamage(pWeapon);
+	if (IPT::HandleInput(cfg::rage::overrideBind))
+		flMinDmg = ConfigOverrideDamage(pWeapon);
 
 	vecIndexes.clear();
 
@@ -142,7 +145,7 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 	int iAppliedRecord = 0;
 
 	Trace_t traceData;
-	CTraceFilter traceFilter(g::pLocal);
+	CTraceFilter traceFilter(g::pLocal, TRACE_EVERYTHING_FILTER_PROPS);
 
 	//matrix3x4_t pBackupMatrix[128];
 	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
@@ -159,10 +162,21 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 		if (pEntity != pEntityByIndex || !pLog || !pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity() || pEntity->GetTeam() == g::pLocal->GetTeam() || pLog->pRecord.empty())
 			continue;
 
-		if (pLog->iLastValid == 0) {
+		for (size_t j = 0; j <= pLog->iLastValid; j++) {
 
-			auto pCurrentRecord = &pLog->pRecord.front();
+			Lagcompensation::LagRecord_t* pCurrentRecord = nullptr;
+			try {
+				pCurrentRecord = &pLog->pRecord.at(j);
+			}
+			catch (std::out_of_range) {
+				util::LogConsole("Picked invalid record!\n");
+				return std::make_pair(nullptr, 0);
+			}
 
+			if (!pCurrentRecord)
+				continue;
+
+			pCurrentRecord->Apply(pEntity, false);
 			for (int& iHitbox : arrHitboxChecks) {
 
 				Vector vecHitboxPosition = pEntity->GetHitboxPosition(iHitbox, pCurrentRecord->pMatricies[RESOLVE], flRadius);
@@ -182,88 +196,12 @@ std::pair<CBaseEntity*, int> __fastcall CRageBot::SelectTargetIndex(CBaseCombatW
 
 				float flDamage = autowall.GetDamage(g::pLocal, vecEyePosition, vecHitboxPosition, pWeapon);
 
-				if (flDamage >= ConfigMinimumDamage(pWeapon) || flDamage > pEntity->GetHealth() + 15) {
+				if (flDamage >= flMinDmg || flDamage > pEntity->GetHealth() + 15) {
 					if (bPriority)
 						return std::make_pair(pEntity, iAppliedRecord);
 					vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
 					bAdded = true;
 					break;
-				}
-			}
-		}
-		else {
-			if (pLog->bSafeRecord) {
-
-				for (size_t j = 0; j < pLog->iLastValid; j++) {
-
-					auto pCurrentRecord = &pLog->pRecord.at(j);
-					if (!pCurrentRecord->bSafeResolve) 
-						continue;
-					
-					pCurrentRecord->Apply(pEntity, false);
-					for (int& iHitbox : arrHitboxChecks) {
-
-						Vector vecHitboxPosition = pEntity->GetHitboxPosition(iHitbox, pCurrentRecord->pMatricies[RESOLVE], flRadius);
-						multiPointed = CreatePoints(pCurrentRecord->pEntity, g::pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, true);
-						for (Vector& vecPoint : multiPointed)
-						{
-							i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecPoint), MASK_SHOT, &traceFilter, &traceData);
-							if (traceData.pHitEntity != nullptr) {
-								if (bPriority)
-									return std::make_pair(pEntity, iAppliedRecord);
-								vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
-								bAdded = true;
-							}
-						}
-						if (bAdded)
-							break;
-
-						float flDamage = autowall.GetDamage(g::pLocal, vecEyePosition, vecHitboxPosition, pWeapon);
-
-						if (flDamage >= ConfigMinimumDamage(pWeapon) || flDamage > pEntity->GetHealth() + 15) {
-							if (bPriority)
-								return std::make_pair(pEntity, iAppliedRecord);
-							vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
-							bAdded = true;
-							break;
-						}
-					}
-				}
-			}
-			for (size_t j = 0; j < pLog->iLastValid; j++) {
-
-				auto pCurrentRecord = &pLog->pRecord.at(j);
-
-				if (!pCurrentRecord)
-					continue;
-
-				pCurrentRecord->Apply(pEntity, false);
-				for (int& iHitbox : arrHitboxChecks) {
-
-					Vector vecHitboxPosition = pEntity->GetHitboxPosition(iHitbox, pCurrentRecord->pMatricies[RESOLVE], flRadius);
-					multiPointed = CreatePoints(pCurrentRecord->pEntity, g::pLocal, pWeapon, vecHitboxPosition, flRadius, iHitbox, true);
-					for (Vector& vecPoint : multiPointed)
-					{
-						i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecPoint), MASK_SHOT, &traceFilter, &traceData);
-						if (traceData.pHitEntity != nullptr) {
-							if (bPriority)
-								return std::make_pair(pEntity, iAppliedRecord); 
-							vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
-							bAdded = true;
-						}
-					}
-					if (bAdded)
-						break;
-
-					float flDamage = autowall.GetDamage(g::pLocal, vecEyePosition, vecHitboxPosition, pWeapon);
-
-					if (flDamage >= ConfigMinimumDamage(pWeapon) || flDamage > pEntity->GetHealth() + 15) {
-						if (bPriority)
-							return std::make_pair(pEntity, iAppliedRecord);
-						vecIndexes.push_back(std::make_pair(pEntity, iAppliedRecord));
-						bAdded = true;
-						break;
-					}
 				}
 			}
 		}
@@ -301,6 +239,8 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	int iSafePoint = 0;
 	float flRadius = 0, flDamage = 0.f;
 	auto pEntity = SelectTargetIndex(pWeapon, vecEyePosition);
+	if (IPT::HandleInput(cfg::rage::overrideBind))
+		iMinimumDamage = ConfigOverrideDamage(pWeapon);
 
 	if (!pEntity.first)
 		return Vector(0, 0, 0);
@@ -1052,8 +992,8 @@ Vector CRageBot::InterpolateLocalEyePosition( Vector vecEyePosition, int iInterp
 
 int CRageBot::CalculateTickCount( float flSimulationTime ) {
 
-	if (IPT::HandleInput(cfg::rage::doubletapkey) && cfg::rage::doubletap && exploits::bCharged)
-		return g::pCmd->iTickCount;
+	//if (IPT::HandleInput(cfg::rage::doubletapkey) && cfg::rage::doubletap && exploits::bCharged)
+	//	return g::pCmd->iTickCount;
 
 	return lagcomp.FixTickCount(flSimulationTime);
 

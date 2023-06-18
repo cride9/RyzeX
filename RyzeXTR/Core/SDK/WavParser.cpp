@@ -5,6 +5,9 @@ void CWavParser::WavHeader_t::ParseWavHeader( unsigned char* wavData )
 	unsigned char buffer4[ 4 ];
 	unsigned char buffer2[ 2 ];
 
+	if (!wavData)
+		return;
+
 	unsigned char* walker = wavData;
 
 	// Retreive riff

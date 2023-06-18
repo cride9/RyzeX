@@ -8,6 +8,7 @@
 #include "../Interface/Classes/CModelInfo.h"
 #include "Animstate.h"
 #include <optional>
+#include "../XorStr.h"
 
 enum InvalidatePhysicsBits_t
 {
@@ -526,16 +527,7 @@ class CBaseEntity : public IClientEntity{
 
 public:
 
-	ADD_OFFSET(GetStudioHdr, CStudioHdr*, 0x2950);
-	ADD_OFFSET(GetOcclusionFrameCount, int, 0xA30);
-	ADD_OFFSET(GetOcclusionFlags, int, 0xA28);
-	ADD_OFFSET(GetRecentModelBoneCounter, unsigned long, 0x2690);
-	ADD_OFFSET(GetLastSetupBonesTime, float, 0x2924);
-	ADD_OFFSET(GetClientEffects, int, 0x68);
-	ADD_OFFSET(GetLastSkipFrameCount, int, 0xA68);
-	ADD_OFFSET(MaintainSequenceTransition, bool, 0x9F0);
-	ADD_OFFSET(InverseKinematics, LPVOID, 0x2670);
-	ADD_OFFSET(GeFinalPredictedTick, int, 0x3434);
+
 	//ADD_POFFSET(AnimState, CAnimState, 0x9960); You are fr a handicapped fuck, just fucking netvar it
 	//ADD_OFFSET(GetEFlags, int, 0xE8);
 
@@ -546,6 +538,7 @@ public:
 	ADD_NETVAR(GetViewOffset, Vector, "CBasePlayer->m_vecViewOffset[0]");
 	ADD_NETVAR(GetFriction, float, "CBasePlayer->m_flFriction");
 	ADD_NETVAR(GetTickBase, int, "CBasePlayer->m_nTickBase");
+	ADD_NETVAROFFSET(GeFinalPredictedTick, int, "CBasePlayer->m_nTickBase", 0x4);
 	ADD_PNETVAR(GetNextThink, int, "CBasePlayer->m_nNextThinkTick");
 	ADD_NETVAR(GetVelocity, Vector, "CBasePlayer->m_vecVelocity[0]");
 	//ADD_NETVAR(GetGroundEntity, CBaseHandle, "CBasePlayer->m_hGroundEntity");
@@ -710,6 +703,11 @@ public:
 		memcpy(this->GetCachedBoneData().Base(), matrix, this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
 	}
 
+	bool IsBoneCacheValid() {
+
+		return (this->GetRecentModelBoneCounter() != GetModelBoneCounter());
+	}
+
 	void SetupBones_AttachmentHelper()
 	{// 55 8B EC 83 EC 48 53 8B 5D 08 89 4D F4
 		
@@ -857,6 +855,18 @@ public:
 		return *reinterpret_cast<std::array<int, 64>*>(uint32_t(this) + offset);
 	}
 	//ADD_PNETVAR(GetWeaponsHandle, CBaseHandle, "CBaseCombatCharacter->m_hMyWeapons");
+
+	ADD_OFFSET(GetStudioHdr, CStudioHdr*, 0x2950);
+	ADD_OFFSET(GetRecentModelBoneCounter, unsigned long, 0x2690);
+	ADD_OFFSET(GetLastSetupBonesTime, float, 0x2924);
+	//ADD_OFFSET(GeFinalPredictedTick, int, 0x3434);
+	ADD_OFFSET(GetOcclusionFrameCount, int, 0xA30);
+	ADD_OFFSET(GetOcclusionFlags, int, 0xA28);
+	ADD_OFFSET(GetClientEffects, int, 0x68);
+	ADD_OFFSET(GetLastSkipFrameCount, int, 0xA68);
+	ADD_OFFSET(MaintainSequenceTransition, bool, 0x9F0);
+	ADD_OFFSET(InverseKinematics, LPVOID, 0x2670);
+
 	ADD_PNETVAR(GetWearablesHandle, CBaseHandle, "CBaseCombatCharacter->m_hMyWearables");
 
 	ADD_NETVAR(GetSequence, int, "CBaseAnimating->m_nSequence");
@@ -865,13 +875,16 @@ public:
 	ADD_NETVAR(IsClientSideAnimation, bool, "CBaseAnimating->m_bClientSideAnimation");
 	ADD_NETVAR(GetCycle, float, "CBaseAnimating->m_flCycle");
 
-	ADD_NETVAROFFSET(GetCustomBlendingRuleMask, int, "DT_BaseAnimating->m_nBody", 0x4);
-	ADD_NETVAROFFSET(GetAnimationLODFlags, unsigned int, "DT_BaseAnimating->m_nBody", 0x8);
-	ADD_NETVAROFFSET(GetOldAnimationLODFlags, unsigned int, "DT_BaseAnimating->m_nBody", 0xC);
-	ADD_NETVAROFFSET(GetComputedAnimationLODFrame, unsigned int, "DT_BaseAnimating->m_nBody", 0x10);
+	//ADD_PNETVAROFFSET(GetStudioHdr, CStudioHdr, "CBaseAnimating->m_hLightingOrigin", 0x8);
+	ADD_NETVAROFFSET(GetCustomBlendingRuleMask, int, "CBaseAnimating->m_nBody", 0x4);
+	ADD_NETVAROFFSET(GetAnimationLODFlags, unsigned int, "CBaseAnimating->m_nBody", 0x8);
+	ADD_NETVAROFFSET(GetOldAnimationLODFlags, unsigned int, "CBaseAnimating->m_nBody", 0xC);
+	ADD_NETVAROFFSET(GetComputedAnimationLODFrame, unsigned int, "CBaseAnimating->m_nBody", 0x10);
 
 	ADD_NETVAROFFSET( GetPrevBoneMask, int, "CBaseAnimating->m_nForceBone", 0x10 );
-	ADD_NETVAROFFSET( GetAccumulatedBoneMask, int, "CBaseAnimating->m_iAccumulatedBoneMask", 0x14 );
+	ADD_NETVAROFFSET( GetAccumulatedBoneMask, int, "CBaseAnimating->m_nForceBone", 0x14 );
+	//ADD_NETVAROFFSET(GetRecentModelBoneCounter, unsigned long, "CBaseAnimating->m_nForceBone", 0x4);
+	//ADD_NETVAROFFSET(GetLastSetupBonesTime, unsigned long, "CBaseAnimating->m_nForceBone", -0x20);
 
 	Vector& m_angVisualAngles()
 	{
@@ -1206,13 +1219,13 @@ public:
 	ADD_NETVAR(GetFallbackStatTrak, int, "CBaseAttributableItem->m_nFallbackStatTrak");
 	ADD_PNETVAR(GetEconItemView, CEconItemView, "CBaseAttributableItem->m_Item");
 
-	ADD_PNETVAR(GetFireDeltaX, int, "DT_Inferno->m_fireXDelta");
-	ADD_PNETVAR(GetFireDeltaY, int, "DT_Inferno->m_fireYDelta");
-	ADD_PNETVAR(GetFireDeltaZ, int, "DT_Inferno->m_fireZDelta");
+	ADD_PNETVAR(GetFireDeltaX, int, "CInferno->m_fireXDelta");
+	ADD_PNETVAR(GetFireDeltaY, int, "CInferno->m_fireYDelta");
+	ADD_PNETVAR(GetFireDeltaZ, int, "CInferno->m_fireZDelta");
 
-	ADD_PNETVAR(IsFireBurning, bool, "DT_Inferno->m_bFireIsBurning");
-	ADD_NETVAR(GetFireCount, int, "DT_Inferno->m_fireCount");
-	ADD_NETVAR(GetFireBeginTick, int, "DT_Inferno->m_nFireEffectTickBegin");
+	ADD_PNETVAR(IsFireBurning, bool, "CInferno->m_bFireIsBurning");
+	ADD_NETVAR(GetFireCount, int, "CInferno->m_fireCount");
+	ADD_NETVAR(GetFireBeginTick, int, "CInferno->m_nFireEffectTickBegin");
 
 	bool IsGrenade() {
 

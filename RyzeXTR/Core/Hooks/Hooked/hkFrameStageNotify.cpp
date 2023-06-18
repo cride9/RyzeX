@@ -7,6 +7,94 @@
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Features/Changers/wtf.h"
 
+/*
+
+void OnRenderStart()
+{
+	CMatRenderContextPtr pRenderContext( materials );
+
+	C_BaseAnimating::EnableInvalidateBoneCache( true );
+
+	::partition->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, true );
+	C_BaseEntity::SetAbsQueriesValid( false );
+
+	Rope_ResetCounters();
+
+	{
+		PREDICTION_TRACKVALUECHANGESCOPE( "interpolation" );
+		C_BaseEntity::InterpolateServerEntities();
+	}
+
+	{
+		VPROF( "OnRenderStart: dirty bone caches");
+		C_BaseAnimating::InvalidateBoneCaches();
+		C_BaseFlex::InvalidateFlexCaches();
+
+		C_BaseEntity::SetAbsQueriesValid( true );
+		C_BaseEntity::EnableAbsRecomputations( true );
+		C_BaseAnimating::PushAllowBoneAccess( true, false, "OnRenderStart->CViewRender::SetUpView" ); // pops in CViewRender::SetUpView
+
+		C_BaseEntity::MarkAimEntsDirty();
+	}
+
+	C_BaseAnimating::PopBoneAccess( "OnRenderStart->CViewRender::SetUpView" ); // pops the (true, false) bone access set in OnRenderStart
+
+	C_BaseAnimating::PushAllowBoneAccess( true, true, "CViewRender::SetUpView->OnRenderEnd" ); // pop is in OnRenderEnd()
+
+	C_BaseAnimating::UpdateClientSideAnimations();
+
+	view->OnRenderStart();
+	::partition->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, false );
+
+	ProcessOnDataChangedEvents();
+
+	g_SmokeFogOverlayAlpha = 0;
+
+	g_SmokeFogOverlayColor.Init( 0.0f, 0.0f, 0.0f );
+
+	{
+		PIXEVENT( pRenderContext, "SimulateEntities" );
+		SimulateEntities();
+	}
+
+	{
+		PIXEVENT( pRenderContext, "PhysicsSimulate" );
+		PhysicsSimulate();
+	}
+
+	C_BaseAnimating::ThreadedBoneSetup();
+
+	{
+		VPROF_("Client TempEnts", 0, VPROF_BUDGETGROUP_CLIENT_SIM, false, BUDGETFLAG_CLIENT);
+		engine->FireEvents();
+		tempents->Update();
+		beams->UpdateTempEntBeams();
+		SetBeamCreationAllowed( false );
+	}
+
+	{
+		VPROF_BUDGET( "ParticleMgr()->Simulate", VPROF_BUDGETGROUP_PARTICLE_SIMULATION );
+		ParticleMgr()->Simulate( gpGlobals->frametime );
+	}
+
+	C_BaseEntity::CalcAimEntPositions();
+
+	if ( ToolsEnabled() )
+	{
+		C_BaseEntity::ToolRecordEntities();
+	}
+
+	engine->UpdateDAndELights();
+	C_BaseEntity::AddVisibleEntities();
+
+	g_pClientLeafSystem->RecomputeRenderableLeaves();
+	g_pClientShadowMgr->ReprojectShadows();
+	g_pClientShadowMgr->AdvanceFrame();
+	g_pClientLeafSystem->DisableLeafReinsertion( true );
+}
+
+*/
+
 void hkPreFrameStageNotify(EStage curStage) {
 
 	auto pLocal = CBaseEntity::GetLocalPlayer();
@@ -25,14 +113,10 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 
+#ifdef DEBUG
 		misc::ServerHitboxes();
-
-		if (cfg::misc::removals[1])
-			pLocal->GetFlashMaxAlpha() = 0.f;
-		else
-			pLocal->GetFlashMaxAlpha() = 255.f;
-
-		misc::BulletImpactFrameStage(pLocal);
+#endif
+		//misc::BulletImpactFrameStage(pLocal);
 		break;
 
 	case FRAME_NET_UPDATE_END:
