@@ -7,6 +7,7 @@
 #include "../Rage/ragebot.h"
 #include "../../SDK/InputSystem.h"
 #include "../../SDK/Menu/gui.h"
+#include "../Misc/Playerlist.h"
 
 constexpr std::string_view szScrollProxies = R"#(
 	"texturescroll"
@@ -519,6 +520,10 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 		CBaseEntity* pEntity = nullptr;
 		for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
+
+			if (playerList::arrPlayers[i].iIndex != i)
+				continue;
+			
 			CBaseEntity* tempEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 			if (tempEntity && tempEntity->IsAlive()) {
 				if ((vecModelOrigin - tempEntity->GetVecOrigin()).Length() < 100.f) {
@@ -676,6 +681,9 @@ bool chams::DrawChamsMDL(IMatRenderContext* ctx, const DrawModelState_t& state, 
 
 			if (pEntity)
 				break;
+
+			if (playerList::arrPlayers[i].iIndex != i)
+				continue;
 
 			CBaseEntity* tempEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 			if (tempEntity && tempEntity->IsAlive()) 

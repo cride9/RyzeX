@@ -29,6 +29,7 @@ namespace visual {
 	void SkeletonEsp(CBaseEntity*, Color);
 	void DrawRadioInformation();
 	void OutOfFov(CBaseEntity*);
+	void BarrelEsp(CBaseEntity*, Color);
 	
 	void WorldEsp();
 	void DroppedWeapons(CBaseCombatWeapon*, Vector&);

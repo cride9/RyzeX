@@ -139,6 +139,12 @@ int CNetworking::GetCorrectedTickbase() {
 	return pCompressData[iLastCommandNumber % 150].nTickbase;
 }
 
+CNetvarData* CNetworking::GetRecord() {
+
+	return &pCompressData[iLastCommandNumber % 150];
+}
+
+
 void CNetworking::StartNetworking() {
 
 	data.iTickRate = (int)(1.0f / i::GlobalVars->flIntervalPerTick);

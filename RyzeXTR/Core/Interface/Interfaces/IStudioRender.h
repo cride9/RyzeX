@@ -55,13 +55,37 @@ struct DrawModelInfo_t
 };
 
 
-class IStudioRender {
+class IStudioRender : ROP::VirtualCallable_t<ROP::EngineGadget_t> {
 
 public:
 
-	void SetColorModulation(float const* arrColor) {
-		util::CallVFunc<void>(this, 27, arrColor);
+	void SetColorModulation(const float* arrColor)
+	{
+		CallVFunc<void, 27U>(this, arrColor);
 	}
+
+	void SetAlphaModulation(float flAlpha)
+	{
+		CallVFunc<void, 28U>(this, flAlpha);
+	}
+
+	void DrawModel(DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags)
+	{
+		CallVFunc<void, 29U>(this, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+	}
+
+	void ForcedMaterialOverride(IMaterial* pMaterial, EOverrideType nOverrideType = OVERRIDE_NORMAL, int nOverrides = 0)
+	{
+		CallVFunc<void, 33U>(this, pMaterial, nOverrideType, nOverrides);
+	}
+
+	bool IsForcedMaterialOverride() {
+		return CallVFunc<bool, 34U>(this);
+	}
+
+	//void SetColorModulation(float const* arrColor) {
+	//	util::CallVFunc<void>(this, 27, arrColor);
+	//}
 
 	void SetColorModulation(float const* arrColor, IMaterial* material) {
 
@@ -76,18 +100,17 @@ public:
 		}
 
 		SetColorModulation(arrColor);
-		//SetAlphaModulation(0.5f);
 	}
 
-	void SetAlphaModulation(float flAlpha) {
-		util::CallVFunc<void>(this, 28, flAlpha);
-	}
+	//void SetAlphaModulation(float flAlpha) {
+	//	util::CallVFunc<void>(this, 28, flAlpha);
+	//}
 
-	void ForcedMaterialOverride(IMaterial* pMaterial, EOverrideType nOverrideType = OVERRIDE_NORMAL, int nOverrides = 0) {
-		util::CallVFunc<void>(this, 33, pMaterial, nOverrideType, nOverrides);
-	}
+	//void ForcedMaterialOverride(IMaterial* pMaterial, EOverrideType nOverrideType = OVERRIDE_NORMAL, int nOverrides = 0) {
+	//	util::CallVFunc<void>(this, 33, pMaterial, nOverrideType, nOverrides);
+	//}
 
-	bool IsForcedMaterialOverride() {
-		return util::CallVFunc<bool>(this, 34);
-	}
+	//bool IsForcedMaterialOverride() {
+	//	return util::CallVFunc<bool>(this, 34);
+	//}
 };

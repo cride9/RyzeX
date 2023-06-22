@@ -50,92 +50,109 @@ struct PlayerInfo_t
 };
 
 // https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/public/cdll_int.h#L298
-class IVEngineClient {
+class IVEngineClient : ROP::VirtualCallable_t<ROP::EngineGadget_t> {
 
 public:
 
 	INetChannelInfo* GetNetChannelInfo() {
 
-		return util::CallVFunc<INetChannelInfo*>(this, 78);
+		return CallVFunc<INetChannelInfo*, 78U>(this);
+		//return util::CallVFunc<INetChannelInfo*>(this, 78);
 	}
 
 	int GetLocalPlayer() {
 
-		return util::CallVFunc<int>(this, 12);
+		return CallVFunc<int, 12U>(this);
+		//return util::CallVFunc<int>(this, 12);
 	}
 
 	void GetScreenSize(int& iWidth, int& iHeight) {
 
-		util::CallVFunc<void>(this, 5, std::ref(iWidth), std::ref(iHeight));
+		CallVFunc<void, 5U>(this, std::ref(iWidth), std::ref(iHeight));
+		//util::CallVFunc<void>(this, 5, std::ref(iWidth), std::ref(iHeight));
 	}
 
 	bool GetPlayerInfo(int nEntityIndex, PlayerInfo_t* pInfo) {
 
-		return util::CallVFunc<bool>(this, 8, nEntityIndex, pInfo);
+		return CallVFunc<bool, 8U>(this, nEntityIndex, pInfo);
+		//return util::CallVFunc<bool>(this, 8, nEntityIndex, pInfo);
 	}
 
 	int GetPlayerForUserID(int iUserID) {
 
-		return util::CallVFunc<int>(this, 9, iUserID);
+		return CallVFunc<int, 9U>(this, iUserID);
+		//return util::CallVFunc<int>(this, 9, iUserID);
 	}
 
 	void GetViewAngles(Vector& angView){
 
-		util::CallVFunc<void>(this, 18, std::ref(angView));
+		CallVFunc<void, 18U>(this, std::ref(angView));
+		//util::CallVFunc<void>(this, 18, std::ref(angView));
 	}
 
 	void SetViewAngles(Vector& angView){
 
-		util::CallVFunc<void>(this, 19, std::ref(angView));
+		CallVFunc<void, 19U>(this, std::ref(angView));
+		//util::CallVFunc<void>(this, 19, std::ref(angView));
 	}
 
 	int GetMaxClients() {
 
-		return util::CallVFunc<int>(this, 20);
+		return CallVFunc<int, 20U>(this);
+		//return util::CallVFunc<int>(this, 20);
 	}
 
 	bool IsInGame(){
 
-		return util::CallVFunc<bool>(this, 26);
+		return CallVFunc<bool, 26U>(this);
+		//return util::CallVFunc<bool>(this, 26);
 	}
 
 	bool IsConnected() {
 
-		return util::CallVFunc<bool>(this, 27);
+		return CallVFunc<bool, 27U>(this);
+		//return util::CallVFunc<bool>(this, 27);
 	}
 
 	void* GetBSPTreeQuery() {
 
-		return util::CallVFunc<void*>(this, 43);
+		return CallVFunc<void*, 43U>(this);
+		//return util::CallVFunc<void*>(this, 43);
 	}
 
 	void* FireEvents( )
 	{
-		return util::CallVFunc<void*>( this, 59 );
+		return CallVFunc<void*, 59U>(this);
+		//return util::CallVFunc<void*>( this, 59 );
 	}
 
 	bool IsHLTV() {
 
-		return util::CallVFunc<bool>(this, 93);
+		return CallVFunc<bool, 93U>(this);
+		//return util::CallVFunc<bool>(this, 93);
 	}
 
 	void ExecuteClientCmd(const char* szCmdString) {
 
-		util::CallVFunc<void>(this, 108, szCmdString);
+		CallVFunc<void, 108U>(this, szCmdString);
+		//util::CallVFunc<void>(this, 108, szCmdString);
 	}
 
 	void ClientCmdUnrestricted(const char* szCmdString, bool bFromConsoleOrKeybind = false) {
 
-		util::CallVFunc<void>(this, 114, szCmdString, bFromConsoleOrKeybind);
+		CallVFunc<void, 114U>(this, szCmdString, bFromConsoleOrKeybind);
+		//util::CallVFunc<void>(this, 114, szCmdString, bFromConsoleOrKeybind);
 	}
 
 	bool IsVoiceRecording() {
 
-		return util::CallVFunc<bool>(this, 224);
+		return CallVFunc<bool, 224U>(this);
+		//return util::CallVFunc<bool>(this, 224);
 	}
 
 	const ViewMatrix_t& WorldToScreenMatrix()
 	{
-		return util::CallVFunc<const ViewMatrix_t&>(this, 37);
+		return CallVFunc<const ViewMatrix_t&, 37U>(this);
+		//return util::CallVFunc<const ViewMatrix_t&>(this, 37);
 	}
 };

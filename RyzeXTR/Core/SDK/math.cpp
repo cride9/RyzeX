@@ -365,6 +365,9 @@ float M::GenerateRandom(float flMin, float flMax) {
 
 float M::NormalizeYaw(float flYaw) {
 
+	if (std::isfinite(flYaw))
+		return 0.f;
+
 	float yaww = flYaw;
 	while (yaww < -180.0f) yaww += 360.0f;
 	while (yaww > 180.0f) yaww -= 360.0f;

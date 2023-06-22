@@ -19,6 +19,8 @@
 #include "Hooks/Proxies/ProxyHooks.h"
 #include "Features/Misc/misc.h"
 #include "../Dependecies/BASS/API.h"
+#include "SDK/Memory.h"
+#include "xorstr.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -26,9 +28,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
 	if (fdwReason == DLL_PROCESS_ATTACH) {
 
-		/*static auto InitSafeModuleFn = (void(__fastcall*)(void*, void*))util::FindSignature("client.dll", "56 8B 71 3C B8");
-		if (InitSafeModuleFn)
-			InitSafeModuleFn((void*)hinstDLL, nullptr);*/
+		//static auto InitSafeModuleFn = (void(__fastcall*)(void*, void*))MEM::FindPattern(CLIENT_DLL, XorStr("56 8B 71 3C B8"));
+		//if (InitSafeModuleFn)
+		//	InitSafeModuleFn((void*)hinstDLL, nullptr);
 
 		DisableThreadLibraryCalls(hinstDLL);
 
@@ -44,9 +46,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 void OpenConsole() {
 
 	AllocConsole();
-	freopen_s((FILE**)stdin, "CONIN$", "r", stdin);
-	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
-	SetConsoleTitleA("Alpha Console");
+	freopen_s((FILE**)stdin, XorStr("CONIN$"), XorStr("r"), stdin);
+	freopen_s((FILE**)stdout, XorStr("CONOUT$"), XorStr("w"), stdout);
+	SetConsoleTitleA(XorStr("Alpha Console"));
 }
 
 void CloseConsole() {
@@ -61,28 +63,29 @@ void CloseConsole() {
 
 void SetupFonts() {
 
-	g::fonts::NameESP = i::Surface->FontCreate();
-	g::fonts::HealthESP = i::Surface->FontCreate();
-	g::fonts::FlagESP = i::Surface->FontCreate();
-	g::fonts::SkeetFont = i::Surface->FontCreate();
+	g::fonts::NameESP = i::Surface->CreateFontGame();
+	g::fonts::HealthESP = i::Surface->CreateFontGame();
+	g::fonts::FlagESP = i::Surface->CreateFontGame();
+	g::fonts::SkeetFont = i::Surface->CreateFontGame();
 
-	i::Surface->SetFontGlyphSet(g::fonts::NameESP, "Verdana", 12, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
-	i::Surface->SetFontGlyphSet(g::fonts::HealthESP, "Verdana", 10, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
-	i::Surface->SetFontGlyphSet(g::fonts::FlagESP, "Small Fonts", 11, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
-	i::Surface->SetFontGlyphSet(g::fonts::SkeetFont, "Verdana", 25, FW_EXTRABOLD, 0, 0, FONTFLAG_DROPSHADOW | FONTFLAG_ANTIALIAS);
+	i::Surface->SetFontGlyphSet(g::fonts::NameESP, XorStr("Verdana"), 12, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
+	i::Surface->SetFontGlyphSet(g::fonts::HealthESP, XorStr("Verdana"), 10, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
+	i::Surface->SetFontGlyphSet(g::fonts::FlagESP, XorStr("Small Fonts"), 11, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
+	i::Surface->SetFontGlyphSet(g::fonts::SkeetFont, XorStr("Verdana"), 25, FW_EXTRABOLD, 0, 0, FONTFLAG_DROPSHADOW | FONTFLAG_ANTIALIAS);
 
 	util::Print("Fonts initialized");
 }
 
 DWORD WINAPI CheatThread(PVOID hinstDLL) {
 
-	if (!GetModuleHandleA("serverbrowser.dll"))
+	if (!MEM::GetModuleBaseHandle(XorStr(L"serverbrowser.dll")))
 		Sleep(200);
 
 #if _DEBUG
 	OpenConsole();
 #endif
 
+	MEM::Setup();
 	i::SetupInterfaces();
 	SetupFonts();
 	n::SetupNetvars();
@@ -91,7 +94,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	menu::Setup();
 	M::Setup();
 	h::SetupHooks();
-	g::entityListener.Setup();
+	//g::entityListener.Setup();
 	IPT::Setup();
 	p::Setup();
 
@@ -118,11 +121,11 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	BASS_StreamFree( BASS::stream_handle );
 	BASS_Free( );
 
-	g::entityListener.Destroy();
+	//g::entityListener.Destroy();
 	menu::open = false;
 	h::DestroyHooks();
 	menu::Destroy();
-	i::EngineClient->ClientCmdUnrestricted("cl_fullupdate");
+	i::EngineClient->ClientCmdUnrestricted(XorStr("cl_fullupdate"));
 	IPT::Restore( );
 	p::Destroy();
 

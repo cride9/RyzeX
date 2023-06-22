@@ -3,6 +3,7 @@
 #include "../../globals.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Networking/networking.h"
+#include "../../Features/Misc/misc.h"
 
 void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCmd* pCmd, IMoveHelper* pMovehelper) {
 
@@ -13,13 +14,7 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	i::MoveHelper = pMovehelper;
 
-	//if (pCmd->iTickCount >= (g::pCmd->iTickCount + int(1 / i::GlobalVars->flIntervalPerTick) + 8)) {
-
-	//	pCmd->bHasBeenPredicted = true;
-	//	pEnt->SetAbsOrigin(pEnt->GetVecOrigin());
-	//	pEnt->GetTickBase()++;
-	//	return;
-	//}
-
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
+
+	misc::RevolverRunCommand(pEnt);
 }

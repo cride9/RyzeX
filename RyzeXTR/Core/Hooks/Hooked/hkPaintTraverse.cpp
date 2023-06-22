@@ -29,10 +29,11 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 			if (i::DebugOverlay->ScreenPosition(drawPos, screenPosition))
 				continue;
 
-			i::Surface->DrawOutlinedCircle(screenPosition.x, screenPosition.y, 20, 64);
+			i::Surface->DrawSetColor(Color(255, 255, 255, 255));
+			i::Surface->DrawFilledRect(screenPosition.x - 2, screenPosition.y - 2, screenPosition.x + 2, screenPosition.y + 2);
 		}
 
-		if (g::drawList.size() > 4)
+		if (g::drawList.size() > 12)
 			g::drawList.clear();
 
 		if (g::pLocal) {

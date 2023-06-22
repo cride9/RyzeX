@@ -398,21 +398,21 @@ public:
 	void SetAbsOrigin(const Vector& vecOrigin) {
 
 		using SetAbsOriginFn = void(__thiscall*)(void*, const Vector&);
-		static auto oSetAbsOrigin = reinterpret_cast<SetAbsOriginFn>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 51 53 56 57 8B F1 E8"));
+		static auto oSetAbsOrigin = reinterpret_cast<SetAbsOriginFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 51 53 56 57 8B F1 E8")));
 		oSetAbsOrigin(this, vecOrigin);
 	}
 
 	void SetAbsAngles(const Vector& angView) {
 
 		using SetAbsAngleFn = void(__thiscall*)(void*, const Vector&);
-		static auto oSetAbsAngles = reinterpret_cast<SetAbsAngleFn>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 83 EC 64 53 56 57 8B F1 E8"));
+		static auto oSetAbsAngles = reinterpret_cast<SetAbsAngleFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 64 53 56 57 8B F1 E8")));
 		oSetAbsAngles(this, angView);
 	}
 
 	void SetAbsVelocity(const Vector& vecVelocity) {
 
 		using Fn = void(__thiscall*)(void*, const Vector&);
-		static auto fn = reinterpret_cast<Fn>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 83 EC 0C 53 56 57 8B 7D 08 8B F1 F3"));
+		static auto fn = reinterpret_cast<Fn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 0C 53 56 57 8B 7D 08 8B F1 F3")));
 		fn(this, vecVelocity);
 	}
 
@@ -482,18 +482,18 @@ class IKContext
 public:
 
 	void Init( CStudioHdr* hdr, Vector& angles, Vector& origin, float curtime, int framecount, int boneMask ) {
-		static const auto ik_init_address = util::FindSignature( "client.dll", "55 8B EC 83 EC 08 8B 45 08 56 57 8B F9 8D 8F" );
+		static const auto ik_init_address = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 08 8B 45 08 56 57 8B F9 8D 8F"));
 		reinterpret_cast< void( __thiscall* )( IKContext*, CStudioHdr*, Vector&, Vector&, float, int, int ) >( ik_init_address )( this, hdr, angles, origin, curtime, framecount, boneMask );
 	}
 
 	void UpdateTargets( Vector* pos, Quaternion* q, matrix3x4_t* bone_array, byte* computed ) {
-		static const auto update_targets_address = util::FindSignature( "client.dll", "55 8B EC 83 E4 F0 81 EC ? ? ? ? 33 D2 89" );
+		static const auto update_targets_address = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 81 EC ? ? ? ? 33 D2 89"));
 		reinterpret_cast< void( __thiscall* )( IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte* ) >( update_targets_address )( this, pos, q, bone_array, computed );
 	}
 
 	void SolveDependencies( Vector* pos, Quaternion* q, matrix3x4_t* bone_array, byte* computed ) {
 		
-		static const auto solve_dependencies_address = util::FindSignature("client.dll", "55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81");
+		static const auto solve_dependencies_address = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81"));
 
 		using Fn = void(__thiscall*)(IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte*);
 		static auto fn = reinterpret_cast<Fn>(solve_dependencies_address);
@@ -617,17 +617,17 @@ public:
 
 	void InvalidatePhysicsRecursive(int32_t flags) {
 
-		static const auto invalidate_physics_recursive = reinterpret_cast<void(__thiscall*)(CBaseEntity*, int32_t)>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 83 EC 0C 53 8B 5D 08 8B C3 56"));
+		static const auto invalidate_physics_recursive = reinterpret_cast<void(__thiscall*)(CBaseEntity*, int32_t)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 0C 53 8B 5D 08 8B C3 56")));
 		invalidate_physics_recursive(this, flags);
 	}
 
 	CUserCmd& GetLastCommand() {
-		static const std::uintptr_t uLastCommandOffset = *reinterpret_cast<std::uintptr_t*>(util::FindSignature("client.dll", "8D 8E ? ? ? ? 89 5C 24 3C") + 0x2);
+		static const std::uintptr_t uLastCommandOffset = *reinterpret_cast<std::uintptr_t*>(MEM::FindPattern(CLIENT_DLL, XorStr("8D 8E ? ? ? ? 89 5C 24 3C")) + 0x2);
 		return *reinterpret_cast<CUserCmd*>(reinterpret_cast<std::uintptr_t>(this) + uLastCommandOffset);
 	}
 
 	int& GetTakeDamage() {
-		static const std::uintptr_t uTakeDamageOffset = *reinterpret_cast<std::uintptr_t*>(util::FindSignature("client.dll", "80 BE ? ? ? ? ? 75 46 8B 86") + 0x2);
+		static const std::uintptr_t uTakeDamageOffset = *reinterpret_cast<std::uintptr_t*>(MEM::FindPattern(CLIENT_DLL, XorStr("80 BE ? ? ? ? ? 75 46 8B 86")) + 0x2);
 		return *reinterpret_cast<int*>(reinterpret_cast<std::uintptr_t>(this) + uTakeDamageOffset);
 	}
 
@@ -711,13 +711,13 @@ public:
 	void SetupBones_AttachmentHelper()
 	{// 55 8B EC 83 EC 48 53 8B 5D 08 89 4D F4
 		
-		static auto sig = util::FindSignature("client.dll", "55 8B EC 83 EC 48 53 8B 5D");
+		static auto sig = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 48 53 8B 5D"));
 		return ((void(__thiscall*)(void*, void*))(sig))(this, this->GetStudioHdr());
 	}
 
 	static unsigned long& GetModelBoneCounter()
 	{
-		static std::uint8_t* uModelBoneCounterOffset = reinterpret_cast<std::uint8_t*>(util::FindSignature("client.dll", "3B 05 ? ? ? ? 0F 84 ? ? ? ? 8B 47") + 0x2);
+		static std::uint8_t* uModelBoneCounterOffset = reinterpret_cast<std::uint8_t*>(MEM::FindPattern(CLIENT_DLL, XorStr("3B 05 ? ? ? ? 0F 84 ? ? ? ? 8B 47")) + 0x2);
 		return *reinterpret_cast<unsigned long*>(uModelBoneCounterOffset);
 	}
 
@@ -745,7 +745,7 @@ public:
 		{
 			using LockStudioHdr_t = void(__thiscall*)(decltype(this));
 			if (this->GetModel() != nullptr)
-				reinterpret_cast<LockStudioHdr_t>(util::FindSignature("client.dll", "55 8B EC 51 53 8B D9 56 57 8D B3"));
+				reinterpret_cast<LockStudioHdr_t>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 51 53 8B D9 56 57 8D B3")));
 			else
 				return nullptr;
 		}
@@ -900,7 +900,7 @@ public:
 	// pattern::find( m_client_dll, ( "55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75" ) ).as<uintptr_t>( );
 	int LookupSequence(const char* name) {
 
-		static uintptr_t sig = (uintptr_t)util::FindSignature("client.dll", "55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75");
+		static uintptr_t sig = (uintptr_t)MEM::FindPattern(CLIENT_DLL, XorStr("55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75"));
 		return ((int(__thiscall*)(CBaseEntity*, const char*))sig)(this, name);
 	}
 
@@ -926,7 +926,7 @@ public:
 	void ClampBonesInBBox(matrix3x4_t* bones, int boneMask) {
 
 		using ClampBonesInBBox_t = void(__thiscall*)(decltype(this), matrix3x4_t*, int);
-		static auto oClampBonesInBBox = reinterpret_cast<ClampBonesInBBox_t>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38"));
+		static auto oClampBonesInBBox = reinterpret_cast<ClampBonesInBBox_t>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38")));
 		return oClampBonesInBBox(this, bones, boneMask);
 		//return util::GetVFunc< ClampBonesInBBox_t >(this, 206)(this, pMatrix, iMask);
 	}
@@ -937,7 +937,7 @@ public:
 
 	CAnimationLayer* GetAnimationOverlays() {
 		
-		static const std::uintptr_t uAnimationOverlaysOffset = *reinterpret_cast<std::uintptr_t*>(util::FindSignature("client.dll", "8B 80 ? ? ? ? 8D 34 C8") + 2);
+		static const std::uintptr_t uAnimationOverlaysOffset = *reinterpret_cast<std::uintptr_t*>(MEM::FindPattern(CLIENT_DLL, XorStr("8B 80 ? ? ? ? 8D 34 C8")) + 2);
 		return *reinterpret_cast<CAnimationLayer**>(uintptr_t(this) + uAnimationOverlaysOffset);
 	}
 
@@ -1009,14 +1009,14 @@ public:
 
 	void SetCollisionBounds(Vector vecMins, Vector vecMaxs) {
 
-		static auto sig = (void*)((DWORD)(util::FindSignature(("client.dll"), ("53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 89 6C 24 04 8B EC 83 EC 18 56 57 8B 7B"))));
+		static auto sig = (void*)((DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 89 6C 24 04 8B EC 83 EC 18 56 57 8B 7B"))));
 		((void(__thiscall*)(void*, Vector*, Vector*))(sig))((void*)((DWORD)(this) + 0x320), &vecMins, &vecMaxs);
 	}
 
 	bool PhysicsRunThink(int nThinkMethod) {
 
 		using PhysicsRunThinkFn = bool(__thiscall*)(void*, int);
-		static auto oPhysicsRunThink = reinterpret_cast<PhysicsRunThinkFn>(util::FindSignature("client.dll", "55 8B EC 83 EC 10 53 56 57 8B F9 8B 87"));
+		static auto oPhysicsRunThink = reinterpret_cast<PhysicsRunThinkFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 10 53 56 57 8B F9 8B 87")));
 		if (!oPhysicsRunThink)
 			return false;
 		
@@ -1034,7 +1034,7 @@ public:
 	std::optional<Vector>	GetHitboxPosition(const int iHitbox);									// current matrix
 	std::optional<Vector>	GetHitboxPosition(const int iHitbox, Vector& vecMins, Vector& vecMaxs, float& flRadius);
 	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128]);					// selected matrix
-	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float& flRadius);// selected matrix + radius
+	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float& flRadius, mstudiobbox_t* pStudioBox = nullptr);// selected matrix + radius
 	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], Vector& vecMins, Vector& vecMaxs, float& flRadius);
 	std::optional<Vector>	GetHitGroupPosition(const int iHitGroup);
 	void					ModifyEyePosition(const CAnimState* pAnimState, Vector* vecPosition) const;
@@ -1185,7 +1185,7 @@ public:
 	CUtlVector<CRefCounted*>& GetVisualsDataProcessors() {
 
 		// @xref: "Original material not found! Name: %s"
-		static const std::uintptr_t uVisualsDataProcessorsOffset = *reinterpret_cast<std::uintptr_t*>(util::FindSignature("client.dll", "81 C7 ? ? ? ? 8B 4F 0C 8B 57 04 89 4C") + 0x2);
+		static const std::uintptr_t uVisualsDataProcessorsOffset = *reinterpret_cast<std::uintptr_t*>(MEM::FindPattern(CLIENT_DLL, XorStr("81 C7 ? ? ? ? 8B 4F 0C 8B 57 04 89 4C")) + 0x2);
 		return *reinterpret_cast<CUtlVector<CRefCounted*>*>(reinterpret_cast<std::uintptr_t>(this) + uVisualsDataProcessorsOffset);
 	}
 };
@@ -1202,6 +1202,7 @@ public:
 	ADD_NETVAR(GetWorldModelIndex, int, "CBaseCombatWeapon->m_iWorldModelIndex");
 	ADD_NETVAR(GetWorldModelHandle, CBaseHandle, "CBaseCombatWeapon->m_hWeaponWorldModel");
 	ADD_NETVAR(GetLastShotTime, float, "CWeaponCSBase->m_fLastShotTime");
+	ADD_NETVAR(GetFireReadyTime, float, "CWeaponCSBase->m_flPostponeFireReadyTime");
 
 	//N_ADD_DATAFIELD(bool, IsReloading, this->GetPredictionDescMap(), "m_bInReload");
 	ADD_NETVAR(GetModelIndex, int, "CBaseViewModel->m_nModelIndex");
@@ -1226,6 +1227,8 @@ public:
 	ADD_PNETVAR(IsFireBurning, bool, "CInferno->m_bFireIsBurning");
 	ADD_NETVAR(GetFireCount, int, "CInferno->m_fireCount");
 	ADD_NETVAR(GetFireBeginTick, int, "CInferno->m_nFireEffectTickBegin");
+
+	ADD_DATAMAP(GetActivity, int, this->GetPredictionDescMap(), "m_Activity");
 
 	bool IsGrenade() {
 
@@ -1277,7 +1280,7 @@ public:
 	CUtlVector<CRefCounted*>& GetVisualsDataProcessors( )
 	{
 		// @xref: "Original material not found! Name: %s"
-		static const std::uintptr_t uVisualsDataProcessorsOffset = *reinterpret_cast< std::uintptr_t* >( util::FindSignature( "client.dll", "81 C7 ? ? ? ? 8B 4F 0C 8B 57 04 89 4C" ) + 0x2 );
+		static const std::uintptr_t uVisualsDataProcessorsOffset = *reinterpret_cast<std::uintptr_t*>(MEM::FindPattern(CLIENT_DLL, XorStr("81 C7 ? ? ? ? 8B 4F 0C 8B 57 04 89 4C")) + 0x2);
 		return *reinterpret_cast< CUtlVector<CRefCounted*>* >( reinterpret_cast< std::uintptr_t >( this ) + uVisualsDataProcessorsOffset );
 	}
 };
@@ -1310,7 +1313,6 @@ public:
 	ADD_NETVAR(IsBurstMode, bool, "CWeaponCSBase->m_bBurstMode");
 	ADD_NETVAR(GetAccuracyPenalty, float, "CWeaponCSBase->m_fAccuracyPenalty");
 	ADD_NETVAR(GetRecoilIndex, float, "CWeaponCSBase->m_flRecoilIndex" );
-	ADD_NETVAR(GetFireReadyTime, float, "CWeaponCSBase->m_flPostponeFireReadyTime");
 
 	void OnFireEvent(CBaseViewModel* pViewModel, const Vector& vecOrigin, const Vector& vecAngles, int iEvent, const char* szOptions) {
 		util::CallVFunc<bool>(this, 59, pViewModel, vecOrigin, vecAngles, iEvent, szOptions);

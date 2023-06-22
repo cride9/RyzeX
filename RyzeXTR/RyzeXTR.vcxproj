@@ -398,7 +398,6 @@
     <ClInclude Include="Core\SDK\NetVar\datatable.h" />
     <ClInclude Include="Core\SDK\NetVar\fnv.h" />
     <ClInclude Include="Core\SDK\NetVar\Netvar.h" />
-    <ClInclude Include="Core\SDK\PatternFinder.h" />
     <ClInclude Include="Core\SDK\pe.h" />
     <ClInclude Include="Core\SDK\RayTracer rebuilt\CRayTrace.h" />
     <ClInclude Include="Core\SDK\WavParser.h" />

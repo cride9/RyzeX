@@ -25,6 +25,9 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	if (pEntity != g::pLocal)
 		return original(ecx, edx);
 
+	if (!pEntity->IsAlive())
+		return original(ecx, edx);
+
 	int& SimulationTick = *pEntity->GetOffsetPointer<int>( 0x2ACU );
 	CCommandContext* pCommandContext = pEntity->GetOffsetPointer<CCommandContext>(0x350C);
 

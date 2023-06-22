@@ -6,6 +6,8 @@ void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudio
 	static auto original = detour::buildTransform.GetOriginal<decltype(&h::hkBuildTransformation)>();
 
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
+	if (!pEnt || !pEnt->IsAlive())
+		return original(entityPointer, edx, hdr, pos, q, transform, mask, computed);
 
 	auto backup = hdr->vecBoneFlags;
 

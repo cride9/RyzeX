@@ -19,13 +19,16 @@ namespace misc {
 	inline bool bDefensive = false;
 	inline bool bFilter = false;
 	inline bool bRetreat = false;
+	inline bool exploitInitialized = false;
 	inline Vector vecRecord = Vector(0.f, 0.f, 0.f);
 	inline Vector vecEyePosition = Vector(0.f, 0.f, 0.f);
 	inline matrix3x4_t matrixRecord[128];
+	inline int iRestChoke = 0;
 
 	void SetupRadio( );
 
 	void CreateMove(CUserCmd*, Vector&, bool&);
+	bool CanFireWeapon(float curtime, bool bRevolverSecondary = false, bool bSkipExtraRevolverChecks = false);
 
 	void BunnyHop(CUserCmd* pCmd);
 	void FakeLag(bool&);
@@ -49,13 +52,17 @@ namespace misc {
 	void RemoveSmoke();
 	void WalkBot(CUserCmd*);
 	void WalkBotHandler(IGameEvent*);
-	void MoveToPosition(Vector&);
+	void MoveToPosition();
 	void ClanTag();
 	void CapsuleHandler(IGameEvent*);
 	void CapsuleOnHit(int, int, Color, float);
 	void LeftHandKnife();
 	bool ChangeName(bool, const char*);
 	bool ResetName(bool, const char*);
+
+	void Killsay(IGameEvent*);
+
+    void ThirdPersonDisableOnDeath(IGameEvent* pEvent);
 
 	void DrawBream(Vector, Vector, Color);
 	void WorldCrosshairHandler(IGameEvent*);
@@ -71,4 +78,8 @@ namespace misc {
 
 	void CustomBombText(const char*);
 	void CheatLog(IGameEvent*);
+
+	void RevolverRunCommand(CBaseEntity*);
+    bool CanFireWeapon(float curtime, bool bRevolverSecondary, bool bSkipExtraRevolverChecks);
+	void RevolverCreateMove();
 }

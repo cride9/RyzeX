@@ -6,6 +6,7 @@
 #include "SDK/DataTyes/Color.h"
 #include <fstream>
 #include "SDK/pe.h"
+#include "SDK/Memory.h"
 
 #define RYZEXCOLOR Color(111, 203, 255)
 #define INRANGE(x,a,b)   (x >= a && x <= b)
@@ -121,43 +122,6 @@ namespace util {
 		return nullptr;
 	}
 
-	inline static uintptr_t FindSignature(const char* szModule, const char* szSignature) {
-
-		const char* pat = szSignature;
-		DWORD firstMatch = 0;
-		DWORD rangeStart = (DWORD)GetModuleHandleA(szModule);
-		MODULEINFO miModInfo;
-		GetModuleInformation(GetCurrentProcess(), (HMODULE)rangeStart, &miModInfo, sizeof(MODULEINFO));
-		DWORD rangeEnd = rangeStart + miModInfo.SizeOfImage;
-
-		for (DWORD pCur = rangeStart; pCur < rangeEnd; pCur++) {
-
-		if (!*pat)
-				return firstMatch;
-
-			if (*(PBYTE)pat == '\?' || *(BYTE*)pCur == GET_BYTE(pat)) {
-
-				if (!firstMatch)
-					firstMatch = pCur;
-
-				if (!pat[2])
-					return firstMatch;
-
-				if (*(PWORD)pat == '\?\?' || *(PBYTE)pat != '\?')
-					pat += 3;
-
-				else
-					pat += 2;
-			}
-			else {
-
-				pat = szSignature;
-				firstMatch = 0;
-			}
-		}
-		return 0u;
-	}
-
 	inline BYTE* ReadWavFileIntoMemory( std::string fname ) {
 		BYTE* pb = nullptr;
 		std::ifstream f( fname, std::ios::binary );
@@ -175,22 +139,22 @@ namespace util {
 
 	inline DWORD FindHudElement(const char* name) {
 
-		static auto pThis = *reinterpret_cast<DWORD**>(util::FindSignature("client.dll", "B9 ? ? ? ? E8 ? ? ? ? 8B 5D 08") + 1);
+		static auto pThis = *reinterpret_cast<DWORD**>(MEM::FindPattern(CLIENT_DLL, XorStr("B9 ? ? ? ? E8 ? ? ? ? 8B 5D 08")) + 1);
 
-		static auto find_hud_element = reinterpret_cast<DWORD(__thiscall*)(void*, const char*)>(util::FindSignature("client.dll", "55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28"));
+		static auto find_hud_element = reinterpret_cast<DWORD(__thiscall*)(void*, const char*)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28")));
 
 		return find_hud_element(pThis, name);
 	}
 
 	inline void SetClan(const char* csTag) {
 
-		static auto pSetClantag = reinterpret_cast<void(__fastcall*)(const char*, const char*)>(util::FindSignature("engine.dll", "53 56 57 8B DA 8B F9 FF"));
+		static auto pSetClantag = reinterpret_cast<void(__fastcall*)(const char*, const char*)>(MEM::FindPattern(ENGINE_DLL, XorStr("53 56 57 8B DA 8B F9 FF")));
 		pSetClantag(csTag, csTag);
 	}
 
 	inline void SetSkybox(const char* szSkybox) {
 
-		static auto LoadNamedSky = reinterpret_cast<void(__fastcall*)(const char*)>(util::FindSignature("engine.dll", "55 8B EC 81 EC ? ? ? ? 56 57 8B F9 C7 45"));
+		static auto LoadNamedSky = reinterpret_cast<void(__fastcall*)(const char*)>(MEM::FindPattern(ENGINE_DLL, XorStr("55 8B EC 81 EC ? ? ? ? 56 57 8B F9 C7 45")));
 		
 		if (LoadNamedSky != nullptr)
 			LoadNamedSky(szSkybox);
@@ -206,11 +170,11 @@ namespace util {
 	{
 		// @note: https://www.unknowncheats.me/forum/counterstrike-global-offensive/342743-finding-sigging-chud-pointer-chud-findelement.html
 
-		static auto pHud = *reinterpret_cast< void** >( util::FindSignature( "client.dll", "B9 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 89" ) + 0x1 );
+		static auto pHud = *reinterpret_cast<void**>(MEM::FindPattern(CLIENT_DLL, XorStr("B9 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 89")) + 0x1);
 		// @xref: "CHudWeaponSelection"
 
 		using FindHudElementFn = std::uintptr_t* ( __thiscall* )( void*, const char* );
-		static auto oFindHudElement = reinterpret_cast< FindHudElementFn >( util::FindSignature( "client.dll", "55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28" ) ); // @xref: "[%d] Could not find Hud Element: %s\n"
+		static auto oFindHudElement = reinterpret_cast<FindHudElementFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28"))); // @xref: "[%d] Could not find Hud Element: %s\n"
 		assert( oFindHudElement != nullptr );
 
 		return oFindHudElement( pHud, szName );
@@ -219,11 +183,11 @@ namespace util {
 	inline void ForceFullUpdate( )
 	{
 		using ClearHudWeaponIconFn = int( __thiscall* )( void*, int );
-		static auto oClearHudWeaponIcon = reinterpret_cast< ClearHudWeaponIconFn >( util::FindSignature( "client.dll", "55 8B EC 51 53 56 8B 75 08 8B D9 57 6B" ) ); // @xref: "WeaponIcon--itemcount"
+		static auto oClearHudWeaponIcon = reinterpret_cast<ClearHudWeaponIconFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 51 53 56 8B 75 08 8B D9 57 6B"))); // @xref: "WeaponIcon--itemcount"
 		assert( oClearHudWeaponIcon != nullptr );
 
 		// get hud weapons
-		if ( const auto pHudWeapons = FindHudElement2( "CCSGO_HudWeaponSelection" ) - 0x28; pHudWeapons != nullptr )
+		if (const auto pHudWeapons = FindHudElement2(XorStr("CCSGO_HudWeaponSelection")) - 0x28; pHudWeapons != nullptr)
 		{
 			// go through all weapons
 			for ( std::size_t i = 0; i < *( pHudWeapons + 0x20 ); i++ )

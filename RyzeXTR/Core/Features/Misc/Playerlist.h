@@ -6,7 +6,7 @@
 enum EPriority : short {
 
 	// default hitscan
-	DEFAULT,
+	NEUTRAL,
 	// scan this player at the beginning
 	RAGE,
 	// do not scan this player
@@ -16,10 +16,12 @@ enum EPriority : short {
 struct playerSettings_t {
 
 	playerSettings_t() {
-
+		pEntity = nullptr;
+		iIndex = -1;
 	}
-	playerSettings_t(CBaseEntity* pEntity) {
+	playerSettings_t(CBaseEntity* _pEntity) {
 
+		pEntity = _pEntity;
 		iIndex = pEntity->EntIndex();
 		vecOrigin = pEntity->GetVecOrigin();
 		vecAngles = pEntity->GetEyeAngles();
@@ -32,8 +34,9 @@ struct playerSettings_t {
 		i::EngineClient->GetPlayerInfo(iIndex, &playerInfo);
 	}
 
-	void UpdateData(CBaseEntity* pEntity) {
+	void UpdateData(CBaseEntity* _pEntity) {
 
+		pEntity = _pEntity;
 		bLocalPlayer = pEntity == g::pLocal;
 		vecOrigin = pEntity->GetVecOrigin();
 		vecAngles = pEntity->GetEyeAngles();
@@ -44,12 +47,13 @@ struct playerSettings_t {
 	void ClearData() {
 
 		iIndex = -1;
-		iPriority = DEFAULT;
+		iPriority = EPriority::NEUTRAL;
 		iTeamID = TEAM_UNASSIGNED;
 	}
 
+	CBaseEntity* pEntity = nullptr;
 	int iIndex = -1;
-	EPriority iPriority = DEFAULT;
+	EPriority iPriority = EPriority::NEUTRAL;
 	ETeamID iTeamID = TEAM_UNASSIGNED;
 
 	PlayerInfo_t playerInfo;
@@ -68,7 +72,8 @@ struct playerSettings_t {
 
 namespace playerList {
 
-	inline std::array<playerSettings_t, 65> arrPlayers;
+	inline std::array<playerSettings_t, 65> arrPlayers{ playerSettings_t() };
+	inline int iFollowPlayerIndex = -1;
 
 	inline bool IsFriendly(CBaseEntity* pEntity) {
 
@@ -81,7 +86,7 @@ namespace playerList {
 
 	inline const char* priorityToString(EPriority priority) {
 		switch (priority) {
-		case DEFAULT:
+		case NEUTRAL:
 			return "DEFAULT";
 		case RAGE:
 			return "RAGE";
@@ -135,7 +140,7 @@ namespace playerList {
 		if (playerSetting.iIndex == -1)
 			return;
 
-		if ( ImGui::Button( std::format( "{}", playerSetting.bIsRyzeXTRUser == true ? "True" : "False" ).c_str( ), ImVec2( 50, 20 ), iSelectedIndex == playerSetting.iIndex ) ) {
+		if ( ImGui::Button( std::format( "{}", playerSetting.bIsRyzeXTRUser == true ? "True" : "False" ).c_str( ), ImVec2(70, 20 ), iSelectedIndex == playerSetting.iIndex ) ) {
 			iSelectedIndex = playerSetting.iIndex;
 		}
 		ImGui::SameLine( );
@@ -252,7 +257,7 @@ namespace playerList {
 
 				if (!currentSelected.bLocalPlayer) {
 					if (ImGui::Button("Default", ImVec2(100, 20)))
-						currentSelected.iPriority = DEFAULT;
+						currentSelected.iPriority = EPriority::NEUTRAL;
 
 					ImGui::SameLine();
 					if (ImGui::Button("Rage", ImVec2(100, 20)))
@@ -264,6 +269,15 @@ namespace playerList {
 
 					if (ImGui::Button("Steal name", ImVec2(100, 20)))
 						misc::ChangeName(false, std::format("{}\n", currentSelected.playerInfo.szName).c_str());
+
+					ImGui::SameLine();
+					if (ImGui::Button("Vote kick", ImVec2(100, 20)))
+						i::EngineClient->ClientCmdUnrestricted(std::format("callvote kick {} {}\n", currentSelected.playerInfo.nUserID, currentSelected.iIndex).c_str());
+
+					ImGui::SameLine();
+					if (ImGui::Button("Follow", ImVec2(100, 20))) 
+						iFollowPlayerIndex = iFollowPlayerIndex != currentSelected.iIndex ? currentSelected.iIndex : -1;
+
 					ImGui::SameLine();
 					if (ImGui::Button("Override yaw", ImVec2(100, 20), currentSelected.bOverrideResolver))
 						currentSelected.bOverrideResolver = !currentSelected.bOverrideResolver;

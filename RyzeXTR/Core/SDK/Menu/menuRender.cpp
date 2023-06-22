@@ -1102,10 +1102,20 @@ void menu::Misctab() noexcept {
 		ImGui::Checkbox("Blockbot", &blockbot);
 		ImGui::Keybind("##blockbotKey", &blockbotKey);
 		ImGui::Checkbox("Clantag", &clantag);
+
 		char bombCharBuffer[12]{};
 		strcpy(bombCharBuffer, bombBuffer.c_str());
 		ImGui::InputText("Custom bomb text", bombCharBuffer, sizeof(bombCharBuffer));
 		bombBuffer = bombCharBuffer;
+
+		ImGui::Checkbox("Killsay", &bKillsay);
+		if (bKillsay) {
+			char killsayBuffer[32]{};
+			strcpy(killsayBuffer, killSayBuffer.c_str());
+			ImGui::InputText("Text", killsayBuffer, sizeof(killsayBuffer));
+			killSayBuffer = killsayBuffer;
+		}
+
 		ImGui::Checkbox("Invert knife", &bInvertKnife);
 
 #if _DEBUG
@@ -1468,7 +1478,7 @@ void menu::ConfigTab() noexcept {
 
 		ImGui::SliderFloat( "Volume", &flRadioVolume, 0.f, 100.f, "%.1f%%" );
 
-		ImGui::SetCursorPosX( ( ImGui::GetWindowContentRegionMin( ).x ) + 17.f );
+		//ImGui::SetCursorPosX( ( ImGui::GetWindowContentRegionMin( ).x ) + 17.f );
 		//ImGui::PushItemWidth( ImGui::CalcItemWidth( ) + 100.f );
 		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
 		if ( ImGui::ListBoxVector( "##radiostations", &iRadioStation, m_szRadioStations, 9 ) )

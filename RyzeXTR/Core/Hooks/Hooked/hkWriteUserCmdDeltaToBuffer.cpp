@@ -7,7 +7,7 @@
 static void WriteUsercmd(void* buf, CUserCmd* Cin, CUserCmd* Cout)
 {
 	using WriteUserCmd_t = void(__fastcall*)(void*, CUserCmd*, CUserCmd*);
-	static auto Fn = (WriteUserCmd_t)util::FindSignature("client.dll", "55 8B EC 83 E4 F8 51 53 56 8B D9");
+	static auto Fn = (WriteUserCmd_t)MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 51 53 56 8B D9"));
 
 	__asm
 	{

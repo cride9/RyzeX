@@ -11,6 +11,9 @@ void __fastcall h::hkCalculateView(void* entityPointer, void* edx, Vector& unuse
 	if (pEnt != g::pLocal)
 		return original(entityPointer, edx, unused1, unused2, unused3, unused4, unused5);
 
+	if (!pEnt->IsAlive())
+		return original(entityPointer, edx, unused1, unused2, unused3, unused4, unused5);
+
 	const auto backup = pEnt->UseNewAnimationState();
 
 	pEnt->UseNewAnimationState() = false;

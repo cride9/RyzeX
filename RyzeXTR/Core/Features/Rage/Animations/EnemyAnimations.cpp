@@ -17,22 +17,9 @@ void Animations::ResolverLogic() {
 	if (!ragebot.rageBotData.pAimbotTarget || !g::pLocal || bulletImpact == Vector(0, 0, 0) || !ragebot.rageBotData.pTargetMatrix)
 		return;
 
-	Ray_t ray(g::pLocal->GetEyePosition(), bulletImpact);
+	Ray_t ray(g::pLocal->GetEyePosition(false), bulletImpact);
 	Trace_t trace;
 
-	const Model_t* model = ragebot.rageBotData.pAimbotTarget->GetModel();
-	if (!model)
-		return;
-
-	studiohdr_t* studioHdr = i::ModelInfo->GetStudioModel(model);
-	if (!studioHdr)
-		return;
-
-	mstudiobbox_t* studioBox = studioHdr->GetHitboxSet(0)->GetHitbox(ragebot.rageBotData.iTargetHitbox);
-	if (!studioBox)
-		return;
-
-	bool bCollided = ragebot.bCollidePoint(g::pLocal->GetEyePosition(), bulletImpact, studioBox, ragebot.rageBotData.pTargetMatrix);
 	ragebot.rageBotData.pAimbotTarget->SetBoneCache(ragebot.rageBotData.pTargetMatrix);
 	i::EngineTrace->ClipRayToEntity(ray, MASK_SHOT, ragebot.rageBotData.pAimbotTarget, &trace);
 
@@ -45,14 +32,13 @@ void Animations::ResolverLogic() {
 	for (bool& bCurrent : bResolverHandler)
 		bCurrent = false;
 
-	if (trace.pHitEntity == ragebot.rageBotData.pAimbotTarget || bCollided) {
+	if (trace.pHitEntity == ragebot.rageBotData.pAimbotTarget) {
 
 		missedShots[ragebot.rageBotData.pAimbotTarget->EntIndex()]++;
 		didHurt = false;
 		ragebot.rageBotData.pAimbotTarget = nullptr;
 		bulletImpact = Vector(0, 0, 0);
 		ragebot.rageBotData.pTargetMatrix = nullptr;
-		ragebot.rageBotData.iTargetHitbox = 0;
 		util::LogConsole("Missed shot due to animation desyncronaztion\n");
 	}
 	else {
@@ -61,7 +47,6 @@ void Animations::ResolverLogic() {
 		ragebot.rageBotData.pAimbotTarget = nullptr;
 		ragebot.rageBotData.pTargetMatrix = nullptr;
 		bulletImpact = Vector(0, 0, 0);
-		ragebot.rageBotData.iTargetHitbox = 0;
 		util::LogConsole("Missed shot due to spread\n");
 	}
 
@@ -117,6 +102,24 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 	}
 }
 
+float GetLocalCycleIncrement(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, float flPlaybackrate)
+{
+	float flMoveCycleRate = flPlaybackrate ? flPlaybackrate : pEntity->GetAnimationOverlays()[6].flPlaybackRate;
+	float flVelocityLengthXY = pRecord->vecVelocity.Length2D() <= 1.f ? 1.f : pRecord->vecVelocity.Length2D();
+	if (flVelocityLengthXY > 0.f)
+	{
+		float flSequenceCycleRate = pEntity->GetSequenceCycleRate(pEntity->GetModelPtr(), pEntity->GetAnimationOverlays()[6].nSequence);
+		float flSequenceGroundSpeed = fmax(pEntity->GetSequenceMoveDist(pEntity->GetModelPtr(), pEntity->GetAnimationOverlays()[6].nSequence) / (1.0f / flSequenceCycleRate), 0.001f);
+
+		float flSpeedMultiplier = flSequenceCycleRate * (flVelocityLengthXY / flSequenceGroundSpeed) * (1.0f - (pEntity->AnimState()->flWalkToRunTransition * 0.15f));
+		flMoveCycleRate /= flSpeedMultiplier;
+	}
+
+	float flLocalCycleIncrement = (flMoveCycleRate * pEntity->AnimState()->flLastUpdateIncrement);
+	return flLocalCycleIncrement * 1000000.0f;
+}
+
+
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
@@ -126,7 +129,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
 	if (playerListData.bOverrideResolver) {
 
-		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw + playerListData.flOverrideYaw);
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
 		return;
 	}
 	if (!cfg::rage::resolver)
@@ -134,11 +137,12 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 
 	Vector vecEyePosition = g::vecEyePosition;
 	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
+
 	Vector vecLHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]);
 	Vector vecRHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]);
-	Vector vecCHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[CENTER]);
+	//Vector vecCHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[CENTER]);
 
-	CTraceFilter traceFilter(pLocal);
+	/*CTraceFilter traceFilter(pLocal);
 	Trace_t traceLData;
 	Trace_t traceRData;
 
@@ -153,10 +157,15 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 		break;
 	}
 
-	float& vecEyeYaw = pEntity->AnimState()->flEyeYaw;
+	float& vecEyeYaw = pRecord->vecEyeAngles.y;
 	if (pWeapon) {
 		if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecLHitboxPosition, HITBOX_HEAD) == 3) {
 			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw - flResolveYaw);
+			pRecord->bSafeResolve = true;
+			return;
+		}
+		else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecCHitboxPosition, HITBOX_HEAD) == 3) {
+			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw);
 			pRecord->bSafeResolve = true;
 			return;
 		}
@@ -165,12 +174,10 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 			pRecord->bSafeResolve = true; 
 			return;
 		}
-		else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecCHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw);
-			pRecord->bSafeResolve = true; 
-			return;
-		}
-	}
+	}*/
+
+	float flResolveYaw = 58.f;
+	static int iFoundSide = 0;
 
 	pRecord->ApplyMatrix(pEntity, LEFT);
 	float bHitLeft = autowall.GetDamage(pLocal, vecEyePosition, vecLHitboxPosition, pLocal->GetWeapon());
@@ -191,7 +198,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	if (iFoundSide != 0)
 		flResolveYaw = iFoundSide == RIGHT ? 58 : -58;
 
-	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw + flResolveYaw);
+	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + flResolveYaw);
 }
 
 void Animations::UpdateClientSideAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord)
@@ -222,7 +229,7 @@ void Animations::UpdateClientSideAnimations(CBaseEntity* pEntity, Lagcompensatio
 	g::bAllowAnimations[pEntity->EntIndex()] = false;
 
 	pEntity->IsClientSideAnimation() = bClientSideAnimation;
-	//pEntity->InvalidatePhysicsRecursive(ANIMATION_CHANGED | ANGLES_CHANGED | POSITION_CHANGED | SEQUENCE_CHANGED | BOUNDS_CHANGED);
+	pEntity->InvalidatePhysicsRecursive(ANIMATION_CHANGED | ANGLES_CHANGED | POSITION_CHANGED);
 
 	//// don't let the server update animation state.
 	//FixAnimatingInSameFrame(pEntity);
@@ -284,8 +291,15 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 		case 0: aMatrix = pRecord->pMatricies[CENTER]; break;
 		case 1: aMatrix = pRecord->pMatricies[RIGHT]; break;
 		}
+		float flEyeYaw = pRecord->pEntity->AnimState()->flEyeYaw;
+		switch (nRotationSide)
+		{
+		case -1: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw - 60.0f); break;
+		case 0: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw); break;
+		case 1: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw + 60.0f); break;
+		}
 
-		pEntity->AnimState()->flGoalFeetYaw = GetYawRotation(nRotationSide);
+		//pEntity->AnimState()->flGoalFeetYaw = GetYawRotation(nRotationSide);
 
 		UpdateClientSideAnimations(pEntity, pRecord);
 
@@ -349,24 +363,7 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (!pLog)
 		return false;
 
-	if (pLog->pEntity == nullptr)
-		return false;
-
-	if (!pLog->pEntity->IsAlive() || pLog->pEntity != pEnt)
-		return false;
-
-	if (pLog->pRecord.empty())
-		return false;
-
-	if (pLog->pEntity->IsDormant() || pLog->pRecord.front().bDormant)
-		return false;
-
-	for (auto& current : pLog->pCachedMatrix)
-		if (!current.GetOrigin().IsValid())
-			return false;
-
 	std::memcpy(pMatrix, pLog->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
-
 	return true;
 }
 
@@ -374,7 +371,7 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 
 	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++)
 	{
-		CBaseEntity* pPlayer = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));
+		CBaseEntity* pPlayer = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));
 		if (!pPlayer || !pPlayer->IsPlayer() || pPlayer == g::pLocal || pPlayer->IsDormant() || !pPlayer->IsAlive() || pPlayer->GetTeam() == g::pLocal->GetTeam())
 			continue;
 
@@ -425,7 +422,7 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 	vecLastOrigin[pEnt->EntIndex()] = pEnt->GetAbsOrigin();
 }
 
-void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer) {
+void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity) {
 
 	// rebuilt layer 6 calculations from csgo
 	// links:
@@ -517,7 +514,7 @@ void Animations::RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 	float m_flNewFeetWeightLayerWeight = m_flNewWeight * m_flNewFeetWeightWithAirSmooth;
 	float m_flFeetCycleRate = 0.0f;
 
-	float m_flSpeed = std::fmin(pEntity->GetVelocity().Length(), 260.0f);
+	float m_flSpeed = std::fmin(vecVelocity.Length(), 260.0f);
 	if (m_flSpeed > 0.00f)
 	{
 		float m_flSequenceCycleRate = pEntity->GetSequenceCycleRate(pEntity->GetModelPtr(), m_nMoveSequence);
@@ -1042,6 +1039,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 	if (cfg::rage::enable && pEntity->GetTeam() != g::pLocal->GetTeam()) {
 		//pRecord->pEntity->SetupBonesFix(pRecord->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pRecord->pMatricies[RESOLVE]);
+		//GetSideLayersForResolver(pEntity, pRecord);
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
 		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
 	}
@@ -1147,4 +1145,45 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	i::GlobalVars->flInterpolationAmount = flInterpolationAmount;
 	i::GlobalVars->iTickCount = iTickCount;
 	i::GlobalVars->iFrameCount = iFrameCount;
+}
+
+void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
+
+	CAnimState pBackupState;
+	memcpy(&pBackupState, pEntity->AnimState(), sizeof(CAnimState));
+	{
+		// center.
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw);
+
+		// update player animation.
+		UpdateClientSideAnimations(pEntity, pRecord);
+
+		// update.
+		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+		RebuiltLayer6(pEntity, &pRecord->LayerData[CENTER], pRecord->vecVelocity);
+	}
+
+	{
+		// right.
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw + 58.f);
+
+		// update player animation.
+		UpdateClientSideAnimations(pEntity, pRecord);
+
+		// update.
+		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+		RebuiltLayer6(pEntity, &pRecord->LayerData[RIGHT], pRecord->vecVelocity);
+	}
+
+	{
+		// left.
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pEntity->AnimState()->flEyeYaw - 58.f);
+
+		// update player animation.
+		UpdateClientSideAnimations(pEntity, pRecord);
+
+		// update.
+		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+		RebuiltLayer6(pEntity, &pRecord->LayerData[LEFT], pRecord->vecVelocity);
+	}
 }

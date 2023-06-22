@@ -10,7 +10,6 @@
 #include "../Features/Rage/Animations/LocalAnimation.h"
 #include "../SDK/Menu/config.h"
 #include "../SDK/X86RetSpoof.h"
-#include "../SDK/PatternFinder.h"
 
 namespace table {
 
@@ -126,12 +125,12 @@ namespace h {
 	inline void	HookTable(CDetourHook& hook, void* thisptr, size_t index, void* function) {
 
 		if (!hook.Create(util::GetVFunc(thisptr, index), function))
-			util::Print("Failed to initialize ", std::to_string(index).c_str());
+			util::Print(XorStr("Failed to initialize "), std::to_string(index).c_str());
 	}
-	inline void	HookSignature(CDetourHook& hook, const char* dll, const char* pattern, void* function, int add = 0x0) {
+	inline void	HookSignature(CDetourHook& hook, const wchar_t* dll, const char* pattern, void* function, int add = 0x0) {
 
-		if (!hook.Create((void*)(util::FindSignature(dll, pattern) + add), function))
-			util::Print("Failed to initialize ", pattern);
+		if (!hook.Create((void*)(MEM::FindPattern(dll, pattern) + add), function))
+			util::Print(XorStr("Failed to initialize "), pattern);
 	}
 
 	long __stdcall		EndScene(IDirect3DDevice9*);
@@ -185,7 +184,7 @@ namespace h {
 	void __fastcall		hkCalculateView(void*, void*, Vector&, Vector&, float&, float&, float&);
 	void __fastcall		hkModifyEyePosition(void*, void*, Vector&);
 	void __fastcall		hkUpdateClientSideAnimations(void*, void*);
-	void __vectorcall	hkUpdateAnimationState(void*, void*, float, float, float, void*);
+	void __vectorcall	hkUpdateAnimationState(CAnimState*, void* edx, float z, float y, float x, void*);
 	bool __fastcall		hkSetupBones(void*, void*, matrix3x4_t*, int, int, float);
 	void __fastcall		hkDoExtraBoneProcessing(void*, void*, CStudioHdr*, Vector*, Quaternion*, const matrix3x4_t&, byte*, void*);
 	bool __stdcall		hkIsPaused();
@@ -217,13 +216,13 @@ public:
 
 	void Init() {
 
-		i::GameEvent->AddListener(this, "player_hurt", false);
-		i::GameEvent->AddListener(this, "player_death", false);
-		i::GameEvent->AddListener(this, "bullet_impact", false);
-		i::GameEvent->AddListener(this, "weapon_fire", false);
-		i::GameEvent->AddListener(this, "round_start", false);
-		i::GameEvent->AddListener(this, "item_purchase", false);
-		i::GameEvent->AddListener(this, "bomb_beginplant", false);
+		i::GameEvent->AddListener(this, XorStr("player_hurt"), false);
+		i::GameEvent->AddListener(this, XorStr("player_death"), false);
+		i::GameEvent->AddListener(this, XorStr("bullet_impact"), false);
+		i::GameEvent->AddListener(this, XorStr("weapon_fire"), false);
+		i::GameEvent->AddListener(this, XorStr("round_start"), false);
+		i::GameEvent->AddListener(this, XorStr("item_purchase"), false);
+		i::GameEvent->AddListener(this, XorStr("bomb_beginplant"), false);
 	}
 
 	void Destroy() {

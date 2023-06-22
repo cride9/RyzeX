@@ -16,38 +16,38 @@ bool MEM::Setup()
 
 	// @note: make sure that 'FindPattern()' and all nested calls inside it doesn't attempt to call any of game virtual functions, otherwise it will cause crash
 	// look for the gadget in the needed modules, we have the exact instruction for the selected register, but if this is not the case, then even some operand of another instruction will work just fine
-	ROP::EngineGadget_t::uReturnGadget = reinterpret_cast<std::uintptr_t>(FindPattern(L"engine.dll", ("83 C3 10 FF 23")) + 0x3);
+	ROP::EngineGadget_t::uReturnGadget = reinterpret_cast<std::uintptr_t>(FindPattern(ENGINE_DLL, XorStr("83 C3 10 FF 23")) + 0x3);
 	bSuccess &= (ROP::EngineGadget_t::uReturnGadget != 0U);
 
-	ROP::ClientGadget_t::uReturnGadget = reinterpret_cast<std::uintptr_t>(FindPattern(L"client.dll", ("83 C3 10 FF 23")) + 0x3);
+	ROP::ClientGadget_t::uReturnGadget = reinterpret_cast<std::uintptr_t>(FindPattern(CLIENT_DLL, XorStr("83 C3 10 FF 23")) + 0x3);
 	bSuccess &= (ROP::ClientGadget_t::uReturnGadget != 0U);
 
-	fnRTDynamicCast = reinterpret_cast<decltype(fnRTDynamicCast)>(FindPattern(L"client.dll", ("6A 18 68 ? ? ? ? E8 ? ? ? ? 8B 7D 08")));
+	fnRTDynamicCast = reinterpret_cast<decltype(fnRTDynamicCast)>(FindPattern(CLIENT_DLL, XorStr("6A 18 68 ? ? ? ? E8 ? ? ? ? 8B 7D 08")));
 	bSuccess &= (fnRTDynamicCast != nullptr);
 
-	const void* hVstdLib = GetModuleBaseHandle(L"vstdlib.dll");
-	const void* hDbgHelp = GetModuleBaseHandle(L"dbghelp.dll");
+	const void* hVstdLib = GetModuleBaseHandle(VSTDLIB_DLL);
+	const void* hDbgHelp = GetModuleBaseHandle(XorStr(L"dbghelp.dll"));
 
 	if (hVstdLib == nullptr || hDbgHelp == nullptr)
 		return false;
 
-	fnRandomSeed = reinterpret_cast<decltype(fnRandomSeed)>(GetExportAddress(hVstdLib, ("RandomSeed")));
+	fnRandomSeed = reinterpret_cast<decltype(fnRandomSeed)>(GetExportAddress(hVstdLib, XorStr("RandomSeed")));
 	bSuccess &= (fnRandomSeed != nullptr);
 
-	fnRandomFloat = reinterpret_cast<decltype(fnRandomFloat)>(GetExportAddress(hVstdLib, ("RandomFloat")));
+	fnRandomFloat = reinterpret_cast<decltype(fnRandomFloat)>(GetExportAddress(hVstdLib, XorStr("RandomFloat")));
 	bSuccess &= (fnRandomFloat != nullptr);
 
-	fnRandomFloatExp = reinterpret_cast<decltype(fnRandomFloatExp)>(GetExportAddress(hVstdLib, ("RandomFloatExp")));
+	fnRandomFloatExp = reinterpret_cast<decltype(fnRandomFloatExp)>(GetExportAddress(hVstdLib, XorStr("RandomFloatExp")));
 	bSuccess &= (fnRandomFloatExp != nullptr);
 
-	fnRandomInt = reinterpret_cast<decltype(fnRandomInt)>(GetExportAddress(hVstdLib, ("RandomInt")));
+	fnRandomInt = reinterpret_cast<decltype(fnRandomInt)>(GetExportAddress(hVstdLib, XorStr("RandomInt")));
 	bSuccess &= (fnRandomInt != nullptr);
 
-	fnRandomGaussianFloat = reinterpret_cast<decltype(fnRandomGaussianFloat)>(GetExportAddress(hVstdLib, ("RandomGaussianFloat")));
+	fnRandomGaussianFloat = reinterpret_cast<decltype(fnRandomGaussianFloat)>(GetExportAddress(hVstdLib, XorStr("RandomGaussianFloat")));
 	bSuccess &= (fnRandomGaussianFloat != nullptr);
 
 	// @todo: move to win.cpp (or platform.cpp?)
-	fnUnDecorateSymbolName = reinterpret_cast<decltype(fnUnDecorateSymbolName)>(GetExportAddress(hDbgHelp, ("UnDecorateSymbolName")));
+	fnUnDecorateSymbolName = reinterpret_cast<decltype(fnUnDecorateSymbolName)>(GetExportAddress(hDbgHelp, XorStr("UnDecorateSymbolName")));
 	bSuccess &= (fnUnDecorateSymbolName != nullptr);
 
 	return bSuccess;
@@ -571,7 +571,7 @@ std::uint8_t* MEM::FindVTable(const wchar_t* wszModuleName, const char* szVTable
 			std::uint8_t* pRDataStart, * pTextStart;
 			std::size_t nRDataSize, nTextSize;
 
-			if (GetSectionInfo(hModuleHandle, (".rdata"), &pRDataStart, &nRDataSize) && GetSectionInfo(hModuleHandle, (".text"), &pTextStart, &nTextSize))
+			if (GetSectionInfo(hModuleHandle, (".rdata"), &pRDataStart, &nRDataSize) && GetSectionInfo(hModuleHandle, XorStr(".text"), &pTextStart, &nTextSize))
 			{
 				// go through all cross-references of the type descriptor inside the '.rdata' section
 				for (const std::uint8_t* pCrossReference : FindPatternAllOccurrencesEx(pRDataStart, nRDataSize, reinterpret_cast<const std::uint8_t*>(&pTypeDescriptor), sizeof(std::uintptr_t)))

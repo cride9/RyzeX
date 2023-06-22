@@ -253,7 +253,7 @@ public:
 	bool& DisableRenderTargetAllocationForever()
 	{
 		// @xref: "Tried BeginRenderTargetAllocation after game startup. If I let you do this, all users would suffer.\n"
-		static auto uDisableRenderTargetAllocationForever = *reinterpret_cast<std::uintptr_t*>(util::FindSignature("materialsystem.dll", "80 B9 ? ? ? ? ? 74 0F") + 0x2);
+		static auto uDisableRenderTargetAllocationForever = *reinterpret_cast<std::uintptr_t*>(MEM::FindPattern(MATERIALSYSTEM_DLL, XorStr("80 B9 ? ? ? ? ? 74 0F")) + 0x2);
 		return *reinterpret_cast<bool*>(reinterpret_cast<std::uintptr_t>(this) + uDisableRenderTargetAllocationForever);
 	}
 };

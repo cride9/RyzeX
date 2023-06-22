@@ -9,6 +9,7 @@
 
 #include "../../SDK/InputSystem.h"
 #include "../Networking/networking.h"
+#include "../Misc/Playerlist.h"
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
 
@@ -140,7 +141,7 @@ void antiaim::Standing(CUserCmd* pCmd, bool& bSendPacket) {
 
 		needMicromovement = true;
 
-		desyncValue = flMaxDesync;
+		desyncValue = -58;
 		if (flickJitter) {
 
 			iChangeOnTick++;
@@ -150,7 +151,7 @@ void antiaim::Standing(CUserCmd* pCmd, bool& bSendPacket) {
 				dontApply = true;
 				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[STANDING] * inverter);
 				iChangeOnTick = 0;
-				//antiaim::shotInvert = !antiaim::shotInvert;
+				antiaim::shotInvert = !antiaim::shotInvert;
 			}
 		}
 
@@ -297,14 +298,17 @@ void antiaim::Moving(CUserCmd* pCmd, bool& bSendPacket) {
 
 		needMicromovement = true;
 
-		desyncValue = flMaxDesync;
+		desyncValue = -58;
 		if (flickJitter) {
+
 			iChangeOnTick++;
+
 			if (iChangeOnTick >= cfg::antiaim::flickAngleSwitch[MOVING]) {
+
 				dontApply = true;
 				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[MOVING] * inverter);
 				iChangeOnTick = 0;
-				//antiaim::shotInvert = !antiaim::shotInvert;
+				antiaim::shotInvert = !antiaim::shotInvert;
 			}
 		}
 
@@ -452,17 +456,19 @@ void antiaim::InAir(CUserCmd* pCmd, bool& bSendPacket) {
 
 		needMicromovement = true;
 
-		desyncValue = flMaxDesync;
+		desyncValue = -58;
 		if (flickJitter) {
+
 			iChangeOnTick++;
+
 			if (iChangeOnTick >= cfg::antiaim::flickAngleSwitch[INAIR]) {
+
 				dontApply = true;
 				pCmd->angViewPoint.y = flBaseYawOrigin - (cfg::antiaim::iFlickOffset[INAIR] * inverter);
 				iChangeOnTick = 0;
-				//antiaim::shotInvert = !antiaim::shotInvert;
+				antiaim::shotInvert = !antiaim::shotInvert;
 			}
 		}
-
 		break;
 
 	default:
@@ -649,7 +655,10 @@ void antiaim::Update( CUserCmd* m_pCmd )
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 
 {
-	const auto time = TICKS_TO_TIME(g::pLocal->GetTickBase());
+	const auto time = TICKS_TO_TIME(networking.GetCorrectedTickbase());
+
+	if (misc::CanFireWeapon(time) && pCmd->iButtons & IN_ATTACK)
+		return true;
 
 	if (g::pLocal->GetWeapon()) {
 
@@ -740,7 +749,7 @@ bool antiaim::FreeStandingDistance(CUserCmd* cmd, Vector& angle) {
 	CBaseEntity* entity = nullptr;
 
 	if (index != -1)
-		entity = (CBaseEntity*)i::EntityList->GetClientEntity(index);
+		CBaseEntity* pEntity = playerList::arrPlayers[index].pEntity;
 
 	if (!entity)
 		return false;
@@ -798,7 +807,7 @@ int antiaim::ClosestToLocal() {
 
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++)
 	{
-		auto entity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+		CBaseEntity* entity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!entity || !entity->IsAlive() || entity->GetTeam() == local_player->GetTeam() || entity->IsDormant() || entity == local_player)
 			continue;
@@ -835,7 +844,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 		Vector vecCalcAngle;
 		auto vecHitboxPosition = pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST, pEnt->GetCachedBoneData().Base());
 
-		M::VectorAngles(vecHitboxPosition - g::pLocal->GetEyePosition(), vecCalcAngle);
+		M::VectorAngles(vecHitboxPosition - g::pLocal->GetEyePosition(false), vecCalcAngle);
 		Vector vecDistanceBetween = (g::vecOriginalViewAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
 
 		if (abs(vecDistanceBetween.Length2D()) < flBestFov) {

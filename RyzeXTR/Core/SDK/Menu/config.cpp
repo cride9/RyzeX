@@ -889,6 +889,8 @@ void CConfig::Setup() {
 		SetupValue(fov, 90, "misc", "fov");
 
 		SetupValue(bombBuffer, "RyzeXTR", "misc", "bombText");
+		SetupValue(bKillsay, false, "misc", "bKillsay");
+		SetupValue(killSayBuffer, "", "misc", "killSayBuffer");
 
 		SetupValue(removals, false, 5, "misc", "removals");
 		SetupValue(drawViewmodelOnScope, false, "misc", "drawViewmodelOnScope");

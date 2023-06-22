@@ -200,7 +200,7 @@ public:
 
 		Lagcompensation::EResolverMode iAntiAimType;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
-		std::array<matrix3x4_t, 128> pCachedMatrix;
+		std::array<matrix3x4_t, 128> pCachedMatrix{matrix3x4_t()};
 
 		void ClearData() {
 
@@ -241,6 +241,8 @@ public:
 	// extrapolate players breaking lagcomp
 	void ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious) const;
 
+	std::array<std::pair<Lagcompensation::LagRecord_t, bool>, 65> arrBackupData;
+
 private:
 	// filter records after updating them
 	void FilterRecords();
@@ -258,6 +260,5 @@ private:
 
 	int nInvalidateFlags{};
 
-	std::array<std::pair<Lagcompensation::LagRecord_t, bool>, 65> arrBackupData;
 };
 inline Lagcompensation lagcomp;

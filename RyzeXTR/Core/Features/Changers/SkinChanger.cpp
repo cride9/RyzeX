@@ -69,7 +69,7 @@ CBaseCombatWeapon* MakeGlove(int entry, int serial)
 	const auto glove = static_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntity(entry));
 	assert(glove);
 	{
-		static auto set_abs_origin_addr = util::FindSignature("client.dll", "55 8B EC 83 E4 F8 51 53 56 57 8B F1 E8");
+		static auto set_abs_origin_addr = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 51 53 56 57 8B F1 E8"));
 		const auto set_abs_origin_fn = reinterpret_cast<void(__thiscall*)(void*, const std::array<float, 3>&)>(set_abs_origin_addr);
 		static constexpr std::array<float, 3> new_pos = { 10000.f, 10000.f, 10000.f };
 		set_abs_origin_fn(glove, new_pos);
@@ -579,7 +579,7 @@ void CSkinChanger::Dump()
 
 	static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
-	uintptr_t sig_address = util::FindSignature("client.dll", "E8 ?? ?? ?? ?? FF 76 0C 8D 48 04 E8");
+	uintptr_t sig_address = (uintptr_t)MEM::FindPattern(CLIENT_DLL, XorStr("E8 ?? ?? ?? ?? FF 76 0C 8D 48 04 E8"));
 
 	// Skip the opcode, read rel32 address
 	int item_system_offset = *reinterpret_cast<int32_t*>(sig_address + 1);

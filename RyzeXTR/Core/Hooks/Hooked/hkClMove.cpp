@@ -25,7 +25,7 @@ void OnMovePacket(float flFrameTime) {
 
 	if (bSendPacket) {
 
-		static auto sig = (void*)((DWORD)(util::FindSignature(("engine.dll"), ("55 8B EC 8B 4D 04 81 EC FC 0F 00 00 53 56 57"))));
+		static auto sig = (void*)((DWORD)(MEM::FindPattern(ENGINE_DLL, XorStr("55 8B EC 8B 4D 04 81 EC FC 0F 00 00 53 56 57"))));
 		((void(__cdecl*)())(sig))();
 
 		i::ClientState->iLastOutgoingCommand = pNetChannel->SendDatagram(0);

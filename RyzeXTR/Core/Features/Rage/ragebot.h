@@ -4,9 +4,28 @@
 #include "Animations/Lagcompensation.h"
 #define HITBOX_ARRAY std::array<bool, HITBOX_MAX>
 
-struct aimbotData_t {
+struct Hitscan_t {
 
+	Hitscan_t() {
 
+	}
+	Hitscan_t(Lagcompensation::LagRecord_t* recordPointer, Vector hitboxVector, float damageFloat, int hitboxInt, bool safeBool, bool lethalBool, bool backtrackBool) {
+		pRecord = recordPointer;
+		vecPoint = hitboxVector;
+		flDamage = damageFloat;
+		iHitbox = hitboxInt;
+		bSafe = safeBool;
+		bLethal = lethalBool;
+		bBacktrack = backtrackBool;
+	}
+
+	Lagcompensation::LagRecord_t* pRecord;
+	Vector vecPoint;
+	float flDamage;
+	int iHitbox;
+	bool bSafe;
+	bool bLethal;
+	bool bBacktrack;
 };
 
 class CRageBot {
@@ -25,33 +44,34 @@ public:
 		float							flTargetSimulation;
 		bool							bCanShoot;
 		int								iCommand;
-		int								iTargetHitbox;
 
-		void SetTarget(Lagcompensation::LagRecord_t* pRecord, int iHitbox) {
+		void SetTarget(Lagcompensation::LagRecord_t* pRecord) {
 
 			pAimbotTarget = pRecord->pEntity;
 			pTargetMatrix = pRecord->pMatricies[1];
 			flTargetSimulation = pRecord->flSimulationTime;
-			iTargetHitbox = iHitbox;
 		}
 
 	} rageBotData ;
 
 	std::vector<Vector> CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, bool = false);
+	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int);
 	std::array<Vector, 6> HitboxPoints(Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, Vector&, int);
 	bool bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);
 	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, int iHitbox);
 
 private:
 
-	std::pair<CBaseEntity*, int> __fastcall SelectTargetIndex(CBaseCombatWeapon*, Vector&);
+	std::array<CBaseEntity*, 65> vecTargets{nullptr};
+
+	void				SelectTargets(CBaseEntity*);
 	Vector				Hitscan(CBaseEntity*, CBaseCombatWeapon*, Vector&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*, Vector);
 	Vector				InterpolateLocalEyePosition(Vector, int = 1);
 	int					CalculateTickCount(float);
 	// helpers
-	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal );
+	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 	Lagcompensation::LagRecord_t* CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog, int&);
 	bool				CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon);
 	bool				ShouldSendPacket(bool&);

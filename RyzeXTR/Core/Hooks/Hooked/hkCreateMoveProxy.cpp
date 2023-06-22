@@ -17,15 +17,9 @@
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
 	static auto original = detour::createMove.GetOriginal<decltype(&h::hkCreateMoveProxy)>();
-
-	for (size_t i = 0; i < 65; i++) 
-		g::bNewTick[i] = true;
 	
 	// call original first so our movement and other stuff will be sent normally
 	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
-
-	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
-		return;
 
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
@@ -34,17 +28,13 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		return;
 
 	bSendPacket = true;
-	CBaseEntity* pLocal = g::pLocal = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
+	CBaseEntity* pLocal = g::pLocal = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	g::pCmd = pCmd;
-	g::vecEyePosition = pLocal->GetEyePosition();
+	g::vecEyePosition = pLocal->GetEyePosition(false);
 
 	lagcomp.StartLagcompensation(pLocal);
 
 	Vector oldViewAngle = g::vecOriginalViewAngle = pCmd->angViewPoint;
-
-	// for now that is the fix for the menu xddxdx
-	if (pCmd->iButtons & IN_ATTACK && menu::open)
-		pCmd->iButtons &= ~(IN_ATTACK | IN_SECOND_ATTACK | IN_MIDDLE_ATTACK);
 
 	if (cfg::misc::infiniteDuck)
 		pCmd->iButtons |= IN_BULLRUSH;

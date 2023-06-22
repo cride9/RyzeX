@@ -6,6 +6,8 @@
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
 #include "../../Features/Visuals/chams.h"
 #include "../../Features/Visuals/ESP.h"
+#include "../../Features/Misc/misc.h"
+#include "../../Features/Misc/Playerlist.h"
 
 void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
@@ -25,6 +27,7 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
 		g::bAllowAnimations[i] = true;
 		g::bSettingUpBones[i] = true;
+		playerList::arrPlayers[i] = playerSettings_t();
 	}
 	/* Clear global pointers */
 	g::pCmd = nullptr;
@@ -40,6 +43,7 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 	ragebot.rageBotData.pTargetMatrix = nullptr;
 	ragebot.rageBotData.iCommand = 0;
 	anims.bResolverHandler = std::array<bool, Animations::EResolverHandler::HANDLERCOUNT>();
+	misc::exploitInitialized = false;
 
 	/* Clear visuals */
 	chams::materials.fill(nullptr);

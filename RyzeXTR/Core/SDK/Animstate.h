@@ -291,7 +291,7 @@ public:
 
 	// m_client_dll, ( "53 56 57 8b f9 33 f6 8b 4f ? 8b 01 ff 90 ? ? ? ? 89 47" )
 	const char* GetWeaponPrefix() {
-		static uintptr_t sig = uintptr_t(util::FindSignature("client.dll", "53 56 57 8b f9 33 f6 8b 4f ? 8b 01 ff 90 ? ? ? ? 89 47"));
+		static uintptr_t sig = uintptr_t(MEM::FindPattern(CLIENT_DLL, XorStr("53 56 57 8b f9 33 f6 8b 4f ? 8b 01 ff 90 ? ? ? ? 89 47")));
 		using GetWeaponPrefixFn = const char* (__thiscall*)(void*);
 		return ((GetWeaponPrefixFn)sig)(this);
 	}
@@ -340,7 +340,7 @@ public:
 	void Create(CBaseEntity* pEntity) {
 
 		using CreateAnimationStateFn = void(__thiscall*)(void*, CBaseEntity*);
-		static auto oCreateAnimationState = reinterpret_cast<CreateAnimationStateFn>(util::FindSignature("client.dll", "55 8B EC 56 8B F1 B9 ? ? ? ? C7 46")); // @xref: "ggprogressive_player_levelup"
+		static auto oCreateAnimationState = reinterpret_cast<CreateAnimationStateFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 56 8B F1 B9 ? ? ? ? C7 46"))); // @xref: "ggprogressive_player_levelup"
 
 		if (oCreateAnimationState == nullptr)
 			return;
@@ -351,7 +351,7 @@ public:
 	void Update(Vector angView) {
 
 		using UpdateAnimationStateFn = void(__vectorcall*)(void*, void*, float, float, float, void*);
-		static auto oUpdateAnimationState = reinterpret_cast<UpdateAnimationStateFn>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3 0F 11 54 24")); // @xref: "%s_aim"
+		static auto oUpdateAnimationState = reinterpret_cast<UpdateAnimationStateFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3 0F 11 54 24"))); // @xref: "%s_aim"
 
 		if (oUpdateAnimationState == nullptr)
 			return;
@@ -362,7 +362,7 @@ public:
 	void Reset() {
 
 		using ResetAnimationStateFn = void(__thiscall*)(void*);
-		static auto oResetAnimationState = reinterpret_cast<ResetAnimationStateFn>(util::FindSignature("client.dll", "56 6A 01 68 ? ? ? ? 8B F1")); // @xref: "player_spawn"
+		static auto oResetAnimationState = reinterpret_cast<ResetAnimationStateFn>(MEM::FindPattern(CLIENT_DLL, XorStr("56 6A 01 68 ? ? ? ? 8B F1"))); // @xref: "player_spawn"
 
 		if (oResetAnimationState == nullptr)
 			return;
@@ -487,7 +487,7 @@ public:
 	float GetLayerSequenceCycleRate(CBaseEntity* thisptr, CAnimationLayer* pLayer, int iSequence) {
 
 		using GetLayerSequenceCycleRateFn = float(__thiscall*)(void*, CAnimationLayer*, int);
-		static auto original = reinterpret_cast<GetLayerSequenceCycleRateFn>(util::FindSignature("client.dll", "55 8B EC 56 57 FF 75 0C 8B 7D 08 8B F1 57 E8"));
+		static auto original = reinterpret_cast<GetLayerSequenceCycleRateFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 56 57 FF 75 0C 8B 7D 08 8B F1 57 E8")));
 		return original(thisptr, pLayer, iSequence);
 
 		//using GetLayerSequenceCycleRateFn = float(__thiscall*)(void*, CAnimationLayer*, int);

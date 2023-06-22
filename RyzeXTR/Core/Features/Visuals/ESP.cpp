@@ -8,6 +8,7 @@
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
 #include "../../SDK/InputSystem.h"
 #include "../../../Dependecies/BASS/dll.h"
+#include "../Misc/Playerlist.h"
 
 void SafepointDebug(CBaseEntity* pEnt) {
 
@@ -60,6 +61,9 @@ using namespace cfg::visual;
 void visual::VisualRender() {
 
 	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
+
+		if (playerList::arrPlayers[i].iIndex != i)
+			continue;
 
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
@@ -336,7 +340,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		}
 	}*/
 
-#if _NO
+#if _NODEBUG
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
 		
@@ -352,28 +356,11 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 		auto pRecord = &pLog->pRecord.front();
 
-		something(right, top, spacing, "[Layer 3]");
-		something(right, top, spacing, std::format("flWeight: {}", pRecord->pLayers[3].flWeight).c_str());
-		something(right, top, spacing, std::format("flCycle: {}", pRecord->pLayers[3].flCycle).c_str());
-		something(right, top, spacing, std::format("flPlaybackrate: {}", pRecord->pLayers[3].flPlaybackRate).c_str());
-		something(right, top, spacing, "");
-
 		something(right, top, spacing, "[Layer 6]");
-		something(right, top, spacing, std::format("flWeight: {}", pRecord->pLayers[6].flWeight).c_str());
-		something(right, top, spacing, std::format("flCycle: {}", pRecord->pLayers[6].flCycle).c_str());
-		something(right, top, spacing, std::format("flPlaybackrate: {}", pRecord->pLayers[6].flPlaybackRate).c_str());
-		something(right, top, spacing, std::format("flLeftPlaybackrate: {}", pRecord->pSideLayers[LEFT][6].flPlaybackRate).c_str());
-		something(right, top, spacing, std::format("flRightPlaybackrate: {}", pRecord->pSideLayers[RIGHT][6].flPlaybackRate).c_str());
-		something(right, top, spacing, std::format("flPlaybackRateDelta1: {}", pRecord->pSideLayers[LEFT][6].flPlaybackRate - pRecord->pLayers[6].flPlaybackRate).c_str());
-		something(right, top, spacing, std::format("flPlaybackRateDelta2: {}", pRecord->pSideLayers[RIGHT][6].flPlaybackRate - pRecord->pLayers[6].flPlaybackRate).c_str());
-		something(right, top, spacing, std::format("flNormalizedPlaybackRate1: {}", M::NormalizeYaw(pRecord->pSideLayers[LEFT][6].flPlaybackRate)).c_str());
-		something(right, top, spacing, std::format("flNormalizedPlaybackRate2: {}", M::NormalizeYaw(pRecord->pSideLayers[RIGHT][6].flPlaybackRate)).c_str());
-
-		something(right, top, spacing, "");
-		something(right, top, spacing, "[Layer 12]");
-		something(right, top, spacing, std::format("flWeight: {}", pRecord->pLayers[12].flWeight).c_str());
-		something(right, top, spacing, std::format("flCycle: {}", pRecord->pLayers[12].flCycle).c_str());
-		something(right, top, spacing, std::format("flPlaybackrate: {}", pRecord->pLayers[12].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("Left: {}", pRecord->LayerData[LEFT].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("Right: {}", pRecord->LayerData[RIGHT].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("Center: {}", pRecord->LayerData[CENTER].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("Server: {}", pRecord->pLayers[6].flPlaybackRate).c_str());
 	}
 #endif
 }

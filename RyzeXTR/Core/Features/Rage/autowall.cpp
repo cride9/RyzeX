@@ -1,5 +1,7 @@
 #include "autowall.h"
 #include "../../globals.h"
+#include "../Misc/Playerlist.h"
+#include "Animations/Lagcompensation.h"
 
 float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, FireBulletData_t* pDataOut)
 {
@@ -83,7 +85,7 @@ void CAutoWall::ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const fl
 }
 
 // @credits: https://github.com/perilouswithadollarsign/cstrike15_src/blob/master/game/shared/util_shared.cpp#L757
-void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, ITraceFilter* pFilter, Trace_t* pTrace, const float flMinRange)
+void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, CTraceFilter* pFilter, Trace_t* pTrace, const float flMinRange)
 {
 	// @ida util_cliptracetoplayers: client.dll @ E8 ? ? ? ? 0F 28 84 24 68 02 00 00
 
@@ -92,9 +94,22 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 
 	const Ray_t ray( vecAbsStart, vecAbsEnd );
 
-	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++ )
+	static std::array<CBaseEntity*, 65> arrPlayers;
+	static int iBackup = 0;
+	if (iBackup != i::GlobalVars->iTickCount)
 	{
-		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+		for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
+			CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+			arrPlayers[i] = pEntity;
+		}
+		iBackup = i::GlobalVars->iTickCount;
+	}
+
+	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++)
+	{
+		//CBaseEntity* pEntity = lagcomp.arrBackupData[i].first.pEntity;
+		CBaseEntity* pEntity = arrPlayers[i];
 
 		if ( pEntity == nullptr || !pEntity->IsAlive( ) || pEntity->IsDormant( ))
 			continue;
@@ -336,7 +351,8 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	float flMaxRange = pWeaponData->flRange;
 
 	// the total number of surfaces any bullet can penetrate in a single flight is capped at 4
-	data.iPenetrateCount = 4;
+	if (data.iPenetrateCount > 4 || data.iPenetrateCount == 0)
+		data.iPenetrateCount = 4;
 	// set our current damage to what our gun's initial damage reports it will do
 	data.flCurrentDamage = static_cast< float >( pWeaponData->iDamage );
 

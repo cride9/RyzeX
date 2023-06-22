@@ -7,6 +7,9 @@ void __fastcall h::hkStandardBlendingRules(void* entityPointer, void* unused1, v
 
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 
+	if (!pEnt->IsAlive())
+		original(entityPointer, unused1, unused2, unused3, unused4, unused5, unused6);
+
 	if (!(pEnt->GetEffects() & 8))
 		pEnt->GetEffects() |= 8;
 

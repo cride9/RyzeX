@@ -16,7 +16,7 @@ int CBaseEntity::GetSequenceActivity(int iSequence)
 		return -1;
 
 	using GetSequenceActivityFn = int(__fastcall*)(void*, void*, int);
-	static auto oGetSequenceActivity = reinterpret_cast<GetSequenceActivityFn>(util::FindSignature("client.dll", "55 8B EC 53 8B 5D 08 56 8B F1 83")); // @xref: "Need to handle the activity %d\n"
+	static auto oGetSequenceActivity = reinterpret_cast<GetSequenceActivityFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 53 8B 5D 08 56 8B F1 83"))); // @xref: "Need to handle the activity %d\n"
 	assert(oGetSequenceActivity != nullptr);
 
 	return oGetSequenceActivity(this, pStudioHdr, iSequence);
@@ -28,7 +28,7 @@ void CBaseEntity::SetUpMovement() {
 		return;
 
 	using SetUpMovementFn = void(__thiscall*)(CAnimState*);
-	static auto oSetUpMovement = reinterpret_cast<SetUpMovementFn>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B ? ? ? ? ? 8B F1"));
+	static auto oSetUpMovement = reinterpret_cast<SetUpMovementFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B ? ? ? ? ? 8B F1")));
 
 	assert(oSetUpMovement != nullptr);
 
@@ -89,7 +89,7 @@ int CBaseEntity::GetBoneByHash(const uint32_t uBoneHash) const
 	return BONE_INVALID;
 }
 
-Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float& flRadius)
+Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float& flRadius, mstudiobbox_t* pStudioBox)
 {
 	if (hitbox >= HITBOX_MAX)
 		return Vector(0, 0, 0);
@@ -106,6 +106,7 @@ Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float
 	if (!studioBox)
 		return Vector(0, 0, 0);
 
+	pStudioBox = studioBox;
 	Vector min, max;
 
 	min = M::VectorTransform(studioBox->vecBBMin, matrix[studioBox->iBone]);
@@ -312,11 +313,11 @@ void CBaseEntity::PostThink()
 	// @ida postthink: client.dll 56 8B 35 ? ? ? ? 57 8B F9 8B CE 8B 06 FF 90 ? ? ? ? 8B 07
 
 	using PostThinkVPhysicsFn = bool(__thiscall*)(CBaseEntity*);
-	static auto oPostThinkVPhysics = reinterpret_cast<PostThinkVPhysicsFn>(util::FindSignature("client.dll", "55 8B EC 83 E4 F8 81 EC ? ? ? ? 53 8B D9 56 57 83 BB"));
+	static auto oPostThinkVPhysics = reinterpret_cast<PostThinkVPhysicsFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 81 EC ? ? ? ? 53 8B D9 56 57 83 BB")));
 	assert(oPostThinkVPhysics != nullptr);
 
 	using SimulatePlayerSimulatedEntitiesFn = void(__thiscall*)(CBaseEntity*);
-	static auto oSimulatePlayerSimulatedEntities = reinterpret_cast<SimulatePlayerSimulatedEntitiesFn>(util::FindSignature("client.dll", "56 8B F1 57 8B BE ? ? ? ? 83 EF 01 78 74"));
+	static auto oSimulatePlayerSimulatedEntities = reinterpret_cast<SimulatePlayerSimulatedEntitiesFn>(MEM::FindPattern(CLIENT_DLL, XorStr("56 8B F1 57 8B BE ? ? ? ? 83 EF 01 78 74")));
 	assert(oSimulatePlayerSimulatedEntities != nullptr);
 
 	//i::MDLCache->BeginLock();
@@ -343,7 +344,7 @@ void CBaseEntity::PostThink()
 bool CBaseEntity::InitializeAsClientEntity(const char* pszModelName, bool bRenderWithViewModels) {
 
 	using InitializeAsClientEntityFn = bool(__thiscall*)(const char*, bool);
-	static auto oInitializeAsClientEntity = reinterpret_cast<InitializeAsClientEntityFn>(util::FindSignature("client.dll", "55 8B EC 8B 55 08 56 57 8B F9 85 D2 74 1B"));
+	static auto oInitializeAsClientEntity = reinterpret_cast<InitializeAsClientEntityFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 8B 55 08 56 57 8B F9 85 D2 74 1B")));
 	assert(oInitializeAsClientEntity != nullptr);
 
 	return oInitializeAsClientEntity(pszModelName, bRenderWithViewModels);
@@ -448,7 +449,7 @@ public:
 
 void CBaseEntity::InvalidateBoneCache() {
 
-	static DWORD addr = (DWORD)util::FindSignature("client.dll", "80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81");
+	static DWORD addr = (DWORD)MEM::FindPattern(CLIENT_DLL, XorStr("80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"));
 
 	*(int*)((uintptr_t)this + 0xA30) = i::GlobalVars->iFrameCount; //we'll skip occlusion checks now
 	*(int*)((uintptr_t)this + 0xA28) = 0;//clear occlusion flags
@@ -472,7 +473,7 @@ float CBaseEntity::GetLayerSequenceCycleRate(CAnimationLayer* pLayer, int iSeque
 float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
 
 	Vector vecReturn;
-	static auto lmao = util::FindSignature("client.dll", "55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14");
+	static auto lmao = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14"));
 	using GetSequenceLinearMotionFn = int(__fastcall*)(CStudioHdr*, int, float*, Vector*);
 	((GetSequenceLinearMotionFn)lmao)(pStudioHdr, iSequence, GetPoseParameter().data(), &vecReturn);
 	__asm {

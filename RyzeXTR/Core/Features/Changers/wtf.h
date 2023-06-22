@@ -553,7 +553,7 @@ namespace beforeIfuckUpEverything {
 		g::bUpdatingSkins = true;
 		//util::ForceFullUpdate();
 		typedef void(*fn) (void);
-		static fn update = (fn)util::FindSignature("engine.dll", "A1 ? ? ? ? B9 ? ? ? ? 56 FF 50 14 8B 34 85");
+		static fn update = (fn)MEM::FindPattern(ENGINE_DLL, XorStr("A1 ? ? ? ? B9 ? ? ? ? 56 FF 50 14 8B 34 85"));
 		//update();
 
 		// lets update hud again to make sure user will have the correct skin name

@@ -3,6 +3,7 @@
 #include "../../Networking/networking.h"
 #include "../../../SDK/InputSystem.h"
 #include "../exploits.h"
+#include "../../Misc/Playerlist.h"
 
 Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 {
@@ -190,7 +191,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 			pRecord.bFirstAfterDormant = true;
 
 		pLog->pRecord.push_front(pRecord);
-		while (pLog->pRecord.size() > 64)
+		while (pLog->pRecord.size() > 32)
 			pLog->pRecord.pop_back();
 
 		anims.RebuildEnemyAnimations(pEntity, &pLog->pRecord.front(), pLog);
@@ -198,7 +199,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		pLog->bLeftDormancy = false;
 
 		//FilterRecords();
-		pPlayerLogs[i].iFirstValid = 64;
+		pPlayerLogs[i].iFirstValid = 32;
 		pPlayerLogs[i].bSafeRecord = false;
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
@@ -265,6 +266,9 @@ void Lagcompensation::FilterRecords()
 void Lagcompensation::SetInterpolationFlags()
 {
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++) {
+
+		if (playerList::arrPlayers[i].iIndex != i)
+			continue;
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
@@ -445,17 +449,34 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 		return false;
 
 	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
-	constexpr float flMagicNumber = 0.00075f;
+	//constexpr float flMagicNumber = 0.00075f;
 
-	if (cfg::misc::fakePing) {
-		float flIncoming = NetChannelInfo->GetLatency(FLOW_INCOMING) * 1000.f;
-		flRange += min(flIncoming, 199) * flMagicNumber;
-	}
+	int iTickBase = networking.GetCorrectedTickbase();
+	const float flLerpTime = GetClientInterpAmount();
+	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
 	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::bCharged)
-		flRange += TICKS_TO_TIME(15);
+		iTickBase -= TICKS_TO_TIME(14);
 
-	return (i::GlobalVars->flCurrentTime - mflSimulationTime) < flRange;
+	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - TICKS_TO_TIME(iTickBase - TIME_TO_TICKS(mflSimulationTime));
+	if (fabs(flDeltaTime) > flRange)
+		return false;
+
+	int nDeadTime = (int)((float)(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - flRange);
+	if (TIME_TO_TICKS(mflSimulationTime + flLerpTime) < nDeadTime)
+		return false;
+
+	return true;
+
+	//if (cfg::misc::fakePing) {
+	//	float flIncoming = NetChannelInfo->GetLatency(FLOW_INCOMING) * 1000.f;
+	//	flRange += (min(flIncoming, 200.f) * flMagicNumber) - (NetChannelInfo->GetLatency(FLOW_OUTGOING));
+	//}
+
+	//if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::bCharged)
+	//	flRange += TICKS_TO_TIME(14);
+
+	//return (i::GlobalVars->flCurrentTime - mflSimulationTime + GetClientInterpAmount()) < flRange;
 }
 
 int Lagcompensation::FixTickCount(const float& flSimulationTime)
@@ -534,6 +555,9 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 
 void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
 
+	if (g::bUpdatingSkins)
+		return;
+
 	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
@@ -550,6 +574,9 @@ void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
 }
 
 void Lagcompensation::FinishLagcompensation(CBaseEntity* pLocal) {
+
+	if (g::bUpdatingSkins)
+		return;
 
 	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
 

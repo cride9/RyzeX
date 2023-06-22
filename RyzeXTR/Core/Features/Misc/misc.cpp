@@ -17,12 +17,10 @@
 #include "../../../Dependecies/BASS/API.h"
 #include "../../../Dependecies/BASS/string_obfuscation.h"
 #include "../../SDK/Menu/gui.h"
+#include "Playerlist.h"
 
 void misc::SetupRadio( )
 {
-	while ( !GetModuleHandleA( "serverbrowser.dll" ) )
-		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
-
 	BASS::bass_lib_handle = BASS::bass_lib.LoadFromMemory( bass_dll_image, sizeof( bass_dll_image ) );
 
 	if ( BASS_INIT_ONCE( ) )
@@ -82,8 +80,8 @@ void misc::SetupRadio( )
 
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
-	BunnyHop(pCmd);
 	FakeLag(bSendPacket);
+	BunnyHop(pCmd);
 	AutoStrafe(vecViewAngle, pCmd);
 	AspectRatio();
 	Slowwalk(pCmd, cfg::antiaim::fakewalk); // need menu element && keybind
@@ -91,6 +89,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FakeDuck(pCmd);
 	SlideFix();
 	BlockBot(pCmd);
+	MoveToPosition();
 	OnlyCheatLogs();
 	RemovePostProcessing();
 	FixScopeSens();
@@ -159,6 +158,8 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	}
 	if (!strcmp(pEvent->GetName(), playerDeath)) {
 		CapsuleHandler(pEvent);
+		Killsay(pEvent);
+		ThirdPersonDisableOnDeath(pEvent);
 	}
 	if (!strcmp(pEvent->GetName(), bulletImpact)) {
 		WorldCrosshairHandler(pEvent);
@@ -186,7 +187,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 CBaseEntity* UTIL_PlayerByIndex(int index)
 {
 	typedef CBaseEntity* (__fastcall* PlayerByIndex)(int);
-	static PlayerByIndex UTIL_PlayerByIndex = reinterpret_cast<PlayerByIndex>(util::FindSignature("server.dll", "85 C9 7E 32 A1"));
+	static PlayerByIndex UTIL_PlayerByIndex = reinterpret_cast<PlayerByIndex>(MEM::FindPattern(SERVER_DLL, XorStr("85 C9 7E 32 A1")));
 
 	if (!UTIL_PlayerByIndex)
 		return nullptr;
@@ -196,7 +197,7 @@ CBaseEntity* UTIL_PlayerByIndex(int index)
 
 void misc::ServerHitboxes() {
 
-	static uintptr_t* pCall = (uintptr_t*)(util::FindSignature("server.dll", "55 8B EC 81 EC ? ? ? ? 53 56 8B 35 ? ? ? ? 8B D9 57 8B CE"));
+	static uintptr_t* pCall = (uintptr_t*)(MEM::FindPattern(SERVER_DLL, XorStr("55 8B EC 81 EC ? ? ? ? 53 56 8B 35 ? ? ? ? 8B D9 57 8B CE")));
 	float fDuration = i::GlobalVars->flIntervalPerTick * 1.0f;
 
 	PVOID pTEntity = nullptr;
@@ -291,7 +292,7 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		if ((vecOrigin - pLocal->GetVecOrigin()).Length2D() > 3.29217472f) {
 
 			Vector vecAngle;
-			M::VectorAngles(vecOrigin - pLocal->GetEyePosition(), vecAngle);
+			M::VectorAngles(vecOrigin - pLocal->GetEyePosition(false), vecAngle);
 
 			g::vecOriginalViewAngle.y = vecAngle.y;
 			g::pCmd->flForwardMove += 450.f;
@@ -541,23 +542,23 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 using namespace cachedEvents;
 void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 
-	static DWORD* _death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
-	static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))util::FindSignature("client.dll", "55 8B EC 83 EC 0C 53 56 8B 71 58");
+	static DWORD* _death_notice = reinterpret_cast<DWORD*>(util::FindHudElement(XorStr("CCSGO_HudDeathNotice")));
+	static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 0C 53 56 8B 71 58"));
 
 	if (!strcmp(event->GetName(), playerDeath)) {
 
-		auto pAttacker = i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(event->GetInt("attacker")));
+		auto pAttacker = i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(event->GetInt(XorStr("attacker"))));
 
 		if (!pAttacker || pAttacker != g::pLocal)
 			return;
 
-		int index = i::EngineClient->GetPlayerForUserID(event->GetInt("userid"));
+		int index = i::EngineClient->GetPlayerForUserID(event->GetInt(XorStr("userid")));
 
 		if (!index)
 			return;
 
 		if (i::EngineClient->IsConnected() && i::EngineClient->IsInGame())
-			_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
+			_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement(XorStr("CCSGO_HudDeathNotice")));
 
 		if (!_clear_notices)
 			return;
@@ -573,7 +574,7 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 		}
 
 		if (_death_notice)
-			_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement("CCSGO_HudDeathNotice"));
+			_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement(XorStr("CCSGO_HudDeathNotice")));
 		if (_clear_notices)
 			_clear_notices(((DWORD)_death_notice - 20));
 	}
@@ -735,7 +736,7 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 	bFlip = !bFlip;
 
 	auto flTurnDirectionModifier = bFlip ? 1.0f : -1.0f;
-	auto vecViewAngles = pCmd->angViewPoint;
+	auto vecViewAngles = vecView;
 
 	if (flForwardMove || flSidemove)
 	{
@@ -804,12 +805,12 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 	Vector angles_move;
 	M::VectorAngles(vecMove, angles_move);
 
-	auto flNormalizedX = fmod(pCmd->angViewPoint.x + 180.0f, 360.0f) - 180.0f;
-	auto flNormalizedY = fmod(pCmd->angViewPoint.y + 180.0f, 360.0f) - 180.0f;
+	auto flNormalizedX = fmod(vecView.x + 180.0f, 360.0f) - 180.0f;
+	auto flNormalizedY = fmod(vecView.y + 180.0f, 360.0f) - 180.0f;
 
 	auto flYaw = M_DEG2RAD(flNormalizedY - vecViewAngles.y + angles_move.y);
 
-	if (flNormalizedX >= 90.0f || flNormalizedX <= -90.0f || pCmd->angViewPoint.x >= 90.0f && pCmd->angViewPoint.x <= 200.0f || pCmd->angViewPoint.x <= -90.0f && pCmd->angViewPoint.x <= 200.0f) //-V648
+	if (flNormalizedX >= 90.0f || flNormalizedX <= -90.0f || vecView.x >= 90.0f && vecView.x <= 200.0f || vecView.x <= -90.0f && vecView.x <= 200.0f) //-V648
 		pCmd->flForwardMove = -cos(flYaw) * flSpeed;
 	else
 		pCmd->flForwardMove = cos(flYaw) * flSpeed;
@@ -1087,6 +1088,7 @@ void misc::FakeLag(bool& bSendPacket) {
 
 	iMax = cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 2 : iMax;
 	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
+	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;
 	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;
 }
 
@@ -1138,10 +1140,10 @@ void misc::BulletTracer(IGameEvent* pEvent) {
 	if (pEntity == g::pLocal && cfg::visual::bBulletTracer[LOCAL])
 		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[LOCAL]);
 	
-	else if (pEntity->GetTeam() == g::pLocal->GetTeam() && cfg::visual::bBulletTracer[TEAM])
+	else if (pEntity->GetTeam() == g::pLocal->GetTeam() && cfg::visual::bBulletTracer[TEAM] && !pEntity->IsDormant())
 		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[TEAM]);
 	
-	else if (pEntity->GetTeam() != g::pLocal->GetTeam() && cfg::visual::bBulletTracer[ENEMY])
+	else if (pEntity->GetTeam() != g::pLocal->GetTeam() && cfg::visual::bBulletTracer[ENEMY] && !pEntity->IsDormant())
 		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[ENEMY]);
 	
 }
@@ -1207,28 +1209,28 @@ void misc::RemoveSmoke() {
 		return;
 
 	flCurrentTime = i::GlobalVars->flCurrentTime;
-	static auto sigLineGoesThroughSmoke = util::FindSignature("client.dll", "55 8B EC 83 EC 08 8B 15 ? ? ? ? 0F 57 C0");
+	static auto sigLineGoesThroughSmoke = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 08 8B 15 ? ? ? ? 0F 57 C0"));
 
 	static const char* vecSmokeWireframe =
 	{
-		"particle/vistasmokev1/vistasmokev1_smokegrenade",
+		XorStr("particle/vistasmokev1/vistasmokev1_smokegrenade"),
 	};
 
 	static std::array<const char*, 3> vecSmokeNoDraw =
 	{
-		"particle/vistasmokev1/vistasmokev1_fire",
-		"particle/vistasmokev1/vistasmokev1_emods",
-		"particle/vistasmokev1/vistasmokev1_emods_impactdust",
+		XorStr("particle/vistasmokev1/vistasmokev1_fire"),
+		XorStr("particle/vistasmokev1/vistasmokev1_emods"),
+		XorStr("particle/vistasmokev1/vistasmokev1_emods_impactdust"),
 	};
 
 	{
-		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(vecSmokeWireframe, "Other textures");
+		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(vecSmokeWireframe, XorStr("Other textures"));
 		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, true); //wireframe
 	}
 
 	for (auto szCurrentMat : vecSmokeNoDraw) {
 
-		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(szCurrentMat, "Other textures");
+		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(szCurrentMat, XorStr("Other textures"));
 		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
 	}
 
@@ -1445,15 +1447,28 @@ void TraceRayBot(CUserCmd* pCmd);
 //		AIVizualization.pop_back();
 //}
 
-void misc::MoveToPosition(Vector& vecPosition) {
+void misc::MoveToPosition() {
 
-	Vector vecMoveDirection;
-	M::VectorAngles(vecPosition - g::pLocal->GetEyePosition(), vecMoveDirection);
+	Vector vecExtrapolatedLocalPos = (g::pLocal->GetVecOrigin() + (g::pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 3)));
+	if (playerList::iFollowPlayerIndex == -1)
+		return;
 
-	Vector vecSetAngle = Vector(g::vecOriginalViewAngle.x, vecMoveDirection.y, g::vecOriginalViewAngle.z);
-	i::EngineClient->SetViewAngles(vecSetAngle);
-	g::pCmd->flForwardMove = 450.f;
-	g::pCmd->iButtons |= IN_JUMP;
+	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+		if (!pEntity)
+			continue;
+
+		if (abs((vecExtrapolatedLocalPos - pEntity->GetVecOrigin()).Length2D()) > 0.75f/*1.29217472f*/) {
+
+			Vector vecAngle;
+			M::VectorAngles(pEntity->GetVecOrigin() - vecExtrapolatedLocalPos, vecAngle);
+
+			g::vecOriginalViewAngle.y = vecAngle.y;
+			g::pCmd->flForwardMove = g::pCmd->iButtons & IN_DUCK ? 450.f * 3 : 450.f;
+			g::pCmd->flSideMove = 0.f;
+		}
+	}
 }
 
 void Friction(float flFriction, Vector* vecVelocity)
@@ -1610,6 +1625,26 @@ void misc::ClanTag() {
 		}
 	}
 	flTime = iMainTime;
+}
+
+void misc::Killsay(IGameEvent* pEvent) {
+
+	if (!cfg::misc::bKillsay)
+		return;
+
+	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+	if (int iLocalIndex = i::EngineClient->GetLocalPlayer(); iUserID != iLocalIndex && iAttacker == iLocalIndex) {
+		i::EngineClient->ExecuteClientCmd(std::format("say {}", cfg::misc::killSayBuffer).c_str());
+	}
+}
+
+void misc::ThirdPersonDisableOnDeath(IGameEvent* pEvent) {
+
+	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+
+	if (iUserID == i::EngineClient->GetLocalPlayer() && i::Input->bCameraInThirdPerson)
+		i::Input->ToFirstPerson();
 }
 
 void misc::CapsuleHandler(IGameEvent* pEvent) {
@@ -1787,7 +1822,7 @@ static __declspec(naked) void __cdecl Invoke_NET_SetConVar(void* pfn, const char
 void DECLSPEC_NOINLINE NET_SetConVar(const char* value, const char* cvar)
 {
 	// "\x8D\x4C\x24\x1C\xE8\x00\x00\x00\x00\x56"
-	static DWORD setaddr = util::FindSignature("engine.dll", "8D 4C 24 1C E8 ? ? ? ? 56");
+	static DWORD setaddr = (DWORD)MEM::FindPattern(ENGINE_DLL, XorStr("8D 4C 24 1C E8 ? ? ? ? 56"));
 	if (setaddr != 0)
 	{
 		void* pvSetConVar = (char*)setaddr;
@@ -1798,19 +1833,17 @@ void DECLSPEC_NOINLINE NET_SetConVar(const char* value, const char* cvar)
 void change_name(const char* name)
 {
 	if (i::EngineClient->IsInGame() && i::EngineClient->IsConnected())
-		NET_SetConVar(name, "name");
+		NET_SetConVar(name, XorStr("name"));
 }
 
 bool misc::ChangeName(bool bReconnect, const char* szName) {
-
-	static auto exploitInitialized{ false };
 
 	if (!exploitInitialized && i::EngineClient->IsInGame()) {
 		if (PlayerInfo_t playerInfo; g::pLocal && i::EngineClient->GetPlayerInfo(i::EngineClient->GetLocalPlayer(), &playerInfo) && (!strcmp(playerInfo.szName, "?empty") || !strcmp(playerInfo.szName, "\n\xAD\xAD\xAD"))) {
 			exploitInitialized = true;
 		}
 		else {
-			change_name("\n\xAD\xAD\xAD");
+			change_name(XorStr("\n\xAD\xAD\xAD"));
 			return false;
 		}
 	}
@@ -1821,10 +1854,180 @@ bool misc::ChangeName(bool bReconnect, const char* szName) {
 
 bool misc::ResetName(bool bReconnect, const char* szName) {
 
-	static CConVar* pNameVar = i::ConVar->FindVar("name");
+	static CConVar* pNameVar = i::ConVar->FindVar(XorStr("name"));
 
 	ChangeName(false, pNameVar->GetString());
 	return true;
+}
+
+void misc::RevolverRunCommand(CBaseEntity* pEntity) {
+
+	CBaseCombatWeapon* pCombatWeapon = pEntity->GetWeapon();
+	static int iActivity = 0, iTickbase = 0;
+	if (pCombatWeapon)
+	{
+		if (pCombatWeapon->GetItemDefinitionIndex() == WEAPON_REVOLVER)
+		{
+			int nActivity = pCombatWeapon->GetActivity();
+			if (iActivity != nActivity)
+				if (nActivity == 208)
+					iTickbase = pEntity->GetTickBase() + 1;
+
+			if (nActivity == 208)
+				if (iTickbase == pEntity->GetTickBase() - 1)
+					pCombatWeapon->GetFireReadyTime() = TICKS_TO_TIME(iTickbase) + 0.2f;
+
+			iActivity = nActivity;
+		}
+	}
+}
+
+bool misc::CanFireWeapon(float curtime, bool bRevolverSecondary, bool bSkipExtraRevolverChecks)
+{
+	/*if ( IExploits::Get( )->m_ExploitData.m_bShifting )
+		return false;*/
+
+	if (!g::pLocal || !g::pLocal->IsAlive())
+		return false;
+
+	if (g::pLocal->GetFlags() & FL_FROZEN)
+		return false;
+
+	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
+	if (!pWeapon)
+		return false;
+
+	if (pWeapon->IsGrenade())
+		return false;
+
+	CCSWeaponInfo* weapon_data = pWeapon->GetCSWpnData();
+	if (!weapon_data)
+		return false;
+
+	if (weapon_data->nWeaponType != WEAPONTYPE_KNIFE && pWeapon->GetAmmo() < 1)
+		return false;
+
+	float flNextAttack = g::pLocal->GetNextAttack();
+	float flNextPrimaryAttack = pWeapon->GetNextPrimaryAttack();
+	float flNextSecondaryAttack = pWeapon->GetNextSecondaryAttack();
+
+	// @onetap - delay 2 ticks when using exploits
+	// we don't need to delay burst shot, we don't use exploits with burst
+	//if (IExploits::Get()->m_ExploitData.m_iExploitType != EXPLOIT_TYPE_NONE
+	//	&& IExploits::Get()->m_ExploitData.m_bCanExploit
+	//	&& IExploits::Get()->m_ExploitData.m_iTicksAllowedForProcessing >= 5
+	//	&& IExploits::Get()->m_ExploitData.m_bCanExploit)
+	//{
+	//	//bool bWasOffensiveShift = features::exploits::m_Data.m_iCommandNumberOnOffensiveShift >= features::exploits::m_Data.m_iCommandNumberOnShift;
+	//	//int iLastShiftAmount = bWasOffensiveShift ? features::exploits::m_Data.m_iLastShiftAmount [ SHIFT_TYPE_OFFENSIVE ] : features::exploits::m_Data.m_iLastShiftAmount [ SHIFT_TYPE_DEFENSIVE ];
+
+	//	float delay_time = TICKS_TO_TIME(2 /*+ iLastShiftAmount*/);
+	//	flNextAttack += delay_time;
+	//	flNextPrimaryAttack += delay_time;
+	//	flNextSecondaryAttack += delay_time;
+	//}
+
+	if (!(curtime >= flNextAttack))
+		return false;
+
+	//if ((pWeapon->GetItemDefinitionIndex() == WEAPON_GLOCK || pWeapon->GetItemDefinitionIndex() == WEAPON_FAMAS) && pWeapon->m_iBurstShotsRemaining() > 0) {
+	//	if (curtime >= pWeapon->m_fNextBurstShot())
+	//		return true;
+	//}
+
+	if (pWeapon->GetItemDefinitionIndex() == WEAPON_REVOLVER && bRevolverSecondary)
+	{
+		if (curtime >= flNextSecondaryAttack)
+			return true;
+
+		return false;
+	}
+
+	if (!(curtime >= flNextPrimaryAttack))
+		return false;
+
+	if (pWeapon->GetItemDefinitionIndex() != WEAPON_REVOLVER || bSkipExtraRevolverChecks)
+		return true;
+
+	// only for REVOLVER
+	// @onetap
+	if (!(curtime >= pWeapon->GetFireReadyTime()))
+		return false;
+
+	// only for REVOLVER
+	// @onetap
+	if (((CBaseEntity*)pWeapon)->GetSequence() != 5)
+		return false;
+
+	return true;
+}
+
+void misc::RevolverCreateMove() {
+
+	if (!cfg::rage::enable)
+		return;
+
+	if (!g::pLocal)
+		return;
+
+	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
+	if (!pWeapon)
+		return;
+
+	CCSWeaponInfo* pWeaponInfo = pWeapon->GetCSWpnData();
+	if (!pWeaponInfo)
+		return;
+
+	// don't remove IN_ATTACK on these weapons
+	if (pWeapon->IsGrenade() || pWeapon->GetItemDefinitionIndex() == WEAPON_C4 || pWeapon->GetItemDefinitionIndex() == WEAPON_HEALTHSHOT)
+		return;
+
+	float curtime = TICKS_TO_TIME(networking.GetCorrectedTickbase());
+
+	// we do something else for revolver
+	if (pWeapon->GetItemDefinitionIndex() != WEAPON_REVOLVER)
+	{
+		if (!CanFireWeapon(curtime))
+		{
+			g::pCmd->iButtons &= ~IN_ATTACK;
+		}
+
+		return;
+	}
+
+	g::pCmd->iButtons &= ~IN_SECOND_ATTACK;
+
+	if (!CanFireWeapon(curtime, false, true))
+	{
+		g::pCmd->iButtons &= ~IN_ATTACK;
+		return;
+	}
+
+	if (pWeapon->GetFireReadyTime() <= curtime)
+	{
+		if (pWeapon->GetNextSecondaryAttack() > curtime)
+		{
+			g::pCmd->iButtons |= IN_SECOND_ATTACK;
+		}
+	}
+	else
+	{
+		g::pCmd->iButtons |= IN_ATTACK;
+	}
+
+	/*if (g::pLocal->GetFlags() & FL_FROZEN)
+		return;
+
+	CBaseCombatWeapon* pCombatWeapon = g::pLocal->GetWeapon();
+	if (!pCombatWeapon || !cfg::rage::enable || pCombatWeapon->GetItemDefinitionIndex() != WEAPON_REVOLVER)
+		return;
+
+	g::pCmd->iButtons &= ~IN_SECOND_ATTACK;
+	if (g::pCmd->iButtons & IN_ATTACK)
+		return;
+
+	if (pCombatWeapon->GetFireReadyTime() > TICKS_TO_TIME(g::pLocal->GetTickBase()))
+		g::pCmd->iButtons |= IN_ATTACK;*/
 }
 
 #pragma runtime_checks( "", off )

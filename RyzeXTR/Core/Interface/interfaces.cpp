@@ -4,75 +4,75 @@
 
 void i::SetupInterfaces() {
 
-	ClientDll =		GetInterface<IBaseClientDLL>("client.dll", "VClient018");
-	EntityList =	GetInterface<IClientEntityList>("client.dll", "VClientEntityList003");
-	EngineClient =	GetInterface<IVEngineClient>("engine.dll", "VEngineClient014");
-	Surface =		GetInterface<ISurface>("vguimatsurface.dll", "VGUI_Surface031");
-	Panel =			GetInterface<IPanel>("vgui2.dll", "VGUI_Panel009");
-	StudioRender =	GetInterface<IStudioRender>("studiorender.dll", "VStudioRender026");
-	Prediction =	GetInterface<IPrediction>("client.dll", "VClientPrediction001");
-	GameMovement =	GetInterface<IGameMovement>("client.dll", "GameMovement001");
-	EngineVGui =	GetInterface<IEngineVGui>("engine.dll", "VEngineVGui001");
-	ModelRender =	GetInterface<IVModelRender>("engine.dll", "VEngineModel016");
-	DebugOverlay =	GetInterface<IVDebugOverlay>("engine.dll", "VDebugOverlay004");
-	MaterialSystem = GetInterface<IMaterialSystem>("materialsystem.dll", "VMaterialSystem080");
-	ModelInfo =		GetInterface<IVModelInfo>("engine.dll", "VModelInfoClient004");
-	ConVar =		GetInterface<IConVar>("vstdlib.dll", "VEngineCvar007");
-	EngineTrace =	GetInterface<IEngineTrace>("engine.dll", "EngineTraceClient004");
-	PhysicsProps =	GetInterface<IPhysicsSurfaceProps>("vphysics.dll", "VPhysicsSurfaceProps001");
-	GameEvent =		GetInterface<IGameEventManager>("engine.dll", "GAMEEVENTSMANAGER002");
-	EngineSoundClient = GetInterface<IEngineSoundClient>("engine.dll", "IEngineSoundClient003");
-	InputSystem =	GetInterface<IInputSystem>( "inputsystem.dll", "InputSystemVersion001" );
-	MDLCache =		GetInterface<IMDLCache>("datacache.dll", "MDLCache004");
-	Localize =		GetInterface<ILocalize>("localize.dll", "Localize_001");
+	ClientDll = GetInterface<IBaseClientDLL>(CLIENT_DLL, XorStr("VClient018"));
+	EntityList = GetInterface<IClientEntityList>(CLIENT_DLL, XorStr("VClientEntityList003"));
+	EngineClient = GetInterface<IVEngineClient>(ENGINE_DLL, XorStr("VEngineClient014"));
+	Surface = GetInterface<ISurface>(VGUIMATSURFACE_DLL, XorStr("VGUI_Surface031"));
+	Panel = GetInterface<IPanel>(VGUI2_DLL, XorStr("VGUI_Panel009"));
+	StudioRender = GetInterface<IStudioRender>(STUDIORENDERER_DLL, XorStr("VStudioRender026"));
+	Prediction = GetInterface<IPrediction>(CLIENT_DLL, XorStr("VClientPrediction001"));
+	GameMovement = GetInterface<IGameMovement>(CLIENT_DLL, XorStr("GameMovement001"));
+	EngineVGui = GetInterface<IEngineVGui>(ENGINE_DLL, XorStr("VEngineVGui001"));
+	ModelRender = GetInterface<IVModelRender>(ENGINE_DLL, XorStr("VEngineModel016"));
+	DebugOverlay = GetInterface<IVDebugOverlay>(ENGINE_DLL, XorStr("VDebugOverlay004"));
+	MaterialSystem = GetInterface<IMaterialSystem>(MATERIALSYSTEM_DLL, XorStr("VMaterialSystem080"));
+	ModelInfo = GetInterface<IVModelInfo>(ENGINE_DLL, XorStr("VModelInfoClient004"));
+	ConVar = GetInterface<IConVar>(VSTDLIB_DLL, XorStr("VEngineCvar007"));
+	EngineTrace = GetInterface<IEngineTrace>(ENGINE_DLL, XorStr("EngineTraceClient004"));
+	PhysicsProps = GetInterface<IPhysicsSurfaceProps>(VPHYSICS_DLL, XorStr("VPhysicsSurfaceProps001"));
+	GameEvent = GetInterface<IGameEventManager>(ENGINE_DLL, XorStr("GAMEEVENTSMANAGER002"));
+	EngineSoundClient = GetInterface<IEngineSoundClient>(ENGINE_DLL, XorStr("IEngineSoundClient003"));
+	InputSystem = GetInterface<IInputSystem>(INPUTSYSTEM_DLL, XorStr("InputSystemVersion001"));
+	MDLCache = GetInterface<IMDLCache>(DATACACHE_DLL, XorStr("MDLCache004"));
+	Localize = GetInterface<ILocalize>(LOCALIZE_DLL, XorStr("Localize_001"));
 
-	ClientState = **reinterpret_cast<CClientState***>(util::FindSignature("engine.dll", "A1 ? ? ? ? 8B 88 ? ? ? ? 85 C9 75 07") + 0x1);
+	ClientState = **reinterpret_cast<CClientState***>(MEM::FindPattern(ENGINE_DLL, XorStr("A1 ? ? ? ? 8B 88 ? ? ? ? 85 C9 75 07")) + 0x1);
 	if (ClientState == nullptr)
-		throw std::runtime_error("Failed to get CClientState");
+		throw std::runtime_error(XorStr("Failed to get CClientState"));
 
-	KeyValuesSystem = reinterpret_cast<CKeyValuesSystem * (__cdecl*)()>(GetProcAddress(GetModuleHandle("vstdlib.dll"), "KeyValuesSystem"))();
+	KeyValuesSystem = reinterpret_cast<CKeyValuesSystem * (__cdecl*)()>(MEM::GetExportAddress(MEM::GetModuleBaseHandle(VSTDLIB_DLL), XorStr("KeyValuesSystem")))();
 	if (KeyValuesSystem == nullptr)
-		throw std::runtime_error("Failed to get CKeyValuesSystem");
+		throw std::runtime_error(XorStr("Failed to get CKeyValuesSystem"));
 
-	DirectDevice = **reinterpret_cast< IDirect3DDevice9*** >( util::FindSignature( "shaderapidx9.dll", "A1 ? ? ? ? 50 8B 08 FF 51 0C" ) + 0x1 ); // @xref: "HandleLateCreation"
+	DirectDevice = **reinterpret_cast<IDirect3DDevice9***>(MEM::FindPattern(XorStr(L"shaderapidx9.dll"), XorStr("A1 ? ? ? ? 50 8B 08 FF 51 0C")) + 0x1); // @xref: "HandleLateCreation"
 	if ( DirectDevice == nullptr )
-		throw std::runtime_error( "Failed to get DirectDevice" );
+		throw std::runtime_error(XorStr("Failed to get DirectDevice"));
 
-	Input = *reinterpret_cast<CInput**>(util::FindSignature("client.dll", "B9 ? ? ? ? F3 0F 11 04 24 FF 50 10") + 0x1);
+	Input = *reinterpret_cast<CInput**>(MEM::FindPattern(CLIENT_DLL, XorStr("B9 ? ? ? ? F3 0F 11 04 24 FF 50 10")) + 0x1);
 	if (Input == nullptr)
-		throw std::runtime_error("Failed to get CInput");
+		throw std::runtime_error(XorStr("Failed to get CInput"));
 
-	ClientModeShared = **reinterpret_cast<CClientModeShared***>(util::GetVFunc<std::uintptr_t>(ClientDll, 10) + 0x5);
+	ClientModeShared = **reinterpret_cast<CClientModeShared***>(MEM::GetVFunc<std::uintptr_t>(ClientDll, 10) + 0x5);
 	if (ClientModeShared == nullptr)
-		throw std::runtime_error("Failed to get CClientModeShared");
+		throw std::runtime_error(XorStr("Failed to get CClientModeShared"));
 
-	GlobalVars = **reinterpret_cast<CGlobalVarsBase***>(util::GetVFunc<std::uintptr_t>(ClientDll, 11) + 0xA);
+	GlobalVars = **reinterpret_cast<CGlobalVarsBase***>(MEM::GetVFunc<std::uintptr_t>(ClientDll, 11) + 0xA);
 	if (GlobalVars == nullptr)
-		throw std::runtime_error("Failed to get CGlobalVarsBase");
+		throw std::runtime_error(XorStr("Failed to get CGlobalVarsBase"));
 
-	GlowObjectManager = *reinterpret_cast<IGlowObjectManager**>(util::FindSignature("client.dll", "0F 11 05 ? ? ? ? 83 C8 01") + 0x3);
+	GlowObjectManager = *reinterpret_cast<IGlowObjectManager**>(MEM::FindPattern(CLIENT_DLL, XorStr("0F 11 05 ? ? ? ? 83 C8 01")) + 0x3);
 	if (GlowObjectManager == nullptr)
-		throw std::runtime_error("Failed to get IGlowObjectManager");
+		throw std::runtime_error(XorStr("Failed to get IGlowObjectManager"));
 
-	RenderBeam = *reinterpret_cast<IViewRenderBeams**>(util::FindSignature("client.dll", "B9 ? ? ? ? A1 ? ? ? ? FF 10 A1 ? ? ? ? B9") + 1);
+	RenderBeam = *reinterpret_cast<IViewRenderBeams**>(MEM::FindPattern(CLIENT_DLL, XorStr("B9 ? ? ? ? A1 ? ? ? ? FF 10 A1 ? ? ? ? B9")) + 1);
 	if (RenderBeam == nullptr)
-		throw std::runtime_error("Failed to get IViewRenderBeams");
+		throw std::runtime_error(XorStr("Failed to get IViewRenderBeams"));
 
 	ClientMode = **reinterpret_cast<IClientMode***>((*reinterpret_cast<uintptr_t**>(ClientDll))[10] + 0x5);
 	if (ClientMode == nullptr)
-		throw std::runtime_error("Failed to get IClientMode");
+		throw std::runtime_error(XorStr("Failed to get IClientMode"));
 
-	WeaponSystem = *(IWeaponSystem**)(util::FindSignature("client.dll", "8B 35 ? ? ? ? FF 10 0F B7 C0") + 2);
+	WeaponSystem = *(IWeaponSystem**)(MEM::FindPattern(CLIENT_DLL, XorStr("8B 35 ? ? ? ? FF 10 0F B7 C0")) + 2);
 	if (WeaponSystem == nullptr)
-		throw std::runtime_error("Failed to get IWeaponSystem");
+		throw std::runtime_error(XorStr("Failed to get IWeaponSystem"));
 
-	GameRules = *(CCSGameRulesProxy***)((DWORD)(util::FindSignature("client.dll", "A1 ? ? ? ? 85 C0 0F 84 ? ? ? ? 80 B8 ? ? ? ? ? 74 7A")) + 0x1);
+	GameRules = *(CCSGameRulesProxy***)((DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("A1 ? ? ? ? 85 C0 0F 84 ? ? ? ? 80 B8 ? ? ? ? ? 74 7A"))) + 0x1);
 	if (GameRules == nullptr)
-		throw std::runtime_error("Failed to get IGameRules");
+		throw std::runtime_error(XorStr("Failed to get IGameRules"));
 
-	//ItemSystem = util::GetAbsoluteAddress<decltype(ItemSystem)>(util::FindSignature("client.dll", "E8 ? ? ? ? 0F B7 0F") + 1);
+	//ItemSystem = util::GetAbsoluteAddress<decltype(ItemSystem)>(util::FindSignature(CLIENT_DLL, "E8 ? ? ? ? 0F B7 0F") + 1);
 	//if (ItemSystem == nullptr)
 	//	throw std::runtime_error("Failed to get ItemSystem");
 
-	util::Print("Interfaces initialized!");
+	util::Print(XorStr("Interfaces initialized!"));
 }

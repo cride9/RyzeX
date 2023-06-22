@@ -4,7 +4,7 @@
 //
 //	static auto original = detour::interpolationList.GetOriginal<decltype(&h::hkInterpolationList)>();
 //
-//	static auto bExtrapolation = *(bool**)(util::FindSignature("client.dll", "A2 ? ? ? ? 8B 45 E8") + 0x1);
+//	static auto bExtrapolation = *(bool**)(MEM::FindPattern(CLIENT_DLL, "A2 ? ? ? ? 8B 45 E8") + 0x1);
 //
 //	if (bExtrapolation)
 //		*bExtrapolation = false;

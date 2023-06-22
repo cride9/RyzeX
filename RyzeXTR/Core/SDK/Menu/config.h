@@ -424,7 +424,9 @@ namespace cfg {
 		inline float m_flHitSoundVolume = 100.f;
 		inline std::string m_szWavPath = "";
 
+		inline bool bKillsay = false;
 		inline std::string bombBuffer = "RyzeXTR";
+		inline std::string killSayBuffer = "";
 	
 	}
 	namespace skin {

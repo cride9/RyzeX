@@ -28,6 +28,8 @@ public:
 	int GetServerTick();
 	int GetCorrectedTickbase();
 
+    CNetvarData* GetRecord();
+
 	void StartNetworking();
 	void FinishNetworking();
 

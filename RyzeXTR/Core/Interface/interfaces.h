@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include "../utilities.h"
+#include "../SDK/Memory.h"
 
 // Interfaces aka "abstract_classes" inside csgo leaked source
 #include "Interfaces/IBaseClientDLL.h"
@@ -80,9 +81,9 @@ namespace i {
 	inline std::add_pointer_t<IItemSystem* __cdecl()> ItemSystem;
 
 	template <typename T>
-	T* GetInterface(const char* szLib, const char* szName) {
+	T* GetInterface(const wchar_t* szLib, const char* szName) {
 
-		const auto moduleHandle = GetModuleHandle(szLib);
+		const auto moduleHandle = MEM::GetModuleBaseHandle(szLib);
 
 		if (!moduleHandle) {
 
@@ -90,7 +91,7 @@ namespace i {
 			return nullptr;
 		}
 
-		const auto funcAddress = GetProcAddress(moduleHandle, "CreateInterface");
+		const auto funcAddress = MEM::GetExportAddress(moduleHandle, "CreateInterface");
 
 		if (!funcAddress) {
 

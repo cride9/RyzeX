@@ -36,8 +36,8 @@ class Prediction {
 
 public:
 	Prediction() {
-		uPredictionRandomSeed = *reinterpret_cast<int**>(util::FindSignature("client.dll", "8B 0D ? ? ? ? BA ? ? ? ? E8 ? ? ? ? 83 C4 04") + 2);
-		pPredictionPlayer = *reinterpret_cast<int**>(util::FindSignature("client.dll", "89 35 ? ? ? ? F3 0F 10 46") + 2);
+		uPredictionRandomSeed = *reinterpret_cast<int**>(MEM::FindPattern(CLIENT_DLL, XorStr("8B 0D ? ? ? ? BA ? ? ? ? E8 ? ? ? ? 83 C4 04")) + 2);
+		pPredictionPlayer = *reinterpret_cast<int**>(MEM::FindPattern(CLIENT_DLL, XorStr("89 35 ? ? ? ? F3 0F 10 46")) + 2);
 	}
 
 	void Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber );

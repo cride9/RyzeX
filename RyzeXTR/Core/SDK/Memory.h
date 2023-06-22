@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vector>
 #include <typeinfo>
+#include "../xorstr.h"
 #pragma region memory_definitions
 #pragma warning(push)
 #pragma warning(disable: 6255) // '_alloca' indicates failure by raising a stack overflow exception. consider using '_malloca' instead
@@ -9,6 +10,19 @@
 #pragma warning(pop)
 #define MEM_STACKFREE(MEMORY) static_cast<void>(0)
 #pragma endregion
+
+#define CLIENT_DLL XorStr(L"client.dll")
+#define ENGINE_DLL XorStr(L"engine.dll")
+#define VSTDLIB_DLL XorStr(L"vstdlib.dll")
+#define VGUI2_DLL XorStr(L"vgui2.dll")
+#define VGUIMATSURFACE_DLL XorStr(L"vguimatsurface.dll")
+#define STUDIORENDERER_DLL XorStr(L"studiorender.dll")
+#define MATERIALSYSTEM_DLL XorStr(L"materialsystem.dll")
+#define VPHYSICS_DLL XorStr(L"vphysics.dll")
+#define INPUTSYSTEM_DLL XorStr(L"inputsystem.dll")
+#define DATACACHE_DLL XorStr(L"datacache.dll")
+#define LOCALIZE_DLL XorStr(L"localize.dll")
+#define SERVER_DLL XorStr(L"server.dll")
 
 #pragma region memory_rtti
 enum EBaseClassAttributes : std::uint32_t
