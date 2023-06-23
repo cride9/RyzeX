@@ -38,9 +38,10 @@ namespace util {
 		static const auto s_log_direct = (log_direct_fn_t)GetProcAddress(GetModuleHandleA("tier0.dll"), "LoggingSystem_LogDirect");
 
 		static std::string prefix = "[RyzeX] ";
-		s_log_direct(s_channel_id, LS_MESSAGE, RYZEXCOLOR, prefix.c_str());
-
+		s_log_direct(s_channel_id, LS_MESSAGE, RYZEXCOLOR, "[RyzeX] ");
+		
 		s_log_direct(s_channel_id, LS_MESSAGE, color, msg);
+		
 	}
 
 	template <typename T, typename ... Args_t>

@@ -105,7 +105,6 @@ namespace cfg {
 		inline bool bAntiJitter[3];
 
 		inline int iDesyncType[3];
-		inline int iDesyncValue[3];
 		inline int iInverterBind = 0;
 
 		inline float bodyLean[2][3];
@@ -116,8 +115,6 @@ namespace cfg {
 		inline bool m_bSwayDesync[3];
 
 		inline int modifier[3];
-		inline int desyncModifier[3];
-		inline int desyncModifierValue[3];
 		inline int jittervalue[3];
 		inline float invertangle[3];
 
@@ -264,6 +261,8 @@ namespace cfg {
 		inline bool teamAnimOverlayXQZXhair = false;
 
 		// local
+		inline bool bBlend;
+		inline float flBlend;
 		inline int localType = 0;
 		inline bool local = false;
 		inline bool localXQZ = false;

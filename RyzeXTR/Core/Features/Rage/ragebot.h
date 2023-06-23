@@ -9,11 +9,12 @@ struct Hitscan_t {
 	Hitscan_t() {
 
 	}
-	Hitscan_t(Lagcompensation::LagRecord_t* recordPointer, Vector hitboxVector, float damageFloat, int hitboxInt, bool safeBool, bool lethalBool, bool backtrackBool) {
+	Hitscan_t(Lagcompensation::LagRecord_t* recordPointer, Vector hitboxVector, float damageFloat, int hitboxInt, int hitgroupInt, bool safeBool, bool lethalBool, bool backtrackBool) {
 		pRecord = recordPointer;
 		vecPoint = hitboxVector;
 		flDamage = damageFloat;
 		iHitbox = hitboxInt;
+		iHitgroup = hitgroupInt;
 		bSafe = safeBool;
 		bLethal = lethalBool;
 		bBacktrack = backtrackBool;
@@ -23,6 +24,7 @@ struct Hitscan_t {
 	Vector vecPoint;
 	float flDamage;
 	int iHitbox;
+	int iHitgroup;
 	bool bSafe;
 	bool bLethal;
 	bool bBacktrack;
@@ -39,17 +41,46 @@ public:
 
 	struct
 	{
+		Lagcompensation::LagRecord_t*	pRecord;
 		CBaseEntity*					pAimbotTarget;
 		matrix3x4_t*					pTargetMatrix;
-		float							flTargetSimulation;
+		Vector							vecLocalShootPosition;
+
+		int								iHealth;
+		int								iTickcount;
+		int								iHitbox;
+
+		bool							bBacktrack;
 		bool							bCanShoot;
-		int								iCommand;
 
-		void SetTarget(Lagcompensation::LagRecord_t* pRecord) {
+		float							flTargetSimulation;
+		float							flDamage;
+		float							flHitchance;
+		float							flResolveAngle;
 
-			pAimbotTarget = pRecord->pEntity;
-			pTargetMatrix = pRecord->pMatricies[1];
-			flTargetSimulation = pRecord->flSimulationTime;
+		void SetTarget(Lagcompensation::LagRecord_t* _pRecord, Vector vecEyePosition, bool _bBacktrack, float _flResolveAngle) {
+
+			pRecord = _pRecord;
+			pAimbotTarget = _pRecord->pEntity;
+			pTargetMatrix = _pRecord->pMatricies[1];
+			flTargetSimulation = _pRecord->flSimulationTime;
+			iHealth = _pRecord->pEntity->GetHealth();
+			vecLocalShootPosition = vecEyePosition;
+			bBacktrack = _bBacktrack;
+			flResolveAngle = _flResolveAngle;
+		}
+
+		void ClearTarget() {
+
+			pRecord = nullptr;
+			pAimbotTarget = nullptr;
+			pTargetMatrix = nullptr;
+			flTargetSimulation = 0.f;
+			iHealth = -1;
+			vecLocalShootPosition = Vector(0, 0, 0);
+			bBacktrack = false;
+			flResolveAngle = 0.f;
+			flHitchance = 0.f;
 		}
 
 	} rageBotData ;

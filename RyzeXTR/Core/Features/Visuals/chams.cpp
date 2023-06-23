@@ -241,6 +241,8 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 				if (!local) {
 					EndChams();
+					if (cfg::model::bBlend && pEnt->IsScoped())
+						i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f); 
 					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 
@@ -263,14 +265,20 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 				if (localXQZ) {
 					BeginChams(materials[localType], localXQZColor, true, localXQZXhair);
+					if (cfg::model::bBlend && pEnt->IsScoped())
+						i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
 					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[localType], localColor, false, localXhair);
+				if (cfg::model::bBlend && pEnt->IsScoped())
+					i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
 				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 
 				EndChams();
+				if (cfg::model::bBlend && pEnt->IsScoped())
+					i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
 				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (localOverlay) {

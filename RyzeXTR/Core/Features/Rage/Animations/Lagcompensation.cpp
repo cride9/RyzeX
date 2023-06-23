@@ -449,24 +449,24 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 		return false;
 
 	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
-	//constexpr float flMagicNumber = 0.00075f;
+	////constexpr float flMagicNumber = 0.00075f;
 
-	int iTickBase = networking.GetCorrectedTickbase();
-	const float flLerpTime = GetClientInterpAmount();
-	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
+	//int iTickBase = networking.GetCorrectedTickbase();
+	//const float flLerpTime = GetClientInterpAmount();
+	//float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
-	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::bCharged)
-		iTickBase -= TICKS_TO_TIME(14);
+	//if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::bCharged)
+	//	iTickBase -= TICKS_TO_TIME(14);
 
-	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - TICKS_TO_TIME(iTickBase - TIME_TO_TICKS(mflSimulationTime));
-	if (fabs(flDeltaTime) > flRange)
-		return false;
+	//float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - TICKS_TO_TIME(iTickBase - TIME_TO_TICKS(mflSimulationTime));
+	//if (fabs(flDeltaTime) > flRange)
+	//	return false;
 
-	int nDeadTime = (int)((float)(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - flRange);
-	if (TIME_TO_TICKS(mflSimulationTime + flLerpTime) < nDeadTime)
-		return false;
+	//int nDeadTime = (int)((float)(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - flRange);
+	//if (TIME_TO_TICKS(mflSimulationTime + flLerpTime) < nDeadTime)
+	//	return false;
 
-	return true;
+	//return true;
 
 	//if (cfg::misc::fakePing) {
 	//	float flIncoming = NetChannelInfo->GetLatency(FLOW_INCOMING) * 1000.f;
@@ -475,8 +475,11 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 
 	//if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::bCharged)
 	//	flRange += TICKS_TO_TIME(14);
+	//const auto flCorrect = std::clamp(NetChannelInfo->GetLatency(FLOW_INCOMING)
+	//	+ NetChannelInfo->GetLatency(FLOW_OUTGOING)
+	//	+ GetClientInterpAmount(), 0.f, sv_maxunlag->GetFloat());
 
-	//return (i::GlobalVars->flCurrentTime - mflSimulationTime + GetClientInterpAmount()) < flRange;
+	return (i::GlobalVars->flCurrentTime - mflSimulationTime) <= flRange;
 }
 
 int Lagcompensation::FixTickCount(const float& flSimulationTime)

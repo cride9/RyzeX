@@ -24,6 +24,8 @@ namespace misc {
 	inline Vector vecEyePosition = Vector(0.f, 0.f, 0.f);
 	inline matrix3x4_t matrixRecord[128];
 	inline int iRestChoke = 0;
+	inline CConVar* con_filter_text = nullptr;
+	inline CConVar* con_filter_enable = nullptr;
 
 	void SetupRadio( );
 
@@ -77,9 +79,10 @@ namespace misc {
 	void BlockBot(CUserCmd*);
 
 	void CustomBombText(const char*);
-	void CheatLog(IGameEvent*);
+	std::string GetHitgroupName(int iHitgroup);
 
 	void RevolverRunCommand(CBaseEntity*);
     bool CanFireWeapon(float curtime, bool bRevolverSecondary, bool bSkipExtraRevolverChecks);
 	void RevolverCreateMove();
+	void Print(const std::string text, ...);
 }

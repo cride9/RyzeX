@@ -41,7 +41,6 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 	prediction.pLastCmd = nullptr;
 	ragebot.rageBotData.pAimbotTarget = nullptr;
 	ragebot.rageBotData.pTargetMatrix = nullptr;
-	ragebot.rageBotData.iCommand = 0;
 	anims.bResolverHandler = std::array<bool, Animations::EResolverHandler::HANDLERCOUNT>();
 	misc::exploitInitialized = false;
 

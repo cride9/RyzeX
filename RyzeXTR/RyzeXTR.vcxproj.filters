@@ -95,6 +95,7 @@
     <ClCompile Include="Dependecies\Minhook\hde\hde64.c" />
     <ClCompile Include="Dependecies\Minhook\hook.c" />
     <ClCompile Include="Dependecies\Minhook\trampoline.c" />
+    <ClCompile Include="Core\Features\Rage\Animations\AntiAimCorrection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />

@@ -44,6 +44,8 @@ void CConfig::Setup() {
 		SetupValue( autostop[ 4 ], false, "rage", "autostop5" );
 		SetupValue( autostop[ 5 ], false, "rage", "autostop6" );
 
+		SetupValue(m_bAutoStopInAir, 6 ,false, "rage", "autostopair");
+
 		SetupValue( betweenshots[ 0 ], false, "rage", "betweenshots1" );
 		SetupValue( betweenshots[ 1 ], false, "rage", "betweenshots2" );
 		SetupValue( betweenshots[ 2 ], false, "rage", "betweenshots3" );
@@ -146,14 +148,11 @@ void CConfig::Setup() {
 		SetupValue(bAntiJitter, false, 3, "antiaim", "bAntiJitter");
 
 		SetupValue(modifier,3, 0, "antiaim", "modifier");
-		SetupValue(desyncModifier, 3, 0, "antiaim", "desyncModifier");
-		SetupValue(desyncModifierValue, 3, 0, "antiaim", "desyncModifierValue");
 
 		SetupValue(jittervalue, 3, 0, "antiaim", "jittervalue");
 		SetupValue(invertangle, 3, 0.f, "antiaim", "invertangle");
 
 		SetupValue(iDesyncType, 3, 0, "antiaim", "desynctype");
-		SetupValue(iDesyncValue, 3, 0, "antiaim", "desyncvalue");
 		SetupValue(iInverterBind, 0, "antiaim", "desyncinverter");
 		SetupValue(iFlickOffset, 3, 0, "antiaim", "flickOffset");
 		SetupValue(flickAngleSwitch, 3, 0, "antiaim", "flickAngleSwitch");
@@ -666,6 +665,9 @@ void CConfig::Setup() {
 		SetupValue(localType, 0, "model", "localType");
 
 		// chams
+		SetupValue(bBlend, false, "model", "bBlend");
+		SetupValue(flBlend, false, "model", "flBlend");
+
 		SetupValue(local, false, "model", "local");
 		SetupValue(localXQZ, false, "model", "localXQZ");
 

@@ -223,6 +223,7 @@
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
     <ClCompile Include="Core\Features\Misc\serversounds.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
+    <ClCompile Include="Core\Features\Rage\Animations\AntiAimCorrection.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\EnemyAnimations.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\LocalAnimation.cpp" />

@@ -146,6 +146,7 @@ public:
 		float flDurationInAir{};
 		float flActivityPlayback{};
 		float flThirdPersonRecoil{};
+		float flResolverAngle{};
 
 		int iCachedCount{};
 		int iWritableBones{};

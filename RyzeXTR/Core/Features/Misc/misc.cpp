@@ -80,8 +80,8 @@ void misc::SetupRadio( )
 
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 
-	FakeLag(bSendPacket);
 	BunnyHop(pCmd);
+	FakeLag(bSendPacket);
 	AutoStrafe(vecViewAngle, pCmd);
 	AspectRatio();
 	Slowwalk(pCmd, cfg::antiaim::fakewalk); // need menu element && keybind
@@ -96,7 +96,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	ClanTag();
 	LeftHandKnife();
 #if NDEBUG
-	Security();
+	//Security();
 #endif
 	//ViewModel();
 }
@@ -104,6 +104,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 void misc::SkyboxChanger() {
 
 	static std::string szSkyboxes[] = {
+	"",
 	"cs_baggage_skybox_",
 	"cs_tibet",
 	"vietnam",
@@ -135,8 +136,9 @@ void misc::SkyboxChanger() {
 		return;
 	}
 
-	//if (szSkyboxes[0] == "None")
-	//	szSkyboxes[0] = szOldSkybox;
+	static CConVar* sv_skyname = i::ConVar->FindVar(XorStr("sv_skyname"));
+	if (szSkyboxes[0] == "")
+		szSkyboxes[0] = sv_skyname->GetString();
 
 	static std::string szBackup;
 	if (szBackup.c_str() != szSkyboxes[cfg::misc::iSkybox] || bRefreshNewGame) {
@@ -307,31 +309,31 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 void misc::OnlyCheatLogs() {
 
-	static bool bDidSet = false;
-	static bool bDidReset = false;
+	// default variables
+	static bool bSet = false;
+	static bool bReset = false;
+	con_filter_enable = i::ConVar->FindVar(XorStr("con_filter_enable"));
+	con_filter_text = i::ConVar->FindVar(XorStr("con_filter_text"));
 
-	if (cfg::misc::onlyCheatLogs) {
+	if (cfg::misc::onlyCheatLogs)
+	{
+		if (!bSet)
+		{
+			con_filter_enable->SetValue(true);
+			con_filter_text->SetValue(XorStr("[RyzeX]"));
 
-		if (!bDidSet) {
-
-			i::ConVar->FindVar("developer")->SetValue(false);
-
-			i::ConVar->FindVar("con_filter_enable")->SetValue(true);
-
-			i::ConVar->FindVar("con_filter_text_out")->SetValue("Achievements disabled");
-			
-			bDidSet = true;
+			bSet = true;
 		}
-		bDidReset = false;
+		bReset = false;
 	}
 	else {
-		if (!bDidReset) {
-			i::ConVar->FindVar("con_filter_text")->SetValue("");
-			i::ConVar->FindVar("con_filter_enable")->SetValue(false);
 
-			bDidReset = true;
+		if (!bReset) {
+
+			con_filter_text->SetValue(XorStr(""));
+			bReset = true;
 		}
-		bDidSet = false;
+		bSet = false;
 	}
 }
 
@@ -590,7 +592,7 @@ void misc::FakeDuck(CUserCmd* pCmd) {
 
 		if (g::pLocal->GetFlags() & FL_ONGROUND) {
 
-			if (iChoke <= 7)
+			if (iChoke <= ((*GameRules)->m_bIsValveDS() ? 3 : 7))
 				pCmd->iButtons &= ~IN_DUCK;
 			else
 				pCmd->iButtons |= IN_DUCK;
@@ -703,119 +705,171 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 	if (g::pLocal->GetVelocity().Length2D() < 5.0f && !pCmd->flForwardMove && !pCmd->flSideMove)
 		return;
 
+	const float speed = g::pLocal->GetVelocity().Length2D();
+
 	static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
 	float flSideSpeed = cl_sidespeed->GetFloat();
-	Vector vecVelocity = g::pLocal->GetVelocity();
-	static auto flOldYaw = 0.0f;
-
-	auto flGetVelocityDegree = [](float velocity)
+	auto calcDelta = [=]() // https://www.unknowncheats.me/wiki/Counter_Strike_Global_Offensive:Proper_auto-strafer
 	{
-		auto tmp = M_RAD2DEG(atan(15.0f / velocity));
+		const static float maxSpeed = g::pLocal->GetMaxSpeed(); // this does not change, or it does? correct me
+		//printf("maxspee %f\n", maxSpeed);
+		const static auto sv_airaccelerate = i::ConVar->FindVar("sv_airaccelerate");
+		const float term = 30.0f / sv_airaccelerate->GetFloat() / maxSpeed * 100.0f / speed;
 
-		if (CheckIfNonValidNumber(tmp) || tmp > 90.0f)
-			return 90.0f;
+		if (term < 1.0f && term > -1.0f)
+			return std::acos(term);
 
-		else if (tmp < 0.0f)
-			return 0.0f;
-		else
-			return tmp;
+		return 0.0f;
 	};
 
-	if (g::pLocal->GetMoveType() != MOVETYPE_WALK)
-		return;
+	const float deltaAir = calcDelta();
 
-	vecVelocity.z = 0.0f;
-
-	auto flForwardMove = pCmd->flForwardMove;
-	auto flSidemove = pCmd->flSideMove;
-
-	if (vecVelocity.Length2D() < 15.0f && !flForwardMove && !flSidemove)
-		return;
-
-	static auto bFlip = false;
-	bFlip = !bFlip;
-
-	auto flTurnDirectionModifier = bFlip ? 1.0f : -1.0f;
-	auto vecViewAngles = vecView;
-
-	if (flForwardMove || flSidemove)
+	if (deltaAir != 0.0f)
 	{
-		pCmd->flForwardMove = 0.0f;
-		pCmd->flSideMove = 0.0f;
+		const float yaw = M_DEG2RAD(pCmd->angViewPoint[1]);
+		const Vector velocityVec = g::pLocal->GetVelocity();
+		const float velocityDirection = std::atan2(velocityVec[1], velocityVec[0]) - yaw;
+		const float bestAngleMove = std::atan2(-pCmd->flSideMove, pCmd->flForwardMove);
 
-		auto flTurnAngle = atan2(-flSidemove, flForwardMove);
-		vecViewAngles.y += flTurnAngle * M_RADPI;
-	}
-	else if (flForwardMove) //-V550
-		pCmd->flForwardMove = 0.0f;
-
-	auto flStrafeAngle = M_RAD2DEG(atan(15.0f / vecVelocity.Length2D()));
-
-	if (flStrafeAngle > 90.0f)
-		flStrafeAngle = 90.0f;
-	else if (flStrafeAngle < 0.0f)
-		flStrafeAngle = 0.0f;
-
-	auto vecTemp = Vector(0.0f, vecViewAngles.y - flOldYaw, 0.0f);
-	vecTemp.y = M::NormalizeYaw(vecTemp.y);
-
-	auto flYawDelta = vecTemp.y;
-	flOldYaw = vecViewAngles.y;
-
-	auto flAbsYawDelta = fabs(flYawDelta);
-
-	if (flAbsYawDelta <= flStrafeAngle || flAbsYawDelta >= 15.0f)
-	{
-		Vector vecVelocityAngles;
-		M::VectorAngles(vecVelocity, vecVelocityAngles);
-
-		vecTemp = Vector(0.0f, vecViewAngles.y - vecVelocityAngles.y, 0.0f);
-		vecTemp.y = M::NormalizeYaw(vecTemp.y);
-
-		auto flVelocityAngleYawDelta = vecTemp.y;
-		auto flVelocityDegree = flGetVelocityDegree(vecVelocity.Length2D());
-
-		if (flVelocityAngleYawDelta <= flVelocityDegree || vecVelocity.Length2D() <= 15.0f)
+		auto deltaAngle = [](float first, float second) // used to point out angle to finally calculate, detection of dir
 		{
-			if (-flVelocityDegree <= flVelocityAngleYawDelta || vecVelocity.Length2D() <= 15.0f)
+			const float delta = first - second;
+			float res = std::isfinite(delta) ? std::remainder(delta, M_2PI) : 0.0f;
+
+			if (first > second)
 			{
-				vecViewAngles.y += flStrafeAngle * flTurnDirectionModifier;
-				pCmd->flSideMove = flSideSpeed * flTurnDirectionModifier;
+				if (res >= M_PI)
+					res -= M_2PI;
 			}
 			else
 			{
-				vecViewAngles.y = vecVelocityAngles.y - flVelocityDegree;
-				pCmd->flSideMove = flSideSpeed;
+				if (res <= -M_PI)
+					res += M_2PI;
 			}
-		}
-		else
-		{
-			vecViewAngles.y = vecVelocityAngles.y + flVelocityDegree;
-			pCmd->flSideMove = -flSideSpeed;
-		}
+
+			return res;
+		};
+
+		const float delta = deltaAngle(velocityDirection, bestAngleMove);
+		const float finalMove = delta < 0.0f ? velocityDirection + deltaAir : velocityDirection - deltaAir;
+
+		pCmd->flForwardMove = std::cos(finalMove) * flSideSpeed;
+		pCmd->flSideMove = -std::sin(finalMove) * flSideSpeed;
 	}
-	else if (flYawDelta > 0.0f)
-		pCmd->flSideMove = -flSideSpeed;
-	else if (flYawDelta < 0.0f)
-		pCmd->flSideMove = flSideSpeed;
 
-	auto vecMove = Vector(pCmd->flForwardMove, pCmd->flSideMove, 0.0f);
-	auto flSpeed = vecMove.Length();
+	//static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
+	//float flSideSpeed = cl_sidespeed->GetFloat();
+	//Vector vecVelocity = g::pLocal->GetVelocity();
+	//static auto flOldYaw = 0.0f;
 
-	Vector angles_move;
-	M::VectorAngles(vecMove, angles_move);
+	//auto flGetVelocityDegree = [](float velocity)
+	//{
+	//	auto tmp = M_RAD2DEG(atan(15.0f / velocity));
 
-	auto flNormalizedX = fmod(vecView.x + 180.0f, 360.0f) - 180.0f;
-	auto flNormalizedY = fmod(vecView.y + 180.0f, 360.0f) - 180.0f;
+	//	if (CheckIfNonValidNumber(tmp) || tmp > 90.0f)
+	//		return 90.0f;
 
-	auto flYaw = M_DEG2RAD(flNormalizedY - vecViewAngles.y + angles_move.y);
+	//	else if (tmp < 0.0f)
+	//		return 0.0f;
+	//	else
+	//		return tmp;
+	//};
 
-	if (flNormalizedX >= 90.0f || flNormalizedX <= -90.0f || vecView.x >= 90.0f && vecView.x <= 200.0f || vecView.x <= -90.0f && vecView.x <= 200.0f) //-V648
-		pCmd->flForwardMove = -cos(flYaw) * flSpeed;
-	else
-		pCmd->flForwardMove = cos(flYaw) * flSpeed;
+	//if (g::pLocal->GetMoveType() != MOVETYPE_WALK)
+	//	return;
 
-	pCmd->flSideMove = sin(flYaw) * flSpeed;
+	//vecVelocity.z = 0.0f;
+
+	//auto flForwardMove = pCmd->flForwardMove;
+	//auto flSidemove = pCmd->flSideMove;
+
+	//if (vecVelocity.Length2D() < 15.0f && !flForwardMove && !flSidemove)
+	//	return;
+
+	//static auto bFlip = false;
+	//bFlip = !bFlip;
+
+	//auto flTurnDirectionModifier = bFlip ? 1.0f : -1.0f;
+	//auto vecViewAngles = vecView;
+
+	//if (flForwardMove || flSidemove)
+	//{
+	//	pCmd->flForwardMove = 0.0f;
+	//	pCmd->flSideMove = 0.0f;
+
+	//	auto flTurnAngle = atan2(-flSidemove, flForwardMove);
+	//	vecViewAngles.y += flTurnAngle * M_RADPI;
+	//}
+	//else if (flForwardMove) //-V550
+	//	pCmd->flForwardMove = 0.0f;
+
+	//auto flStrafeAngle = M_RAD2DEG(atan(15.0f / vecVelocity.Length2D()));
+
+	//if (flStrafeAngle > 90.0f)
+	//	flStrafeAngle = 90.0f;
+	//else if (flStrafeAngle < 0.0f)
+	//	flStrafeAngle = 0.0f;
+
+	//auto vecTemp = Vector(0.0f, vecViewAngles.y - flOldYaw, 0.0f);
+	//vecTemp.y = M::NormalizeYaw(vecTemp.y);
+
+	//auto flYawDelta = vecTemp.y;
+	//flOldYaw = vecViewAngles.y;
+
+	//auto flAbsYawDelta = fabs(flYawDelta);
+
+	//if (flAbsYawDelta <= flStrafeAngle || flAbsYawDelta >= 15.0f)
+	//{
+	//	Vector vecVelocityAngles;
+	//	M::VectorAngles(vecVelocity, vecVelocityAngles);
+
+	//	vecTemp = Vector(0.0f, vecViewAngles.y - vecVelocityAngles.y, 0.0f);
+	//	vecTemp.y = M::NormalizeYaw(vecTemp.y);
+
+	//	auto flVelocityAngleYawDelta = vecTemp.y;
+	//	auto flVelocityDegree = flGetVelocityDegree(vecVelocity.Length2D());
+
+	//	if (flVelocityAngleYawDelta <= flVelocityDegree || vecVelocity.Length2D() <= 15.0f)
+	//	{
+	//		if (-flVelocityDegree <= flVelocityAngleYawDelta || vecVelocity.Length2D() <= 15.0f)
+	//		{
+	//			vecViewAngles.y += flStrafeAngle * flTurnDirectionModifier;
+	//			pCmd->flSideMove = flSideSpeed * flTurnDirectionModifier;
+	//		}
+	//		else
+	//		{
+	//			vecViewAngles.y = vecVelocityAngles.y - flVelocityDegree;
+	//			pCmd->flSideMove = flSideSpeed;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		vecViewAngles.y = vecVelocityAngles.y + flVelocityDegree;
+	//		pCmd->flSideMove = -flSideSpeed;
+	//	}
+	//}
+	//else if (flYawDelta > 0.0f)
+	//	pCmd->flSideMove = -flSideSpeed;
+	//else if (flYawDelta < 0.0f)
+	//	pCmd->flSideMove = flSideSpeed;
+
+	//auto vecMove = Vector(pCmd->flForwardMove, pCmd->flSideMove, 0.0f);
+	//auto flSpeed = vecMove.Length();
+
+	//Vector angles_move;
+	//M::VectorAngles(vecMove, angles_move);
+
+	//auto flNormalizedX = fmod(vecView.x + 180.0f, 360.0f) - 180.0f;
+	//auto flNormalizedY = fmod(vecView.y + 180.0f, 360.0f) - 180.0f;
+
+	//auto flYaw = M_DEG2RAD(flNormalizedY - vecViewAngles.y + angles_move.y);
+
+	//if (flNormalizedX >= 90.0f || flNormalizedX <= -90.0f || vecView.x >= 90.0f && vecView.x <= 200.0f || vecView.x <= -90.0f && vecView.x <= 200.0f) //-V648
+	//	pCmd->flForwardMove = -cos(flYaw) * flSpeed;
+	//else
+	//	pCmd->flForwardMove = cos(flYaw) * flSpeed;
+
+	//pCmd->flSideMove = sin(flYaw) * flSpeed;
 }
 
 void misc::MovementFix(CUserCmd* pCmd, Vector& oldang) {
@@ -1028,7 +1082,7 @@ void misc::FakeLag(bool& bSendPacket) {
 	}
 
 	if ( IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
-		bSendPacket = i::ClientState->nChokedCommands >= 14;
+		bSendPacket = i::ClientState->nChokedCommands >= ((*GameRules)->m_bIsValveDS() ? 6 : 14);
 		return;
 	}
 
@@ -1696,7 +1750,7 @@ void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDura
 	}
 }
 
-std::string GetHitgroupName(int iHitgroup) {
+std::string misc::GetHitgroupName(int iHitgroup) {
 
 	switch (iHitgroup)
 	{
@@ -1720,63 +1774,6 @@ std::string GetHitgroupName(int iHitgroup) {
 		return "Neck";
 	case HITGROUP_GEAR:
 		return "Gear";
-	}
-}
-void misc::CheatLog(IGameEvent* pEvent) {
-
-	//if (!strcmp(pEvent->GetName(), "player_death")) {
-
-	//	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-	//	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
-	//	int iHitgroup = pEvent->GetInt("hitgroup");
-
-	//	CBaseEntity* pHitEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iUserID));
-	//	CBaseEntity* pAttackEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iAttacker));
-
-	//	if (pAttackEntity == g::pLocal) {
-
-	//		std::string szOutput = "";
-	//		PlayerInfo_t info = pHitEntity->GetPlayerInfo();
-
-	//		szOutput += "Hit ";
-	//		szOutput += info.szName;
-	//		szOutput += " in the ";
-	//		szOutput += GetHitgroupName(iHitgroup);
-	//		szOutput += " (0 health remaining)\n";
-
-	//		util::LogConsole(szOutput.c_str());
-	//	}
-	//}
-	if (!strcmp(pEvent->GetName(), playerHurt)) {
-
-		int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-		int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
-		int iHitgroup = pEvent->GetInt("hitgroup");
-		int iRemainingHealth = pEvent->GetInt("health");
-		int iRemainingKevlar = pEvent->GetInt("armor");
-		int iDamageHealth = pEvent->GetInt("dmg_health");
-		int iDamageKevlar = pEvent->GetInt("dmg_armor");
-
-		CBaseEntity* pHitEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iUserID));
-		CBaseEntity* pAttackEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iAttacker));
-
-		if (pAttackEntity == g::pLocal && pAttackEntity->IsAlive()) {
-
-			std::string szOutput = "";
-			PlayerInfo_t info = pHitEntity->GetPlayerInfo();
-
-			szOutput += "Hit ";
-			szOutput += info.szName;
-			szOutput += " in the ";
-			szOutput += GetHitgroupName(iHitgroup);
-			szOutput += " for ";
-			szOutput += iDamageHealth;
-			szOutput += " (";
-			szOutput += iRemainingHealth;
-			szOutput += " health remaining)\n";
-
-			util::LogConsole(szOutput.c_str());
-		}
 	}
 }
 
@@ -2048,3 +2045,30 @@ void misc::CustomBombText(const char* szText) {
 	pWeapon->OnFireEvent(pViewmodel, Vector(0, 0, 0), Vector(0, 0, 0), 7002, szText);
 }
 #pragma runtime_checks( "", restore )
+
+void misc::Print(const std::string text, ...)
+{
+	va_list     list;
+	int         size;
+	std::string buf;
+
+	if (text.empty())
+		return;
+
+	va_start(list, text);
+
+	// count needed size.
+	size = std::vsnprintf(0, 0, text.c_str(), list);
+
+	// allocate.
+	buf.resize(size);
+
+	// print to buffer.
+	std::vsnprintf(buf.data(), size + 1, text.c_str(), list);
+
+	va_end(list);
+
+	// print to console.
+	i::ConVar->ConsoleColorPrintf(RYZEXCOLOR, XorStr("[RyzeX] "));
+	i::ConVar->ConsoleColorPrintf(Color(240, 240, 240, 255), buf.append(XorStr("\n")).c_str());
+}

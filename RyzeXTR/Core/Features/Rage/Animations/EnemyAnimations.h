@@ -55,6 +55,8 @@ public:
 
 	AnimationData_t pAnimationData[65];
 	std::array<bool, HANDLERCOUNT> bResolverHandler{false};
+	float iHitDmg = 0.f;
+	int iHitHitbox = 0;
 
 	bool NewDataRecievedFromServer(CBaseEntity* pPlayer);
 	void UpdateClientSideAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
@@ -67,7 +69,7 @@ public:
 	void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
 
 	/* PASTED FUNTIONS */
-	void RebuiltLayer6(CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity);
+	void RebuiltLayer6(CAnimState*, CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity);
 	void GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	float BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	void RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog);

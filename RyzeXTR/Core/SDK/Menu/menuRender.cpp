@@ -234,7 +234,7 @@ void menu::Antiaimtab() noexcept {
 				ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1][STANDING], -58.f, 58.f, "%.f");
 
 				if (iDesyncType[STANDING] == 4) {
-					ImGui::SliderInt("Yaw desync angle", &iDesyncValue[STANDING], 0, 100);
+					//ImGui::SliderInt("Yaw desync angle", &iDesyncValue[STANDING], 0, 100);
 					ImGui::Keybind("invertButton", &iInverterBind);
 					ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset[STANDING], 0, 180.f);
 					ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch[STANDING], 0, cfg::antiaim::fakelagmax);
@@ -243,11 +243,7 @@ void menu::Antiaimtab() noexcept {
 					if (iDesyncType[STANDING] == 2)
 						ImGui::Checkbox("Sway LBY", &m_bSwayDesync[STANDING]);
 
-					ImGui::SliderInt("Yaw desync angle", &iDesyncValue[STANDING], 0, 100);
 					ImGui::Keybind("invertButton", &iInverterBind);
-					ImGui::Combo("Yaw target modifier", &desyncModifier[STANDING], yawModifierList, IM_ARRAYSIZE(yawModifierList));
-					if (desyncModifier[STANDING] != 0)
-						ImGui::SliderInt("Modifier value ##2", &desyncModifierValue[STANDING], 0, 58);
 				}
 			}
 			ImGui::Checkbox("Invert on shoot", &bInvertOnShoot[STANDING]);
@@ -273,7 +269,6 @@ void menu::Antiaimtab() noexcept {
 					ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1][MOVING], -58.f, 58.f, "%.f");
 
 					if (iDesyncType[MOVING] == 4) {
-						ImGui::SliderInt("Yaw desync angle", &iDesyncValue[MOVING], 0, 100);
 						ImGui::Keybind("invertButton", &iInverterBind);
 						ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset[MOVING], 0, 180.f);
 						ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch[MOVING], 0, cfg::antiaim::fakelagmax);
@@ -282,11 +277,7 @@ void menu::Antiaimtab() noexcept {
 						if (iDesyncType[MOVING] == 2)
 							ImGui::Checkbox("Sway LBY", &m_bSwayDesync[MOVING]);
 
-						ImGui::SliderInt("Yaw desync angle", &iDesyncValue[MOVING], 0, 100);
 						ImGui::Keybind("invertButton", &iInverterBind);
-						ImGui::Combo("Yaw target modifier", &desyncModifier[MOVING], yawModifierList, IM_ARRAYSIZE(yawModifierList));
-						if (desyncModifier[MOVING] != 0)
-							ImGui::SliderInt("Modifier value ##2", &desyncModifierValue[MOVING], 0, 58);
 					}
 				}
 				ImGui::Checkbox("Invert on shoot", &bInvertOnShoot[MOVING]);
@@ -312,7 +303,6 @@ void menu::Antiaimtab() noexcept {
 					ImGui::SliderFloat("Body lean inverted", &cfg::antiaim::bodyLean[1][INAIR], -58.f, 58.f, "%.f");
 
 					if (iDesyncType[INAIR] == 4) {
-						ImGui::SliderInt("Yaw desync angle", &iDesyncValue[INAIR], 0, 100);
 						ImGui::Keybind("invertButton", &iInverterBind);
 						ImGui::SliderInt("Static offset", &cfg::antiaim::iFlickOffset[INAIR], 0, 180.f);
 						ImGui::SliderInt("Switch angle on tick", &cfg::antiaim::flickAngleSwitch[INAIR], 0, cfg::antiaim::fakelagmax);
@@ -321,11 +311,8 @@ void menu::Antiaimtab() noexcept {
 						if (iDesyncType[INAIR] == 2)
 							ImGui::Checkbox("Sway LBY", &m_bSwayDesync[INAIR]);
 
-						ImGui::SliderInt("Yaw desync angle", &iDesyncValue[INAIR], 0, 100);
+						//ImGui::SliderInt("Yaw desync angle", &iDesyncValue[INAIR], 0, 100);
 						ImGui::Keybind("invertButton", &iInverterBind);
-						ImGui::Combo("Yaw target modifier", &desyncModifier[INAIR], yawModifierList, IM_ARRAYSIZE(yawModifierList));
-						if (desyncModifier[INAIR] != 0)
-							ImGui::SliderInt("Modifier value ##2", &desyncModifierValue[INAIR], 0, 58);
 					}
 				}
 				ImGui::Checkbox("Invert on shoot", &bInvertOnShoot[INAIR]);
@@ -508,6 +495,7 @@ void menu::Visualtab() noexcept {
             ImGui::ColorEdit4("nightmodecolor", nightmodeColor);
 
 			static const char* szSkyboxes[] = {
+				"None",
 				"Baggage", 
 				"Tibet",
 				"Vietnam", 
@@ -962,6 +950,10 @@ void menu::Visualtab() noexcept {
 				ImGui::ColorEdit4("##localcolorXQZ", localXQZColor);
 				ImGui::Checkbox("Wireframe behind wall", &localXQZXhair);
 
+				ImGui::Checkbox("Blend on scope", &bBlend);
+				if (bBlend)
+					ImGui::SliderFloat("Value##3", &flBlend, 0, 100, "%.f");
+
 				ImGui::Checkbox("Desync", &localDesync);
 				ImGui::ColorEdit4("##localDesync", localDesyncColor);
 				ImGui::Combo("Material", &localDesyncType, allType, IM_ARRAYSIZE(allType));
@@ -1102,6 +1094,7 @@ void menu::Misctab() noexcept {
 		ImGui::Checkbox("Blockbot", &blockbot);
 		ImGui::Keybind("##blockbotKey", &blockbotKey);
 		ImGui::Checkbox("Clantag", &clantag);
+		ImGui::Checkbox("Filter cheat logs", &onlyCheatLogs);
 
 		char bombCharBuffer[12]{};
 		strcpy(bombCharBuffer, bombBuffer.c_str());

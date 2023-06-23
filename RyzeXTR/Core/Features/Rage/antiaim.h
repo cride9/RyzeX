@@ -38,7 +38,6 @@ namespace antiaim {
 	inline bool needMicromovement = false;
 	inline bool flickJitter = false;
 
-	inline float desyncValue = 0.f;
 	inline bool shotInvert = false;
 	void AntiAim(CUserCmd*, bool&);
 	
@@ -62,7 +61,5 @@ namespace antiaim {
 	int ClosestToLocal();
 	void AtTarget(CUserCmd*, Vector&);
 
-	void Standing(CUserCmd* pCmd, bool& bSendPacket);
-	void Moving(CUserCmd* pCmd, bool& bSendPacket);
-	void InAir(CUserCmd* pCmd, bool& bSendPacket);
+	void DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE);
 }

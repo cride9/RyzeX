@@ -144,6 +144,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 				pCmd->iButtons |= IN_ATTACK;
 
 				bSetTickCount = true;
+				rageBotData.iTickcount = pCmd->iTickCount;
 				pCmd->iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
 				bSendPacketThisTick = ShouldSendPacket(bSendPacket);
 			}
@@ -203,95 +204,94 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	std::array<bool, HITBOX_MAX> vecSelectedMultipoint = ConfigMultiHitboxes(pWeapon);
 	int iMinimumDamage = IPT::HandleInput(cfg::rage::overrideBind) ? ConfigOverrideDamage(pWeapon) : ConfigMinimumDamage(pWeapon);
 	bool bForceSafe = ConfigForceSafe(pWeapon);
-	float flRadius = 0, flDamage = 0.f;
+	float flDamage = 0.f;
 
 	std::vector<Hitscan_t> vecRecordSave{};
 
-	const int iMaxClients = i::GlobalVars->nMaxClients;
-	static size_t iLimitScans = 0;
-	if (iLimitScans >= iMaxClients)
-		iLimitScans = 0;
-	size_t iScanCount = min(iLimitScans + 3, iMaxClients);
+	//const int iMaxClients = i::GlobalVars->nMaxClients;
+	//static size_t iLimitScans = 0;
+	//if (iLimitScans >= iMaxClients)
+	//	iLimitScans = 0;
+	//size_t iScanCount = min(iLimitScans + 3, iMaxClients);
 
-	for (; iLimitScans < iScanCount; iLimitScans++) {
+	for (CBaseEntity* pEntity : vecTargets) {
 
-		CBaseEntity* pEntity = vecTargets[iLimitScans];
-		if (!pEntity) {
-			iScanCount = min(iScanCount + 1, iMaxClients);
+		//CBaseEntity* pEntity = vecTargets[iLimitScans];
+		//if (!pEntity) {
+		//	iScanCount = min(iScanCount + 1, iMaxClients);
+		//	continue;
+		//}
+
+		if (!pEntity)
+			continue;
+
+		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEntity->EntIndex());
+
+		if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity || pLog->iLastValid >= pLog->pRecord.size() || pLog->iFirstValid >= pLog->pRecord.size()) {
+			//iScanCount = min(iScanCount + 1, iMaxClients);
 			continue;
 		}
+		std::array<Lagcompensation::LagRecord_t*, 2> arrRecords{ &pLog->pRecord.at(pLog->iFirstValid), &pLog->pRecord.at(pLog->iLastValid) };
 
-		try {
-			Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEntity->EntIndex());
+		bool bAdded = false;
+		bool bAddedRecord = false;
+		bool bBacktrack = false;
+		size_t iTick = 0;
 
-			if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity || pLog->iLastValid >= pLog->pRecord.size()) {
-				iScanCount = min(iScanCount + 1, iMaxClients);
-				continue;
-			}
-			std::array<Lagcompensation::LagRecord_t*, 2> arrRecords{ &pLog->pRecord.front(), &pLog->pRecord.at(pLog->iLastValid) };
+		for (auto pCurrentApplied : arrRecords) {
 
-			bool bAdded = false;
-			bool bAddedRecord = false;
-			bool bBacktrack = false;
-			size_t iTick = 0;
+			if (bAddedRecord)
+				break;
 
-			for (auto pCurrentApplied : arrRecords) {
+			pCurrentApplied->Apply(pEntity, false);
+			for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
 
-				if (bAddedRecord)
-					break;
+				multiPointed.clear();
+				if (!vecSelectedHitboxes[iHitbox])
+					continue;
 
-				pCurrentApplied->Apply(pEntity, false);
-				for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
+				bAdded = false;
+				if (vecSelectedMultipoint[iHitbox])
+					multiPointed = CreatePoints(vecEyePosition, pWeapon, pCurrentApplied, iHitbox);
+				else
+					multiPointed.push_back(pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatricies[RESOLVE]));
 
-					if (!vecSelectedHitboxes[iHitbox])
+				if (cfg::rage::iAimbotFov < 180) {
+					Vector output;
+					M::VectorAngles(multiPointed.front() - vecEyePosition, output);
+					Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.NormalizeAngle());
+
+					if (abs((vecDistanceBetween).NormalizeAngle().Length2D()) > cfg::rage::iAimbotFov)
 						continue;
+				}
 
-					bAdded = false;
-					if (vecSelectedMultipoint[iHitbox])
-						multiPointed = CreatePoints(vecEyePosition, pWeapon, pCurrentApplied, iHitbox);
-					else
-						multiPointed.push_back(pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatricies[RESOLVE], flRadius));
+				for (Vector& vecPoint : multiPointed) {
 
-					if (cfg::rage::iAimbotFov < 180) {
-						Vector output;
-						M::VectorAngles(multiPointed.front() - vecEyePosition, output);
-						Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.NormalizeAngle());
+					int iSafePoint = SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, iHitbox);
+					if (vecSelectedSafePoints[iHitbox]) {
 
-						if (abs((vecDistanceBetween).NormalizeAngle().Length2D()) > cfg::rage::iAimbotFov)
+						if (bForceSafe && iSafePoint < 3)
+							continue;
+
+						if (iSafePoint < 2)
 							continue;
 					}
 
-					for (Vector& vecPoint : multiPointed) {
+					FireBulletData_t data;
+					if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &data); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
 
-						int iSafePoint = SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, iHitbox);
-						if (vecSelectedSafePoints[iHitbox]) {
+						if (playerList::arrPlayers[data.enterTrace.pHitEntity->EntIndex()].iPriority == FRIEND)
+							continue;
 
-							if (bForceSafe && iSafePoint < 3)
-								continue;
-
-							if (iSafePoint < 2)
-								continue;
-						}
-
-						FireBulletData_t data;
-						if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &data); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
-
-							if (playerList::arrPlayers[data.enterTrace.pHitEntity->EntIndex()].iPriority == FRIEND)
-								continue;
-
-							vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, iSafePoint == 3, flDamage > pEntity->GetHealth() + 5, bBacktrack));
-							bAdded = true;
-							bAddedRecord = true;
-						}
-						if (bAdded)
-							break;
+						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage > pEntity->GetHealth() + 5, bBacktrack));
+						bAdded = true;
+						bAddedRecord = true;
 					}
+					if (bAdded)
+						break;
 				}
-				bBacktrack = true;
 			}
-		}
-		catch (std::exception){
-			util::LogConsole("wtf\n");
+			bBacktrack = true;
 		}
 	}
 
@@ -301,8 +301,13 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	if (vecRecordSave.size() >= 2)
 		std::sort(vecRecordSave.begin(), vecRecordSave.end(), HitscanComparator);
 
-	rageBotData.SetTarget(vecRecordSave.front().pRecord);
-	return vecRecordSave.front().vecPoint;
+	auto pRecord = &vecRecordSave.front();
+
+	rageBotData.SetTarget(pRecord->pRecord, vecEyePosition, pRecord->bBacktrack, pRecord->pRecord->flResolverAngle);
+	rageBotData.flDamage = pRecord->flDamage;
+	rageBotData.iHitbox = pRecord->iHitgroup;
+
+	return pRecord->vecPoint;
 }
 
 bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector vecFrom, int iChance, Vector vecEyePosition) {
@@ -395,8 +400,10 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 
 	flFinalHitchance = static_cast< int >( ( float( iHits ) / ( iAccuracry / 100.f ) ) );
 
-	if ( flFinalHitchance >= iChance )
+	if (flFinalHitchance >= iChance) {
+		rageBotData.flHitchance = flFinalHitchance;
 		return true;
+	}
 
 	return false;
 }
