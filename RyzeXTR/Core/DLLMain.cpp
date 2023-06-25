@@ -78,7 +78,7 @@ void SetupFonts() {
 
 DWORD WINAPI CheatThread(PVOID hinstDLL) {
 
-	if (!MEM::GetModuleBaseHandle(XorStr(L"serverbrowser.dll")))
+	while (!MEM::GetModuleBaseHandle(XorStr(L"serverbrowser.dll")))
 		Sleep(200);
 
 #if _DEBUG

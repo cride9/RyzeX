@@ -356,11 +356,33 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 		auto pRecord = &pLog->pRecord.front();
 
+		/*
+			pLayer->flMovementSide = m_flMovementSide;
+			pLayer->angMoveYaw = m_angAngle;
+			pLayer->vecDirection = m_vecDirection;
+			pLayer->flFeetWeight = m_flNewFeetWeight;
+		*/
+
+		const float fServerPlaybackrate = anims.GetLocalCycleIncrement(pEnt, pRecord, pRecord->pLayers[6].flPlaybackRate);
+		const float fCenterPlaybackrate = anims.GetLocalCycleIncrement(pEnt, pRecord, pRecord->LayerData[CENTER].flPlaybackRate, &pRecord->LayerData[CENTER]);
+		const float fRightPlaybackrate = anims.GetLocalCycleIncrement(pEnt, pRecord, pRecord->LayerData[RIGHT].flPlaybackRate, &pRecord->LayerData[RIGHT]);
+		const float fLeftPlaybackrate = anims.GetLocalCycleIncrement(pEnt, pRecord, pRecord->LayerData[LEFT].flPlaybackRate, &pRecord->LayerData[LEFT]);
+
+		float leftdiff = fabsf(fServerPlaybackrate - fLeftPlaybackrate);
+		float rightdiff = fabsf(fServerPlaybackrate - fRightPlaybackrate);
+		float centerdiff = fabsf(fServerPlaybackrate - fCenterPlaybackrate);
+		float flReturn = (leftdiff < rightdiff && leftdiff < centerdiff) ? -58.0f : ((rightdiff < leftdiff && rightdiff < centerdiff) ? 58.0f : 0.0f);
+
+		static float flLastValidResolveYaw = flReturn;
+		if (flReturn != 0)
+			flLastValidResolveYaw = flReturn;
+
 		something(right, top, spacing, "[Layer 6]");
-		something(right, top, spacing, std::format("Left: {}", pRecord->LayerData[LEFT].flPlaybackRate).c_str());
-		something(right, top, spacing, std::format("Right: {}", pRecord->LayerData[RIGHT].flPlaybackRate).c_str());
-		something(right, top, spacing, std::format("Center: {}", pRecord->LayerData[CENTER].flPlaybackRate).c_str());
-		something(right, top, spacing, std::format("Server: {}", pRecord->pLayers[6].flPlaybackRate).c_str());
+		something(right, top, spacing, std::format("Left: {}", fLeftPlaybackrate).c_str());
+		something(right, top, spacing, std::format("Right: {}", fRightPlaybackrate).c_str());
+		something(right, top, spacing, std::format("Center: {}", fCenterPlaybackrate).c_str());
+		something(right, top, spacing, std::format("Server: {}", fServerPlaybackrate).c_str());
+		something(right, top, spacing, std::format("Yaw: {}", flLastValidResolveYaw).c_str());
 	}
 #endif
 }

@@ -35,6 +35,7 @@ void h::SetupHooks() {
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
 	HookTable(detour::drawModelMdl, i::ModelRender, table::drawModelMdl, &hkDrawModelMDL);
 	HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
+	HookTable(detour::processMovement, i::GameMovement, 1, &hkProcessMovement);
 	//HookTable(detour::installStringTableCallback, i::ClientDll, table::installStringTableCallback, &hkInstallStringTableCallback);
 
 	// Signature hooks

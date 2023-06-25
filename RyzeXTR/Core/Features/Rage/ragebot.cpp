@@ -44,6 +44,19 @@ bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 
 bool LowestFov(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 
+	if (pEnt1 == nullptr)
+		return false; // pEnt1 is nullptr, move it to the back
+	if (pEnt2 == nullptr)
+		return true; // pEnt2 is nullptr, move it to the back
+
+	auto firstPriority = playerList::arrPlayers[pEnt1->EntIndex()].iPriority;
+	auto secondPriority = playerList::arrPlayers[pEnt2->EntIndex()].iPriority;
+
+	if (firstPriority == 1 && secondPriority != 1)
+		return true; // pEnt1 has priority 1, move it to the front
+	if (firstPriority != 1 && secondPriority == 1)
+		return false; // pEnt2 has priority 1, move it to the front
+
 	const Vector vecEyePosition = g::pLocal->GetEyePosition(false );
 	Vector vecCalcAngle;
 
@@ -165,18 +178,19 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 
 void CRageBot::SelectTargets(CBaseEntity* pLocal) {
 
-	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
+	vecTargets.clear();
+	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->GetTeam() == pLocal->GetTeam() || pEntity->HasImmunity()) {
-			vecTargets[i] = nullptr;
 			continue;
 		}
 
-		vecTargets[i] = pEntity;
+		vecTargets.push_back(pEntity);
 	}
-	//std::sort(vecTargets.begin(), vecTargets.end(), LowestFov);
+	if (vecTargets.size() > 1)
+		std::sort(vecTargets.begin(), vecTargets.end(), LowestFov);
 }
 
 Lagcompensation::LagRecord_t* CRageBot::CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog, int& iIndex) {
@@ -201,36 +215,22 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	static std::vector<Vector> multiPointed = { Vector(0, 0, 0) };
 	std::array<bool, HITBOX_MAX> vecSelectedHitboxes = ConfigHitboxes(pWeapon);
 	std::array<bool, HITBOX_MAX> vecSelectedSafePoints = ConfigSafeHitboxes(pWeapon);
-	std::array<bool, HITBOX_MAX> vecSelectedMultipoint = ConfigMultiHitboxes(pWeapon);
 	int iMinimumDamage = IPT::HandleInput(cfg::rage::overrideBind) ? ConfigOverrideDamage(pWeapon) : ConfigMinimumDamage(pWeapon);
 	bool bForceSafe = ConfigForceSafe(pWeapon);
 	float flDamage = 0.f;
 
 	std::vector<Hitscan_t> vecRecordSave{};
 
-	//const int iMaxClients = i::GlobalVars->nMaxClients;
-	//static size_t iLimitScans = 0;
-	//if (iLimitScans >= iMaxClients)
-	//	iLimitScans = 0;
-	//size_t iScanCount = min(iLimitScans + 3, iMaxClients);
-
 	for (CBaseEntity* pEntity : vecTargets) {
-
-		//CBaseEntity* pEntity = vecTargets[iLimitScans];
-		//if (!pEntity) {
-		//	iScanCount = min(iScanCount + 1, iMaxClients);
-		//	continue;
-		//}
 
 		if (!pEntity)
 			continue;
 
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEntity->EntIndex());
 
-		if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity || pLog->iLastValid >= pLog->pRecord.size() || pLog->iFirstValid >= pLog->pRecord.size()) {
-			//iScanCount = min(iScanCount + 1, iMaxClients);
+		if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity || pLog->iLastValid >= pLog->pRecord.size() || pLog->iFirstValid >= pLog->pRecord.size()) 
 			continue;
-		}
+		
 		std::array<Lagcompensation::LagRecord_t*, 2> arrRecords{ &pLog->pRecord.at(pLog->iFirstValid), &pLog->pRecord.at(pLog->iLastValid) };
 
 		bool bAdded = false;
@@ -251,10 +251,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 					continue;
 
 				bAdded = false;
-				if (vecSelectedMultipoint[iHitbox])
-					multiPointed = CreatePoints(vecEyePosition, pWeapon, pCurrentApplied, iHitbox);
-				else
-					multiPointed.push_back(pCurrentApplied->pEntity->GetHitboxPosition(iHitbox, pCurrentApplied->pMatricies[RESOLVE]));
+				multiPointed = CreatePoints(vecEyePosition, pWeapon, pCurrentApplied, iHitbox);
 
 				if (cfg::rage::iAimbotFov < 180) {
 					Vector output;
@@ -281,6 +278,9 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 					if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &data); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
 
 						if (playerList::arrPlayers[data.enterTrace.pHitEntity->EntIndex()].iPriority == FRIEND)
+							continue;
+
+						if (data.enterTrace.iHitGroup != HITGROUP_HEAD && iHitbox == HITBOX_HEAD)
 							continue;
 
 						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage > pEntity->GetHealth() + 5, bBacktrack));
@@ -891,6 +891,7 @@ bool CRageBot::CheckShootingCondition( CUserCmd * pCmd, CBaseEntity * pLocal, CB
 
 std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, int iHitbox) {
 
+	std::array<bool, HITBOX_MAX> vecSelectedMultipoint = ConfigMultiHitboxes(pWeapon);
 	std::vector<Vector> refVecPoints{};
 	std::pair<int, int> multiPoints = ConfigMultipoint(pWeapon);
 	int* pHeadPoints = &multiPoints.first;
@@ -901,24 +902,34 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 	Vector vecCenter = pRecord->pEntity->GetHitboxPosition(iHitbox, pRecord->pMatricies[RESOLVE], flRadius, &refStudioBox);
 	matrix3x4_t& refMatrixBone = pRecord->pMatricies[RESOLVE][refStudioBox.iBone];
 
+	if (!vecSelectedMultipoint[iHitbox]) {
+		refVecPoints.emplace_back(vecCenter);
+		return refVecPoints;
+	}
+
 	float flHitboxDistance = flRadius * ((iHitbox == HITBOX_HEAD ? *pHeadPoints : *pBodyPoints) * 0.01f);
 
-	const Vector vecCurrentAngles = M::CalcAngle(vecCenter, vecEyePosition);
+	Vector vecCurrentAngles;
+	M::VectorAngles(vecCenter - vecEyePosition, vecCurrentAngles);
 	Vector vecForward; M::AngleVectors(vecCurrentAngles, &vecForward);
 
 	const Vector vecRight = vecForward.CrossProduct(Vector(0, 0, 1));
-	const Vector vecLeft = Vector(-vecRight.x, vecRight.y, vecRight.z);
+	const Vector vecLeft = Vector(-vecRight.x, -vecRight.y, vecRight.z);
 	const Vector vecTop = Vector(0, 0, 1);
 
 	refVecPoints.emplace_back(vecCenter);
-	if (iHitbox == HITBOX_HEAD)
+	if (iHitbox == HITBOX_HEAD) {
 		refVecPoints.emplace_back(vecCenter + vecTop * flHitboxDistance);
+		refVecPoints.emplace_back(vecCenter - vecTop * flHitboxDistance);
+	}
 	refVecPoints.emplace_back(vecCenter + vecLeft * flHitboxDistance);
 	refVecPoints.emplace_back(vecCenter + vecRight * flHitboxDistance);
 
 	//g::drawList.emplace_back(vecCenter);
-	//if (iHitbox == HITBOX_HEAD)
+	//if (iHitbox == HITBOX_HEAD) {
 	//	g::drawList.emplace_back(vecCenter + vecTop * flHitboxDistance);
+	//	g::drawList.emplace_back(vecCenter - vecTop * flHitboxDistance);
+	//}
 	//g::drawList.emplace_back(vecCenter + vecLeft * flHitboxDistance);
 	//g::drawList.emplace_back(vecCenter + vecRight * flHitboxDistance);
 
@@ -1050,8 +1061,8 @@ Vector CRageBot::InterpolateLocalEyePosition( Vector vecEyePosition, int iInterp
 
 int CRageBot::CalculateTickCount( float flSimulationTime ) {
 
-	//if (IPT::HandleInput(cfg::rage::doubletapkey) && cfg::rage::doubletap && exploits::bCharged)
-	//	return g::pCmd->iTickCount;
+	if (IPT::HandleInput(cfg::rage::doubletapkey) && cfg::rage::doubletap && exploits::bCharged)
+		return g::pCmd->iTickCount;
 
 	return lagcomp.FixTickCount(flSimulationTime);
 

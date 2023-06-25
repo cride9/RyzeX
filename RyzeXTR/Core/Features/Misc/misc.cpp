@@ -96,7 +96,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	ClanTag();
 	LeftHandKnife();
 #if NDEBUG
-	//Security();
+	Security();
 #endif
 	//ViewModel();
 }

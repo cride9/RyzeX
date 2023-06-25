@@ -100,7 +100,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		auto pLog = &pPlayerLogs[i];
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || pEntity->GetTeam() == g::pLocal->GetTeam() || pEntity == g::pLocal) {
+		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || /*pEntity->GetTeam() == g::pLocal->GetTeam() ||*/ pEntity == g::pLocal) {
 			anims.missedShots[i] = 0;
 			pLog->iLastValid = 0;
 			pLog->iFirstValid = 32;

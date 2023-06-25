@@ -245,6 +245,7 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsHltv.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsPaused.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkModifyEyePosition.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessMovement.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupBones.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkShouldSkipAnimationFrame.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkStandardBlendingRules.cpp" />

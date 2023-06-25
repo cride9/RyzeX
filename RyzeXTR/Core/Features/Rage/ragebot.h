@@ -93,7 +93,7 @@ public:
 
 private:
 
-	std::array<CBaseEntity*, 65> vecTargets{nullptr};
+	std::vector<CBaseEntity*> vecTargets{nullptr};
 
 	void				SelectTargets(CBaseEntity*);
 	Vector				Hitscan(CBaseEntity*, CBaseCombatWeapon*, Vector&);

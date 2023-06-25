@@ -136,11 +136,11 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 		if (LBYUpdate(g::pLocal)) {
 
 			bSendPacket = false;
-			pCmd->angViewPoint.y += (120 * bInvertValue);
+			pCmd->angViewPoint.y -= (120 * bInvertValue);
 		}
 		else if (!bSendPacket) {
 			// 95 = unhittable
-			pCmd->angViewPoint.y -= (120 * bInvertValue);
+			pCmd->angViewPoint.y += (95 * bInvertValue);
 		}
 		break;
 

@@ -116,7 +116,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 #ifdef DEBUG
 		misc::ServerHitboxes();
 #endif
-		//misc::BulletImpactFrameStage(pLocal);
+		misc::BulletImpactFrameStage(pLocal);
 		break;
 
 	case FRAME_NET_UPDATE_END:
