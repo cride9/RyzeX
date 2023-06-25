@@ -46,15 +46,15 @@ bool __fastcall h::hkSVCMsg_VoiceData( void* thistr, void* edx, C_SVCMsg_VoiceDa
 {
 	static auto original = detour::voiceData.GetOriginal<decltype( &hkSVCMsg_VoiceData )>( );
 
-	if ( !g::pLocal || g::pLocal->EntIndex( ) == Message->m_iClient + 1 )
-		return original( thistr, edx, Message );
+	//if ( !g::pLocal || g::pLocal->EntIndex( ) == Message->m_iClient + 1 )
+	//	return original( thistr, edx, Message );
 
-	C_VoiceCommunicationData VoiceData = Message->GetData( );
-	// is RyzeXTR user
-	if ( Message->m_nFormat == 0 && VoiceData.m_nXuidHigh == g::pLocal->EntIndex( ) && VoiceData.m_nSectionNumber == 3459085 && VoiceData.m_nSequenceBytes == 123143456 && VoiceData.m_nUnCompressedSampleOffset == 909576 )
-	{
-		playerList::arrPlayers[ Message->m_iClient + 1 ].bIsRyzeXTRUser = true;
-	}
+	//C_VoiceCommunicationData VoiceData = Message->GetData( );
+	//// is RyzeXTR user
+	//if ( Message->m_nFormat == 0 && VoiceData.m_nXuidHigh == g::pLocal->EntIndex( ) && VoiceData.m_nSectionNumber == 3459085 && VoiceData.m_nSequenceBytes == 123143456 && VoiceData.m_nUnCompressedSampleOffset == 909576 )
+	//{
+	//	playerList::arrPlayers[ Message->m_iClient + 1 ].bIsRyzeXTRUser = true;
+	//}
 
 	// bluescreen
 	//if ( Message->m_nFormat == 0 && VoiceData.m_nXuidHigh == g::pLocal->EntIndex( ) && VoiceData.m_nSectionNumber == 342 && VoiceData.m_nSequenceBytes == 342 && VoiceData.m_nUnCompressedSampleOffset == 342 )

@@ -21,8 +21,8 @@ bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 		return false;
 
 	// Sort by bLethal only when it's not a headshot
-	if (a.iHitbox != 0 && b.iHitbox != 0 && !a.bLethal && b.bLethal)
-		return true;
+	//if (a.iHitbox != 0 && b.iHitbox != 0 && !a.bLethal && b.bLethal)
+	//	return true;
 
 	// Sort by hitbox, prioritize body over head if both are lethal
 	if (a.iHitbox != 0 && b.iHitbox != 0) {
@@ -33,10 +33,7 @@ bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 	}
 
 	// Sort by flDamage in descending order
-	if (a.flDamage > b.flDamage)
-		return true;
-	else if (a.flDamage < b.flDamage)
-		return false;
+	return a.flDamage > b.flDamage;
 
 	// If all else is equal, maintain the original order
 	return false;
@@ -176,21 +173,22 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 	}
 }
 
-void CRageBot::SelectTargets(CBaseEntity* pLocal) {
+void CRageBot::SelectTargets( CBaseEntity* pLocal )
+{
+	vecTargets.clear( );
 
-	vecTargets.clear();
-	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+	for ( int i = 1; i < i::GlobalVars->nMaxClients; i++ )
+	{
+		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
 
-		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-
-		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->GetTeam() == pLocal->GetTeam() || pEntity->HasImmunity()) {
+		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || pEntity->GetTeam( ) == pLocal->GetTeam( ) || pEntity->HasImmunity( ) )
 			continue;
-		}
 
-		vecTargets.push_back(pEntity);
+		vecTargets.push_back( pEntity );
 	}
-	if (vecTargets.size() > 1)
-		std::sort(vecTargets.begin(), vecTargets.end(), LowestFov);
+	
+	if ( !vecTargets.empty( ) )
+		std::sort( vecTargets.begin( ), vecTargets.end( ), LowestFov );
 }
 
 Lagcompensation::LagRecord_t* CRageBot::CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog, int& iIndex) {
@@ -221,6 +219,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 	std::vector<Hitscan_t> vecRecordSave{};
 
+	Retry:
 	for (CBaseEntity* pEntity : vecTargets) {
 
 		if (!pEntity)
