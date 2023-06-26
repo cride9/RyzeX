@@ -689,6 +689,25 @@ void misc::AspectRatio() {
 		r_aspectratio->SetValue((35 * 0.1f) / 2);
 }
 
+Vector VecAngle( Vector vec )
+{
+	Vector ret;
+	if ( vec.x == 0.0f && vec.y == 0.0f )
+	{
+		ret.x = ( vec.z > 0.0f ) ? 270.0f : 90.0f;
+		ret.y = 0.0f;
+	}
+	else
+	{
+		ret.x = M_RAD2DEG( std::atan2f( -vec.z, vec.Length2D( ) ) );
+		ret.y = M_RAD2DEG( std::atan2f( vec.y, vec.x ) );
+		if ( ret.y < 0.0f ) ret.y += 360.0f;
+		if ( ret.x < 0.0f ) ret.x += 360.0f;
+	}
+	ret.z = 0.0f;
+	return ret;
+}
+
 void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 
 	if (!cfg::misc::autoStrafe)
@@ -705,171 +724,62 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 	if (g::pLocal->GetVelocity().Length2D() < 5.0f && !pCmd->flForwardMove && !pCmd->flSideMove)
 		return;
 
-	const float speed = g::pLocal->GetVelocity().Length2D();
-
-	static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
-	float flSideSpeed = cl_sidespeed->GetFloat();
-	auto calcDelta = [=]() // https://www.unknowncheats.me/wiki/Counter_Strike_Global_Offensive:Proper_auto-strafer
+	float flYawAdd = 0.f;
+	static const auto cl_sidespeed = i::ConVar->FindVar( XorStr( "cl_sidespeed" ) )->GetFloat( );
+	if ( !( g::pLocal->GetFlags( ) & FL_ONGROUND ) )
 	{
-		const static float maxSpeed = g::pLocal->GetMaxSpeed(); // this does not change, or it does? correct me
-		//printf("maxspee %f\n", maxSpeed);
-		const static auto sv_airaccelerate = i::ConVar->FindVar("sv_airaccelerate");
-		const float term = 30.0f / sv_airaccelerate->GetFloat() / maxSpeed * 100.0f / speed;
+		bool bBack = pCmd->iButtons & IN_BACK;
+		bool bForward = pCmd->iButtons & IN_FORWARD;
+		bool bRight = pCmd->iButtons & IN_MOVELEFT;
+		bool bLeft = pCmd->iButtons & IN_MOVERIGHT;
 
-		if (term < 1.0f && term > -1.0f)
-			return std::acos(term);
-
-		return 0.0f;
-	};
-
-	const float deltaAir = calcDelta();
-
-	if (deltaAir != 0.0f)
-	{
-		const float yaw = M_DEG2RAD(pCmd->angViewPoint[1]);
-		const Vector velocityVec = g::pLocal->GetVelocity();
-		const float velocityDirection = std::atan2(velocityVec[1], velocityVec[0]) - yaw;
-		const float bestAngleMove = std::atan2(-pCmd->flSideMove, pCmd->flForwardMove);
-
-		auto deltaAngle = [](float first, float second) // used to point out angle to finally calculate, detection of dir
+		if ( bBack )
 		{
-			const float delta = first - second;
-			float res = std::isfinite(delta) ? std::remainder(delta, M_2PI) : 0.0f;
+			flYawAdd = -180.f;
+			if ( bRight )
+				flYawAdd -= 45.f;
+			else if ( bLeft )
+				flYawAdd += 45.f;
+		}
+		else if ( bRight )
+		{
+			flYawAdd = 90.f;
+			if ( bBack )
+				flYawAdd += 45.f;
+			else if ( bForward )
+				flYawAdd -= 45.f;
+		}
+		else if ( bLeft )
+		{
+			flYawAdd = -90.f;
+			if ( bBack )
+				flYawAdd -= 45.f;
+			else if ( bForward )
+				flYawAdd += 45.f;
+		}
+		else
+		{
+			flYawAdd = 0.f;
+		}
 
-			if (first > second)
-			{
-				if (res >= M_PI)
-					res -= M_2PI;
-			}
-			else
-			{
-				if (res <= -M_PI)
-					res += M_2PI;
-			}
+		vecView.y += flYawAdd;
+		pCmd->flForwardMove = 0.f;
+		pCmd->flSideMove = 0.f;
+		const auto delta = M::NormalizeAngle( vecView.y - M_RAD2DEG( std::atan2f( g::pLocal->GetVelocity( ).y, g::pLocal->GetVelocity( ).x ) ) );
+		pCmd->flSideMove = delta > 0.f ? -cl_sidespeed : cl_sidespeed;
+		vecView.y = M::NormalizeAngle( vecView.y - delta );
 
-			return res;
-		};
+		if ( vecView.x == 0 && vecView.y == 0 && vecView.z == 0 )
+			i::EngineClient->GetViewAngles( vecView );
 
-		const float delta = deltaAngle(velocityDirection, bestAngleMove);
-		const float finalMove = delta < 0.0f ? velocityDirection + deltaAir : velocityDirection - deltaAir;
+		const Vector vecMove = Vector( pCmd->flForwardMove, pCmd->flSideMove, pCmd->flUpMove );
+		const Vector vecAngle = VecAngle( vecMove );
+		const float flSpeed = vecMove.Length2D( );
+		const float flRotation = M_DEG2RAD( pCmd->angViewPoint.y - vecView.y + vecAngle.y );
 
-		pCmd->flForwardMove = std::cos(finalMove) * flSideSpeed;
-		pCmd->flSideMove = -std::sin(finalMove) * flSideSpeed;
+		pCmd->flForwardMove = std::cosf( flRotation ) * flSpeed;
+		pCmd->flSideMove = std::sinf( flRotation ) * flSpeed;
 	}
-
-	//static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
-	//float flSideSpeed = cl_sidespeed->GetFloat();
-	//Vector vecVelocity = g::pLocal->GetVelocity();
-	//static auto flOldYaw = 0.0f;
-
-	//auto flGetVelocityDegree = [](float velocity)
-	//{
-	//	auto tmp = M_RAD2DEG(atan(15.0f / velocity));
-
-	//	if (CheckIfNonValidNumber(tmp) || tmp > 90.0f)
-	//		return 90.0f;
-
-	//	else if (tmp < 0.0f)
-	//		return 0.0f;
-	//	else
-	//		return tmp;
-	//};
-
-	//if (g::pLocal->GetMoveType() != MOVETYPE_WALK)
-	//	return;
-
-	//vecVelocity.z = 0.0f;
-
-	//auto flForwardMove = pCmd->flForwardMove;
-	//auto flSidemove = pCmd->flSideMove;
-
-	//if (vecVelocity.Length2D() < 15.0f && !flForwardMove && !flSidemove)
-	//	return;
-
-	//static auto bFlip = false;
-	//bFlip = !bFlip;
-
-	//auto flTurnDirectionModifier = bFlip ? 1.0f : -1.0f;
-	//auto vecViewAngles = vecView;
-
-	//if (flForwardMove || flSidemove)
-	//{
-	//	pCmd->flForwardMove = 0.0f;
-	//	pCmd->flSideMove = 0.0f;
-
-	//	auto flTurnAngle = atan2(-flSidemove, flForwardMove);
-	//	vecViewAngles.y += flTurnAngle * M_RADPI;
-	//}
-	//else if (flForwardMove) //-V550
-	//	pCmd->flForwardMove = 0.0f;
-
-	//auto flStrafeAngle = M_RAD2DEG(atan(15.0f / vecVelocity.Length2D()));
-
-	//if (flStrafeAngle > 90.0f)
-	//	flStrafeAngle = 90.0f;
-	//else if (flStrafeAngle < 0.0f)
-	//	flStrafeAngle = 0.0f;
-
-	//auto vecTemp = Vector(0.0f, vecViewAngles.y - flOldYaw, 0.0f);
-	//vecTemp.y = M::NormalizeYaw(vecTemp.y);
-
-	//auto flYawDelta = vecTemp.y;
-	//flOldYaw = vecViewAngles.y;
-
-	//auto flAbsYawDelta = fabs(flYawDelta);
-
-	//if (flAbsYawDelta <= flStrafeAngle || flAbsYawDelta >= 15.0f)
-	//{
-	//	Vector vecVelocityAngles;
-	//	M::VectorAngles(vecVelocity, vecVelocityAngles);
-
-	//	vecTemp = Vector(0.0f, vecViewAngles.y - vecVelocityAngles.y, 0.0f);
-	//	vecTemp.y = M::NormalizeYaw(vecTemp.y);
-
-	//	auto flVelocityAngleYawDelta = vecTemp.y;
-	//	auto flVelocityDegree = flGetVelocityDegree(vecVelocity.Length2D());
-
-	//	if (flVelocityAngleYawDelta <= flVelocityDegree || vecVelocity.Length2D() <= 15.0f)
-	//	{
-	//		if (-flVelocityDegree <= flVelocityAngleYawDelta || vecVelocity.Length2D() <= 15.0f)
-	//		{
-	//			vecViewAngles.y += flStrafeAngle * flTurnDirectionModifier;
-	//			pCmd->flSideMove = flSideSpeed * flTurnDirectionModifier;
-	//		}
-	//		else
-	//		{
-	//			vecViewAngles.y = vecVelocityAngles.y - flVelocityDegree;
-	//			pCmd->flSideMove = flSideSpeed;
-	//		}
-	//	}
-	//	else
-	//	{
-	//		vecViewAngles.y = vecVelocityAngles.y + flVelocityDegree;
-	//		pCmd->flSideMove = -flSideSpeed;
-	//	}
-	//}
-	//else if (flYawDelta > 0.0f)
-	//	pCmd->flSideMove = -flSideSpeed;
-	//else if (flYawDelta < 0.0f)
-	//	pCmd->flSideMove = flSideSpeed;
-
-	//auto vecMove = Vector(pCmd->flForwardMove, pCmd->flSideMove, 0.0f);
-	//auto flSpeed = vecMove.Length();
-
-	//Vector angles_move;
-	//M::VectorAngles(vecMove, angles_move);
-
-	//auto flNormalizedX = fmod(vecView.x + 180.0f, 360.0f) - 180.0f;
-	//auto flNormalizedY = fmod(vecView.y + 180.0f, 360.0f) - 180.0f;
-
-	//auto flYaw = M_DEG2RAD(flNormalizedY - vecViewAngles.y + angles_move.y);
-
-	//if (flNormalizedX >= 90.0f || flNormalizedX <= -90.0f || vecView.x >= 90.0f && vecView.x <= 200.0f || vecView.x <= -90.0f && vecView.x <= 200.0f) //-V648
-	//	pCmd->flForwardMove = -cos(flYaw) * flSpeed;
-	//else
-	//	pCmd->flForwardMove = cos(flYaw) * flSpeed;
-
-	//pCmd->flSideMove = sin(flYaw) * flSpeed;
 }
 
 void misc::MovementFix(CUserCmd* pCmd, Vector& oldang) {
