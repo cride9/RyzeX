@@ -48,7 +48,7 @@ void h::SetupHooks() {
 	HookSignature(detour::modifyEyePosition, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 14", &hkModifyEyePosition);
 	HookSignature(detour::skipAnimation, CLIENT_DLL, "57 8B F9 8B 07 8B 80 ? ? ? ? FF D0 84 C0 75 02", &hkShouldSkipAnimationFrame);
 	HookSignature(detour::blendingRules, CLIENT_DLL, "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 8B 75 08 57 8B F9 85 F6", &hkStandardBlendingRules);
-	//HookSignature(detour::animationState, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3", &hkUpdateAnimationState);
+	HookSignature(detour::animationState, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3", &hkUpdateAnimationState);
 	HookSignature(detour::clientAnimation, CLIENT_DLL, "55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74", &hkUpdateClientSideAnimations);
 												//   55 8B EC 56 8B F1 51 8D old: 55 8B EC 83 E4 F0 B8 D8
 	HookSignature(detour::setupBones, CLIENT_DLL, "55 8B EC 83 E4 F0 B8 D8", &hkSetupBones);
@@ -57,11 +57,13 @@ void h::SetupHooks() {
 	HookSignature(detour::interpolateEntites, CLIENT_DLL, "55 8B EC 83 EC 1C 8B 0D ? ? ? ? 53 56 57", &hkInterpolateServerEntites);
 	HookSignature(detour::drawViewmodel, CLIENT_DLL, "55 8B EC 51 57 E8", &hkShouldDrawViewmodel);
 	HookSignature(detour::isFollowingEntity, CLIENT_DLL, "F6 ? ? ? ? ? ? 74 31 80", &hkIsFollowingEntity);
-	HookSignature(detour::playerMove, CLIENT_DLL, "55 8B EC 83 EC 08 56 8B F1 8B 8E 54 0E 00 00 E8", &hkPlayerMove);
+	HookSignature(detour::playerMove, CLIENT_DLL, "55 8B EC 83 EC 08 56 8B F1 8B 8E 54 0E ? ? E8", &hkPlayerMove);
 	HookSignature(detour::clampBonesInBBox, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38", &hkClampBonesInBBox);
 	HookSignature(detour::getColorModulation, MATERIALSYSTEM_DLL, "55 8B EC 83 EC ? 56 8B F1 8A 46", &hkGetColorModulation);
+	HookSignature(detour::getAlphaModulation, MATERIALSYSTEM_DLL, "56 8B F1 8A 46 20 C0 E8 02 A8 01 75 0B 6A 00 6A 00 6A 00 E8 ? ? ? ? 80 7E 22 05 76 0E", &hkGetAlphaModulation);
 	HookSignature(detour::setText, CLIENT_DLL, "55 8B EC 8B 45 08 85 C0 53", &hkSetText);
 	HookSignature(detour::levelShutDown, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 30 C6", &hkLevelShutDownClient);
+	HookSignature(detour::setupAliveLoop, CLIENT_DLL, "55 8B EC 51 56 8B 71 60 83 BE 9C 29 ? ? ? 0F 84 93 ? ? ? 8B", &hkSetupAliveLoop);
 	//HookSignature(detour::dispatchSound, ENGINE_DLL, "55 8B EC 81 EC ?? ?? ?? ?? 56 8B F1 8D 4D 98 E8", &hkDispatchSound);
 	//HookSignature(detour::startSound, ENGINE_DLL, "55 8B EC 81 ? ? ? ? ? 53 56 8B F1 57 8B 7E", &hkStartSound);
 

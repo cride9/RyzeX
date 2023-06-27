@@ -1,5 +1,6 @@
 #include "../../hooks.h"
 #include "../../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../../Features/Networking/networking.h"
 /*
 void ___thiscall C_CSPlayer::BuildTransformations (DWORD this, int studioHdr, int a3, int a4, int a5, int boneMask, int boneComputed)
 {
@@ -25,5 +26,13 @@ void __fastcall h::hkClampBonesInBBox(CBaseEntity* pEntity, void* edx, matrix3x4
 
 	static auto original = detour::clampBonesInBBox.GetOriginal<decltype(&hkClampBonesInBBox)>();
 
-	return original(pEntity, edx, pMatrix, iBoneMask);
+	float flCurtime = i::GlobalVars->flCurrentTime;
+
+	i::GlobalVars->flCurrentTime = (pEntity->GetSimulationTime());
+	if (pEntity == g::pLocal)
+		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(i::GlobalVars->iTickCount);
+
+	original(pEntity, edx, pMatrix, iBoneMask);
+
+	i::GlobalVars->flCurrentTime = flCurtime;
 }

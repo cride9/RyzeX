@@ -50,6 +50,9 @@ void Animations::ResolverLogic() {
 	// make pointers and references for easier handling
 	auto& refCurrentData = ragebot.rageBotData;
 	CBaseEntity* pTarget = refCurrentData.pAimbotTarget;
+	auto* pLog = &lagcomp.GetLog(refCurrentData.pAimbotTarget->EntIndex());
+	if (!pLog)
+		return;
 
 	// get player name and info
 	PlayerInfo_t info;
@@ -64,6 +67,10 @@ void Animations::ResolverLogic() {
 
 	// Check if we killed, or hurt the player
 	if (bResolverHandler[PLAYERHURT] || bResolverHandler[PLAYERDEATH]) {
+
+		pLog->bPeekingReal = pLog->iFreestandMatrix == pLog->iLastResolve;
+		pLog->bInitialized = true;
+
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
 			"Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}]",
@@ -79,6 +86,10 @@ void Animations::ResolverLogic() {
 
 	// Check again just to be safe
 	if (pTarget->GetHealth() < ragebot.rageBotData.iHealth || !pTarget->IsAlive()) {
+
+		pLog->bPeekingReal = pLog->iFreestandMatrix == pLog->iLastResolve;
+		pLog->bInitialized = true;
+
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
 			"Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}]",
@@ -93,7 +104,7 @@ void Animations::ResolverLogic() {
 	}
 
 	// apply shot matrix
-	refCurrentData.pRecord->Apply(pTarget, false);
+	refCurrentData.pRecord->ApplyMatrix(pTarget, RESOLVE);
 
 	// Simulate a bullet shot
 	FireBulletData_t data;
@@ -101,6 +112,9 @@ void Animations::ResolverLogic() {
 
 	// If we hit an entity but didn't deal any dmg its a resolver miss
 	if (data.enterTrace.pHitEntity != nullptr && data.enterTrace.pHitEntity == pTarget) {
+
+		pLog->bPeekingReal = !(pLog->iFreestandMatrix == pLog->iLastResolve);
+		pLog->bInitialized = true;
 
 		if (refCurrentData.bBacktrack) {
 
@@ -117,6 +131,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.ClearTarget();
 			return;
 		}
+
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		anims.missedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
 		misc::Print(std::format(
@@ -133,9 +148,12 @@ void Animations::ResolverLogic() {
 
 		if (refCurrentData.flHitchance >= 99) {
 
+			pLog->bPeekingReal = !(pLog->iFreestandMatrix == pLog->iLastResolve);
+			pLog->bInitialized = true;
+
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
 			misc::Print(std::format(
-				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: unknown reason",
+				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: resolver",
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -214,105 +232,93 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	if (!cfg::rage::resolver)
 		return;
 
-	static std::array<float, 65> flLastResolveYaw{ 58.f };
-
-	float flMaxDesync = pEntity->AnimState()->GetMaxDesync();
-	flLastResolveYaw[pEntity->EntIndex()] = std::clamp(flLastResolveYaw[pEntity->EntIndex()], -flMaxDesync, flMaxDesync);
-
-	switch (missedShots[pEntity->EntIndex()] % 3) {
-
-	case 1: flLastResolveYaw[pEntity->EntIndex()] *= 0;
-		break;
-	case 2: flLastResolveYaw[pEntity->EntIndex()] *= -1;
-		break;
-	}
+	auto pLog = &lagcomp.GetLog(pEntity->EntIndex());
+	if (!pLog)
+		return;
 
 	Vector vecEyePosition = g::vecEyePosition;
 	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
+	const int iEntIndex = pEntity->EntIndex();
 	float& vecEyeYaw = pRecord->vecEyeAngles.y;
 	Vector vecLHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]);
 	Vector vecRHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]);
 	Vector vecCHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[CENTER]);
 
-	if (pWeapon) {
-		if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecLHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw - flLastResolveYaw[pEntity->EntIndex()]);
-			pRecord->bSafeResolve = true;
-			return;
+	if (pLog->bInitialized) {
+
+		float flRightDamage = autowall.GetDamage(pLocal, vecEyePosition, vecRHitboxPosition, pWeapon);
+		float flLeftDamage = autowall.GetDamage(pLocal, vecEyePosition, vecLHitboxPosition, pWeapon);
+
+		if (abs(flRightDamage - flLeftDamage) > 30.f) {
+
+			if (pLog->bPeekingReal) {
+
+				if (flRightDamage > flLeftDamage)
+					memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
+				else if (flLeftDamage > flRightDamage)
+					memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[LEFT], sizeof(matrix3x4_t) * 128);
+			}
+			else {
+
+				if (flRightDamage < flLeftDamage)
+					memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
+				else if (flLeftDamage < flRightDamage)
+					memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[LEFT], sizeof(matrix3x4_t) * 128);
+			}
 		}
-		else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecRHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw + flLastResolveYaw[pEntity->EntIndex()]);
-			pRecord->bSafeResolve = true;
-			return;
-		}
-		else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecCHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw);
-			pRecord->bSafeResolve = true;
-			return;
-		}
+
+		return;
 	}
 
-	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + flLastResolveYaw[pEntity->EntIndex()]);
+	if (missedShots[iEntIndex] == 0) {
 
-	/*Vector vecEyePosition = g::vecEyePosition;
-	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
-	Vector vecLHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]);
-	Vector vecRHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]);
-	Vector vecCHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[CENTER]);
-
-	CTraceFilter traceFilter(pLocal);
-	Trace_t traceLData;
-	Trace_t traceRData;
-
-	float flResolveYaw = pEntity->AnimState()->GetMaxDesync();
-	static int iFoundSide = 0;
-
-	switch (missedShots[pEntity->EntIndex()] % 3) {
-
-	case 1: flResolveYaw *= 0;
-		break;
-	case 2: flResolveYaw *= -1;
-		break;
-	}
-
-	float& vecEyeYaw = pRecord->vecEyeAngles.y;
-	if (pWeapon) {
-		if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecLHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw - flResolveYaw);
-			pRecord->bSafeResolve = true;
-			return;
-		}
-		else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecRHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw + flResolveYaw);
-			pRecord->bSafeResolve = true;
-			return;
-		}
-		else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecCHitboxPosition, HITBOX_HEAD) == 3) {
-			pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw);
-			pRecord->bSafeResolve = true;
-			return;
+		if (pWeapon) {
+			if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecLHitboxPosition, HITBOX_HEAD) == 3) {
+				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[LEFT], sizeof(matrix3x4_t) * 128);
+				pLog->iLastResolve = LEFT;
+			}
+			else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecRHitboxPosition, HITBOX_HEAD) == 3) {
+				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
+				pLog->iLastResolve = RIGHT;
+			}
+			else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecCHitboxPosition, HITBOX_HEAD) == 3) {
+				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[CENTER], sizeof(matrix3x4_t) * 128);
+				pLog->iLastResolve = CENTER;
+			}
 		}
 	}
+	static std::array<int, 65> arrBackupMisses{0};
+	if (arrBackupMisses[iEntIndex] != missedShots[iEntIndex]) {
 
-	float bAntiFreestand = pEntity->AnimState()->GetMaxDesync();
-	pRecord->ApplyMatrix(pEntity, LEFT);
-	float bHitLeft = autowall.GetDamage(pLocal, vecEyePosition, vecLHitboxPosition, pLocal->GetWeapon());
-	pRecord->ApplyMatrix(pEntity, RIGHT);
-	float bHitRight = autowall.GetDamage(pLocal, vecEyePosition, vecRHitboxPosition, pLocal->GetWeapon());
-
-	if (bHitLeft > 1 && bHitRight > 1) {
-		if (!iFoundSide)
-			iFoundSide = RIGHT;
+		switch (pLog->iLastResolve) {
+			case LEFT:
+				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
+				pLog->iLastResolve = RIGHT;
+				break;
+			case RIGHT:
+				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[LEFT], sizeof(matrix3x4_t) * 128);
+				pLog->iLastResolve = LEFT;
+				break;
+			case CENTER:
+				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
+				pLog->iLastResolve = RIGHT;
+				break;
+		}
+		arrBackupMisses[iEntIndex] = missedShots[iEntIndex];
 	}
-	else if (bHitLeft <= 0.f && bHitRight <= 0)
-		iFoundSide = 0;
-	else if (bHitLeft > bHitRight && !iFoundSide)
-		iFoundSide = RIGHT;
-	else if (bHitLeft < bHitRight && !iFoundSide)
-		iFoundSide = LEFT;
 
-	if (iFoundSide != 0)
-		flResolveYaw = iFoundSide == RIGHT ? bAntiFreestand : -bAntiFreestand;
+	// check if they peeked with real or fake
+	if (!pLog->bInitialized) {
 
-	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(vecEyeYaw + flResolveYaw);*/
+		float flRightDamage = autowall.GetDamage(pLocal, vecEyePosition, vecRHitboxPosition, pWeapon);
+		float flLeftDamage = autowall.GetDamage(pLocal, vecEyePosition, vecLHitboxPosition, pWeapon);
+
+		if (abs(flRightDamage - flLeftDamage) > 30.f) {
+
+			if (flRightDamage > flLeftDamage)
+				pLog->iFreestandMatrix = RIGHT;
+			else if (flLeftDamage > flRightDamage)
+				pLog->iFreestandMatrix = LEFT;
+		}
+	}
 }

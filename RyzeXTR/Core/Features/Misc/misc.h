@@ -26,6 +26,7 @@ namespace misc {
 	inline int iRestChoke = 0;
 	inline CConVar* con_filter_text = nullptr;
 	inline CConVar* con_filter_enable = nullptr;
+	inline bool bPeeking = false;
 
 	void SetupRadio( );
 

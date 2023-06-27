@@ -129,8 +129,10 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 	misc::RevolverCreateMove();
 	Vector vecEyePosition = pLocal->GetEyePosition(false);
 
+	misc::bPeeking = false;
 	if (Vector vecHitscan = Hitscan(pLocal, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
 
+		misc::bPeeking = false;
 		exploits::bCanCharge = false;
 		if (cfg::rage::betweenshots)
 			rageBotData.bCanShoot = false;
@@ -184,6 +186,18 @@ void CRageBot::SelectTargets( CBaseEntity* pLocal )
 		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || pEntity->GetTeam( ) == pLocal->GetTeam( ) || pEntity->HasImmunity( ) )
 			continue;
 
+		//if (cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind)) 
+		/*{
+
+			Vector vecInterpolatedEyePosition = InterpolateLocalEyePosition(pLocal->GetEyePosition(false), 5);
+
+			FireBulletData_t data = { };
+			data.vecPosition = vecInterpolatedEyePosition;
+			data.vecDirection = (pEntity->GetHitboxPosition(HITBOX_HEAD, lagcomp.GetLog(i).pCachedMatrix.data()) - vecInterpolatedEyePosition).Normalized();
+
+			if (autowall.SimulateFireBullet(pLocal, pLocal->GetWeapon(), data))
+				misc::bPeeking = true;
+		}*/
 		vecTargets.push_back( pEntity );
 	}
 	
@@ -219,10 +233,12 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 	std::vector<Hitscan_t> vecRecordSave{};
 
-	Retry:
 	for (CBaseEntity* pEntity : vecTargets) {
 
 		if (!pEntity)
+			continue;
+
+		if (playerList::arrPlayers[pEntity->EntIndex()].iPriority == FRIEND)
 			continue;
 
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEntity->EntIndex());
@@ -242,7 +258,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			if (bAddedRecord)
 				break;
 
-			pCurrentApplied->Apply(pEntity, false);
+			pCurrentApplied->ApplyMatrix(pEntity, RESOLVE);
 			for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
 
 				multiPointed.clear();
@@ -274,12 +290,12 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 					}
 
 					FireBulletData_t data;
-					if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &data); flDamage > iMinimumDamage || flDamage > pEntity->GetHealth() + 5) {
+					if (iMinimumDamage > 100)
+						iMinimumDamage = pEntity->GetHealth() + (iMinimumDamage - 100);
+
+					if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &data); flDamage > iMinimumDamage || (flDamage >= pEntity->GetHealth() + 15 && iHitbox != HITBOX_HEAD)) {
 
 						if (playerList::arrPlayers[data.enterTrace.pHitEntity->EntIndex()].iPriority == FRIEND)
-							continue;
-
-						if (data.enterTrace.iHitGroup != HITGROUP_HEAD && iHitbox == HITBOX_HEAD)
 							continue;
 
 						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage > pEntity->GetHealth() + 5, bBacktrack));
@@ -317,8 +333,8 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 	if ( !pWeaponInfo )
 		return false;
 
-	if ( exploits::bIsShiftingTicks || ( cfg::rage::doubletap && IPT::HandleInput( cfg::rage::doubletapkey ) && i::GlobalVars->flCurrentTime - pWeapon->GetLastShotTime( ) <= TICKS_TO_TIME( 15 ) ) )
-		return true;
+	//if ( exploits::bIsShiftingTicks || ( cfg::rage::doubletap && IPT::HandleInput( cfg::rage::doubletapkey ) && i::GlobalVars->flCurrentTime - pWeapon->GetLastShotTime( ) <= TICKS_TO_TIME( 15 ) ) )
+	//	return true;
 
 	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar( "weapon_accuracy_nospread" );
 	// server is currently in nospread, no need to calculate anything, just shoot
@@ -414,7 +430,7 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	if ( !ConfigAutoStop( pWeapon ) )
 		return;
 
-	if ( !( g::pLocal->GetFlags( ) & FL_ONGROUND ) && !ConfigAutoStopInAir( pWeapon ) )
+	if ( !(pLocal->GetFlags( ) & FL_ONGROUND ) && !ConfigAutoStopInAir( pWeapon ) )
 		return;
 
 	// server is currently in nospread, no need to autostop
@@ -433,34 +449,12 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	if (exploits::bIsShiftingTicks && !(IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick))
 		return;
 
-	float flIdealSpeed = ( 0.28f ) * ( g::pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
-
-	/*int predictTick = 0;
-	switch (ConfigAutoStopAggressiveness(pWeapon))
-	{
-	case 1:
-		predictTick = 2; break;
-	case 2:
-		predictTick = 4; break;
-	case 3:
-		predictTick = 8; break;
-	default :
-		predictTick = 1; break;
-	}
-
-	Vector vecInterpolatedEyePosition = InterpolateLocalEyePosition(g::pLocal->GetEyePosition(), predictTick);
-
-	FireBulletData_t data = { };
-	data.vecPosition = vecInterpolatedEyePosition;
-	data.vecDirection = (vecShootPosition - vecInterpolatedEyePosition).Normalized();
-
-	if (!autowall.SimulateFireBullet(g::pLocal, g::pLocal->GetWeapon(), data))
-		return;*/
+	float flIdealSpeed = ( 0.28f ) * (pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
 
 	pCmd->iButtons &= ~IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT;
 
 	// Get the ideal speed for shooting (playstyle)
-	Vector velocity = g::pLocal->GetVelocity( );
+	Vector velocity = pLocal->GetVelocity( );
 	Vector direction;
 	Vector real_view;
 
@@ -919,10 +913,15 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 	refVecPoints.emplace_back(vecCenter);
 	if (iHitbox == HITBOX_HEAD) {
 		refVecPoints.emplace_back(vecCenter + vecTop * flHitboxDistance);
+		refVecPoints.emplace_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.67f)));
+		refVecPoints.emplace_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.67f)));
 		refVecPoints.emplace_back(vecCenter - vecTop * flHitboxDistance);
 	}
 	refVecPoints.emplace_back(vecCenter + vecLeft * flHitboxDistance);
 	refVecPoints.emplace_back(vecCenter + vecRight * flHitboxDistance);
+
+	//for (auto& something : refVecPoints)
+	//	g::drawList.emplace_back(something);
 
 	//g::drawList.emplace_back(vecCenter);
 	//if (iHitbox == HITBOX_HEAD) {
@@ -1080,12 +1079,8 @@ bool CRageBot::ShouldSendPacket(bool& bSendPacket) {
 	if (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind))
 		return bSendPacket;
 
-	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && !g::bWaiting)
+	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey))
 		return false;
-
-	if (g::bWaiting) {
-		return true;
-	}
 
 	return true;
 }

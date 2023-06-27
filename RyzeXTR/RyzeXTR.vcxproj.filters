@@ -97,6 +97,8 @@
     <ClCompile Include="Dependecies\Minhook\trampoline.c" />
     <ClCompile Include="Core\Features\Rage\Animations\AntiAimCorrection.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessMovement.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupAliveLoop.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkGetAlphaModulation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />

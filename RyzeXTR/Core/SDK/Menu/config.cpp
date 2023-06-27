@@ -1032,20 +1032,72 @@ void CConfig::Save(std::string ConfigName)
 
 	CreateDirectory(folder.c_str(), NULL);
 
-	for (auto value : ints)
-		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
+	// Define lambda functions for saving each type of value
+	auto saveInts = [&]() {
+		for (auto value : ints)
+			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
+	};
 
-	for (auto value : floats)
-		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
+	auto saveFloats = [&]() {
+		for (auto value : floats)
+			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
+	};
 
-	for (auto value : bools)
-		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
+	auto saveBools = [&]() {
+		for (auto value : bools)
+			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
+	};
 
-	for ( auto value : strings )
-		WritePrivateProfileString( value->category.c_str( ), value->name.c_str( ), reinterpret_cast< std::string* >( value->value )->c_str( ), file.c_str( ) );
+	auto saveStrings = [&]() {
+		for (auto value : strings)
+			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), reinterpret_cast<std::string*>(value->value)->c_str(), file.c_str());
+	};
+
+	// Create separate threads for each type of value
+	std::thread intsThread(saveInts);
+	std::thread floatsThread(saveFloats);
+	std::thread boolsThread(saveBools);
+	std::thread stringsThread(saveStrings);
+
+	// Wait for all threads to finish
+	intsThread.join();
+	floatsThread.join();
+	boolsThread.join();
+	stringsThread.join();
 
 	bSaving = false;
 }
+
+
+//void CConfig::Save(std::string ConfigName)
+//{
+//	bSaving = true;
+//
+//	static TCHAR path[MAX_PATH];
+//	std::string folder, file;
+//
+//	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
+//	{
+//		folder = std::string(path) + "\\ryzextr\\";
+//		file = std::string(path) + "\\ryzextr\\" + ConfigName + ".xtr";
+//	}
+//
+//	CreateDirectory(folder.c_str(), NULL);
+//
+//	for (auto value : ints)
+//		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
+//
+//	for (auto value : floats)
+//		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
+//
+//	for (auto value : bools)
+//		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
+//
+//	for ( auto value : strings )
+//		WritePrivateProfileString( value->category.c_str( ), value->name.c_str( ), reinterpret_cast< std::string* >( value->value )->c_str( ), file.c_str( ) );
+//
+//	bSaving = false;
+//}
 
 void CConfig::Load(std::string ConfigName)
 {

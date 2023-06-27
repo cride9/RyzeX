@@ -112,7 +112,6 @@ public:
 		bool bDidShot{};
 		bool bRestoreData{};
 		bool bFirstAfterDormant{};
-		bool bSafeResolve = false;
 
 		Vector vecVelocity{};
 		Vector vecAbsVelocity{};
@@ -181,12 +180,10 @@ public:
 
 		bool bLeftDormancy{};
 
-		bool bSafeRecord;
 		int iLastUpdateTick;
 		int iLastValid;
 		int iFirstValid = 32;
 		int iShots;
-		int iMissedShots; 
 		int iWalkToRunTransitionState;
 		int iDesyncSide;
 
@@ -200,6 +197,12 @@ public:
 		float flWalkToRunTransition;
 		float flExploitTime;
 
+
+		EMatrixType iLastResolve{};
+		EMatrixType iFreestandMatrix{};
+		bool bInitialized{};
+		bool bPeekingReal{};
+
 		Lagcompensation::EResolverMode iAntiAimType;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
 		std::array<matrix3x4_t, 128> pCachedMatrix{matrix3x4_t()};
@@ -209,6 +212,7 @@ public:
 			pEntity = nullptr;
 			iLastUpdateTick = 0;
 			pCachedMatrix = std::array<matrix3x4_t, 128>();
+			bInitialized = false;
 			pRecord.clear();
 		}
 	};

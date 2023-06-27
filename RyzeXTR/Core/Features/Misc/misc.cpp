@@ -996,6 +996,12 @@ void misc::FakeLag(bool& bSendPacket) {
 		return;
 	}
 
+	if (bPeeking && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::iTicksToStore > 0) {
+		bSendPacket = i::ClientState->nChokedCommands >= ((*GameRules)->m_bIsValveDS() ? 6 : 14);
+		misc::Print(std::format("Choked ticks: {}", i::ClientState->nChokedCommands));
+		return;
+	}
+
 	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey))
 		return;
 

@@ -77,6 +77,7 @@ namespace detour {
 	inline CDetourHook playerMove;
 	inline CDetourHook clampBonesInBBox;
 	inline CDetourHook getColorModulation;
+	inline CDetourHook getAlphaModulation;
 	inline CDetourHook startSound;
 	inline CDetourHook dispatchSound;
 	inline CDetourHook installStringTableCallback;
@@ -115,6 +116,7 @@ namespace detour {
 	inline CDetourHook isFollowingEntity;
 	inline CDetourHook estimateAbsVelocity;
 	inline CDetourHook processMovement;
+	inline CDetourHook setupAliveLoop;
 }
 
 namespace h {
@@ -157,6 +159,7 @@ namespace h {
 	void __fastcall		hkPlayerMove(void*, void*);
 	void __fastcall		hkClampBonesInBBox(CBaseEntity*, void*, matrix3x4_t*, int);
 	void __fastcall		hkGetColorModulation(void*, void*, float*, float*, float*);
+	float __fastcall	hkGetAlphaModulation(void*, void*);
 	int	__cdecl			hkStartSound(StartSoundParams_t&);
 	void __fastcall     hkInstallStringTableCallback(const char* tableName);
 	void __cdecl		hkDispatchSound(SoundInfoSOURCESDK_t*);
@@ -194,6 +197,8 @@ namespace h {
 	bool __fastcall		hkIsFollowingEntity(void*, void*);
 	void __fastcall		hkEstimateAbsVelocity(CBaseEntity*, void*, Vector&);
 	void __fastcall		hkProcessMovement(void* ecx, void* edx, CBaseEntity* pEntity, CMoveData* pMove);
+	void __fastcall		hkSetupAliveLoop(void* ecx, void* edx);
+
 	//int					hkInterpolationList();
 	long CALLBACK        hkWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 

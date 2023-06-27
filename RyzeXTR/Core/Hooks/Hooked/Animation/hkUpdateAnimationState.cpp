@@ -9,12 +9,12 @@ void __vectorcall h::hkUpdateAnimationState(CAnimState* pAnimstate, void* edx, f
 
 	const auto pEnt = pAnimstate->pEntity;
 
-	if (!pEnt || !pEnt->IsAlive() || !pEnt->IsPlayer())
+	if (!pEnt || !pEnt->IsAlive() || !pEnt->IsPlayer() || pEnt == g::pLocal)
 		return original(pAnimstate, edx, z, y, x, unknown1);
 
 	auto pLog = &lagcomp.GetLog(pEnt->EntIndex());
 	if (!pLog || pLog->pRecord.empty())
 		return original(pAnimstate, edx, z, y, x, unknown1);
 
-	return original(pAnimstate, edx, z, y, x, unknown1);
+	return original(pAnimstate, edx, z, pLog->pRecord.front().vecEyeAngles.y, pLog->pRecord.front().vecEyeAngles.x, unknown1);
 }

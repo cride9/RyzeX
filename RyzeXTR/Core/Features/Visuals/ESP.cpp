@@ -493,16 +493,12 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 		return;
 
 	auto* pLog = &lagcomp.GetLog(pEntity->EntIndex());
-	if (!pLog || pLog->pRecord.empty() || pLog->pRecord.front().pMatricies[VISUAL]->GetOrigin().IsZero())
+	if (pEntity != g::pLocal && (!pLog || pLog->pRecord.empty() || pLog->pCachedMatrix.data()->GetOrigin().IsZero()))
 		return;
-
-	bool bNotLagcompensated = false;
-	if (pEntity->GetTeam() == g::pLocal->GetTeam())
-		bNotLagcompensated = true;
 
 	auto skeleton_position = [=](const size_t idx)
 	{
-		auto child = bNotLagcompensated ? pEntity->GetCachedBoneData().Base()[idx].GetOrigin() : pLog->pCachedMatrix[idx].GetOrigin();
+		auto child = (pEntity == g::pLocal) ? pEntity->GetCachedBoneData().Base()[idx].GetOrigin() : pLog->pCachedMatrix[idx].GetOrigin();
 		return child;
 	};
 	auto skeleton_position_desync = [=](const size_t idx)

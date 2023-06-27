@@ -3100,9 +3100,19 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     if (g.LogEnabled)
         LogSetNextTextDecoration("{", "}");
     //RenderTextClipped(frame_bb.Min + ImVec2(0.f, -20.f), frame_bb.Max + ImVec2(frame_bb.Max.x / 3, -10.f), value_buf, value_buf_end, NULL, ImVec2(0.5f, 0.5f));
-    RenderText(ImVec2(frame_bb.Max.x, frame_bb.Min.y - 15.f), value_buf);
+    if (*((int*)p_min) == 0 && *((int*)p_max) == 110) {
+        if (*((int*)p_data) > 100) {
 
-    if (label_size.x > 0.0f)
+            std::string szText = std::format("Hp+{}", *((int*)p_data) - 100);
+            RenderText(ImVec2(frame_bb.Max.x, frame_bb.Min.y - 15.f), szText.c_str());
+        }
+        else
+            RenderText(ImVec2(frame_bb.Max.x, frame_bb.Min.y - 15.f), value_buf);
+    }
+    else
+        RenderText(ImVec2(frame_bb.Max.x, frame_bb.Min.y - 15.f), value_buf);
+
+    if (label_size.x > 0.0f) 
         RenderText(frame_bb.Min + ImVec2(0.f, -15.f), label);
 
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags | (temp_input_allowed ? ImGuiItemStatusFlags_Inputable : 0));

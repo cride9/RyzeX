@@ -11,11 +11,11 @@ void __fastcall h::hkGetColorModulation(void* ecx, void* edx, float* r, float* g
 	const char* szName = pMaterial->GetName();
 	const char* szGroup = pMaterial->GetTextureGroupName();
 
-	if (strstr(szName, "skybox/")) {
+	if (strstr(szGroup, XorStr("SkyBox textures"))) {
 
-		*r = cfg::misc::flSkyboxColor[0];
-		*g = cfg::misc::flSkyboxColor[1];
-		*b = cfg::misc::flSkyboxColor[2];
+		*r *= cfg::misc::flSkyboxColor[0];
+		*g *= cfg::misc::flSkyboxColor[1];
+		*b *= cfg::misc::flSkyboxColor[2];
 
 		misc::SkyboxChanger();
 		return;
@@ -23,17 +23,17 @@ void __fastcall h::hkGetColorModulation(void* ecx, void* edx, float* r, float* g
 
 	if (cfg::misc::nightmode) {
 
-		if (strstr(szGroup, "World")) {
+		if (strstr(szGroup, XorStr("World textures"))) {
 
-			*r = cfg::misc::nightmodeColor[0] * 0.4544644448404919f;
-			*g = cfg::misc::nightmodeColor[1] * 0.4544644448404919f;
-			*b = cfg::misc::nightmodeColor[2] * 0.4544644448404919f;
+			*r *= cfg::misc::nightmodeColor[0] /** 0.4544644448404919f*/;
+			*g *= cfg::misc::nightmodeColor[1] /** 0.4544644448404919f*/;
+			*b *= cfg::misc::nightmodeColor[2] /** 0.4544644448404919f*/;
 		}
-		if (strstr(szGroup, "StaticProp")) {
+		else if (strstr(szGroup, XorStr("StaticProp textures"))) {
 
-			*r = cfg::misc::nightmodeColor[0];
-			*g = cfg::misc::nightmodeColor[1];
-			*b = cfg::misc::nightmodeColor[2];
+			*r *= cfg::misc::nightmodeColor[0];
+			*g *= cfg::misc::nightmodeColor[1];
+			*b *= cfg::misc::nightmodeColor[2];
 		}
 	}
 }

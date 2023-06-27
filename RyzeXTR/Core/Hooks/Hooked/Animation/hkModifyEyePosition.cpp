@@ -3,6 +3,8 @@
 
 void __fastcall h::hkModifyEyePosition(void* animstatePointer, void* edx, Vector& unused1) 
 {
+	return;
+
 	static auto original = detour::modifyEyePosition.GetOriginal<decltype(&h::hkModifyEyePosition)>();
 
 	const auto pAnimstate = reinterpret_cast<CAnimState*>(animstatePointer);

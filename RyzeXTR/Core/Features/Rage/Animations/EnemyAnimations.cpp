@@ -104,15 +104,15 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 		case 0: aMatrix = pRecord->pMatricies[CENTER]; break;
 		case 1: aMatrix = pRecord->pMatricies[RIGHT]; break;
 		}
-		float flEyeYaw = pRecord->pEntity->AnimState()->flEyeYaw;
-		switch (nRotationSide)
-		{
-		case -1: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw - pEntity->AnimState()->GetMaxDesync()); break;
-		case 0: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw); break;
-		case 1: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw + pEntity->AnimState()->GetMaxDesync()); break;
-		}
+		//float flEyeYaw = pRecord->pEntity->AnimState()->flEyeYaw;
+		//switch (nRotationSide)
+		//{
+		//case -1: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw - pEntity->AnimState()->GetMaxDesync()); break;
+		//case 0: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw); break;
+		//case 1: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeAngle(flEyeYaw + pEntity->AnimState()->GetMaxDesync()); break;
+		//}
 
-		//pEntity->AnimState()->flGoalFeetYaw = GetYawRotation(nRotationSide);
+		pEntity->AnimState()->flGoalFeetYaw = GetYawRotation(nRotationSide);
 
 		UpdateClientSideAnimations(pEntity, pRecord);
 
@@ -842,14 +842,9 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 	pEntity->SetAbsOrigin(vecBackupAbsOrigin);
 
-	GetSideLayersForResolver(pEntity, pRecord);
-
 	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
 	if (playerListData.bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
-	else if (pEntity->GetTeam() != g::pLocal->GetTeam())
-		Resolver(pEntity, pRecord, pPrevious);
-	UpdateClientSideAnimations(pEntity, pRecord);
 
 	pRecord->vecAbsAngles = Vector(0.0f, pState->flGoalFeetYaw, 0.0f);
 
@@ -865,10 +860,12 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
 
 	if (cfg::rage::enable && pEntity->GetTeam() != g::pLocal->GetTeam()) {
-		//pRecord->pEntity->SetupBonesFix(pRecord->pEntity, BoneUsedByHitbox, i::GlobalVars->flCurrentTime, pRecord->pMatricies[RESOLVE]);
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
 		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
 	}
+
+	if (pEntity->GetTeam() != g::pLocal->GetTeam() && !playerListData.bOverrideResolver)
+		Resolver(pEntity, pRecord, pPrevious);
 
 	pEntity->GetVelocity() = vecBackupVelocity;
 	pEntity->GetVecAbsVelocity() = vecbackupAbsVelocity;

@@ -14,7 +14,6 @@ namespace g {
 	inline Vector vecEyePosition;
 
 	inline bool bAllowAnimations[65];
-	inline bool bWaiting;
 	inline bool bUpdatingSkins = false;
 
 	inline bool bSettingUpBones[65];

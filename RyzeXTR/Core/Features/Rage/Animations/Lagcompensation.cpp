@@ -200,7 +200,6 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 		//FilterRecords();
 		pPlayerLogs[i].iFirstValid = 32;
-		pPlayerLogs[i].bSafeRecord = false;
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
 			auto& pCurrentRecord = pLog->pRecord.at(j);
@@ -210,9 +209,6 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 			if (pCurrentRecord.bValid && pPlayerLogs[i].iFirstValid > j)
 				pPlayerLogs[i].iFirstValid = j;
-
-			if (pCurrentRecord.bValid && pCurrentRecord.bSafeResolve)
-				pPlayerLogs[i].bSafeRecord = true;
 		}
 	}
 }

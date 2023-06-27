@@ -183,7 +183,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	
 	// shooting checks
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
-		bSendPacket = (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) ? g::bWaiting ? true : false : true;
+		bSendPacket = (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) ? false : true;
 		return;
 	}
 
