@@ -15,6 +15,18 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
+#if NDEBUG
+		//misc::Print("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
+		visual::WelcomeUser("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
+#endif
+#if _DEBUG
+		//misc::Print("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
+		visual::WelcomeUser("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
+#endif
+#if ALPHA
+		//misc::Print("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
+		visual::WelcomeUser("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
+#endif
 		serversound.Start();
 		visual::VisualRender();
 		serversound.Finish();

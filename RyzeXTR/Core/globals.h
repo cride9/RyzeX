@@ -25,5 +25,6 @@ namespace g {
 		inline HFont NameESP;
 		inline HFont FlagESP;
 		inline HFont SkeetFont;
+		inline HFont DebugFont;
 	}
 }

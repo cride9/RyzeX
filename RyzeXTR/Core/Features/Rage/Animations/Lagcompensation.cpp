@@ -60,7 +60,8 @@ void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity, bool Backup)
 	pEntity->GetVecAbsVelocity() = Backup ? vecAbsVelocity : vecVelocity;
 	pEntity->GetVecOrigin() = vecOrigin;
 	pEntity->SetAbsOrigin(Backup ? vecAbsOrigin : vecOrigin);
-	ApplyMatrix(pEntity, RESOLVE);
+	if (!Backup)
+		ApplyMatrix(pEntity, RESOLVE);
 }
 
 void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity)
@@ -101,7 +102,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || /*pEntity->GetTeam() == g::pLocal->GetTeam() ||*/ pEntity == g::pLocal) {
-			anims.missedShots[i] = 0;
+			anims.arrMissedShots[i] = 0;
 			pLog->iLastValid = 0;
 			pLog->iFirstValid = 32;
 			pLog->bLeftDormancy = true;
@@ -320,7 +321,7 @@ bool Lagcompensation::IsBreakingLagcompensation(Lagcompensation::LagRecord_t* pL
 		Vector delta = pRecord.vecOrigin - previousOrigin;
 		if (delta.LengthSqr() > LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR)
 		{
-			//ExtrapolatePlayer(pRecord.pEntity, &pRecord, pPrevious);
+			ExtrapolatePlayer(pRecord.pEntity, &pRecord, pPrevious);
 
 			// lost track, too much difference.
 			return true;
@@ -363,8 +364,8 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 			auto ticks_left = iSimulationTickDelta;
 			do
 			{
-				//Trace_t      trace;
-				//CTraceFilter filter(g::pLocal);
+				Trace_t      trace;
+				CTraceFilter filter(g::pLocal);
 
 				auto predicted_origin = simulationData.vecOrigin;
 				auto time_to_extrapolate = TIME_TO_TICKS(i::GlobalVars->iTickCount) - m_pEntity->GetSimulationTime();
@@ -394,7 +395,7 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 				predicted_origin = predict_next_velocity(m_pCurrentRecord->vecVelocity, m_pPrevious->vecVelocity);
 				predicted_origin.z += simulationData.vecVelocity.z - sv_gravity * time_to_extrapolate;
 
-				//i::EngineTrace->TraceRay(Ray_t(simulationData.vecOrigin, predicted_origin, simulationData.pEntity->vecMins(), simulationData.pEntity->vecMaxs()), CONTENTS_SOLID, &filter, &trace);
+				i::EngineTrace->TraceRay(Ray_t(simulationData.vecOrigin, predicted_origin, simulationData.pEntity->vecMins(), simulationData.pEntity->vecMaxs()), CONTENTS_SOLID, &filter, &trace);
 
 				m_pCurrentRecord->flSimulationTime = m_pEntity->GetSimulationTime() + time_to_extrapolate;
 				--ticks_left;
@@ -402,7 +403,7 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 		}
 
 		m_pCurrentRecord->vecOrigin = simulationData.vecOrigin;
-		//m_pCurrentRecord->vecAbsOrigin = simulationData.vecOrigin;
+		m_pCurrentRecord->vecAbsOrigin = simulationData.vecOrigin;
 	}
 }
 

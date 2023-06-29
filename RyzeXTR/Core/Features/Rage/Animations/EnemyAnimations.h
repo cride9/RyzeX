@@ -60,7 +60,7 @@ public:
 
 	bool NewDataRecievedFromServer(CBaseEntity* pPlayer);
 	void UpdateClientSideAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
-	int missedShots[ 65 ];
+	std::array<int, 65> arrMissedShots{0};
 	bool didHurt = false, didFire = false, didImpact = false, didDie = false;
 	Vector bulletImpact = Vector( 0, 0, 0 );
 

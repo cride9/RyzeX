@@ -85,6 +85,16 @@ public:
 			float flMovementSide;
 			Vector angMoveYaw;
 			Vector vecDirection;
+
+			LayerData_t(const CAnimationLayer& pLayer) {
+
+				nSequence = pLayer.nSequence;
+				flPlaybackRate = pLayer.flPlaybackRate;
+				flCycle = pLayer.flCycle;
+				flWeight = pLayer.flWeight;
+			}
+
+			LayerData_t() {};
 		};
 
 		LagRecord_t() = default;
@@ -110,6 +120,7 @@ public:
 		bool bSideways{};
 		bool bForwards{};
 		bool bDidShot{};
+		bool bResolved{};
 		bool bRestoreData{};
 		bool bFirstAfterDormant{};
 
@@ -200,8 +211,8 @@ public:
 
 		EMatrixType iLastResolve{};
 		EMatrixType iFreestandMatrix{};
-		bool bInitialized{};
-		bool bPeekingReal{};
+		int iPeekingReal = 0;
+		int iPeekingFake = 0;
 
 		Lagcompensation::EResolverMode iAntiAimType;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
@@ -212,7 +223,6 @@ public:
 			pEntity = nullptr;
 			iLastUpdateTick = 0;
 			pCachedMatrix = std::array<matrix3x4_t, 128>();
-			bInitialized = false;
 			pRecord.clear();
 		}
 	};

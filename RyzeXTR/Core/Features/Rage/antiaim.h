@@ -23,7 +23,8 @@ enum EDESYNC : int {
 	STATIC,
 	EXTENDED,
 	JITTER,
-	FLICK
+	FLICK,
+	XJITTER
 };
 
 enum AATYPE : int {

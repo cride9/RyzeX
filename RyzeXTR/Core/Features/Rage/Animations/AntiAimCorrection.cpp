@@ -58,18 +58,24 @@ void Animations::ResolverLogic() {
 	PlayerInfo_t info;
 	i::EngineClient->GetPlayerInfo(pTarget->EntIndex(), &info);
 
-	if (refCurrentData.iTickcount + TIME_TO_TICKS(0.1f) < g::pCmd->iTickCount)
-		return;
+	//if (refCurrentData.iTickcount + TIME_TO_TICKS(0.1f) < g::pCmd->iTickCount)
+	//	return;
 
 	// check if we did shot & had an impact
-	if (!bResolverHandler[WEAPONFIRE] || !bResolverHandler[BULLETIMPACT])
+	if (!bResolverHandler[WEAPONFIRE] || !bResolverHandler[BULLETIMPACT]) {
+		//misc::Print("No log due to event delay??!?!");
+		//bResolverHandler = std::array<bool, HANDLERCOUNT>();
+		//refCurrentData.ClearTarget();
 		return;
+	}
 
 	// Check if we killed, or hurt the player
 	if (bResolverHandler[PLAYERHURT] || bResolverHandler[PLAYERDEATH]) {
 
-		pLog->bPeekingReal = pLog->iFreestandMatrix == pLog->iLastResolve;
-		pLog->bInitialized = true;
+		if (pLog->iFreestandMatrix == pLog->iLastResolve)
+			pLog->iPeekingReal++;
+		else
+			pLog->iPeekingFake++;
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
@@ -87,8 +93,10 @@ void Animations::ResolverLogic() {
 	// Check again just to be safe
 	if (pTarget->GetHealth() < ragebot.rageBotData.iHealth || !pTarget->IsAlive()) {
 
-		pLog->bPeekingReal = pLog->iFreestandMatrix == pLog->iLastResolve;
-		pLog->bInitialized = true;
+		if (pLog->iFreestandMatrix == pLog->iLastResolve)
+			pLog->iPeekingReal++;
+		else
+			pLog->iPeekingFake++;
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
@@ -113,13 +121,15 @@ void Animations::ResolverLogic() {
 	// If we hit an entity but didn't deal any dmg its a resolver miss
 	if (data.enterTrace.pHitEntity != nullptr && data.enterTrace.pHitEntity == pTarget) {
 
-		pLog->bPeekingReal = !(pLog->iFreestandMatrix == pLog->iLastResolve);
-		pLog->bInitialized = true;
+		if (pLog->iFreestandMatrix == pLog->iLastResolve)
+			pLog->iPeekingFake++;
+		else
+			pLog->iPeekingReal++;
 
 		if (refCurrentData.bBacktrack) {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
-			anims.missedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
+			//anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
 			misc::Print(std::format(
 				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: invalid record",
 				info.szName,
@@ -133,7 +143,7 @@ void Animations::ResolverLogic() {
 		}
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		anims.missedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
+		//anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
 		misc::Print(std::format(
 			"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: resolver",
 			info.szName,
@@ -148,9 +158,6 @@ void Animations::ResolverLogic() {
 
 		if (refCurrentData.flHitchance >= 99) {
 
-			pLog->bPeekingReal = !(pLog->iFreestandMatrix == pLog->iLastResolve);
-			pLog->bInitialized = true;
-
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
 			misc::Print(std::format(
 				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: resolver",
@@ -164,6 +171,7 @@ void Animations::ResolverLogic() {
 			return;
 		}
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
+		anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]--;
 		misc::Print(std::format(
 			"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: spread",
 			info.szName,
@@ -187,6 +195,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 
 		if (iUser == i::EngineClient->GetLocalPlayer()) {
 			bResolverHandler[WEAPONFIRE] = true;
+			arrMissedShots[iUser]++;
 		}
 	}
 	if (!strcmp(pEvent->GetName(), "player_hurt")) {
@@ -223,102 +232,312 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 	}
 }
 
+void SetResolveMatrix(Lagcompensation::AnimationInfo_t* pLog, Lagcompensation::LagRecord_t* pRecord, EMatrixType iType) {
+
+	memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[iType], sizeof(matrix3x4_t) * 128);
+	pLog->iLastResolve = iType;
+}
+
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious)
+	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious || !pRecord)
 		return;
 
 	if (!cfg::rage::resolver)
 		return;
 
-	auto pLog = &lagcomp.GetLog(pEntity->EntIndex());
-	if (!pLog)
+	int iEntIndex = pEntity->EntIndex();
+
+	auto& pData = lagcomp.GetLog(iEntIndex);
+	if (!&pData)
 		return;
 
-	Vector vecEyePosition = g::vecEyePosition;
-	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
-	const int iEntIndex = pEntity->EntIndex();
-	float& vecEyeYaw = pRecord->vecEyeAngles.y;
-	Vector vecLHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]);
-	Vector vecRHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]);
-	Vector vecCHitboxPosition = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[CENTER]);
+	static std::array<float, 65> flOldLowerbodyYaw{0};
+	static std::array<float, 65> flOldPlaybackrateYaw{0};
+	arrMissedShots[pEntity->EntIndex()];
 
-	if (pLog->bInitialized) {
+	// use it if not gonna use the resolver.
+	float flOldGoalFeetYaw = pEntity->AnimState( )->flGoalFeetYaw;
 
-		float flRightDamage = autowall.GetDamage(pLocal, vecEyePosition, vecRHitboxPosition, pWeapon);
-		float flLeftDamage = autowall.GetDamage(pLocal, vecEyePosition, vecLHitboxPosition, pWeapon);
+	// bot or either no resolver.
+	if (!cfg::rage::resolver /*|| pEntity->GetPlayerInfo().bFakePlayer*/) {
 
-		if (abs(flRightDamage - flLeftDamage) > 30.f) {
+		// reset missed shots.
+		pData.iAntiAimType = Lagcompensation::LEGIT;
+		pData.iDesyncSide = NULL;
 
-			if (pLog->bPeekingReal) {
+		// reset the data.
+		pData.flTimeSinceBreakingLBY = 0.f;
+		pData.flTimeSinceBodySwayRight = 0.f;
+		pData.flTimeSinceBodySwayLeft = 0.f;
+		pData.flTimeSinceBodySwaying = 0.f;
+		pData.flTimeSinceNoDesync = 0.f;
 
-				if (flRightDamage > flLeftDamage)
-					memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
-				else if (flLeftDamage > flRightDamage)
-					memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[LEFT], sizeof(matrix3x4_t) * 128);
-			}
-			else {
-
-				if (flRightDamage < flLeftDamage)
-					memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
-				else if (flLeftDamage < flRightDamage)
-					memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[LEFT], sizeof(matrix3x4_t) * 128);
-			}
-		}
-
+		// lets go back to old feet yaw faster.
+		pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
 		return;
 	}
+	// the angle.
+	flGuessedYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y - pEntity->AnimState( )->flGoalFeetYaw );
+ 
+	// breaking the lowerbody.
+	if ( fabsf( M::NormalizeYaw( pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget ) ) > 35.f)
+	{
+		// its breaking lby so its opposite.
+		pData.iAntiAimType = Lagcompensation::OPPOSITE;
 
-	if (missedShots[iEntIndex] == 0) {
+		// its less than 179.998f you might say.
+		if ( fabsf( M::NormalizeYaw( pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget ) ) < 175.f )
+		{
+			// set to the opposite lowerbody.
+			flGuessedYaw = std::clamp( M::NormalizeYaw( pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget ), -58.f, 58.f ) * -1.f;
 
-		if (pWeapon) {
-			if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecLHitboxPosition, HITBOX_HEAD) == 3) {
-				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[LEFT], sizeof(matrix3x4_t) * 128);
-				pLog->iLastResolve = LEFT;
-			}
-			else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecRHitboxPosition, HITBOX_HEAD) == 3) {
-				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
-				pLog->iLastResolve = RIGHT;
-			}
-			else if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecCHitboxPosition, HITBOX_HEAD) == 3) {
-				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[CENTER], sizeof(matrix3x4_t) * 128);
-				pLog->iLastResolve = CENTER;
-			}
+			// save the correct lby data.
+			if ( flOldLowerbodyYaw[ pEntity->EntIndex( ) ] != flGuessedYaw )
+				flOldLowerbodyYaw[ pEntity->EntIndex( ) ] = flGuessedYaw;
+		}
+		// set the last saved data.
+		else if ( fabsf( flOldLowerbodyYaw[ pEntity->EntIndex( ) ] ) > 0.f )
+			// thats how to resolve onetap.
+			flGuessedYaw = flOldLowerbodyYaw[ pEntity->EntIndex( ) ];
+		// we don't have data so i assume its opposite.
+		else flGuessedYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y - flOldGoalFeetYaw ) * -1.f;
+
+		// max desync detection.
+		if ( pRecord->pLayers[ 3 ].flCycle != 0.f || pRecord->pLayers[ 3 ].flWeight != 0.f )
+			++pData.flTimeSinceNoDesync;
+		else pData.flTimeSinceNoDesync = 0.f;
+
+		// increase while breaking.
+		++pData.flTimeSinceBreakingLBY;
+
+		// use the correct data.
+		if ( M::NormalizeYaw( pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget ) <= 0.f ) {
+			pData.flTimeSinceBodySwayRight = 0.f;
+			++pData.flTimeSinceBodySwayLeft;
+		}
+		else {
+			pData.flTimeSinceBodySwayLeft = 0.f;
+			++pData.flTimeSinceBodySwayRight;
+		}
+
+		// this is probably sway anti-aim but we need more check.
+		if ( pData.flTimeSinceBreakingLBY > 11.1f && pData.flTimeSinceBodySwayLeft < 11.1f && pData.flTimeSinceBodySwayRight < 11.1f )
+			// increase.
+			++pData.flTimeSinceBodySwaying;
+		// reset data.
+		else pData.flTimeSinceBodySwaying = 0.f;
+
+		// think about it.
+		if ( pData.flTimeSinceBodySwaying > 11.1f )	
+			pData.iAntiAimType = Lagcompensation::SWAY;
+
+		// its been fake desync for enough time.
+		if ( pData.flTimeSinceNoDesync > 5.f ) {
+			flGuessedYaw *= 0.f;
+
+			// its fake desync for sure.
+			pData.iAntiAimType = Lagcompensation::FAKE;
+		}
+
+		// fire detection.
+		if ( pRecord->bDidShot && fabsf( pEntity->AnimState( )->flEyePitch ) < 89.f ) {
+			pData.iAntiAimType = Lagcompensation::ONSHOT;
+
+			// change known side.
+			flGuessedYaw *= -1.f;
+
+			// use the default yaw.
+			pEntity->AnimState( )->flGoalFeetYaw = flOldGoalFeetYaw;
+
+			// last side.
+			flGuessedYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y - pEntity->AnimState( )->flGoalFeetYaw );
+
+			// desync side info.
+			if ( !flGuessedYaw )
+				pData.iDesyncSide = 0;
+			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+			return;
 		}
 	}
-	static std::array<int, 65> arrBackupMisses{0};
-	if (arrBackupMisses[iEntIndex] != missedShots[iEntIndex]) {
+	else {
+		// its normal desync for sure.
+		pData.iAntiAimType = Lagcompensation::DESYNC;
 
-		switch (pLog->iLastResolve) {
-			case LEFT:
-				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
-				pLog->iLastResolve = RIGHT;
-				break;
-			case RIGHT:
-				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[LEFT], sizeof(matrix3x4_t) * 128);
-				pLog->iLastResolve = LEFT;
-				break;
-			case CENTER:
-				memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[RIGHT], sizeof(matrix3x4_t) * 128);
-				pLog->iLastResolve = RIGHT;
-				break;
+		// reset the data.
+		pData.flTimeSinceBreakingLBY = 0.f;
+		pData.flTimeSinceBodySwayRight = 0.f;
+		pData.flTimeSinceBodySwayLeft = 0.f;
+		pData.flTimeSinceBodySwaying = 0.f;
+		pData.flTimeSinceNoDesync = 0.f;
+
+		// from the server.
+		auto flFromServerPlaybackrate = pRecord->pLayers[ 6 ].flPlaybackRate;
+
+		// resolver calculations.
+		const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
+		const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
+		const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
+
+		// differences.
+		const float fDifferenceCenterPlaybackrate = fabs( flFromServerPlaybackrate - fCenterPlaybackrate );
+		const float fDifferenceRightPlaybackrate = fabs( flFromServerPlaybackrate - fRightPlaybackrate );
+		const float fDifferenceLeftPlaybackrate = fabs( flFromServerPlaybackrate - fLeftPlaybackrate );
+
+		// while.
+		if ( /*flServerVelocityXY*/pRecord->vecVelocity.Length2D() > 0.f && !pRecord->pLayers[12].flWeight && (pPrevious && pRecord->pLayers[6].flWeight == pPrevious->pLayers[6].flWeight || pRecord->vecVelocity.Length2D() > 135.f && pRecord->pLayers[6].flWeight == 1.f))
+		{
+			pData.iAntiAimType = Lagcompensation::ANIMATION;
+
+			if ( fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate )
+				// center.
+				flGuessedYaw = 0.f;
+			else if ( fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate )
+				// right.
+				flGuessedYaw = 58.f;
+			else if ( fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate )
+				// left.
+				flGuessedYaw = -58.f;
+			else // center.
+				flGuessedYaw = 0.f; //flGuessedYaw = -58.f;
+
+			// save the correct moving data.
+			if ( flOldPlaybackrateYaw[ pEntity->EntIndex( ) ] != flGuessedYaw )
+				flOldPlaybackrateYaw[ pEntity->EntIndex( ) ] = flGuessedYaw;
 		}
-		arrBackupMisses[iEntIndex] = missedShots[iEntIndex];
+		// set the last saved data.
+		else if ( fabs( flOldPlaybackrateYaw[ pEntity->EntIndex( ) ] ) > 0.f )
+			flGuessedYaw = flOldPlaybackrateYaw[ pEntity->EntIndex( ) ];
+		// set the last saved data.
+		else  if ( fabs( flOldLowerbodyYaw[ pEntity->EntIndex( ) ] ) > 0.f )
+			// thats how to resolve onetap.
+			flGuessedYaw = flOldLowerbodyYaw[ pEntity->EntIndex( ) ];
+		// we don't have data.
+		else flGuessedYaw = 58.f;
+
+		// fire detection.
+		if ( pRecord->bDidShot && fabsf( pEntity->AnimState( )->flEyePitch ) < 89.f ) {
+			pData.iAntiAimType = Lagcompensation::ONSHOT;
+
+			// use the default yaw.
+			pEntity->AnimState( )->flGoalFeetYaw = flOldGoalFeetYaw;
+
+			// last side.
+			flGuessedYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y - pEntity->AnimState( )->flGoalFeetYaw );
+
+			// desync side info.
+			if ( !flGuessedYaw )
+				pData.iDesyncSide = 0;
+			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+			return;
+		}
+
+		// in use detection but not the greateast.
+		if ( pLocal->IsAlive( ) && pRecord->flDeltaAngle < 90.f && fabsf( pEntity->AnimState( )->flEyePitch ) < 45.f ) {
+			pData.iAntiAimType = Lagcompensation::LEGIT;
+
+			// use the default yaw.
+			pEntity->AnimState( )->flGoalFeetYaw = flOldGoalFeetYaw;
+
+			// last side.
+			flGuessedYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y - pEntity->AnimState( )->flGoalFeetYaw );
+
+			// desync side info.
+			if ( !flGuessedYaw )
+				pData.iDesyncSide = 0;
+			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+			return;
+		}
 	}
 
-	// check if they peeked with real or fake
-	if (!pLog->bInitialized) {
-
-		float flRightDamage = autowall.GetDamage(pLocal, vecEyePosition, vecRHitboxPosition, pWeapon);
-		float flLeftDamage = autowall.GetDamage(pLocal, vecEyePosition, vecLHitboxPosition, pWeapon);
-
-		if (abs(flRightDamage - flLeftDamage) > 30.f) {
-
-			if (flRightDamage > flLeftDamage)
-				pLog->iFreestandMatrix = RIGHT;
-			else if (flLeftDamage > flRightDamage)
-				pLog->iFreestandMatrix = LEFT;
-		}
+	// bruteforce.
+	switch ( arrMissedShots[pEntity->EntIndex()] % 3)
+	{
+	case 1: flGuessedYaw *= -1.f; break;
+	case 2: flGuessedYaw *= 0.f; break;
 	}
+
+	// desync side info.
+	if ( !flGuessedYaw )
+		pData.iDesyncSide = 0;
+	else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+
+	// apply the resolver.
+	pEntity->AnimState( )->flGoalFeetYaw = M::NormalizeYaw( pRecord->vecEyeAngles.y + flGuessedYaw);
+	if (flGuessedYaw > 50)
+		SetResolveMatrix(&pData, pRecord, RIGHT);
+	if (flGuessedYaw < -50)
+		SetResolveMatrix(&pData, pRecord, LEFT);
+
+	//static std::array<int, 65> arrBackupMissCounts{0};
+	//Vector vecEyePosition = pLocal->GetEyePosition(false);
+	//std::array<Vector, MAX> arrHeadPositions{};
+	//EMatrixType iSafeIndex = VISUAL;
+
+	//for (int i = LEFT; i <= CENTER; i++) {
+	//	arrHeadPositions[i] = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[i]);
+	//	if (int iTemp = ragebot.SafePoint(vecEyePosition, pLocal->GetWeapon(), pRecord, arrHeadPositions[i], HITBOX_HEAD); iTemp >= 3) {
+	//		iSafeIndex = static_cast<EMatrixType>(i);
+	//		pRecord->bResolved = true;
+	//	}
+	//}
+
+	//bool bFoundSafe = false;
+	//if (iSafeIndex != VISUAL && arrMissedShots[iEntIndex] < 1) {
+
+	//	arrBackupMissCounts[iEntIndex] = 0;
+	//	SetResolveMatrix(pLog, pRecord, iSafeIndex);
+	//	pRecord->bResolved = true;
+	//	bFoundSafe = true;
+	//}
+
+	//if (bFoundSafe)
+	//	return;
+
+	//pRecord->ApplyMatrix(pEntity, LEFT);
+	//int iLeftDamage = autowall.GetDamage(pLocal, vecEyePosition, arrHeadPositions[LEFT], pLocal->GetWeapon());
+	//pRecord->ApplyMatrix(pEntity, RIGHT);
+	//int iRightDamage = autowall.GetDamage(pLocal, vecEyePosition, arrHeadPositions[RIGHT], pLocal->GetWeapon());
+
+	//if (abs(pLog->iPeekingFake - pLog->iPeekingReal) < 2 && pLog->iPeekingReal > 2 && pLog->iPeekingFake > 2) {
+
+	//	if (pLog->iLastResolve == RIGHT)
+	//		SetResolveMatrix(pLog, pRecord, LEFT);
+	//	else if (pLog->iLastResolve == LEFT)
+	//		SetResolveMatrix(pLog, pRecord, RIGHT);
+	//}
+	//else if (pLog->iPeekingReal > 2 && pLog->iPeekingReal > pLog->iPeekingFake) {
+
+	//	if (iLeftDamage > iRightDamage)
+	//		SetResolveMatrix(pLog, pRecord, LEFT);
+	//	else
+	//		SetResolveMatrix(pLog, pRecord, RIGHT);
+	//}
+	//else if (pLog->iPeekingFake > 2 && pLog->iPeekingFake > pLog->iPeekingReal) {
+
+	//	if (iLeftDamage > iRightDamage)
+	//		SetResolveMatrix(pLog, pRecord, RIGHT);
+	//	else
+	//		SetResolveMatrix(pLog, pRecord, LEFT);
+	//}
+
+	//if (arrBackupMissCounts[iEntIndex] != arrMissedShots[iEntIndex]) {
+
+	//	switch (pLog->iLastResolve) {
+	//		case LEFT:
+	//			SetResolveMatrix(pLog, pRecord, RIGHT);
+	//			break;
+
+	//		case RIGHT:
+	//			SetResolveMatrix(pLog, pRecord, CENTER);
+	//			break;
+
+	//		case CENTER:
+	//			SetResolveMatrix(pLog, pRecord, LEFT);
+	//			break;
+	//	}
+
+	//	arrBackupMissCounts[iEntIndex] == arrMissedShots[iEntIndex];
+	//}
 }

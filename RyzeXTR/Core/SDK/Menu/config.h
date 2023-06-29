@@ -96,6 +96,8 @@ namespace cfg {
 	}
 	namespace antiaim {
 
+		inline std::vector<int> vecJitterWays[3];
+
 		inline bool bEnabled[3];
 		inline int iPitch[3];
 		inline int iYawBase[3];

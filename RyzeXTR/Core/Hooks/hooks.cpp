@@ -5,6 +5,8 @@
 #include "../SDK/DataTyes/Color.h"
 #include "../SDK/Menu/gui.h"
 #include "../../Dependecies/ImGui/imgui_impl_win32.h"
+#include "../Features/Misc/misc.h"
+#include "../Features/Visuals/ESP.h"
 
 void h::SetupHooks() {
 

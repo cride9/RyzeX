@@ -346,7 +346,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		
 		static auto something = [](int right, int top, int& spacing, const char* print) {
 
-			i::Surface->DrawT(right + 2, (top + spacing) - 80, RYZEXCOLOR, g::fonts::FlagESP, false, print);
+			i::Surface->DrawT(right + 2, (top + spacing) - 80, RYZEXCOLOR, g::fonts::DebugFont, false, print);
 			spacing += 10;
 		};
 
@@ -356,33 +356,28 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 		auto pRecord = &pLog->pRecord.front();
 
-		/*
-			pLayer->flMovementSide = m_flMovementSide;
-			pLayer->angMoveYaw = m_angAngle;
-			pLayer->vecDirection = m_vecDirection;
-			pLayer->flFeetWeight = m_flNewFeetWeight;
-		*/
+		// from the server.
+		auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
 
-		const float fServerPlaybackrate = anims.GetLocalCycleIncrement(pEnt, pRecord, pRecord->pLayers[6].flPlaybackRate);
-		const float fCenterPlaybackrate = anims.GetLocalCycleIncrement(pEnt, pRecord, pRecord->LayerData[CENTER].flPlaybackRate, &pRecord->LayerData[CENTER]);
-		const float fRightPlaybackrate = anims.GetLocalCycleIncrement(pEnt, pRecord, pRecord->LayerData[RIGHT].flPlaybackRate, &pRecord->LayerData[RIGHT]);
-		const float fLeftPlaybackrate = anims.GetLocalCycleIncrement(pEnt, pRecord, pRecord->LayerData[LEFT].flPlaybackRate, &pRecord->LayerData[LEFT]);
+		// resolver calculations.
+		const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
+		const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
+		const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
 
-		float leftdiff = fabsf(fServerPlaybackrate - fLeftPlaybackrate);
-		float rightdiff = fabsf(fServerPlaybackrate - fRightPlaybackrate);
-		float centerdiff = fabsf(fServerPlaybackrate - fCenterPlaybackrate);
-		float flReturn = (leftdiff < rightdiff && leftdiff < centerdiff) ? -58.0f : ((rightdiff < leftdiff && rightdiff < centerdiff) ? 58.0f : 0.0f);
-
-		static float flLastValidResolveYaw = flReturn;
-		if (flReturn != 0)
-			flLastValidResolveYaw = flReturn;
+		// differences.
+		const float fDifferenceCenterPlaybackrate = fabs(flFromServerPlaybackrate - fCenterPlaybackrate);
+		const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
+		const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
 
 		something(right, top, spacing, "[Layer 6]");
 		something(right, top, spacing, std::format("Left: {}", fLeftPlaybackrate).c_str());
 		something(right, top, spacing, std::format("Right: {}", fRightPlaybackrate).c_str());
 		something(right, top, spacing, std::format("Center: {}", fCenterPlaybackrate).c_str());
-		something(right, top, spacing, std::format("Server: {}", fServerPlaybackrate).c_str());
-		something(right, top, spacing, std::format("Yaw: {}", flLastValidResolveYaw).c_str());
+		something(right, top, spacing, std::format("Server: {}", flFromServerPlaybackrate).c_str());
+
+		something(right, top, spacing, std::format("RightDiff: {}", fDifferenceRightPlaybackrate).c_str());
+		something(right, top, spacing, std::format("LeftDiff: {}", fDifferenceLeftPlaybackrate).c_str());
+		something(right, top, spacing, std::format("CenterDiff: {}", fDifferenceCenterPlaybackrate).c_str());
 	}
 #endif
 }
@@ -871,4 +866,59 @@ void visual::OutOfFov(CBaseEntity* pEntity) {
 	i::Surface->DrawSetColor(drawColor);
 	i::Surface->DrawSetTexture(iTextureID);
 	i::Surface->DrawTexturedPolygon(3, vertices.data());
+}
+
+void visual::WelcomeUser(std::string szText) {
+
+	if (!i::GlobalVars || bNotWelcome)
+		return;
+
+	static float iStartTick = i::GlobalVars->iTickCount;
+	static bool bGoBack = false;
+	static bool bDoneAnimating = false;
+	if (i::GlobalVars->iTickCount - iStartTick > TIME_TO_TICKS(5)) {
+		bNotWelcome = true;
+	}
+	if (i::GlobalVars->iTickCount - iStartTick > TIME_TO_TICKS(4)) {
+		bGoBack = true;
+	}
+
+	constexpr int iStepSize = 364 / 32;
+	
+	static int iAnimation = 0;
+	int iEaseAnimation = 0.05f * abs(364 - iAnimation);
+	if (abs(iStartTick - i::GlobalVars->iTickCount) <= TIME_TO_TICKS(0.5f))
+		iAnimation += iStepSize * iEaseAnimation;
+	else
+		bDoneAnimating = true;
+
+	if (bGoBack && iAnimation > 0)
+		iAnimation = std::clamp(iAnimation - iStepSize, 0, 364);
+
+	// draw the border
+	i::Surface->DrawSetColor(40, 40, 40, 255);
+	i::Surface->DrawOutlinedRect(0, 50, iAnimation, 125);
+
+	// draw middle
+	i::Surface->DrawSetColor(12, 12, 12, 255);
+	i::Surface->DrawFilledRect(0, 51, iAnimation - 1, 124);
+
+	i::Surface->DrawSetColor(40, 40, 40, 255);
+	i::Surface->DrawOutlinedRect(0, 51 + 8, iAnimation - 1 - 8, 124 - 8);
+
+	i::Surface->DrawSetColor(22, 22, 22, 255);
+	i::Surface->DrawFilledRect(0, 51 + 9, iAnimation - 1 - 9, 124 - 9);
+
+	if (bDoneAnimating) {
+		static int iAlpha = 0;
+
+		if (abs(iStartTick - i::GlobalVars->iTickCount) >= TIME_TO_TICKS(3.5f))
+			iAlpha = std::clamp(iAlpha - 255 / TIME_TO_TICKS(0.3f), 0, 255);
+		else if (abs(iStartTick - i::GlobalVars->iTickCount) >= TIME_TO_TICKS(0.5f) && abs(iStartTick - i::GlobalVars->iTickCount) >= TIME_TO_TICKS(0.8f))
+			iAlpha = std::clamp(iAlpha + 255 / TIME_TO_TICKS(0.3f), 0, 255);
+
+		std::clamp(iAlpha, 0, 255);
+
+		i::Surface->DrawT(iAnimation / 2, 125 / 2 + 17, Color(255, 255, 255, iAlpha), g::fonts::DebugFont, true, szText.c_str());
+	}
 }

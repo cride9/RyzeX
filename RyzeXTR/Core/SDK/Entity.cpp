@@ -35,6 +35,19 @@ void CBaseEntity::SetUpMovement() {
 	oSetUpMovement(this->AnimState());
 }
 
+void CBaseEntity::SetUpVelocity() {
+
+	if (!this->AnimState())
+		return;
+
+	using SetUpVelocityFn = void(__thiscall*)(CAnimState*);
+	static auto oSetUpVelocity = reinterpret_cast<SetUpVelocityFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 30 56 57 8B ? ? ? ? ? 8B")));
+
+	assert(oSetUpVelocity != nullptr);
+
+	oSetUpVelocity(this->AnimState());
+}
+
 CBaseCombatWeapon* CBaseEntity::GetWeapon()
 {
 	if (auto pHandle = this->GetActiveWeaponHandle(); pHandle)

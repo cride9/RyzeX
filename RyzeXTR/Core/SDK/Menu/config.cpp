@@ -136,6 +136,10 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::antiaim;
 
+		//SetupValue(vecJitterWays[0].data(), vecJitterWays[0].size(), 0, "antiaim", "xwayjitterMove");
+		//SetupValue(vecJitterWays[1].data(), vecJitterWays[1].size(), 0, "antiaim", "xwayjitterStanding");
+		//SetupValue(vecJitterWays[2].data(), vecJitterWays[2].size(), 0, "antiaim", "xwayjitterJumping");
+
 		SetupValue(bEnabled, false, 3, "antiaim", "Antiaimenabled");
 
 		SetupValue(iPitch, 3, 0, "antiaim", "pitch");
@@ -864,7 +868,7 @@ void CConfig::Setup() {
 		SetupValue(bProjectileESP, false, "misc", "bProjectileESP");
 		SetupValue(flProjectileESP, 4, 1.f, "misc", "flProjectileESP");
 
-		SetupValue(onlyCheatLogs, true, "misc", "onlyCheatLogs");
+		SetupValue(onlyCheatLogs, false, "misc", "onlyCheatLogs");
 
 		SetupValue(bDrawCapsule, false, "misc", "bDrawCapsule");
 		SetupValue(flDrawCapsuleColor[0], 1.f, "visual", "flDrawCapsuleColorR"); // (0.000f, 0.246f, 0.646f, 1.000f)

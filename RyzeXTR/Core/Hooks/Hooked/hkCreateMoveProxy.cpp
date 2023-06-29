@@ -19,10 +19,10 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	static auto original = detour::createMove.GetOriginal<decltype(&h::hkCreateMoveProxy)>();
 	
 	// call original first so our movement and other stuff will be sent normally
-	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
-
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
+
+	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
@@ -87,14 +87,12 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		ragebot.bSendPacketThisTick = false;
 	}
 
-	static auto maxusercmd = i::ConVar->FindVar("sv_maxusrcmdprocessticks");
-	if (i::ClientState->nChokedCommands >= maxusercmd->GetInt() - 1)
+	if (i::ClientState->nChokedCommands >= 14)
 		bSendPacket = true;
 
 	if (bSendPacket)
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
 
-	//misc::ChangeName(false, "kurvaanyad");
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();
 

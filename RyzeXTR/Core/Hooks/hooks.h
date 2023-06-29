@@ -198,7 +198,6 @@ namespace h {
 	void __fastcall		hkEstimateAbsVelocity(CBaseEntity*, void*, Vector&);
 	void __fastcall		hkProcessMovement(void* ecx, void* edx, CBaseEntity* pEntity, CMoveData* pMove);
 	void __fastcall		hkSetupAliveLoop(void* ecx, void* edx);
-
 	//int					hkInterpolationList();
 	long CALLBACK        hkWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 

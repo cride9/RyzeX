@@ -8,6 +8,7 @@
 
 namespace visual {
 
+	inline bool bNotWelcome = false;
 	inline int iHealth[65];
 	inline bool bAmmoEnabled[65];
 	inline Vector safePoint;
@@ -30,6 +31,8 @@ namespace visual {
 	void DrawRadioInformation();
 	void OutOfFov(CBaseEntity*);
 	void BarrelEsp(CBaseEntity*, Color);
+
+	void WelcomeUser(std::string szText);
 	
 	void WorldEsp();
 	void DroppedWeapons(CBaseCombatWeapon*, Vector&);

@@ -18,7 +18,7 @@ void Style() {
 	ImFontConfig cfg;
 	cfg.FontDataOwnedByAtlas = false;
 
-#if NDEBUG
+#if NDEBUG || ALPHA
 	menu::logoFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::logoFont, 50.f, 50.f);
 	menu::xtrFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::xtrFont, 17.f, 17.f);
 	menu::childFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::childFont, 15.f, 15.f);

@@ -18,6 +18,7 @@ struct Hitscan_t {
 		bSafe = safeBool;
 		bLethal = lethalBool;
 		bBacktrack = backtrackBool;
+		bHead = ((iHitbox == HITBOX_HEAD || HITBOX_NECK) && iHitgroup == HITGROUP_HEAD);
 	}
 
 	Lagcompensation::LagRecord_t* pRecord;
@@ -28,6 +29,7 @@ struct Hitscan_t {
 	bool bSafe;
 	bool bLethal;
 	bool bBacktrack;
+	bool bHead;
 };
 
 class CRageBot {
@@ -35,7 +37,7 @@ class CRageBot {
 public:
 
 	void CreateMove(CUserCmd*, CBaseEntity*, bool&);
-	bool bSendPacketThisTick = false;
+	bool bSendPacketThisTick;
 	int iTickCount = 0;
 	bool bSetTickCount = false;
 
@@ -103,7 +105,6 @@ private:
 	int					CalculateTickCount(float);
 	// helpers
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
-	Lagcompensation::LagRecord_t* CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog, int&);
 	bool				CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon);
 	bool				ShouldSendPacket(bool&);
 

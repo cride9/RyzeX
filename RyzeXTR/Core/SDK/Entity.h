@@ -689,7 +689,7 @@ public:
 
 	void GetBoneCache(matrix3x4_t* matrix) {
 
-		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count())
+		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count() || !IsBoneCacheValid())
 			return;
 
 		memcpy(matrix, this->GetCachedBoneData().Base(), this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
@@ -697,7 +697,7 @@ public:
 
 	void SetBoneCache(matrix3x4_t* matrix) {
 
-		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count())
+		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count() || !IsBoneCacheValid())
 			return;
 
 		memcpy(this->GetCachedBoneData().Base(), matrix, this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
@@ -1026,6 +1026,7 @@ public:
 	static CBaseEntity*		GetLocalPlayer();
 	int						GetSequenceActivity(int iSequence);
 	void					SetUpMovement();
+	void					SetUpVelocity();
 	bool					IsGrenade(CBaseCombatWeapon* weapon);
 	CBaseCombatWeapon*		GetWeapon();
 	int						GetMaxHealth();

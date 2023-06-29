@@ -15,21 +15,45 @@
 bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 
 	// Sort by bSafe in descending order
-	if (a.bSafe && !b.bSafe)
+	if (a.bSafe && !b.bSafe) {
+
+		if (a.iHitbox == HITBOX_HEAD && !a.bHead)
+			return false;
+		else if (a.iHitbox == HITBOX_HEAD && a.bHead)
+			return true;
+
 		return true;
-	else if (!a.bSafe && b.bSafe)
+	}
+	else if (!a.bSafe && b.bSafe) {
+
+		if (b.iHitbox == HITBOX_HEAD && !b.bHead)
+			return true;
+		else if (b.iHitbox == HITBOX_HEAD && b.bHead)
+			return false;
+
+		return false;
+	}
+
+	// prioritize high ground
+
+
+	/*if (a.pRecord->bResolved && a.bHead)
+		return true;
+	else if (b.pRecord->bResolved && b.bHead)
+		return false;*/
+	
+	if (a.bHead && !b.bHead)
+		return true;
+	else if (!a.bHead && b.bHead)
 		return false;
 
-	// Sort by bLethal only when it's not a headshot
-	//if (a.iHitbox != 0 && b.iHitbox != 0 && !a.bLethal && b.bLethal)
-	//	return true;
-
 	// Sort by hitbox, prioritize body over head if both are lethal
-	if (a.iHitbox != 0 && b.iHitbox != 0) {
-		if (a.iHitbox != 0 && b.iHitbox == 0)
-			return true;
-		else if (a.iHitbox == 0 && b.iHitbox != 0)
+	if (a.bLethal && b.bLethal) {
+
+		if (a.iHitbox == HITBOX_HEAD && b.iHitbox != HITBOX_HEAD)
 			return false;
+		else if (a.iHitbox != HITBOX_HEAD && b.iHitbox == HITBOX_HEAD)
+			return true;
 	}
 
 	// Sort by flDamage in descending order
@@ -72,11 +96,11 @@ bool LowestFov(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
 	return flFirstFov < flSecondFov;
 }
 
-bool LowestHealth(const std::pair<CBaseEntity*, int>& pEnt1, const std::pair<CBaseEntity*, int>& pEnt2 ) {
-	if ( pEnt1.first->GetHealth( ) != pEnt2.first->GetHealth( ) )
-		return pEnt1.first->GetHealth( ) < pEnt2.first->GetHealth( );
+bool LowestHealth(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
+	if (pEnt1->GetHealth() != pEnt2->GetHealth())
+		return pEnt1->GetHealth() < pEnt2->GetHealth();
 	else
-		return LowestFov( pEnt1.first, pEnt2.first );
+		return false;
 }
 
 bool HighestDamage( std::tuple<Vector, float, int>& damage1, std::tuple<Vector, float, int>& damage2 ) {
@@ -143,7 +167,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 		Vector shootAngle;
 		M::VectorAngles(vecHitscan - vecEyePosition, shootAngle); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
 
-		if (CheckShootingCondition(pCmd, pLocal, pWeapon)) {
+		if (/*CheckShootingCondition(pCmd, pLocal, pWeapon)*/pLocal->CanShoot((CWeaponCSBase*)pWeapon)) {
 
 			if (Hitchance(rageBotData.pAimbotTarget, pWeapon, shootAngle, ConfigHitChance(pWeapon), vecEyePosition)) {
 
@@ -198,23 +222,116 @@ void CRageBot::SelectTargets( CBaseEntity* pLocal )
 			if (autowall.SimulateFireBullet(pLocal, pLocal->GetWeapon(), data))
 				misc::bPeeking = true;
 		}*/
-		vecTargets.push_back( pEntity );
+		vecTargets.emplace_back( pEntity );
 	}
 	
 	if ( !vecTargets.empty( ) )
-		std::sort( vecTargets.begin( ), vecTargets.end( ), LowestFov );
+		std::sort( vecTargets.begin( ), vecTargets.end( ), LowestHealth );
 }
 
-Lagcompensation::LagRecord_t* CRageBot::CheckOnShotRecord(Lagcompensation::AnimationInfo_t* pLog, int& iIndex) {
+std::array<Lagcompensation::LagRecord_t*, 2> ChooseTargetRecord(Lagcompensation::AnimationInfo_t* pLog) {
 
-	for (size_t i = 0; i < pLog->pRecord.size(); i++) {
-		if (pLog->pRecord.at(i).bDidShot && pLog->pRecord.at(i).bValid) {
-			iIndex = i;
-			return &pLog->pRecord.at(i);
+	Lagcompensation::LagRecord_t* pOnShotRecord = nullptr;
+	Lagcompensation::LagRecord_t* pSafeRecord = nullptr;
+	Lagcompensation::LagRecord_t* pSafeBackTrackRecord = nullptr;
+
+	int iSafeRecord = 0;
+	int iHeadShottableRecordIndex = 128;
+	for (int i = 0; i < pLog->iLastValid; i++) {
+
+		// Break from the loop if we got 2 entites
+		if (pOnShotRecord && pSafeRecord)
+			break;
+
+		// get a reference from that record
+		Lagcompensation::LagRecord_t& refRecord = pLog->pRecord.at(i);
+
+		// haha lol
+		if (iHeadShottableRecordIndex > i) {
+			if ((refRecord.bBreakingLagcompensation && i == 0) || !refRecord.bBreakingLagcompensation) {
+
+				Trace_t traceData;
+				Vector vecHitboxPosition = pLog->pEntity->GetHitboxPosition(HITBOX_HEAD, refRecord.pMatricies[RESOLVE]);
+				i::EngineTrace->ClipRayToEntity(Ray_t(g::vecEyePosition, vecHitboxPosition), MASK_SHOT, pLog->pEntity, &traceData);
+				if (traceData.iHitGroup == HITGROUP_HEAD) {
+					iHeadShottableRecordIndex = i;
+				}
+			}
+		}
+
+		// check for onshot because that's what we call the safest headshot option
+		if (refRecord.bDidShot && !pOnShotRecord) {
+
+			// lagcomp breaking entities cannot be bcaktracked
+			if (refRecord.bBreakingLagcompensation && i == 0) {
+				pOnShotRecord = &refRecord;
+				continue;
+			}
+
+			// not lagcomp breaking entities can be easily backtracked and even force it
+			else if (!refRecord.bBreakingLagcompensation) {
+				pOnShotRecord = &refRecord;
+				continue;
+			}
+		}
+
+		// first let's get the safest resolves
+		if (!refRecord.bResolved)
+			continue;
+
+		// non backtrackable entity -> bcs breaking lagcomp -> server is not saving this guy
+		// TODO: bypass cl_lagcompensation check -> disallow the client to be lagcompensated
+		if (refRecord.bBreakingLagcompensation && i == 0 && !pSafeRecord) {
+			pSafeRecord = &refRecord;
+			continue;
+		}
+		// not breaking the lagcompensation -> can be backtracked
+		else if (!refRecord.bBreakingLagcompensation && !pSafeRecord) {
+			pSafeRecord = &refRecord;
+			iSafeRecord = i;
+			continue;
 		}
 	}
-	
-	return nullptr;
+
+	// if we got the 2 safe stuff let's just return them
+	if (pOnShotRecord && pSafeRecord)
+		return std::array<Lagcompensation::LagRecord_t*, 2>{pOnShotRecord, pSafeRecord};
+
+	// if we 
+	if (pOnShotRecord || pSafeRecord) {
+
+		// loop from the back to the record that we added lately (to not scan the same target)
+		for (int i = pLog->iLastValid; i > iSafeRecord; i--) {
+
+			// break out from the loop if we got a backtrackable record
+			if (pSafeBackTrackRecord)
+				break;
+
+			try {
+
+				// get a reference from that record
+				Lagcompensation::LagRecord_t& refRecord = pLog->pRecord.at(i);
+
+				// same stuff, lagcomp break -> cant be backtracked
+				if (refRecord.bBreakingLagcompensation)
+					continue;
+
+				if (refRecord.bResolved)
+					pSafeBackTrackRecord = &refRecord;
+			}
+			catch (std::out_of_range) {
+
+
+			}
+		}
+	}
+
+	// if we got the 2 record let's return them
+	if (pSafeBackTrackRecord && pSafeRecord)
+		return std::array<Lagcompensation::LagRecord_t*, 2>{pSafeRecord, pSafeBackTrackRecord};
+
+	// if we reach this part, we didn't have any record... let's return the recent record and return nothing else
+	return std::array<Lagcompensation::LagRecord_t*, 2>{ &pLog->pRecord.at(iHeadShottableRecordIndex == 128 ? 0 : iHeadShottableRecordIndex), nullptr};
 }
 
 Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
@@ -223,6 +340,8 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		return Vector(0, 0, 0);
 
 	SelectTargets(pLocal);
+	if (vecTargets.empty())
+		return Vector(0, 0, 0);
 
 	static std::vector<Vector> multiPointed = { Vector(0, 0, 0) };
 	std::array<bool, HITBOX_MAX> vecSelectedHitboxes = ConfigHitboxes(pWeapon);
@@ -246,17 +365,15 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity || pLog->iLastValid >= pLog->pRecord.size() || pLog->iFirstValid >= pLog->pRecord.size()) 
 			continue;
 		
-		std::array<Lagcompensation::LagRecord_t*, 2> arrRecords{ &pLog->pRecord.at(pLog->iFirstValid), &pLog->pRecord.at(pLog->iLastValid) };
+		std::array<Lagcompensation::LagRecord_t*, 2> arrRecords = ChooseTargetRecord(pLog);
 
-		bool bAdded = false;
-		bool bAddedRecord = false;
 		bool bBacktrack = false;
 		size_t iTick = 0;
 
 		for (auto pCurrentApplied : arrRecords) {
 
-			if (bAddedRecord)
-				break;
+			if (!pCurrentApplied)
+				continue;
 
 			pCurrentApplied->ApplyMatrix(pEntity, RESOLVE);
 			for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
@@ -265,7 +382,6 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 				if (!vecSelectedHitboxes[iHitbox])
 					continue;
 
-				bAdded = false;
 				multiPointed = CreatePoints(vecEyePosition, pWeapon, pCurrentApplied, iHitbox);
 
 				if (cfg::rage::iAimbotFov < 180) {
@@ -290,20 +406,13 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 					}
 
 					FireBulletData_t data;
-					if (iMinimumDamage > 100)
-						iMinimumDamage = pEntity->GetHealth() + (iMinimumDamage - 100);
-
-					if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &data); flDamage > iMinimumDamage || (flDamage >= pEntity->GetHealth() + 15 && iHitbox != HITBOX_HEAD)) {
+					if (flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecPoint, pWeapon, &data); flDamage > 0 /*|| (flDamage >= pEntity->GetHealth() + 5 && iHitbox != HITBOX_HEAD)*/) {
 
 						if (playerList::arrPlayers[data.enterTrace.pHitEntity->EntIndex()].iPriority == FRIEND)
 							continue;
 
-						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage > pEntity->GetHealth() + 5, bBacktrack));
-						bAdded = true;
-						bAddedRecord = true;
+						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage >= pEntity->GetHealth(), bBacktrack));
 					}
-					if (bAdded)
-						break;
 				}
 			}
 			bBacktrack = true;
@@ -313,10 +422,17 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	if (vecRecordSave.empty())
 		return Vector(0, 0, 0);
 
-	if (vecRecordSave.size() >= 2)
+	if (vecRecordSave.size() > 1)
 		std::sort(vecRecordSave.begin(), vecRecordSave.end(), HitscanComparator);
 
 	auto pRecord = &vecRecordSave.front();
+
+	if (iMinimumDamage > 100)
+		iMinimumDamage = pRecord->pRecord->pEntity->GetHealth() + (iMinimumDamage - 100);
+
+	if (pRecord->flDamage < iMinimumDamage)
+		if (iMinimumDamage - pRecord->flDamage > 10)
+			return Vector(0, 0, 0);
 
 	rageBotData.SetTarget(pRecord->pRecord, vecEyePosition, pRecord->bBacktrack, pRecord->pRecord->flResolverAngle);
 	rageBotData.flDamage = pRecord->flDamage;
@@ -526,7 +642,7 @@ int CRageBot::ConfigMinimumDamage( CBaseCombatWeapon* pWeapon ) {
 		return cfg::rage::pistolMindmg;
 	}
 	else if ( iDefinitionIndex == WEAPON_TASER ) {
-		return 100;
+		return 110;
 	}
 	else {
 		return cfg::rage::etcMindmg;
@@ -553,7 +669,7 @@ int CRageBot::ConfigOverrideDamage( CBaseCombatWeapon* pWeapon ) {
 		return cfg::rage::pistolOverride;
 	}
 	else if ( iDefinitionIndex == WEAPON_TASER ) {
-		return 100;
+		return 110;
 	}
 	else {
 		return cfg::rage::etcOverride;
@@ -1013,8 +1129,11 @@ int CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, L
 		pRecord->pMatricies[EMatrixType::LEFT]->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pMatricies[EMatrixType::CENTER]->GetOrigin() == Vector(0, 0, 0))
 	{
-		return false;
+		return 0;
 	}
+
+	if (!pRecord)
+		return 0;
 
 	int iSafePoint = 0;
 	Vector vecStart = vecEyePosition;
@@ -1023,15 +1142,15 @@ int CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, L
 
 	const Model_t* model = pRecord->pEntity->GetModel();
 	if (!model)
-		return false;
+		return 0;
 
 	studiohdr_t* studioHdr = i::ModelInfo->GetStudioModel(model);
 	if (!studioHdr)
-		return false;
+		return 0;
 
 	mstudiobbox_t* studioBox = studioHdr->GetHitboxSet(0)->GetHitbox(iHitbox);
 	if (!studioBox)
-		return false;
+		return 0;
 
 	if (bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[RIGHT]))
 		iSafePoint++;

@@ -20,11 +20,15 @@ void OnMovePacket(float flFrameTime) {
 	bool bSendPacket = true;
 	//g::bSendPacket = &bSendPacket;
 	
+	// createmove -> hooked
+	// if this isn't getting called we eliminate the shifting "teleport"
 	typedef void(__thiscall* CreateMove_t)(void*, int, float, bool);
 	((CreateMove_t)(util::GetVFunc(i::ClientDll, 22)))(i::ClientDll, nSequence, i::GlobalVars->flIntervalPerTick - flFrameTime, true);
 
 	if (bSendPacket) {
 
+		// cl_sendmove
+		// only calling this is not enough to DT and will cause some serious prediction issues
 		static auto sig = (void*)((DWORD)(MEM::FindPattern(ENGINE_DLL, XorStr("55 8B EC 8B 4D 04 81 EC FC 0F 00 00 53 56 57"))));
 		((void(__cdecl*)())(sig))();
 

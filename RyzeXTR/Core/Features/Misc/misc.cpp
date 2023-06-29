@@ -18,6 +18,7 @@
 #include "../../../Dependecies/BASS/string_obfuscation.h"
 #include "../../SDK/Menu/gui.h"
 #include "Playerlist.h"
+#include "../Rage/Animations/EnemyAnimations.h"
 
 void misc::SetupRadio( )
 {
@@ -95,7 +96,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FixScopeSens();
 	ClanTag();
 	LeftHandKnife();
-#if NDEBUG
+#if NDEBUG || ALPHA
 	Security();
 #endif
 	//ViewModel();
@@ -174,16 +175,13 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	if (!strcmp(pEvent->GetName(), roundStart)) {
 		BuyBot(pEvent);
 		WalkBotHandler(pEvent);
-		for (size_t i = 0; i < 65; i++)
-			visual::iHealth[i] = -1;
-		
 	}
 	if (!strcmp(pEvent->GetName(), itemPurchase)) {
 
 	}
-	if (!strcmp(pEvent->GetName(), "bomb_beginplant")) {
-		CustomBombText("lmao");
-	}
+	//if (!strcmp(pEvent->GetName(), "bomb_beginplant")) {
+	//	//CustomBombText("lmao");
+	//}
 }
 
 CBaseEntity* UTIL_PlayerByIndex(int index)
@@ -1605,7 +1603,7 @@ void misc::Killsay(IGameEvent* pEvent) {
 	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
 	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
 	if (int iLocalIndex = i::EngineClient->GetLocalPlayer(); iUserID != iLocalIndex && iAttacker == iLocalIndex) {
-		i::EngineClient->ExecuteClientCmd(std::format("say {}", cfg::misc::killSayBuffer).c_str());
+		i::EngineClient->ExecuteClientCmd(std::format("say \"{}\"", cfg::misc::killSayBuffer).c_str());
 	}
 }
 

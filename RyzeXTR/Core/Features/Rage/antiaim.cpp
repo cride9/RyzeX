@@ -146,18 +146,55 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 	case FLICK:
 
+		flDesyncValue = 120.f * bInvertValue;
 		if (flickJitter) {
 
 			iChangeOnTick++;
 
 			if (iChangeOnTick >= cfg::antiaim::flickAngleSwitch[type]) {
 
-				pCmd->angViewPoint.y -= (cfg::antiaim::iFlickOffset[type] * bInvertValue);
+				pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y - (cfg::antiaim::iFlickOffset[type] * bInvertValue));
 				antiaim::shotInvert = !antiaim::shotInvert;
 				iChangeOnTick = 0;
 			}
 		}
 
+		break;
+
+	case XJITTER:
+
+		if (vecJitterWays[type].empty())
+			break;
+
+		try {
+			static int iLatestWay = 0;
+			static int iLastTick = 0;
+			int iTickBase = networking.GetCorrectedTickbase();
+			static float flCurtime = i::GlobalVars->flCurrentTime;
+			if (iLastTick + (i::ClientState->nChokedCommands + 1) < iTickBase || iLastTick > iTickBase)
+			{
+				if (iLatestWay >= vecJitterWays[type].size())
+					iLatestWay = 0;
+				else {
+					if (cfg::antiaim::bAntiJitter[type]) {
+						if (flCurtime + 0.7f < i::GlobalVars->flCurrentTime) {
+							flCurtime = i::GlobalVars->flCurrentTime;
+							pCmd->angViewPoint.y += vecJitterWays[type].at(iLatestWay);
+							break;
+						}
+					}
+					iLatestWay++;
+				}
+				iLastTick = iTickBase;
+			}
+			pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + vecJitterWays[type].at(min(iLatestWay, vecJitterWays[type].size())));
+			//flDesyncValue = 120.f * bInvertValue;
+
+		}
+		catch (std::exception) {
+			
+		}
+		
 		break;
 	}
 
