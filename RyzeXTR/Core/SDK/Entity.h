@@ -1051,6 +1051,7 @@ public:
 	float					GetSequenceMoveDist(CStudioHdr*, int);
 	float					GetLayerSequenceCycleRate(CAnimationLayer*, int);
 	bool					InitializeAsClientEntity(const char* pszModelName, bool bRenderWithViewModels);
+	bool					IsFakeducking();
 
 	/*    
 	N_ADD_VARIABLE(int, GetSequence, "CBaseAnimating->m_nSequence");

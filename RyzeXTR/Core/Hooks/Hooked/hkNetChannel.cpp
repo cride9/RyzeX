@@ -86,7 +86,7 @@ bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMe
 	
 	//C_CLCMsg_VoiceData msg = { };
 	//using ConstructVoiceMessage_t = uint32_t( __fastcall* )( void*, void* );
-	//static ConstructVoiceMessage_t ConstructVoiceMessage = reinterpret_cast< ConstructVoiceMessage_t >( util::FindSignature( "engine.dll", "56 57 8B F9 8D 4F 08 C7 07 ? ? ? ? E8 ? ? ? ? C7" ) );
+	//static ConstructVoiceMessage_t ConstructVoiceMessage = reinterpret_cast< ConstructVoiceMessage_t >( MEM::FindPattern(ENGINE_DLL, XorStr("56 57 8B F9 8D 4F 08 C7 07 ? ? ? ? E8 ? ? ? ? C7") ) );
 
 	//for ( int i = 1; i < i::GlobalVars->nMaxClients; i++ )
 	//{

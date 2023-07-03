@@ -100,6 +100,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	IPT::Setup();
 	p::Setup();
 
+	g::bStartWelcome = true;
 	misc::SetupRadio();
 
 #if _DEBUG

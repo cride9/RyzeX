@@ -96,7 +96,8 @@ namespace cfg {
 	}
 	namespace antiaim {
 
-		inline std::vector<int> vecJitterWays[3];
+		inline std::array<int, 3> iEnabledJitters;
+		inline std::array<std::array<int, 64>, 3> vecJitterWays;
 
 		inline bool bEnabled[3];
 		inline int iPitch[3];
@@ -171,8 +172,8 @@ namespace cfg {
 		inline bool bBulletTracer[3] = { false, false, false };
 		inline float flBulletTracerColor[3][4];
 
-		inline bool bFlags[3][6];
-		inline float flFlagsColor[3][6][4];
+		inline bool bFlags[3][9];
+		inline float flFlagsColor[3][9][4];
 	}
 
 	namespace model {
@@ -406,6 +407,7 @@ namespace cfg {
 		inline bool removals[] = { false, false ,false ,false, false };
 		inline bool drawViewmodelOnScope = false;
 		inline float scopeColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline float scopeColorEnd[4] = { 1.f, 1.f, 1.f, 1.f };
 		inline float scopeLength = 1.f;
 
 		inline bool autobuyEnabled = false;
@@ -499,6 +501,7 @@ private:
 	void SetupValue(int* value, int length, int def, std::string category, std::string name);
 	void SetupValue(float* value, int length, float def, std::string category, std::string name);
 	void SetupValue(float* value, int length, float* def, std::string category, std::string name);
+	void SetupValue(std::vector<int>& value, int max, int def, std::string category, std::string name);
 
 public:
 	CConfig()

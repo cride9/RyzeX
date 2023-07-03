@@ -255,4 +255,38 @@ namespace util {
 			CloseClipboard();
 		}
 	}
+
+	inline std::vector<std::string> AnimateText(const std::string& szInput) {
+
+		std::vector<std::string> vecReturnValue{};
+
+		int iCurrentLine = 0;
+		for (size_t i = 0; i < szInput.length(); i++) {
+			iCurrentLine++;
+			std::string szLineOutput = "";
+			for (size_t j = 0; j < iCurrentLine; j++) {
+				szLineOutput += szInput[j];
+			}
+
+			vecReturnValue.push_back(szLineOutput);
+
+			if (i == szInput.length() - 1)
+				for (size_t j = 0; j < 3; j++)
+					vecReturnValue.push_back(szLineOutput);
+		}
+
+		iCurrentLine = 0;
+		for (size_t i = szInput.length(); i > 0; i--) {
+			iCurrentLine++;
+			std::string szLineOutput = "";
+			for (size_t j = szInput.length() - iCurrentLine; j > 0; j--) {
+
+				szLineOutput += szInput[j];
+			}
+			std::reverse(szLineOutput.begin(), szLineOutput.end());
+			vecReturnValue.push_back(szLineOutput);
+		}
+
+		return vecReturnValue;
+	}
 }

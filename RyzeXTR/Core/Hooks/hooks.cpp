@@ -7,6 +7,7 @@
 #include "../../Dependecies/ImGui/imgui_impl_win32.h"
 #include "../Features/Misc/misc.h"
 #include "../Features/Visuals/ESP.h"
+#include "../Features/Misc/Playerlist.h"
 
 void h::SetupHooks() {
 
@@ -31,7 +32,7 @@ void h::SetupHooks() {
 	HookTable(detour::lockCursor, i::Surface, table::lockCursor, &hkLockCursor);
 	HookTable(detour::runCommand, i::Prediction, table::runCommand, &hkRunCommand);
 	HookTable(detour::getViewmodelFov, i::ClientMode, table::getViewmodelFov, &hkGetViewModelFov);
-	//HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
+	HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
 	HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
@@ -50,7 +51,7 @@ void h::SetupHooks() {
 	HookSignature(detour::modifyEyePosition, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 14", &hkModifyEyePosition);
 	HookSignature(detour::skipAnimation, CLIENT_DLL, "57 8B F9 8B 07 8B 80 ? ? ? ? FF D0 84 C0 75 02", &hkShouldSkipAnimationFrame);
 	HookSignature(detour::blendingRules, CLIENT_DLL, "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 8B 75 08 57 8B F9 85 F6", &hkStandardBlendingRules);
-	HookSignature(detour::animationState, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3", &hkUpdateAnimationState);
+	//HookSignature(detour::animationState, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3", &hkUpdateAnimationState);
 	HookSignature(detour::clientAnimation, CLIENT_DLL, "55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74", &hkUpdateClientSideAnimations);
 												//   55 8B EC 56 8B F1 51 8D old: 55 8B EC 83 E4 F0 B8 D8
 	HookSignature(detour::setupBones, CLIENT_DLL, "55 8B EC 83 E4 F0 B8 D8", &hkSetupBones);
@@ -153,6 +154,23 @@ void h::UnHookClientState() {
 		if (detour::temptEntities.IsHooked()) {
 			MH_DisableHook(oldtemptEntities);
 			MH_RemoveHook(oldtemptEntities);
+		}
+	}
+}
+
+void h::HookEntites() {
+
+	for (int i = 0; i < i::GlobalVars->nMaxClients; i++) {
+
+		CBaseEntity* pEntity = playerList::arrPlayers[i].pEntity;
+
+		if (!pEntity) 
+			continue;
+
+		if (!detour::estimateAbsVelocity.IsHooked()) {
+
+			vecEstimateAbsVelocityHooks[i] = util::GetVFunc(pEntity, 145);
+			h::HookTable(detour::estimateAbsVelocity, pEntity, 145, &h::hkEstimateAbsVelocity);
 		}
 	}
 }

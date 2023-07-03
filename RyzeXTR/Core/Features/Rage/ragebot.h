@@ -41,7 +41,7 @@ public:
 	int iTickCount = 0;
 	bool bSetTickCount = false;
 
-	struct
+	struct rageBotData_t
 	{
 		Lagcompensation::LagRecord_t*	pRecord;
 		CBaseEntity*					pAimbotTarget;
@@ -51,6 +51,7 @@ public:
 		int								iHealth;
 		int								iTickcount;
 		int								iHitbox;
+		int								iHitGroup;
 
 		bool							bBacktrack;
 		bool							bCanShoot;
@@ -85,13 +86,15 @@ public:
 			flHitchance = 0.f;
 		}
 
-	} rageBotData ;
+	};
+	rageBotData_t rageBotData;
+	rageBotData_t hitlogData;
 
 	std::vector<Vector> CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, bool = false);
 	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int);
 	std::array<Vector, 6> HitboxPoints(Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, Vector&, int);
 	bool bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);
-	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector&, int iHitbox);
+	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector, int iHitbox);
 
 private:
 
@@ -107,6 +110,7 @@ private:
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 	bool				CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon);
 	bool				ShouldSendPacket(bool&);
+	void				CapsuleRebuild(mstudiobbox_t* studioBox, matrix3x4_t* pMatrix);
 
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);
 	int					ConfigOverrideDamage(CBaseCombatWeapon*);

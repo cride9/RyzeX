@@ -81,6 +81,7 @@ namespace misc {
 
 	void CustomBombText(const char*);
 	std::string GetHitgroupName(int iHitgroup);
+	std::string GetMatrixName(int iType);
 
 	void RevolverRunCommand(CBaseEntity*);
     bool CanFireWeapon(float curtime, bool bRevolverSecondary, bool bSkipExtraRevolverChecks);

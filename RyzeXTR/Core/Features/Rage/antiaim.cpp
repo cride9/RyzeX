@@ -163,7 +163,7 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 	case XJITTER:
 
-		if (vecJitterWays[type].empty())
+		if (iEnabledJitters[type] == 0)
 			break;
 
 		try {
@@ -173,7 +173,7 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 			static float flCurtime = i::GlobalVars->flCurrentTime;
 			if (iLastTick + (i::ClientState->nChokedCommands + 1) < iTickBase || iLastTick > iTickBase)
 			{
-				if (iLatestWay >= vecJitterWays[type].size())
+				if (iLatestWay >= iEnabledJitters[type])
 					iLatestWay = 0;
 				else {
 					if (cfg::antiaim::bAntiJitter[type]) {

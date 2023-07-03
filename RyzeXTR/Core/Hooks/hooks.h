@@ -121,6 +121,8 @@ namespace detour {
 
 namespace h {
 
+	inline std::array<void*, 65> vecEstimateAbsVelocityHooks{};
+
 	void SetupHooks();
 	void DestroyHooks();
 
@@ -209,6 +211,7 @@ namespace h {
 	void UnHookNetChannel();
 	void HookClientState();
 	void UnHookClientState();
+	void HookEntites();
 
 	inline WNDPROC pOriginalWNDProc;
 	// Original CSGO window proc

@@ -33,6 +33,9 @@ enum EEspFlags : int {
 	AMMO,
 	MONEY,
 	WEAPON,
+	RESOLVER,
+	FAKEDUCK,
+	AIMBOT,
 	FLAGMAX
 };
 

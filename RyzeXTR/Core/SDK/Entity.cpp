@@ -643,3 +643,33 @@ bool CBaseEntity::IsBreakable()
 
 	return true;
 }
+
+bool CBaseEntity::IsFakeducking() {
+
+	static float flStoredTicks;
+	static float flCrouchedTicks[65];
+
+	if (!this->AnimState())
+		return false;
+
+	float flDuckAmount = this->AnimState()->flDuckAmount;
+	float flDuckSpeed = this->GetDuckSpeed();
+	float iFlags = this->GetFlags();
+
+	if (flDuckSpeed != 0.f && flDuckAmount != 0.f)
+	{
+		if (flDuckSpeed == 8.f && flDuckAmount <= 0.9f && flDuckAmount > 0.01f)
+		{
+			if (flStoredTicks != i::GlobalVars->iTickCount)
+			{
+				flCrouchedTicks[this->EntIndex()] = flCrouchedTicks[this->EntIndex()] + 1;
+				flStoredTicks = i::GlobalVars->iTickCount;
+			}
+			return (flCrouchedTicks[this->EntIndex()] >= 5);
+		}
+		else
+			flCrouchedTicks[this->EntIndex()] = 0;
+	}
+
+	return false;
+}

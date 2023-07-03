@@ -17,15 +17,18 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 #if NDEBUG
 		//misc::Print("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
-		visual::WelcomeUser("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
+		if (g::bStartWelcome)
+			visual::WelcomeUser("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
 #endif
 #if _DEBUG
 		//misc::Print("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
-		visual::WelcomeUser("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
+		if (g::bStartWelcome)
+			visual::WelcomeUser("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
 #endif
 #if ALPHA
 		//misc::Print("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
-		visual::WelcomeUser("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
+		if (g::bStartWelcome)
+			visual::WelcomeUser("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
 #endif
 		serversound.Start();
 		visual::VisualRender();
@@ -56,20 +59,82 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 				int iWidth = 0;
 				i::EngineClient->GetScreenSize(iWidth, iHeight);
 
-				i::Surface->DrawSetColor(cfg::misc::scopeColor);
-				
 				float flSize = iHeight * (cfg::misc::scopeLength / 100.f);
 
-				i::Surface->DrawLine( // vertical
-					iWidth / 2, 
-					iHeight / 2 - flSize,
-					iWidth / 2, 
-					iHeight / 2 + flSize);
-				i::Surface->DrawLine( // horizontal
-					iWidth / 2 - flSize,
-					iHeight / 2, 
-					iWidth / 2 + flSize,
-					iHeight / 2);
+				i::Surface->DrawSetColor(cfg::misc::scopeColor);
+				i::Surface->DrawFilledRectFade(
+					iWidth / 2 - flSize - 15,
+					iHeight / 2 - 1,
+					iWidth / 2 - 15,
+					iHeight / 2,
+					0, cfg::misc::scopeColor[3] * 255.f, true);
+
+				i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+				i::Surface->DrawFilledRectFade(
+					iWidth / 2 - flSize - 15,
+					iHeight / 2 - 1,
+					iWidth / 2 - 15,
+					iHeight / 2,
+					cfg::misc::scopeColorEnd[3] * 255.f, 0, true);
+
+				i::Surface->DrawSetColor(cfg::misc::scopeColor);
+				i::Surface->DrawFilledRectFade(
+					iWidth / 2 + 15,
+					iHeight / 2 - 1,
+					iWidth / 2 + flSize + 15,
+					iHeight / 2,
+					cfg::misc::scopeColor[3] * 255.f, 0, true);
+
+				i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+				i::Surface->DrawFilledRectFade(
+					iWidth / 2 + 15,
+					iHeight / 2 - 1,
+					iWidth / 2 + flSize + 15,
+					iHeight / 2,
+					0, cfg::misc::scopeColorEnd[3] * 255.f, true);
+
+				i::Surface->DrawSetColor(cfg::misc::scopeColor);
+				i::Surface->DrawFilledRectFade(
+					iWidth / 2 - 1,
+					iHeight / 2 - flSize - 15,
+					iWidth / 2,
+					iHeight / 2 - 15,
+					0, cfg::misc::scopeColor[3] * 255.f, false);
+
+				i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+				i::Surface->DrawFilledRectFade(
+					iWidth / 2 - 1,
+					iHeight / 2 - flSize - 15,
+					iWidth / 2,
+					iHeight / 2 - 15,
+					cfg::misc::scopeColorEnd[3] * 255.f, 0, false);
+
+				i::Surface->DrawSetColor(cfg::misc::scopeColor);
+				i::Surface->DrawFilledRectFade(
+					iWidth / 2 - 1,
+					iHeight / 2 + 15,
+					iWidth / 2,
+					iHeight / 2 + flSize + 15,
+					cfg::misc::scopeColor[3] * 255.f, 0, false);
+
+				i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+				i::Surface->DrawFilledRectFade(
+					iWidth / 2 - 1,
+					iHeight / 2 + 15,
+					iWidth / 2,
+					iHeight / 2 + flSize + 15,
+					0, cfg::misc::scopeColorEnd[3] * 255.f, false);
+
+				//i::Surface->DrawLine( // vertical
+				//	iWidth / 2, 
+				//	iHeight / 2 - flSize,
+				//	iWidth / 2, 
+				//	iHeight / 2 + flSize);
+				//i::Surface->DrawLine( // horizontal
+				//	iWidth / 2 - flSize,
+				//	iHeight / 2, 
+				//	iWidth / 2 + flSize,
+				//	iHeight / 2);
 			}
 		}
 	}

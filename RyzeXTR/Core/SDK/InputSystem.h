@@ -68,14 +68,14 @@ namespace IPT
 			return false;
 
 		if ( cfg::m_iKeyStates[ uButtonCode ] == HOLD ) {
-			return IsKeyDown( uButtonCode );
+			return GetAsyncKeyState( uButtonCode );
 		}
 		else if ( cfg::m_iKeyStates[ uButtonCode ] == TOGGLE ) {
 
-			if ( IsKeyReleased( uButtonCode ) )
-				arrKeyBooleans[ uButtonCode ] = !arrKeyBooleans[ uButtonCode ];
+			//if ( GetKeyState( uButtonCode ) )
+			//	arrKeyBooleans[ uButtonCode ] = !arrKeyBooleans[ uButtonCode ];
 
-			return arrKeyBooleans[ uButtonCode ];
+			return GetKeyState(uButtonCode)/*arrKeyBooleans[ uButtonCode ]*/;
 		}
 		else if ( cfg::m_iKeyStates[ uButtonCode ] == ALWAYS_ON ) {
 			return true;

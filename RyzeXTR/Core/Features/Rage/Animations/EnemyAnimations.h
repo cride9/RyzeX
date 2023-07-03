@@ -81,8 +81,6 @@ public:
 	bool CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount);
 	void TransformateMatrix(CBaseEntity* pPlayer);
 	void InterpolateMatricies(CBaseEntity* pEntity = nullptr);
-	float GetLocalCycleIncrement(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, float flPlaybackrate, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
-	float GetLocalCycleIncrement(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, float flPlaybackrate);
 
 private:
 	void FakePitchResolver( CBaseEntity*, Lagcompensation::LagRecord_t* );

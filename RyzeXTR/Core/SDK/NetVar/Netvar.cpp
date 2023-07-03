@@ -11,7 +11,7 @@ void n::SetupNetvars() {
 			DumpNetvars(BaseClient->szNetworkName, BaseClient->pRecvTable);
 		}
 	}
-	util::Print("Netvars initialized");
+	util::Print(XorStr("Netvars initialized"));
 }
 
 void n::DumpNetvars(const char* szBase, RecvTable_t* cTable, uint32_t offset) {

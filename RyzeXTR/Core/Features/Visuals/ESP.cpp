@@ -295,10 +295,16 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 	if (bFlags[ARMOR]) {
 
-		i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[ARMOR], g::fonts::FlagESP, false, std::format(kevlarPrefix, pEnt->GetArmor()).c_str());
-		spacing += 10;
-	}
+		if (pEnt->HasHeavyArmor()) {
+			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[ARMOR], g::fonts::FlagESP, false, "HK+");
+			spacing += 10;
+		}
+		else if (pEnt->GetArmor() > 0) {
+			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[ARMOR], g::fonts::FlagESP, false, "HK");
+			spacing += 10;
+		}
 
+	}
 	CBaseCombatWeapon* pWeapon = pEnt->GetWeapon();
 	if (pWeapon && bFlags[AMMO]) {
 
@@ -327,6 +333,36 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		//spacing += 10;
 	}
 
+	if (bFlags[RESOLVER]) {
+
+		auto* pLog = &lagcomp.GetLog(pEnt->EntIndex());
+		if (pLog) {
+			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, lagcomp.EResolverModeToString(pLog->iAntiAimType));
+			spacing += 10;
+		}
+	}
+
+	if (bFlags[FAKEDUCK]) {
+
+		if (pEnt->IsFakeducking()) {
+			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, "FD");
+			spacing += 10;
+		}
+	}
+
+	if (bFlags[AIMBOT]) {
+
+		auto* pLog = &lagcomp.GetLog(pEnt->EntIndex());
+		if (pLog) {
+			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[AIMBOT], g::fonts::FlagESP, false, misc::GetHitgroupName(ragebot.rageBotData.iHitGroup).c_str());
+			spacing += 10;
+		}
+	}
+	/*
+	RESOLVER,
+	FAKEDUCK,
+	BOMB,
+	*/
 	/*if (true) {
 
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex());
@@ -356,28 +392,30 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 		auto pRecord = &pLog->pRecord.front();
 
-		// from the server.
-		auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
+		//// from the server.
+		//auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
 
-		// resolver calculations.
-		const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
-		const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
-		const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
+		//// resolver calculations.
+		//const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
+		//const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
+		//const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
 
-		// differences.
-		const float fDifferenceCenterPlaybackrate = fabs(flFromServerPlaybackrate - fCenterPlaybackrate);
-		const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
-		const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
+		//// differences.
+		//const float fDifferenceCenterPlaybackrate = fabs(flFromServerPlaybackrate - fCenterPlaybackrate);
+		//const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
+		//const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
 
-		something(right, top, spacing, "[Layer 6]");
-		something(right, top, spacing, std::format("Left: {}", fLeftPlaybackrate).c_str());
-		something(right, top, spacing, std::format("Right: {}", fRightPlaybackrate).c_str());
-		something(right, top, spacing, std::format("Center: {}", fCenterPlaybackrate).c_str());
-		something(right, top, spacing, std::format("Server: {}", flFromServerPlaybackrate).c_str());
+		something(right, top, spacing, std::format("Choke: {}", pRecord->iChoked).c_str());
 
-		something(right, top, spacing, std::format("RightDiff: {}", fDifferenceRightPlaybackrate).c_str());
-		something(right, top, spacing, std::format("LeftDiff: {}", fDifferenceLeftPlaybackrate).c_str());
-		something(right, top, spacing, std::format("CenterDiff: {}", fDifferenceCenterPlaybackrate).c_str());
+		//something(right, top, spacing, "[Layer 6]");
+		//something(right, top, spacing, std::format("Left: {}", fLeftPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("Right: {}", fRightPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("Center: {}", fCenterPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("Server: {}", flFromServerPlaybackrate).c_str());
+
+		//something(right, top, spacing, std::format("RightDiff: {}", fDifferenceRightPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("LeftDiff: {}", fDifferenceLeftPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("CenterDiff: {}", fDifferenceCenterPlaybackrate).c_str());
 	}
 #endif
 }

@@ -47,8 +47,14 @@ void misc::SetupRadio( )
 		__("http://stream-158.zeno.fm/71ntub27u18uv?zs=R4yvq6kaRPyekzJdUwP1VA") // Phonk radio
 	};
 
-	while (!GetAsyncKeyState(VK_DELETE))
+	bool bShouldDisable = false;
+
+	while (!bShouldDisable)
 	{
+#ifdef _DEBUG
+		if (GetAsyncKeyState(VK_DELETE))
+			bShouldDisable = true;
+#endif
 		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
 		const auto desired_channel = cfg::misc::iRadioStation;
 
@@ -175,6 +181,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	if (!strcmp(pEvent->GetName(), roundStart)) {
 		BuyBot(pEvent);
 		WalkBotHandler(pEvent);
+		std::fill(anims.arrMissedShots.begin(), anims.arrMissedShots.end(), 0);
 	}
 	if (!strcmp(pEvent->GetName(), itemPurchase)) {
 
@@ -1042,7 +1049,7 @@ void misc::FakeLag(bool& bSendPacket) {
 			}
 			else {
 
-				iCurrentChoke = cfg::antiaim::fakelag;
+				iCurrentChoke = cfg::antiaim::fakelagmax;
 				bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
 				
 				if (bChokeCycleEnded)
@@ -1054,7 +1061,7 @@ void misc::FakeLag(bool& bSendPacket) {
 	else
 		iCurrentChoke = cfg::antiaim::fakelag;
 
-	iMax = cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 2 : iMax;
+	iMax = cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 1 : iMax;
 	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
 	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;
 	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;
@@ -1556,17 +1563,24 @@ void misc::ClanTag() {
 	if (!bShouldPrint && !cfg::misc::clantag)
 		return;
 
+	//std::vector<std::string> vecClantagString = util::AnimateText("RyzeXTR");
+
 	static float flTime = 1;
 	int iTicks = TIME_TO_TICKS(pNetChannel->GetAvgLatency(FLOW_OUTGOING)) + (float)i::GlobalVars->iTickCount;
 	float intervals = 0.4f / i::GlobalVars->flIntervalPerTick;
-	int iMainTime = (int)(iTicks / intervals) % 17;
+	int iMainTime = (int)(iTicks / intervals) % 17; // 17
 	if (iMainTime != flTime)
 	{
 		if (cfg::misc::clantag) {
 
+			/*for (size_t i = 0; i < vecClantagString.size(); i++)
+			{
+				if (iMainTime % i == 0) {
+					util::SetClan(vecClantagString.at(i).c_str());
+				}
+			}*/
 			bShouldPrint = true;
 			switch (iMainTime) {
-
 			case 0: util::SetClan("R"); break;
 			case 1: util::SetClan("TR"); break;
 			case 2: util::SetClan("XTR"); break;
@@ -1669,7 +1683,7 @@ std::string misc::GetHitgroupName(int iHitgroup) {
 	switch (iHitgroup)
 	{
 	case HITGROUP_GENERIC:
-		return "Generic";
+		return "None";
 	case HITGROUP_HEAD:
 		return "Head";
 	case HITGROUP_CHEST:
@@ -1688,6 +1702,27 @@ std::string misc::GetHitgroupName(int iHitgroup) {
 		return "Neck";
 	case HITGROUP_GEAR:
 		return "Gear";
+	}
+}
+
+std::string misc::GetMatrixName(int iType) {
+
+	switch (iType)
+	{
+	case VISUAL:
+		return "VISUAL";
+	case RESOLVE:
+		return "RESOLVE";
+	case LEFT:
+		return "LEFT";
+	case RIGHT:
+		return "RIGHT";
+	case CENTER:
+		return "CENTER";
+	case MAX:
+		return "MAX";
+	default:
+		return "UNKNOWN";
 	}
 }
 

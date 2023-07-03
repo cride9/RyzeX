@@ -123,6 +123,7 @@ public:
 		bool bResolved{};
 		bool bRestoreData{};
 		bool bFirstAfterDormant{};
+		bool bSafeRecord{};
 
 		Vector vecVelocity{};
 		Vector vecAbsVelocity{};
@@ -184,6 +185,33 @@ public:
 		JITTER,
 		ANIMATION
 	};
+
+	const char* EResolverModeToString(EResolverMode mode)
+	{
+		switch (mode)
+		{
+		case LEGIT:
+			return "LEGIT";
+		case DESYNC:
+			return "DESYNC";
+		case OPPOSITE:
+			return "OPPOSITE";
+		case SWAY:
+			return "SWAY";
+		case FAKE:
+			return "FAKE";
+		case OVERRIDE:
+			return "OVERRIDE";
+		case ONSHOT:
+			return "ONSHOT";
+		case JITTER:
+			return "JITTER";
+		case ANIMATION:
+			return "ANIMATION";
+		default:
+			return "UNKNOWN";
+		}
+	}
 
 	struct AnimationInfo_t
 	{

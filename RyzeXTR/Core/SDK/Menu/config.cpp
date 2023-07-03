@@ -136,11 +136,11 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::antiaim;
 
-		//SetupValue(vecJitterWays[0].data(), vecJitterWays[0].size(), 0, "antiaim", "xwayjitterMove");
-		//SetupValue(vecJitterWays[1].data(), vecJitterWays[1].size(), 0, "antiaim", "xwayjitterStanding");
-		//SetupValue(vecJitterWays[2].data(), vecJitterWays[2].size(), 0, "antiaim", "xwayjitterJumping");
-
 		SetupValue(bEnabled, false, 3, "antiaim", "Antiaimenabled");
+		SetupValue(vecJitterWays[0].data(), 64, 0, "antiaim", "wayStand");
+		SetupValue(vecJitterWays[1].data(), 64, 0, "antiaim", "wayMove");
+		SetupValue(vecJitterWays[2].data(), 64, 0, "antiaim", "wayJump");
+		SetupValue(iEnabledJitters.data(), 3, 0, "antiaim", "wayNumberSaves");
 
 		SetupValue(iPitch, 3, 0, "antiaim", "pitch");
 		SetupValue(iYaw, 3, 0, "antiaim", "yaw");
@@ -244,6 +244,9 @@ void CConfig::Setup() {
 		SetupValue(bFlags[ENEMY][3], false, "visual", "ENEMYbFlags3");
 		SetupValue(bFlags[ENEMY][4], false, "visual", "ENEMYbFlags4");
 		SetupValue(bFlags[ENEMY][5], false, "visual", "ENEMYbFlags5");
+		SetupValue(bFlags[ENEMY][6], false, "visual", "ENEMYbFlags6");
+		SetupValue(bFlags[ENEMY][7], false, "visual", "ENEMYbFlags7");
+		SetupValue(bFlags[ENEMY][8], false, "visual", "ENEMYbFlags8");
 
 		SetupValue(flFlagsColor[ENEMY][0][0], 1.f, "visual", "ENEMYflFlags0R");
 		SetupValue(flFlagsColor[ENEMY][0][1], 1.f, "visual", "ENEMYflFlags0G");
@@ -274,6 +277,21 @@ void CConfig::Setup() {
 		SetupValue(flFlagsColor[ENEMY][5][1], 1.f, "visual", "ENEMYflFlags5G");
 		SetupValue(flFlagsColor[ENEMY][5][2], 1.f, "visual", "ENEMYflFlags5B");
 		SetupValue(flFlagsColor[ENEMY][5][3], 1.f, "visual", "ENEMYflFlags5A");
+
+		SetupValue(flFlagsColor[ENEMY][6][0], 1.f, "visual", "ENEMYflFlags6R");
+		SetupValue(flFlagsColor[ENEMY][6][1], 1.f, "visual", "ENEMYflFlags6G");
+		SetupValue(flFlagsColor[ENEMY][6][2], 1.f, "visual", "ENEMYflFlags6B");
+		SetupValue(flFlagsColor[ENEMY][6][3], 1.f, "visual", "ENEMYflFlags6A");
+
+		SetupValue(flFlagsColor[ENEMY][7][0], 1.f, "visual", "ENEMYflFlags7R");
+		SetupValue(flFlagsColor[ENEMY][7][1], 1.f, "visual", "ENEMYflFlags7G");
+		SetupValue(flFlagsColor[ENEMY][7][2], 1.f, "visual", "ENEMYflFlags7B");
+		SetupValue(flFlagsColor[ENEMY][7][3], 1.f, "visual", "ENEMYflFlags7A");
+
+		SetupValue(flFlagsColor[ENEMY][8][0], 1.f, "visual", "ENEMYflFlags8R");
+		SetupValue(flFlagsColor[ENEMY][8][1], 1.f, "visual", "ENEMYflFlags8G");
+		SetupValue(flFlagsColor[ENEMY][8][2], 1.f, "visual", "ENEMYflFlags8B");
+		SetupValue(flFlagsColor[ENEMY][8][3], 1.f, "visual", "ENEMYflFlags8A");
 
 		SetupValue(bSkeleton[ENEMY], false, "visual", "bSkeletonENEMY");
 		SetupValue(flSkeletonColor[ENEMY][0], 1.f, "visual", "flSkeletonColorENEMYR");
@@ -343,6 +361,9 @@ void CConfig::Setup() {
 		SetupValue(bFlags[TEAM][3], false, "visual", "TEAMbFlags3");
 		SetupValue(bFlags[TEAM][4], false, "visual", "TEAMbFlags4");
 		SetupValue(bFlags[TEAM][5], false, "visual", "TEAMbFlags5");
+		SetupValue(bFlags[TEAM][6], false, "visual", "TEAMbFlags6");
+		SetupValue(bFlags[TEAM][7], false, "visual", "TEAMbFlags7");
+		SetupValue(bFlags[TEAM][8], false, "visual", "TEAMbFlags8");
 
 		SetupValue(flFlagsColor[TEAM][0][0], 1.f, "visual", "TEAMflFlags0R");
 		SetupValue(flFlagsColor[TEAM][0][1], 1.f, "visual", "TEAMflFlags0G");
@@ -373,6 +394,21 @@ void CConfig::Setup() {
 		SetupValue(flFlagsColor[TEAM][5][1], 1.f, "visual", "TEAMflFlags5G");
 		SetupValue(flFlagsColor[TEAM][5][2], 1.f, "visual", "TEAMflFlags5B");
 		SetupValue(flFlagsColor[TEAM][5][3], 1.f, "visual", "TEAMflFlags5A");
+
+		SetupValue(flFlagsColor[TEAM][6][0], 1.f, "visual", "TEAMflFlags6R");
+		SetupValue(flFlagsColor[TEAM][6][1], 1.f, "visual", "TEAMflFlags6G");
+		SetupValue(flFlagsColor[TEAM][6][2], 1.f, "visual", "TEAMflFlags6B");
+		SetupValue(flFlagsColor[TEAM][6][3], 1.f, "visual", "TEAMflFlags6A");
+
+		SetupValue(flFlagsColor[TEAM][7][0], 1.f, "visual", "TEAMflFlags7R");
+		SetupValue(flFlagsColor[TEAM][7][1], 1.f, "visual", "TEAMflFlags7G");
+		SetupValue(flFlagsColor[TEAM][7][2], 1.f, "visual", "TEAMflFlags7B");
+		SetupValue(flFlagsColor[TEAM][7][3], 1.f, "visual", "TEAMflFlags7A");
+
+		SetupValue(flFlagsColor[TEAM][8][0], 1.f, "visual", "TEAMflFlags8R");
+		SetupValue(flFlagsColor[TEAM][8][1], 1.f, "visual", "TEAMflFlags8G");
+		SetupValue(flFlagsColor[TEAM][8][2], 1.f, "visual", "TEAMflFlags8B");
+		SetupValue(flFlagsColor[TEAM][8][3], 1.f, "visual", "TEAMflFlags8A");
 
 		SetupValue(bSkeleton[TEAM], false, "visual", "bSkeletonTEAM");
 		SetupValue(flSkeletonColor[TEAM][0], 1.f, "visual", "flSkeletonColorTEAMR");
@@ -442,6 +478,9 @@ void CConfig::Setup() {
 		SetupValue(bFlags[LOCAL][3], false, "visual", "LOCALbFlags3");
 		SetupValue(bFlags[LOCAL][4], false, "visual", "LOCALbFlags4");
 		SetupValue(bFlags[LOCAL][5], false, "visual", "LOCALbFlags5");
+		SetupValue(bFlags[LOCAL][6], false, "visual", "LOCALbFlags6");
+		SetupValue(bFlags[LOCAL][7], false, "visual", "LOCALbFlags7");
+		SetupValue(bFlags[LOCAL][8], false, "visual", "LOCALbFlags8");
 
 		SetupValue(flFlagsColor[LOCAL][0][0], 1.f, "visual", "LOCALflFlags0R");
 		SetupValue(flFlagsColor[LOCAL][0][1], 1.f, "visual", "LOCALflFlags0G");
@@ -472,6 +511,21 @@ void CConfig::Setup() {
 		SetupValue(flFlagsColor[LOCAL][5][1], 1.f, "visual", "LOCALflFlags5G");
 		SetupValue(flFlagsColor[LOCAL][5][2], 1.f, "visual", "LOCALflFlags5B");
 		SetupValue(flFlagsColor[LOCAL][5][3], 1.f, "visual", "LOCALflFlags5A");
+
+		SetupValue(flFlagsColor[LOCAL][6][0], 1.f, "visual", "LOCALflFlags6R");
+		SetupValue(flFlagsColor[LOCAL][6][1], 1.f, "visual", "LOCALflFlags6G");
+		SetupValue(flFlagsColor[LOCAL][6][2], 1.f, "visual", "LOCALflFlags6B");
+		SetupValue(flFlagsColor[LOCAL][6][3], 1.f, "visual", "LOCALflFlags6A");
+
+		SetupValue(flFlagsColor[LOCAL][7][0], 1.f, "visual", "LOCALflFlags7R");
+		SetupValue(flFlagsColor[LOCAL][7][1], 1.f, "visual", "LOCALflFlags7G");
+		SetupValue(flFlagsColor[LOCAL][7][2], 1.f, "visual", "LOCALflFlags7B");
+		SetupValue(flFlagsColor[LOCAL][7][3], 1.f, "visual", "LOCALflFlags7A");
+
+		SetupValue(flFlagsColor[LOCAL][8][0], 1.f, "visual", "LOCALflFlags8R");
+		SetupValue(flFlagsColor[LOCAL][8][1], 1.f, "visual", "LOCALflFlags8G");
+		SetupValue(flFlagsColor[LOCAL][8][2], 1.f, "visual", "LOCALflFlags8B");
+		SetupValue(flFlagsColor[LOCAL][8][3], 1.f, "visual", "LOCALflFlags8A");
 
 		SetupValue(bSkeleton[LOCAL], false, "visual", "bSkeletonLOCAL");
 		SetupValue(flSkeletonColor[LOCAL][0], 1.f, "visual", "flSkeletonColorLOCALR");
@@ -904,6 +958,10 @@ void CConfig::Setup() {
 		SetupValue(scopeColor[1], 1.f, "visual", "scopeColorG");
 		SetupValue(scopeColor[2], 1.f, "visual", "scopeColorB");
 		SetupValue(scopeColor[3], 1.f, "visual", "scopeColorA");
+		SetupValue(scopeColorEnd[0], 1.f, "visual", "scopeColorEndR");
+		SetupValue(scopeColorEnd[1], 1.f, "visual", "scopeColorEndG");
+		SetupValue(scopeColorEnd[2], 1.f, "visual", "scopeColorEndB");
+		SetupValue(scopeColorEnd[3], 1.f, "visual", "scopeColorEndA");
 		SetupValue(scopeLength, 1.f, "visual", "scopeLength");
 
 		SetupValue(pistols, 0, "misc", "autobuypistol");

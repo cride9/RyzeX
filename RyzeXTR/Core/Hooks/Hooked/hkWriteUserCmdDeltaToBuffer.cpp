@@ -26,6 +26,51 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	if (!exploits::iDefensive)
 		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
 
+	int* pNumBackupCommands = (int*)((uintptr_t)(buf)-0x30);
+	int* pNumNewCommands = (int*)((uintptr_t)(buf)-0x2C);
+
+	int iExtraCommands = exploits::iDefensive;
+	exploits::iDefensive = 0;
+
+	int iNewCommands = *pNumNewCommands;
+	int iNextCommand = i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands + 1;
+
+	*pNumBackupCommands = 0;
+	for (nTo = iNextCommand - iNewCommands + 1; nTo <= iNextCommand; nTo++)
+	{
+		if (!original(ecx, edx, nSlot, buf, nFrom, nTo, true))
+			return false;
+
+		nFrom = nTo;
+	}
+
+	*pNumNewCommands = iNewCommands + iExtraCommands;
+
+	CUserCmd* pCmd = i::Input->GetUserCmd(nFrom);
+	if (!pCmd)
+		return true;
+
+	CUserCmd ToCmd = *pCmd;
+	CUserCmd FromCmd = *pCmd;
+
+	ToCmd.iCommandNumber++;
+	ToCmd.iTickCount += ((int)(1.0f / i::GlobalVars->flIntervalPerTick)) * 3;
+
+	for (int i = 0; i < iExtraCommands; i++)
+	{
+		WriteUsercmd(buf, &ToCmd, &FromCmd);
+
+		FromCmd = ToCmd;
+
+		ToCmd.iCommandNumber++;
+		ToCmd.iTickCount++;
+	}
+
+	return true;
+
+	/*if (!exploits::iDefensive)
+		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
+
 	if (nFrom != -1)
 		return true;
 
@@ -71,5 +116,5 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 		pToCmd.iTickCount++;
 	}
 
-	return true;
+	return true;*/
 }

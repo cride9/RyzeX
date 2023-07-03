@@ -15,6 +15,7 @@ namespace g {
 
 	inline bool bAllowAnimations[65];
 	inline bool bUpdatingSkins = false;
+	inline bool bStartWelcome = false;
 
 	inline bool bSettingUpBones[65];
 

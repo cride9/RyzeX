@@ -233,14 +233,14 @@ void menu::Antiaimtab() noexcept {
 				if (iDesyncType[STANDING] == 5) {
 
 					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
-					if (ImGui::Button("Add way##1", ImVec2(ImGui::GetContentRegionAvail().x / 2, 20)))
-						vecJitterWays[STANDING].push_back(int(0));
+					if (ImGui::Button("Add way##1", ImVec2(ImGui::GetContentRegionAvail().x / 2, 20)) && iEnabledJitters[STANDING] < vecJitterWays[STANDING].size() - 1)
+						iEnabledJitters[STANDING]++;
 					ImGui::SameLine();
-					if (ImGui::Button("Remove way##1", ImVec2(ImGui::GetContentRegionAvail().x, 20)))
-						vecJitterWays[STANDING].pop_back();
+					if (ImGui::Button("Remove way##1", ImVec2(ImGui::GetContentRegionAvail().x, 20)) && iEnabledJitters[STANDING] > 0)
+						iEnabledJitters[STANDING]--;
 					ImGui::PopStyleVar();
 
-					for (size_t i = 0; i < vecJitterWays[STANDING].size(); i++)
+					for (size_t i = 0; i < iEnabledJitters[STANDING]; i++)
 						ImGui::SliderInt(std::format("{} way", i).c_str(), &vecJitterWays[STANDING].at(i), -180, 180);
 				}
 				else {
@@ -283,14 +283,14 @@ void menu::Antiaimtab() noexcept {
 					if (iDesyncType[MOVING] == 5) {
 
 						ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
-						if (ImGui::Button("Add way##2", ImVec2(ImGui::GetContentRegionAvail().x / 2, 20)))
-							vecJitterWays[MOVING].push_back(int(0));
+						if (ImGui::Button("Add way##2", ImVec2(ImGui::GetContentRegionAvail().x / 2, 20)) && iEnabledJitters[STANDING] < vecJitterWays[MOVING].size() - 1)
+							iEnabledJitters[MOVING]++;
 						ImGui::SameLine();
-						if (ImGui::Button("Remove way##2", ImVec2(ImGui::GetContentRegionAvail().x, 20)))
-							vecJitterWays[MOVING].pop_back();
+						if (ImGui::Button("Remove way##2", ImVec2(ImGui::GetContentRegionAvail().x, 20)) && iEnabledJitters[MOVING] > 0)
+							iEnabledJitters[MOVING]--;
 						ImGui::PopStyleVar();
 
-						for (size_t i = 0; i < vecJitterWays[MOVING].size(); i++)
+						for (size_t i = 0; i < iEnabledJitters[MOVING]; i++)
 							ImGui::SliderInt(std::format("{} way", i).c_str(), &vecJitterWays[MOVING].at(i), -180, 180);
 					}
 					else {
@@ -334,16 +334,16 @@ void menu::Antiaimtab() noexcept {
 
 						ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
 
-						if (ImGui::Button("Add way##3", ImVec2(ImGui::GetContentRegionAvail().x / 2, 20)))
-							vecJitterWays[INAIR].push_back(int(0));
+						if (ImGui::Button("Add way##3", ImVec2(ImGui::GetContentRegionAvail().x / 2, 20)) && iEnabledJitters[INAIR] < vecJitterWays[INAIR].size() - 1)
+							iEnabledJitters[INAIR]++;
 
 						ImGui::SameLine();
-						if (ImGui::Button("Remove way##3", ImVec2(ImGui::GetContentRegionAvail().x, 20)))
-							vecJitterWays[INAIR].pop_back();
+						if (ImGui::Button("Remove way##3", ImVec2(ImGui::GetContentRegionAvail().x, 20)) && iEnabledJitters[INAIR] > 0)
+							iEnabledJitters[INAIR]--;
 
 						ImGui::PopStyleVar();
 
-						for (size_t i = 0; i < vecJitterWays[INAIR].size(); i++)
+						for (size_t i = 0; i < iEnabledJitters[INAIR]; i++)
 							ImGui::SliderInt(std::format("{} way", i).c_str(), &vecJitterWays[INAIR].at(i), -180, 180);
 					}
 					else {
@@ -599,7 +599,8 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Remove recoil", &removals[2]);
             ImGui::Checkbox("Remove zoom", &removals[3]);
             if (removals[3]) {
-                ImGui::ColorEdit4("##scope stuff", scopeColor);
+                ImGui::ColorEdit4("##scope stuff", scopeColor, true);
+				ImGui::ColorEdit4("##scope stuff2", scopeColorEnd);
                 ImGui::SliderFloat("Scope length", &scopeLength, 0.f, 100.f, "%.f");
             }
             ImGui::Checkbox("Remove post processing", &removals[4]);
@@ -703,7 +704,7 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Keybind list", &keyBindList);
 			ImGui::Checkbox("Keybind list OLD", &bKeyBindListOldEnable);
 			if (bKeyBindListOldEnable) {
-				static const char* options[] = {"Aimbot", "Doubletap", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping"};
+				static const char* options[] = {"Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping"};
 				ImGui::MultiComboBox("Keybinds", options, cfg::misc::bKeyBindListOld, IM_ARRAYSIZE(options));
 			}
         }
@@ -1234,7 +1235,7 @@ void menu::Skintab() noexcept {
 	using namespace cfg::skin;
 	ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove);
 	{
-		//ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 16);
+		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 16);
 		using namespace beforeIfuckUpEverything;
 		ImGui::Checkbox("Enable", &bEnableSkinChagner);
 		ImGui::Checkbox("Filter by weapon", &bFilterByWeapon);
@@ -1409,7 +1410,7 @@ noexcept {
 
 		bool bOpen = true;
 		ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(200, 200));
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200, 165 ));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200, 250 ));
 		if (ImGui::BeginPopupModal("##flagsManager", &bOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar ) ) {
 
 			ImGui::BeginChild("##flags", ImGui::GetContentRegionAvail(), true);
@@ -1431,6 +1432,15 @@ noexcept {
 
 				ImGui::Checkbox("Weapon", &bFlags[WEAPON]);
 				ImGui::ColorEdit4("##weapon Color", flFlagsColor[WEAPON]);
+
+				ImGui::Checkbox("Resolver", &bFlags[RESOLVER]);
+				ImGui::ColorEdit4("##resolver Color", flFlagsColor[RESOLVER]);
+
+				ImGui::Checkbox("Fake duck", &bFlags[FAKEDUCK]);
+				ImGui::ColorEdit4("##FD Color", flFlagsColor[FAKEDUCK]);
+
+				ImGui::Checkbox("Aimbot info", &bFlags[AIMBOT]);
+				ImGui::ColorEdit4("##AI Color", flFlagsColor[AIMBOT]);
 
 				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
 				if (ImGui::Button("Close", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
