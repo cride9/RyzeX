@@ -404,9 +404,11 @@ bool CBaseEntity::IsTargetingLocal(CBaseEntity* pLocal)
 	return false;
 }
 
-bool CBaseEntity::CanShoot(CWeaponCSBase* pBaseWeapon)
+bool CBaseEntity::CanShoot(CWeaponCSBase* pBaseWeapon, int iTickbase)
 {
-	const float flServerTime = TICKS_TO_TIME(this->GetTickBase());
+	if (iTickbase == -1)
+		iTickbase = this->GetTickBase();
+	const float flServerTime = TICKS_TO_TIME(iTickbase);
 
 	// check is have ammo
 	if (pBaseWeapon->GetAmmo() <= 0)

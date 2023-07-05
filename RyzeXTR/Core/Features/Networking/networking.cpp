@@ -136,7 +136,8 @@ int CNetworking::GetServerTick() {
 
 int CNetworking::GetCorrectedTickbase() {
 
-	return pCompressData[iLastCommandNumber % 150].nTickbase;
+	return g::pLocal->GetTickBase();
+	//return pCompressData[iLastCommandNumber % 150].nTickbase;
 }
 
 CNetvarData* CNetworking::GetRecord() {

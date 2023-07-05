@@ -248,7 +248,7 @@ void SetYaw(Lagcompensation::LagRecord_t* pRecord, float flYaw) {
 
 	// set eye yaw
 	float flEyeRotation = pRecord->vecEyeAngles.y;
-	pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - flYaw);
+	pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + flYaw);
 
 	// generate foot yaw
 	float flFootYaw = anims.BuildFootYaw(pRecord->pEntity, pRecord);
@@ -435,7 +435,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 		const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
 
 		// while.
-		if (GetVelocityLengthXY(pEntity) > 4.f && !pRecord->pLayers[12].flWeight && (pPrevious && pRecord->pLayers[6].flWeight == pPrevious->pLayers[6].flWeight || pRecord->vecVelocity.Length2D() > 135.f && pRecord->pLayers[6].flWeight == 1.f))
+		if (GetVelocityLengthXY(pEntity) > 0.f && !pRecord->pLayers[12].flWeight && (pPrevious && pRecord->pLayers[6].flWeight == pPrevious->pLayers[6].flWeight || pRecord->vecVelocity.Length2D() > 135.f && pRecord->pLayers[6].flWeight == 1.f))
 		{
 			pData.iAntiAimType = Lagcompensation::ANIMATION;
 

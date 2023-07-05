@@ -14,29 +14,9 @@
 
 bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 
-	// Sort by bSafe in descending order
-	if (a.bSafe && !b.bSafe) {
-
-		if (a.iHitbox == HITBOX_HEAD && !a.bHead)
-			return false;
-		else if (a.iHitbox == HITBOX_HEAD && a.bHead)
-			return true;
-
+	if (a.bHead && !b.bHead && a.bSafe)
 		return true;
-	}
-	else if (!a.bSafe && b.bSafe) {
-
-		if (b.iHitbox == HITBOX_HEAD && !b.bHead)
-			return true;
-		else if (b.iHitbox == HITBOX_HEAD && b.bHead)
-			return false;
-
-		return false;
-	}
-
-	if (a.bHead && !b.bHead)
-		return true;
-	else if (!a.bHead && b.bHead)
+	else if (!a.bHead && b.bHead && b.bSafe)
 		return false;
 
 	// Sort by hitbox, prioritize body over head if both are lethal
@@ -180,6 +160,8 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 
 				pCmd->iButtons |= IN_ATTACK;
 
+				g::bWasShootingInChokeCycle = i::ClientState->nChokedCommands > 1;
+
 				bSetTickCount = true;
 				rageBotData.iTickcount = pCmd->iTickCount;
 				pCmd->iTickCount = CalculateTickCount(rageBotData.flTargetSimulation);
@@ -225,6 +207,7 @@ std::array<Lagcompensation::LagRecord_t*, 2> ChooseTargetRecord(Lagcompensation:
 	if (pLog->pRecord.size() < 2)
 		return {nullptr, nullptr};
 
+	//ragebot.vecSafePoints.clear();
 	Lagcompensation::LagRecord_t* pOnShotRecord = nullptr;
 	Lagcompensation::LagRecord_t* pSafeRecord = nullptr;
 	Lagcompensation::LagRecord_t* pSafeBackTrackRecord = nullptr;
@@ -236,32 +219,46 @@ std::array<Lagcompensation::LagRecord_t*, 2> ChooseTargetRecord(Lagcompensation:
 
 		// get a reference from that record
 		Lagcompensation::LagRecord_t& refRecord = pLog->pRecord.at(i);
+		Vector vecCurrentSafePoint = Vector(0, 0, 0);
+		if (!lagcomp.IsValidRecord(refRecord.flSimulationTime))
+			continue;
 
 		// check for every safeness
 		// first let's get the safest resolves
-		for (int iType = RESOLVE; i <= CENTER; i++) {
 
-			if (refRecord.bSafeRecord)
+		// check every point for a safepoint
+		std::vector<Vector> vecMultiPoints = ragebot.CreatePoints(g::vecEyePosition, pWeapon, &refRecord, HITBOX_HEAD, RESOLVE);
+			
+		// loop through the points
+		for (Vector& vecCurrent : vecMultiPoints) {
+
+			// check if its a safe record or not
+			refRecord.bSafeRecord = ragebot.SafePoint(g::vecEyePosition, pWeapon, &refRecord, vecCurrent, HITBOX_HEAD, true) >= 3;
+				
+			// if safe replace the resolve matrix with the safe matrix
+			if (refRecord.bSafeRecord) {
+
+				//ragebot.vecSafePoints.push_back(std::make_pair(vecCurrent, &refRecord));
+				//memcpy(refRecord.pMatricies[RESOLVE], refRecord.pMatricies[i], sizeof(matrix3x4_t) * 128);
+				vecCurrentSafePoint = vecCurrent;
 				break;
-
-			Vector vecHitbox = refRecord.pEntity->GetHitboxPosition(HITBOX_HEAD, refRecord.pMatricies[i]);
-			int iSafeness = ragebot.SafePoint(g::vecEyePosition, pWeapon, &refRecord, vecHitbox, HITBOX_HEAD);
-			refRecord.bSafeRecord = iSafeness == 3;
-			if (refRecord.bSafeRecord)
-				memcpy(refRecord.pMatricies[RESOLVE], refRecord.pMatricies[i], sizeof(matrix3x4_t) * 128);
+			}
 		}
+
 		// Break from the loop if we got 2 entites
 		if (pOnShotRecord && pSafeRecord)
+			continue;
+
+		refRecord.Apply(pLog->pEntity, false);
+		FireBulletData_t traceData;
+		autowall.GetDamage(g::pLocal, g::vecEyePosition, vecCurrentSafePoint, pWeapon, &traceData);
+		if (!(traceData.flCurrentDamage > 0.f))
 			continue;
 
 		// haha lol
 		if (iHeadShottableRecordIndex > i) {
 			if ((refRecord.bBreakingLagcompensation && i == 0) || !refRecord.bBreakingLagcompensation) {
-
-				Trace_t traceData;
-				Vector vecHitboxPosition = pLog->pEntity->GetHitboxPosition(HITBOX_HEAD, refRecord.pMatricies[RESOLVE]);
-				i::EngineTrace->ClipRayToEntity(Ray_t(g::vecEyePosition, vecHitboxPosition), MASK_SHOT, pLog->pEntity, &traceData);
-				if (traceData.iHitGroup == HITGROUP_HEAD) {
+				if (traceData.enterTrace.iHitGroup == HITGROUP_HEAD && traceData.flCurrentDamage > 0.f) {
 					iHeadShottableRecordIndex = i;
 				}
 			}
@@ -272,6 +269,7 @@ std::array<Lagcompensation::LagRecord_t*, 2> ChooseTargetRecord(Lagcompensation:
 
 			// lagcomp breaking entities cannot be bcaktracked
 			if (refRecord.bBreakingLagcompensation && i == 0) {
+
 				pOnShotRecord = &refRecord;
 				continue;
 			}
@@ -283,8 +281,8 @@ std::array<Lagcompensation::LagRecord_t*, 2> ChooseTargetRecord(Lagcompensation:
 			}
 		}
 
-		if (!refRecord.bSafeRecord)
-			continue;
+		//if (!refRecord.bSafeRecord)
+		//	continue;
 
 		// non backtrackable entity -> bcs breaking lagcomp -> server is not saving this guy
 		// TODO: bypass cl_lagcompensation check -> disallow the client to be lagcompensated
@@ -323,7 +321,7 @@ std::array<Lagcompensation::LagRecord_t*, 2> ChooseTargetRecord(Lagcompensation:
 
 			if (!refRecord.bSafeRecord)
 				continue;
-				
+			
 			pSafeBackTrackRecord = &refRecord;
 		}
 	}
@@ -354,7 +352,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	bool bForceSafe = ConfigForceSafe(pWeapon);
 	float flDamage = 0.f;
 
-	std::vector<Hitscan_t> vecRecordSave{};
+	std::vector<Hitscan_t> vecRecordSave{}; 
 
 	for (CBaseEntity* pEntity : vecTargets) {
 
@@ -379,7 +377,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			if (!pCurrentApplied)
 				continue;
 
-			pCurrentApplied->ApplyMatrix(pEntity, RESOLVE);
+			pCurrentApplied->Apply(pEntity, false);
 			for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
 
 				multiPointed.clear();
@@ -430,28 +428,30 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	if (vecRecordSave.size() > 1)
 		std::sort(vecRecordSave.begin(), vecRecordSave.end(), HitscanComparator);
 
-	auto pRecord = &vecRecordSave.front();
+	for (auto& refRecord : vecRecordSave) {
 
-	if (iMinimumDamage > 100)
-		iMinimumDamage = pRecord->pRecord->pEntity->GetHealth() + (iMinimumDamage - 100);
+		if (iMinimumDamage > 100)
+			iMinimumDamage = refRecord.pRecord->pEntity->GetHealth() + (iMinimumDamage - 100);
 
-	static int iCalculateNotShootingTicks = 0;
-	if (pRecord->flDamage < iMinimumDamage) {
-		iCalculateNotShootingTicks++;
+		static int iCalculateNotShootingTicks = 0;
+		if (refRecord.flDamage < iMinimumDamage) {
+			iCalculateNotShootingTicks++;
 
-		if (iCalculateNotShootingTicks < 16)
-			return Vector(0, 0, 0);
+			if (iCalculateNotShootingTicks < 16)
+				continue;
 
-		if (iMinimumDamage - pRecord->flDamage > int(pRecord->pRecord->pEntity->GetHealth() * 0.1f))
-			return Vector(0, 0, 0);
+			if (iMinimumDamage - refRecord.flDamage > int(refRecord.pRecord->pEntity->GetHealth() * 0.1f))
+				continue;
+		}
+		iCalculateNotShootingTicks = 0;
+
+		rageBotData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
+		rageBotData.flDamage = refRecord.flDamage;
+		rageBotData.iHitbox = refRecord.iHitgroup;
+		rageBotData.iHitGroup = refRecord.iHitgroup;
+
+		return refRecord.vecPoint;
 	}
-	iCalculateNotShootingTicks = 0;
-	rageBotData.SetTarget(pRecord->pRecord, vecEyePosition, pRecord->bBacktrack, pRecord->pRecord->flResolverAngle);
-	rageBotData.flDamage = pRecord->flDamage;
-	rageBotData.iHitbox = pRecord->iHitgroup;
-	rageBotData.iHitGroup = pRecord->iHitgroup;
-
-	return pRecord->vecPoint;
 }
 
 bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector vecFrom, int iChance, Vector vecEyePosition) {
@@ -535,8 +535,11 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 
 		Vector vecEnd = vecEyePosition + vecDirection * pWeaponInfo->flRange;
 
-		Trace_t Trace;
+		Trace_t Trace{};
 		i::EngineTrace->ClipRayToEntity( Ray_t( vecEyePosition, vecEnd ), MASK_SHOT | CONTENTS_GRATE, pEnt, &Trace );
+
+		if (!&Trace)
+			continue;
 
 		if ( Trace.pHitEntity == pEnt)
 			iHits++;
@@ -1011,7 +1014,7 @@ bool CRageBot::CheckShootingCondition( CUserCmd * pCmd, CBaseEntity * pLocal, CB
 	return true;
 }
 
-std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, int iHitbox) {
+std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, int iHitbox, EMatrixType iType) {
 
 	std::array<bool, HITBOX_MAX> vecSelectedMultipoint = ConfigMultiHitboxes(pWeapon);
 	std::vector<Vector> refVecPoints{};
@@ -1020,9 +1023,15 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 	int* pBodyPoints = &multiPoints.second;
 
 	float flRadius = 0.f;
-	mstudiobbox_t refStudioBox;
-	Vector vecCenter = pRecord->pEntity->GetHitboxPosition(iHitbox, pRecord->pMatricies[RESOLVE], flRadius, &refStudioBox);
-	matrix3x4_t& refMatrixBone = pRecord->pMatricies[RESOLVE][refStudioBox.iBone];
+	mstudiobbox_t* refStudioBox = nullptr;
+	Vector vecCenter = pRecord->pEntity->GetHitboxPosition(iHitbox, pRecord->pMatricies[iType], flRadius, refStudioBox);
+
+	if (!refStudioBox) {
+		refVecPoints.emplace_back(vecCenter);
+		return refVecPoints;
+	}
+
+	matrix3x4_t& refMatrixBone = pRecord->pMatricies[iType][refStudioBox->iBone];
 
 	if (!vecSelectedMultipoint[iHitbox]) {
 		refVecPoints.emplace_back(vecCenter);
@@ -1132,146 +1141,12 @@ bool CRageBot::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstud
 	// kittenpopo: 55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F
 	typedef int(__fastcall* ClipRayToHitbox_t)(const Ray_t&, mstudiobbox_t*, matrix3x4_t&, Trace_t&);
 	static auto sig = (void*)((DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F"))));
-	return ((ClipRayToHitbox_t)(sig))(Ray, pHitbox, aMatrix[pHitbox->iBone], Trace) >= 0;
+	int iHit = ((ClipRayToHitbox_t)(sig))(Ray, pHitbox, aMatrix[pHitbox->iBone], Trace);
+	return iHit >= 0;
 }
 #pragma runtime_checks( "", restore )
 
-float g_capsuleVertPositions[74][3] = {
-	{ -0.01, -0.01, 1.0 },	{ 0.51, 0.0, 0.86 },	{ 0.44, 0.25, 0.86 },	{ 0.25, 0.44, 0.86 },	{ -0.01, 0.51, 0.86 },	{ -0.26, 0.44, 0.86 },	{ -0.45, 0.25, 0.86 },	{ -0.51, 0.0, 0.86 },	{ -0.45, -0.26, 0.86 },
-	{ -0.26, -0.45, 0.86 },	{ -0.01, -0.51, 0.86 },	{ 0.25, -0.45, 0.86 },	{ 0.44, -0.26, 0.86 },	{ 0.86, 0.0, 0.51 },	{ 0.75, 0.43, 0.51 },	{ 0.43, 0.75, 0.51 },	{ -0.01, 0.86, 0.51 },	{ -0.44, 0.75, 0.51 },
-	{ -0.76, 0.43, 0.51 },	{ -0.87, 0.0, 0.51 },	{ -0.76, -0.44, 0.51 },	{ -0.44, -0.76, 0.51 },	{ -0.01, -0.87, 0.51 },	{ 0.43, -0.76, 0.51 },	{ 0.75, -0.44, 0.51 },	{ 1.0, 0.0, 0.01 },		{ 0.86, 0.5, 0.01 },
-	{ 0.49, 0.86, 0.01 },	{ -0.01, 1.0, 0.01 },	{ -0.51, 0.86, 0.01 },	{ -0.87, 0.5, 0.01 },	{ -1.0, 0.0, 0.01 },	{ -0.87, -0.5, 0.01 },	{ -0.51, -0.87, 0.01 },	{ -0.01, -1.0, 0.01 },	{ 0.49, -0.87, 0.01 },
-	{ 0.86, -0.51, 0.01 },	{ 1.0, 0.0, -0.02 },	{ 0.86, 0.5, -0.02 },	{ 0.49, 0.86, -0.02 },	{ -0.01, 1.0, -0.02 },	{ -0.51, 0.86, -0.02 },	{ -0.87, 0.5, -0.02 },	{ -1.0, 0.0, -0.02 },	{ -0.87, -0.5, -0.02 },
-	{ -0.51, -0.87, -0.02 },{ -0.01, -1.0, -0.02 },	{ 0.49, -0.87, -0.02 },	{ 0.86, -0.51, -0.02 },	{ 0.86, 0.0, -0.51 },	{ 0.75, 0.43, -0.51 },	{ 0.43, 0.75, -0.51 },	{ -0.01, 0.86, -0.51 },	{ -0.44, 0.75, -0.51 },
-	{ -0.76, 0.43, -0.51 },	{ -0.87, 0.0, -0.51 },	{ -0.76, -0.44, -0.51 },{ -0.44, -0.76, -0.51 },{ -0.01, -0.87, -0.51 },{ 0.43, -0.76, -0.51 },	{ 0.75, -0.44, -0.51 },	{ 0.51, 0.0, -0.87 },	{ 0.44, 0.25, -0.87 },
-	{ 0.25, 0.44, -0.87 },	{ -0.01, 0.51, -0.87 },	{ -0.26, 0.44, -0.87 },	{ -0.45, 0.25, -0.87 },	{ -0.51, 0.0, -0.87 },	{ -0.45, -0.26, -0.87 },{ -0.26, -0.45, -0.87 },{ -0.01, -0.51, -0.87 },{ 0.25, -0.45, -0.87 },
-	{ 0.44, -0.26, -0.87 },	{ 0.0, 0.0, -1.0 },
-};
-
-int g_capsuleLineIndices[117] = { -1,
-	14,		0,	4,	16,	28,	40,	52,	64,	73,	70,	58,	46,	34,	22,	10,		-1,
-	14,		0,	1,	13,	25,	37,	49,	61,	73,	67,	55,	43,	31,	19,	7,		-1,
-	12,		61,	62,	63,	64,	65,	66,	67,	68,	69,	70,	71,	72,				-1,
-	12,		49,	50,	51,	52,	53,	54,	55,	56,	57,	58,	59,	60,				-1,
-	12,		37,	38,	39,	40,	41,	42,	43,	44,	45,	46,	47,	48,				-1,
-	12,		25,	26,	27,	28,	29,	30,	31,	32,	33,	34,	35,	36,				-1,
-	12,		13,	14,	15,	16,	17,	18,	19,	20,	21,	22,	23,	24,				-1,
-	12,		1,	2,	3,	4,	5,	6,	7,	8,	9,	10,	11,	12,				-1
-};
-
-void MatrixSetColumn(const Vector& in, int column, matrix3x4_t& out)
-{
-	out[0][column] = in.x;
-	out[1][column] = in.y;
-	out[2][column] = in.z;
-}
-
-float VectorNormalize(Vector& vec)
-{
-	float radius = sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
-
-	// FLT_EPSILON is added to the radius to eliminate the possibility of divide by zero.
-	float iradius = 1.f / (radius + FLT_EPSILON);
-
-	vec.x *= iradius;
-	vec.y *= iradius;
-	vec.z *= iradius;
-
-	return radius;
-}
-
-void CrossProduct(const float* v1, const float* v2, float* cross)
-{
-	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
-	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
-	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
-}
-
-void VectorVectors(const Vector& forward, Vector& right, Vector& up)
-{
-	Vector tmp;
-
-	if (forward[0] == 0 && forward[1] == 0)
-	{
-		// pitch 90 degrees up/down from identity
-		right[0] = 0;
-		right[1] = -1;
-		right[2] = 0;
-		up[0] = -forward[2];
-		up[1] = 0;
-		up[2] = 0;
-	}
-	else
-	{
-		tmp[0] = 0; tmp[1] = 0; tmp[2] = 1.0;
-		CrossProduct(forward.data(), tmp.data(), right.data());
-		VectorNormalize(right);
-		CrossProduct(right.data(), forward.data(), up.data());
-		VectorNormalize(up);
-	}
-}
-void VectorMatrix(const Vector& forward, matrix3x4_t& matrix)
-{
-	Vector right, up;
-	VectorVectors(forward, right, up);
-
-	MatrixSetColumn(forward, 0, matrix);
-	MatrixSetColumn((right * -1), 1, matrix);
-	MatrixSetColumn(up, 2, matrix);
-}
-
-void VectorRotate(const float* in1, const matrix3x4_t& in2, float* out)
-{
-	out[0] = M::DotProduct(in1, in2[0]);
-	out[1] = M::DotProduct(in1, in2[1]);
-	out[2] = M::DotProduct(in1, in2[2]);
-}
-
-void CRageBot::CapsuleRebuild(mstudiobbox_t* studioBox, matrix3x4_t* pMatrix) {
-
-	Vector vStart, vEnd;
-	vEnd = M::VectorTransform(studioBox->vecBBMin, pMatrix[studioBox->iBone]);
-	vStart = M::VectorTransform(studioBox->vecBBMax, pMatrix[studioBox->iBone]);
-
-	Vector vecCapsuleCoreNormal = (vStart - vEnd).Normalized();
-
-	matrix3x4_t matCapsuleRotationSpace;
-	VectorMatrix(Vector(0, 0, 1), matCapsuleRotationSpace);
-
-	matrix3x4_t matCapsuleSpace;
-	VectorMatrix(vecCapsuleCoreNormal, matCapsuleSpace);
-
-	Vector v[74];
-	Vector vecLen = (vEnd - vStart);
-
-	std::pair<int, int> multiPoints = ConfigMultipoint(g::pLocal->GetWeapon());
-
-	int* pHeadPoints = &multiPoints.first;
-	int* pBodyPoints = &multiPoints.second;
-
-	float flHitboxDistance = *pHeadPoints * 0.01f;
-
-	for (int i = 0; i < 74; i++)
-	{
-		Vector vecCapsuleVert = Vector(g_capsuleVertPositions[i][0], g_capsuleVertPositions[i][1], g_capsuleVertPositions[i][2]);
-
-		VectorRotate(vecCapsuleVert.data(), matCapsuleRotationSpace, vecCapsuleVert.data());
-		VectorRotate(vecCapsuleVert.data(), matCapsuleSpace, vecCapsuleVert.data());
-
-		vecCapsuleVert *= (studioBox->flRadius * flHitboxDistance);
-
-		if (g_capsuleVertPositions[i][2] > 0)
-		{
-			vecCapsuleVert += vecLen;
-		}
-
-		v[i] = vecCapsuleVert + vStart;
-		g::drawList.push_back(vecCapsuleVert + vStart);
-	}
-
-}
-
-int CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector vecShootposition, int iHitbox) {
+int CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, Lagcompensation::LagRecord_t * pRecord, Vector vecShootposition, int iHitbox, bool bOnlyIntersect) {
 
 	if (pRecord->pMatricies[EMatrixType::RIGHT]->GetOrigin() == Vector(0, 0, 0) ||
 		pRecord->pMatricies[EMatrixType::LEFT]->GetOrigin() == Vector(0, 0, 0) ||
@@ -1300,16 +1175,37 @@ int CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, L
 	if (!studioBox)
 		return 0;
 
-	//CapsuleRebuild(studioBox, pRecord->pMatricies[VISUAL]);
+	//CapsuleRebuild(studioBox, refRecord.pMatricies[VISUAL]);
 
-	if (bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[RIGHT]))
-		iSafePoint++;
+	if (bOnlyIntersect) {
 
-	if (bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[LEFT]))
-		iSafePoint++;
+		Trace_t leftTrace; CTraceFilter leftFilter(g::pLocal, TRACE_ENTITIES_ONLY);
+		Trace_t rightTrace; CTraceFilter rightFilter(g::pLocal, TRACE_ENTITIES_ONLY);
+		Trace_t centerTrace; CTraceFilter centerFilter(g::pLocal, TRACE_ENTITIES_ONLY);
 
-	if (bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[CENTER]))
-		iSafePoint++;
+		pRecord->ApplyMatrix(pRecord->pEntity, LEFT);
+		if (i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT, &leftFilter, &leftTrace); leftTrace.pHitEntity && leftTrace.pHitEntity == pRecord->pEntity)
+			iSafePoint++;
+
+		pRecord->ApplyMatrix(pRecord->pEntity, RIGHT);
+		if (i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT, &rightFilter, &rightTrace); rightTrace.pHitEntity && rightTrace.pHitEntity == pRecord->pEntity)
+			iSafePoint++;
+
+		pRecord->ApplyMatrix(pRecord->pEntity, CENTER);
+		if (i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT, &centerFilter, &centerTrace); centerTrace.pHitEntity && centerTrace.pHitEntity == pRecord->pEntity)
+			iSafePoint++;
+	}
+	else {
+
+		if (bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[RIGHT]))
+			iSafePoint++;
+
+		if (bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[LEFT]))
+			iSafePoint++;
+
+		if (bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[CENTER]))
+			iSafePoint++;
+	}
 
 	return iSafePoint;
 }

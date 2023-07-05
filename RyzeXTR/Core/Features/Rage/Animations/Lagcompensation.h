@@ -67,6 +67,20 @@ enum EMatrixType : int {
 	MAX
 };
 
+struct PlayerState
+{
+public:
+	CBaseEntity* pPlayer;
+	float flEyeYaw;
+	float flFootYaw;
+	float flSpeed;
+	float flAnimDuckAmount;
+	bool bOnGround;
+	float flAimYawMax;
+	float flAimYawMin;
+	float flWalkToRunTransition;
+};
+
 class Lagcompensation {
 
 public:
@@ -111,6 +125,7 @@ public:
 		matrix3x4_t pMatricies[MAX][128];
 		CAnimationLayer pSideLayers[MAX][13];
 		LayerData_t LayerData[MAX];
+		PlayerState Animationstate;
 
 		bool bBreakingLagcompensation{};
 		bool bFakewalking{};
@@ -157,7 +172,6 @@ public:
 		float flDurationInAir{};
 		float flActivityPlayback{};
 		float flThirdPersonRecoil{};
-		float flResolverAngle{};
 		float flDesyncDelta{};
 
 		int iCachedCount{};

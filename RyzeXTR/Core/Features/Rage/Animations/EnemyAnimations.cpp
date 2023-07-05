@@ -902,16 +902,9 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
 	if (playerListData.bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
-	else if (pEntity->GetTeam() != g::pLocal->GetTeam()) {
-
-		float flOldEyeYaw = pRecord->pEntity->AnimState()->flEyeYaw;
-		float flEyeRotation = pRecord->vecEyeAngles.y;
-
-		pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + 60.f);
-		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + BuildFootYaw(pEntity, pRecord));
-		pRecord->pEntity->AnimState()->flEyeYaw = flOldEyeYaw;
-	}
-
+	else if (pEntity->GetTeam() != g::pLocal->GetTeam())
+		Resolver(pEntity, pRecord, pPrevious);
+	
 	UpdateClientSideAnimations(pEntity, pRecord);
 
 	pRecord->vecAbsAngles = Vector(0.0f, pState->flGoalFeetYaw, 0.0f);

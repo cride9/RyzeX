@@ -1042,7 +1042,7 @@ public:
 	void					PostThink();
 	bool					IsEnemy(CBaseEntity* pEntity);
 	bool					IsTargetingLocal(CBaseEntity* pLocal);
-	bool					CanShoot(CWeaponCSBase* pBaseWeapon);
+	bool					CanShoot(CWeaponCSBase* pBaseWeapon, int iTickbase = -1);
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecEnd, bool bSmokeCheck = false);
 	bool					IsBreakable();
 	bool					SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut );

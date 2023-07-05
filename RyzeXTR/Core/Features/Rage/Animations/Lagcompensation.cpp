@@ -45,6 +45,17 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 	iEffects = pEntity->GetEffects();
 	iChoked = TIME_TO_TICKS(flSimulationTime - flOldSimulationTime);
 	iChoked = std::clamp(iChoked, 1, 16);
+
+	CAnimState* pState = pEntity->AnimState();
+	Animationstate.bOnGround = pState->bOnGround;
+	Animationstate.flAimYawMax = pState->flMinBodyYaw;
+	Animationstate.flAimYawMin = pState->flMaxBodyYaw;
+	Animationstate.flAnimDuckAmount = pState->flDuckAmount;
+	Animationstate.flEyeYaw = pState->flEyeYaw;
+	Animationstate.flFootYaw = pState->flGoalFeetYaw;
+	Animationstate.flSpeed = pState->flSpeedNormalized;
+	Animationstate.flWalkToRunTransition = pState->flWalkToRunTransition;
+	Animationstate.pPlayer = pEntity;
 }
 
 void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity, bool Backup)
@@ -435,7 +446,6 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 		return false;
 
 	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
-	constexpr float flMagicNumber = 0.00075f;
 
 	int iTickBase = networking.GetCorrectedTickbase();
 	const float flLerpTime = GetClientInterpAmount();
@@ -445,7 +455,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 		iTickBase -= TICKS_TO_TIME(14);
 
 	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - TICKS_TO_TIME(iTickBase - TIME_TO_TICKS(mflSimulationTime));
-	if (fabs(flDeltaTime) > flRange)
+	if (fabs(flDeltaTime) >= flRange)
 		return false;
 
 	int nDeadTime = (int)((float)(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - flRange);
@@ -454,6 +464,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 
 	return true;
 
+	//constexpr float flMagicNumber = 0.00075f;
 	//if (cfg::misc::fakePing) {
 	//	float flIncoming = NetChannelInfo->GetLatency(FLOW_INCOMING) * 1000.f;
 	//	flRange += (min(flIncoming, 200.f) * flMagicNumber) - (NetChannelInfo->GetLatency(FLOW_OUTGOING));

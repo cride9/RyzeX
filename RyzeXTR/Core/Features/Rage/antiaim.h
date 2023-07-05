@@ -60,6 +60,7 @@ namespace antiaim {
 	bool FreeStandingThreat(Vector& angle);
     void InvertOnShoot(CUserCmd* pCmd);
 	int ClosestToLocal();
+	int ClosesToCrosshair();
 	void AtTarget(CUserCmd*, Vector&);
 
 	void DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE);

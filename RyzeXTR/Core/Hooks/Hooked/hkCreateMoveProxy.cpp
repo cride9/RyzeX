@@ -13,6 +13,7 @@
 #include "../../Features/Rage/ragebot.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
+#include "../../SDK/InputSystem.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -22,7 +23,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
 
-	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
+	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, !(exploits::bIsShiftingTicks && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && !(cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))));
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
@@ -44,9 +45,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	//if (i::ClientState->iDeltaTick > 0)
 	//	i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
-
-	if ( exploits::bIsShiftingTicks )
-		bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
 
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
@@ -89,6 +87,13 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	if (i::ClientState->nChokedCommands >= 14)
 		bSendPacket = true;
+
+	if (exploits::bIsShiftingTicks) {
+		if (exploits::iShiftAmount == 14)
+			pCmd->iButtons &= ~IN_ATTACK;
+		//bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
+		bSendPacket = false;
+	}
 
 	if (bSendPacket)
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);

@@ -17,7 +17,7 @@ static bool jitter = false;
 
 void HandleJitter(AATYPE type) {
 
-	int tickbase = networking.GetCorrectedTickbase();
+	int tickbase = g::pLocal->GetTickBase();
 	static int last_tick = 0;
 	static float flCurtime = i::GlobalVars->flCurrentTime;
 	if (last_tick + (i::ClientState->nChokedCommands + 1) < tickbase || last_tick > tickbase)
@@ -220,7 +220,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	
 	// shooting checks
 	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
-		bSendPacket = (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) ? false : true;
+		//bSendPacket = (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) ? false : true;
 		return;
 	}
 
@@ -340,10 +340,10 @@ void antiaim::Update( CUserCmd* m_pCmd )
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 
 {
-	const auto time = TICKS_TO_TIME(networking.GetCorrectedTickbase());
+	const auto time = TICKS_TO_TIME(g::pLocal->GetTickBase());
 
-	if (misc::CanFireWeapon(time) && pCmd->iButtons & IN_ATTACK)
-		return true;
+	//if (misc::CanFireWeapon(time) && pCmd->iButtons & IN_ATTACK)
+	//	return true;
 
 	if (g::pLocal->GetWeapon()) {
 
@@ -367,11 +367,10 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 			}
 		}
 
-		if (g::pLocal->GetNextAttack() > time || pWeapon->GetNextPrimaryAttack() > time || pWeapon->GetNextSecondaryAttack() > time)
+		if (g::pLocal->GetNextAttack() >= time || pWeapon->GetNextPrimaryAttack() >= time || pWeapon->GetNextSecondaryAttack() >= time)
 			return false;
 
 		if (pCmd->iButtons & IN_ATTACK && info->nWeaponType != WEAPONTYPE_GRENADE) {
-			bSendPacket = true;
 			return true;
 		}
 
@@ -379,7 +378,6 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 
 			if ((pCmd->iButtons & IN_ATTACK && pWeapon->GetNextPrimaryAttack() <= time) ||
 				(pCmd->iButtons & IN_SECOND_ATTACK && pWeapon->GetNextSecondaryAttack() <= time)) {
-				bSendPacket = true;
 				return true;
 			}
 		}
@@ -388,91 +386,119 @@ bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 	return false;
 }
 
-bool antiaim::FreeStandingDistance(CUserCmd* cmd, Vector& angle) {
+bool antiaim::FreeStandingDistance(CUserCmd* pCmd, Vector& vecCMDViewAngle) {
 
-	bool no_active = true;
-	float bestrotation = 0.f;
-	float highestthickness = 0.f;
-	Vector besthead;
+	bool bNoActive = true;
+	float flBestRotation = 0.f;
+	float flHighestThickness = 0.f;
+	Vector vecBestHead;
 
-	static float m_bestthreat = 0.f;
+	static float flBestThreat = 0.f;
 
-	auto leyepos = g::pLocal->GetVecOrigin() + g::pLocal->GetViewOffset();
-	auto headpos = g::pLocal->GetHitboxPosition(0);
-	if (!headpos.has_value())
-		return false;
-	auto origin = g::pLocal->GetAbsOrigin();
+	Vector vecEyePosition = g::pLocal->GetVecOrigin() + g::pLocal->GetViewOffset();
+	Vector vecHeadPosition = g::pLocal->GetHitboxPosition(HITBOX_HEAD, g_LocalAnimations->GetDesyncMatrix().data());
 
+	auto vecOrigin = g::pLocal->GetAbsOrigin();
 
-	auto checkWallThickness = [&](CBaseEntity* pPlayer, Vector newhead) -> float
+	auto flCheckThickness = [&](CBaseEntity* pEntity, Vector vecNewHead) -> float
 	{
-		Vector endpos1, endpos2;
-		Vector eyepos = pPlayer->GetVecOrigin() + pPlayer->GetViewOffset();
+		Vector vecEndPos1, vecEndPos2;
+		Vector vecEyePos = pEntity->GetVecOrigin() + pEntity->GetViewOffset();
 
 
-		CTraceFilter filter(pPlayer);
+		CTraceFilter filter(pEntity);
 
 		Trace_t trace1, trace2;
-		i::EngineTrace->TraceRay(Ray_t(newhead, eyepos), MASK_SHOT_BRUSHONLY, &filter, &trace1);
+		i::EngineTrace->TraceRay(Ray_t(vecNewHead, vecEyePos), MASK_SHOT_BRUSHONLY, &filter, &trace1);
 
 		if (trace1.DidHit())
-			endpos1 = trace1.vecEnd;
+			vecEndPos1 = trace1.vecEnd;
 		else
 			return 0.f;
 
-		i::EngineTrace->TraceRay(Ray_t(eyepos, newhead), MASK_SHOT_BRUSHONLY, &filter, &trace2);
+		i::EngineTrace->TraceRay(Ray_t(vecEyePos, vecNewHead), MASK_SHOT_BRUSHONLY, &filter, &trace2);
 
 		if (trace2.DidHit())
-			endpos2 = trace2.vecEnd;
+			vecEndPos2 = trace2.vecEnd;
 
-		float add = newhead.DistTo(eyepos) - leyepos.DistTo(eyepos) + 3.f;
-		return endpos1.DistTo(endpos2) + add / 3;
+		float add = vecNewHead.DistTo(vecEyePos) - vecEyePosition.DistTo(vecEyePos) + 3.f;
+		return vecEndPos1.DistTo(vecEndPos2) + add / 3;
 	};
 
-	int index = ClosestToLocal();
+	int iIndex = ClosesToCrosshair();
 
-	CBaseEntity* entity = nullptr;
+	CBaseEntity* pEntity = nullptr;
 
-	if (index != -1)
-		CBaseEntity* pEntity = playerList::arrPlayers[index].pEntity;
+	if (iIndex != -1)
+		pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iIndex));
 
-	if (!entity)
+	if (!pEntity)
 		return false;
 
-	float step = (2 * M_PI) / 18.f; // One PI = half a circle ( for stacker cause low iq :sunglasses: ), 28
+	float flStep = (2 * M_PI) / 18.f; // One PI = half a circle ( for stacker cause low iq :sunglasses: ), 28
 
-	if (!headpos.has_value())
-		return false;
+	float flRadius = fabs(Vector(vecHeadPosition - vecOrigin).Length2D());
 
-	float radius = fabs(Vector(headpos.value() - origin).Length2D());
+	for (float rotation = 0; rotation < (M_PI * 2.0); rotation += flStep) {
+		Vector newhead(flRadius * cos(rotation) + vecEyePosition.x, flRadius * sin(rotation) + vecEyePosition.y, vecEyePosition.z);
 
-	if (index == -1)
-		no_active = true;
-	else {
+		float totalthickness = 0.f;
 
-		for (float rotation = 0; rotation < (M_PI * 2.0); rotation += step) {
-			Vector newhead(radius * cos(rotation) + leyepos.x, radius * sin(rotation) + leyepos.y, leyepos.z);
+		bNoActive = false;
 
-			float totalthickness = 0.f;
+		totalthickness += flCheckThickness(pEntity, newhead);
 
-			no_active = false;
-
-			totalthickness += checkWallThickness(entity, newhead);
-
-			if (totalthickness > highestthickness)
-			{
-				highestthickness = totalthickness;
-				bestrotation = rotation;
-				besthead = newhead;
-			}
+		if (totalthickness > flHighestThickness)
+		{
+			flHighestThickness = totalthickness;
+			flBestRotation = rotation;
+			vecBestHead = newhead;
 		}
 	}
-	if (!no_active) {
-		cmd->angViewPoint.y = M_RAD2DEG(bestrotation);
-		return true;
+	
+	pCmd->angViewPoint.y = M_RAD2DEG(flBestRotation);
+}
+
+int antiaim::ClosesToCrosshair() {
+
+	int iIndex = -1;
+	float flLowestFOV = INT_MAX;
+
+	auto pLocal = g::pLocal;
+
+	if (!pLocal)
+		return -1;
+
+	Vector vecLocalPosition = pLocal->GetVecOrigin() + pLocal->GetViewOffset();
+
+	Vector vecRealAngles;
+	i::EngineClient->GetViewAngles(vecRealAngles);
+
+	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
+	{
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
+
+		if (!pEntity || !pEntity->IsAlive() || pEntity->GetTeam() == pLocal->GetTeam() || pEntity->IsDormant() || pEntity == pLocal)
+			continue;
+
+		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
+		if (!pLog || pLog->pRecord.empty())
+			continue;
+
+		Vector output;
+		M::VectorAngles(pEntity->GetHitboxPosition(HITBOX_HEAD, pLog->pCachedMatrix.data()) - vecLocalPosition, output);
+		Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.NormalizeAngle());
+
+		float flFov = abs((vecDistanceBetween).NormalizeAngle().Length2D());
+
+		if (flFov < flLowestFOV) {
+
+			flLowestFOV = flFov;
+			iIndex = i;
+		}
 	}
-	else
-		return false;
+
+	return iIndex;
 }
 
 int antiaim::ClosestToLocal() {
@@ -519,11 +545,14 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 
 	Vector vecBestEntity = Vector(0, 0, 0);
 	float flBestFov = 480.f;
-	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++)
+	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++)
 	{
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || pEnt->IsDormant() || pEnt == g::pLocal)
+			continue;
+
+		if (playerList::arrPlayers[i].iPriority == FRIEND)
 			continue;
 
 		Vector vecCalcAngle;

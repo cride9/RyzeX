@@ -32,6 +32,8 @@ namespace cfg {
 
 		inline bool doubletap;
 		inline int  doubletapkey;
+		inline bool hideshot;
+		inline int  hideshotkey;
 		inline bool resolver;
 		inline int	overrideBind;
 		inline bool m_bEnableBacktrack;

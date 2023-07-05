@@ -40,6 +40,7 @@ public:
 	bool bSendPacketThisTick;
 	int iTickCount = 0;
 	bool bSetTickCount = false;
+	std::vector<std::pair<Vector, Lagcompensation::LagRecord_t*>> vecSafePoints{};
 
 	struct rageBotData_t
 	{
@@ -59,9 +60,8 @@ public:
 		float							flTargetSimulation;
 		float							flDamage;
 		float							flHitchance;
-		float							flResolveAngle;
 
-		void SetTarget(Lagcompensation::LagRecord_t* _pRecord, Vector vecEyePosition, bool _bBacktrack, float _flResolveAngle) {
+		void SetTarget(Lagcompensation::LagRecord_t* _pRecord, Vector vecEyePosition, bool _bBacktrack) {
 
 			pRecord = _pRecord;
 			pAimbotTarget = _pRecord->pEntity;
@@ -70,7 +70,6 @@ public:
 			iHealth = _pRecord->pEntity->GetHealth();
 			vecLocalShootPosition = vecEyePosition;
 			bBacktrack = _bBacktrack;
-			flResolveAngle = _flResolveAngle;
 		}
 
 		void ClearTarget() {
@@ -82,7 +81,6 @@ public:
 			iHealth = -1;
 			vecLocalShootPosition = Vector(0, 0, 0);
 			bBacktrack = false;
-			flResolveAngle = 0.f;
 			flHitchance = 0.f;
 		}
 
@@ -91,10 +89,10 @@ public:
 	rageBotData_t hitlogData;
 
 	std::vector<Vector> CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, bool = false);
-	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int);
+	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE);
 	std::array<Vector, 6> HitboxPoints(Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, Vector&, int);
 	bool bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);
-	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector, int iHitbox);
+	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector, int iHitbox, bool bOnlyIntersectFind = false);
 
 private:
 
@@ -110,7 +108,7 @@ private:
 	bool				CheckShootingCondition( CUserCmd* pCmd, CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon);
 	bool				CheckBaimRecord(CBaseEntity* pLocal, Lagcompensation::LagRecord_t* pLog, Vector& vecEyePosition, CBaseCombatWeapon* pWeapon);
 	bool				ShouldSendPacket(bool&);
-	void				CapsuleRebuild(mstudiobbox_t* studioBox, matrix3x4_t* pMatrix);
+	void				CapsuleRebuild(mstudiobbox_t* studioBox, matrix3x4_t* pMatrix, std::vector<Vector>* vecPointsOut = nullptr);
 
 	int					ConfigMinimumDamage(CBaseCombatWeapon*);
 	int					ConfigOverrideDamage(CBaseCombatWeapon*);
