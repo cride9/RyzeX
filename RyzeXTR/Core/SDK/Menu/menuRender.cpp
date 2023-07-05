@@ -598,7 +598,8 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Remove flash", &removals[1]);
             ImGui::Checkbox("Remove recoil", &removals[2]);
             ImGui::Checkbox("Remove zoom", &removals[3]);
-            if (removals[3]) {
+			ImGui::Checkbox("Remove scope", &removals[6]);
+            if (removals[6]) {
                 ImGui::ColorEdit4("##scope stuff", scopeColor, true);
 				ImGui::ColorEdit4("##scope stuff2", scopeColorEnd);
                 ImGui::SliderFloat("Scope length", &scopeLength, 0.f, 100.f, "%.f");

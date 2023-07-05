@@ -952,7 +952,7 @@ void CConfig::Setup() {
 		SetupValue(bKillsay, false, "misc", "bKillsay");
 		SetupValue(killSayBuffer, "", "misc", "killSayBuffer");
 
-		SetupValue(removals, false, 5, "misc", "removals");
+		SetupValue(removals, false, 6, "misc", "removals");
 		SetupValue(drawViewmodelOnScope, false, "misc", "drawViewmodelOnScope");
 		SetupValue(scopeColor[0], 1.f, "visual", "scopeColorR");
 		SetupValue(scopeColor[1], 1.f, "visual", "scopeColorG");

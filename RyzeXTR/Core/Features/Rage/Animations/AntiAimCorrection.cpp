@@ -123,7 +123,7 @@ void Animations::ResolverLogic() {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
 			misc::Print(std::format(
-				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: resolver",
+				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: correction",
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -340,7 +340,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 		if (fabsf(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget)) < 175.f)
 		{
 			// set to the opposite lowerbody.
-			flGuessedYaw = std::clamp(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget), -58.f, 58.f) * -1.f;
+			flGuessedYaw = std::clamp(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget), -60.f, 60.f) * -1.f;
 
 			// save the correct lby data.
 			if (flOldLowerbodyYaw[pEntity->EntIndex()] != flGuessedYaw)
@@ -441,13 +441,13 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 
 			if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
 				// center.
-				flGuessedYaw = 0.f;
+				flGuessedYaw = 60.f;
 			else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
 				// right.
-				flGuessedYaw = 58.f;
+				flGuessedYaw = 60.f;
 			else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
 				// left.
-				flGuessedYaw = -58.f;
+				flGuessedYaw = -60.f;
 			else // center.
 				flGuessedYaw = 0.f; //flGuessedYaw = -58.f;
 

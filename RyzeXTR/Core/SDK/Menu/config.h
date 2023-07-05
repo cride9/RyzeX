@@ -406,7 +406,7 @@ namespace cfg {
 		inline int viewmodelFov = 75;
 		inline int fov = 90;
 
-		inline bool removals[] = { false, false ,false ,false, false };
+		inline bool removals[] = { false, false ,false ,false, false, false };
 		inline bool drawViewmodelOnScope = false;
 		inline float scopeColor[4] = { 1.f, 1.f, 1.f, 1.f };
 		inline float scopeColorEnd[4] = { 1.f, 1.f, 1.f, 1.f };

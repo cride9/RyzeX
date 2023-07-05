@@ -24,6 +24,7 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 	bDidShot = false;
 	bFakewalking = false;
 	bBreakingLagcompensation = false;
+	bImmune = pEntity->HasImmunity();
 	
 	flAnimationTime = pEntity->GetOldSimulationTime() + i::GlobalVars->flIntervalPerTick;
 	flSimulationTime = pEntity->GetSimulationTime();

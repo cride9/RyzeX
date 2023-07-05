@@ -53,7 +53,7 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 		if (g::pLocal) {
 
-			if (cfg::misc::removals[3] && g::pLocal->IsScoped() && i::EngineClient->IsInGame()) {
+			if (cfg::misc::removals[6] && g::pLocal->IsScoped() && i::EngineClient->IsInGame()) {
 
 				int iHeight = 0;
 				int iWidth = 0;

@@ -139,6 +139,7 @@ public:
 		bool bRestoreData{};
 		bool bFirstAfterDormant{};
 		bool bSafeRecord{};
+		bool bImmune{};
 
 		Vector vecVelocity{};
 		Vector vecAbsVelocity{};
