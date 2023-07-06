@@ -88,7 +88,7 @@ public:
 	rageBotData_t rageBotData;
 	rageBotData_t hitlogData;
 
-	std::vector<Vector> CreatePoints(CBaseEntity*, CBaseEntity*, CBaseCombatWeapon*, Vector, float, int, bool = false);
+	std::vector<Vector> CreatePoints(CBaseEntity*, Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, int, bool = false);
 	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE);
 	std::array<Vector, 6> HitboxPoints(Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, Vector&, int);
 	bool bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);

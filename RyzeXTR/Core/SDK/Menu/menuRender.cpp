@@ -123,6 +123,12 @@ void menu::Ragetab() noexcept {
         ImGui::Checkbox("Doubletap", &doubletap);
         ImGui::PopStyleColor();
         ImGui::Keybind("DoubletapKey", &doubletapkey);
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
+		ImGui::Checkbox("Hideshot", &hideshot);
+		ImGui::PopStyleColor();
+		ImGui::Keybind("HideshotBind", &hideshotkey);
+
         ImGui::Checkbox("Anti-aim correction", &resolver);
         ImGui::Checkbox( "Backtrack", &m_bEnableBacktrack );
 
@@ -598,8 +604,8 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Remove flash", &removals[1]);
             ImGui::Checkbox("Remove recoil", &removals[2]);
             ImGui::Checkbox("Remove zoom", &removals[3]);
-			ImGui::Checkbox("Remove scope", &removals[6]);
-            if (removals[6]) {
+			ImGui::Checkbox("Remove scope", &removals[5]);
+            if (removals[5]) {
                 ImGui::ColorEdit4("##scope stuff", scopeColor, true);
 				ImGui::ColorEdit4("##scope stuff2", scopeColorEnd);
                 ImGui::SliderFloat("Scope length", &scopeLength, 0.f, 100.f, "%.f");

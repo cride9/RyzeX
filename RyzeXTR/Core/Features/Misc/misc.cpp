@@ -1061,7 +1061,7 @@ void misc::FakeLag(bool& bSendPacket) {
 	else
 		iCurrentChoke = cfg::antiaim::fakelag;
 
-	iMax = cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) ? 1 : iMax;
+	iMax = ((cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) || (cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey))) ? 1 : iMax;
 	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
 	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;
 	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;
@@ -1180,7 +1180,7 @@ void misc::RemoveSmoke() {
 
 	static int flCurrentTime = i::GlobalVars->flCurrentTime;
 
-	if (!cfg::misc::removals[0] || !g::pLocal || flCurrentTime > (i::GlobalVars->flCurrentTime - TICKS_TO_TIME(64)))
+	if (!cfg::misc::removals[0] || !g::pLocal || flCurrentTime > (i::GlobalVars->flCurrentTime - TICKS_TO_TIME(32)))
 		return;
 
 	flCurrentTime = i::GlobalVars->flCurrentTime;

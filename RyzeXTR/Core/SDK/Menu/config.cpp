@@ -74,6 +74,9 @@ void CConfig::Setup() {
 		SetupValue(doubletap, false, "rage", "Ragedoubletap");
 		SetupValue(doubletapkey, 0, "rage", "Ragedoubletapkey");
 
+		SetupValue(hideshot, false, "rage", "bHideshot");
+		SetupValue(hideshotkey, 0, "rage", "iHideshot");
+
 		SetupValue(resolver, false, "rage", "Rageresolver");
 
 		SetupValue(etcMultiHitboxes, false, 6, "rage", "etcMultiHitboxes");

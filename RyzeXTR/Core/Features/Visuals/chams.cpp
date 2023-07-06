@@ -411,7 +411,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					}
 				}
 			}
-
 			if (enemy) {
 
 				if (enemyXQZ) {

@@ -897,15 +897,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 	pEntity->SetAbsOrigin(vecBackupAbsOrigin);
 
-	GetSideLayersForResolver(pEntity, pRecord); // call it here so it won't mess up anything
-
-	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
-	if (playerListData.bOverrideResolver)
-		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
-	else if (pEntity->GetTeam() != g::pLocal->GetTeam())
-		Resolver(pEntity, pRecord, pPrevious);
-	
-	UpdateClientSideAnimations(pEntity, pRecord);
+	//GetSideLayersForResolver(pEntity, pRecord); // call it here so it won't mess up anything
 
 	pRecord->vecAbsAngles = Vector(0.0f, pState->flGoalFeetYaw, 0.0f);
 
@@ -914,6 +906,22 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 		flAimMatrixWidthRange = M::Lerp(pEntity->AnimState()->flDuckAmount * std::clamp(pEntity->AnimState()->flDuckingSpeed, 0.0f, 1.0f), flAimMatrixWidthRange, 0.5f);
 
 	pRecord->flDesyncDelta = flAimMatrixWidthRange * pEntity->AnimState()->flMaxBodyYaw;
+
+	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
+	if (playerListData.bOverrideResolver)
+		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
+	else if (pEntity->IsEnemy(g::pLocal)) {
+		//Resolver(pEntity, pRecord, pPrevious);
+		switch (arrMissedShots[pEntity->EntIndex()] % 3) {
+
+		case 0: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta);
+			break;
+		case 1: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta);
+			break;
+		case 2: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y);
+			break;
+		}
+	}
 
 	pEntity->GetPoseParameters(pRecord->flPoses);
 

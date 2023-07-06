@@ -753,6 +753,11 @@ void visual::CoolHackKeyBindList() {
 		i::Surface->DrawT(10, iHeight / 2 + spacing, exploits::iTicksToStore ? Color(255, 255, 255) : Color(255, 0, 0), g::fonts::SkeetFont, false, "DT");
 		spacing += 30;
 	}
+	if (IPT::HandleInput(cfg::rage::hideshotkey) && cfg::rage::hideshot && cfg::misc::bKeyBindListOld[1]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "OSAA");
+		spacing += 30;
+	}
 	if (IPT::HandleInput(cfg::rage::forceBaimKey) && cfg::rage::forceBaim && cfg::misc::bKeyBindListOld[2]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BODY");

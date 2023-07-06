@@ -23,7 +23,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
 
-	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, !(exploits::bIsShiftingTicks && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && !(cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))));
+	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, exploits::bIsCurrentlyCharging ? bIsActive : !(exploits::bIsShiftingTicks && ((cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) || (cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey))) && !(cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))));
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
@@ -58,6 +58,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
 
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
+		exploits::HandleHideShots(bSendPacket, pCmd);
 		exploits::HandleBreakLagcomp(pCmd);
 		misc::IdealTick(pCmd, pLocal);
 		antiaim::InvertOnShoot(pCmd);
@@ -89,10 +90,13 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		bSendPacket = true;
 
 	if (exploits::bIsShiftingTicks) {
-		if (exploits::iShiftAmount == 14)
+		if (exploits::iShiftAmount == 12)
 			pCmd->iButtons &= ~IN_ATTACK;
-		//bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
-		bSendPacket = false;
+
+		if ((cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey)))
+			bSendPacket = false;
+		else
+			bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
 	}
 
 	if (bSendPacket)

@@ -10,7 +10,7 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	static auto original = detour::paintTraverse.GetOriginal<decltype(&h::hkPaintTraverse)>();
 
-	if (cfg::misc::removals[3] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
+	if (cfg::misc::removals[5] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
@@ -53,7 +53,7 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 		if (g::pLocal) {
 
-			if (cfg::misc::removals[6] && g::pLocal->IsScoped() && i::EngineClient->IsInGame()) {
+			if (cfg::misc::removals[5] && g::pLocal->IsScoped() && i::EngineClient->IsInGame()) {
 
 				int iHeight = 0;
 				int iWidth = 0;

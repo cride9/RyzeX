@@ -55,6 +55,8 @@ namespace antiaim {
 	bool NextLBYUpdate( CUserCmd* cmd );
 	void ForceResync( CUserCmd* m_pCmd, int m_iLbyChange );
 	void Update( CUserCmd* m_pCmd );
+
+	bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket);
 	
 	bool FreeStandingDistance(CUserCmd*, Vector&);
 	bool FreeStandingThreat(Vector& angle);

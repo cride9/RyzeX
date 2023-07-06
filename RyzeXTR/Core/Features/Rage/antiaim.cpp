@@ -219,8 +219,9 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 		return;
 	
 	// shooting checks
-	if (ShouldDisableAntiaim(pCmd, bSendPacket)) {
-		//bSendPacket = (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) ? false : true;
+	if (antiaim::ShouldDisableAntiaim(pCmd, bSendPacket)) {
+		if (!(cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey)))
+			bSendPacket = (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) ? false : true;
 		return;
 	}
 
@@ -338,7 +339,7 @@ void antiaim::Update( CUserCmd* m_pCmd )
 	ForceResync( m_pCmd, m_flLastLBYChange );
 }
 
-bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 
+bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 
 {
 	const auto time = TICKS_TO_TIME(g::pLocal->GetTickBase());
 

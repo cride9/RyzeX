@@ -84,6 +84,8 @@ void Animations::ResolverLogic() {
 	// If we hit an entity but didn't deal any dmg its a resolver miss
 	if (data.enterTrace.pHitEntity != nullptr && data.enterTrace.pHitEntity == pTarget) {
 
+		anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
+
 		if (pLog->iFreestandMatrix == pLog->iLastResolve)
 			pLog->iPeekingFake++;
 		else
@@ -106,7 +108,6 @@ void Animations::ResolverLogic() {
 		}
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
 		misc::Print(std::format(
 			"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: resolver",
 			info.szName,
@@ -260,6 +261,262 @@ void SetYaw(Lagcompensation::LagRecord_t* pRecord, float flYaw) {
 	pRecord->pEntity->AnimState()->flGoalFeetYaw = flFootYaw;
 }
 
+//void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
+//
+//	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
+//	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious || !pRecord)
+//		return;
+//
+//	if (!cfg::rage::resolver)
+//		return;
+//
+//	int iEntIndex = pEntity->EntIndex();
+//
+//	auto& pData = lagcomp.GetLog(iEntIndex);
+//	if (!&pData)
+//		return;
+//
+//	static std::array<float, 65> flOldLowerbodyYaw{0};
+//	static std::array<float, 65> flOldPlaybackrateYaw{0};
+//
+//	// use it if not gonna use the resolver.
+//	float flOldGoalFeetYaw = pEntity->AnimState( )->flGoalFeetYaw;
+//
+//	// bot or either no resolver.
+//	if (!cfg::rage::resolver || pEntity->GetPlayerInfo().bFakePlayer) {
+//		// reset missed shots.
+//		pData.iAntiAimType = Lagcompensation::LEGIT;
+//		pData.iDesyncSide = NULL;
+//
+//		// reset the data.
+//		pData.flTimeSinceBreakingLBY = 0.f;
+//		pData.flTimeSinceBodySwayRight = 0.f;
+//		pData.flTimeSinceBodySwayLeft = 0.f;
+//		pData.flTimeSinceBodySwaying = 0.f;
+//		pData.flTimeSinceNoDesync = 0.f;
+//
+//		// lets go back to old feet yaw faster.
+//		pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
+//		return;
+//	}
+//
+//	// the angle.
+//	flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->flGoalFeetYaw);
+//
+//	//if ( IPT::HandleInput( C::Get<int>( Vars.iRageResolverOverrideKey ) ) )
+//	//{
+//	//	// overriding.
+//	//	pData.iAntiAimType = Animations::OVERRIDE;
+//
+//	//	Vector vecPosEnemy;
+//	//	if ( !I::DebugOverlay->WorldToScreen( pRecord->vecOrigin, vecPosEnemy ) )
+//	//		return;
+//
+//	//	POINT pMouse;
+//	//	GetCursorPos( &pMouse );
+//	//	float flDelta = pMouse.x - vecPosEnemy.x;
+//
+//	//	// set yaw.
+//	//	flGuessedYaw = std::clamp( flDelta, -58.f, 58.f );
+//
+//	//	// desync side info.
+//	//	pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+//
+//	//	// fix legit anti-aim.
+//	//	if ( pRecord->flDeltaAngle <= 90.f )
+//	//		flGuessedYaw *= -1.f;
+//
+//	//	// apply the resolver.
+//	//	pEntity->GetAnimationState( )->flGoalFeetYaw = M::NormalizeYaw( pRecord->angEyeAngles.y ) - flGuessedYaw;
+//	//	return;
+//	//}
+//
+//	// breaking the lowerbody.
+//	if (fabsf(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget)) > 35.f)
+//	{
+//		// its breaking lby so its opposite.
+//		pData.iAntiAimType = Lagcompensation::OPPOSITE;
+//
+//		// its less than 179.998f you might say.
+//		if (fabsf(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget)) < 175.f)
+//		{
+//			// set to the opposite lowerbody.
+//			flGuessedYaw = std::clamp(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget), -60.f, 60.f) * -1.f;
+//
+//			// save the correct lby data.
+//			if (flOldLowerbodyYaw[pEntity->EntIndex()] != flGuessedYaw)
+//				flOldLowerbodyYaw[pEntity->EntIndex()] = flGuessedYaw;
+//		}
+//		// set the last saved data.
+//		else if (fabsf(flOldLowerbodyYaw[pEntity->EntIndex()]) > 0.f)
+//			// thats how to resolve onetap.
+//			flGuessedYaw = flOldLowerbodyYaw[pEntity->EntIndex()];
+//		// we don't have data so i assume its opposite.
+//		else flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - flOldGoalFeetYaw) * -1.f;
+//
+//		// max desync detection.
+//		if (pRecord->pLayers[3].flCycle != 0.f || pRecord->pLayers[3].flWeight != 0.f)
+//			++pData.flTimeSinceNoDesync;
+//		else pData.flTimeSinceNoDesync = 0.f;
+//
+//		// increase while breaking.
+//		++pData.flTimeSinceBreakingLBY;
+//
+//		// use the correct data.
+//		if (M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget) <= 0.f) {
+//			pData.flTimeSinceBodySwayRight = 0.f;
+//			++pData.flTimeSinceBodySwayLeft;
+//		}
+//		else {
+//			pData.flTimeSinceBodySwayLeft = 0.f;
+//			++pData.flTimeSinceBodySwayRight;
+//		}
+//
+//		// this is probably sway anti-aim but we need more check.
+//		if (pData.flTimeSinceBreakingLBY > 11.1f && pData.flTimeSinceBodySwayLeft < 11.1f && pData.flTimeSinceBodySwayRight < 11.1f)
+//			// increase.
+//			++pData.flTimeSinceBodySwaying;
+//		// reset data.
+//		else pData.flTimeSinceBodySwaying = 0.f;
+//
+//		// think about it.
+//		if (pData.flTimeSinceBodySwaying > 11.1f)
+//			pData.iAntiAimType = Lagcompensation::SWAY;
+//
+//		// its been fake desync for enough time.
+//		if (pData.flTimeSinceNoDesync > 5.f) {
+//			flGuessedYaw *= 0.f;
+//
+//			// its fake desync for sure.
+//			pData.iAntiAimType = Lagcompensation::FAKE;
+//		}
+//
+//		// fire detection.
+//		if (pRecord->bDidShot && fabsf(pEntity->AnimState()->flEyePitch) < 89.f) {
+//			pData.iAntiAimType = Lagcompensation::ONSHOT;
+//
+//			// change known side.
+//			flGuessedYaw *= -1.f;
+//
+//			// use the default yaw.
+//			pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
+//
+//			// last side.
+//			flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->flGoalFeetYaw);
+//
+//			// desync side info.
+//			if (!flGuessedYaw)
+//				pData.iDesyncSide = 0;
+//			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+//			return;
+//		}
+//	}
+//	else {
+//		// its normal desync for sure.
+//		pData.iAntiAimType = Lagcompensation::DESYNC;
+//
+//		// reset the data.
+//		pData.flTimeSinceBreakingLBY = 0.f;
+//		pData.flTimeSinceBodySwayRight = 0.f;
+//		pData.flTimeSinceBodySwayLeft = 0.f;
+//		pData.flTimeSinceBodySwaying = 0.f;
+//		pData.flTimeSinceNoDesync = 0.f;
+//
+//		// from the server.
+//		auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
+//
+//		// resolver calculations.
+//		const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
+//		const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
+//		const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
+//
+//		// differences.
+//		const float fDifferenceCenterPlaybackrate = fabs(flFromServerPlaybackrate - fCenterPlaybackrate);
+//		const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
+//		const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
+//
+//		// while.
+//		if (GetVelocityLengthXY(pEntity) > 0.f && !pRecord->pLayers[12].flWeight && (pPrevious && pRecord->pLayers[6].flWeight == pPrevious->pLayers[6].flWeight || pRecord->vecVelocity.Length2D() > 135.f && pRecord->pLayers[6].flWeight == 1.f))
+//		{
+//			pData.iAntiAimType = Lagcompensation::ANIMATION;
+//
+//			if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
+//				// center.
+//				flGuessedYaw = 60.f;
+//			else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
+//				// right.
+//				flGuessedYaw = 60.f;
+//			else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
+//				// left.
+//				flGuessedYaw = -60.f;
+//			else // center.
+//				flGuessedYaw = 0.f; //flGuessedYaw = -58.f;
+//
+//			// save the correct moving data.
+//			if (flOldPlaybackrateYaw[pEntity->EntIndex()] != flGuessedYaw)
+//				flOldPlaybackrateYaw[pEntity->EntIndex()] = flGuessedYaw;
+//		}
+//		// set the last saved data.
+//		else if (fabs(flOldPlaybackrateYaw[pEntity->EntIndex()]) > 0.f)
+//			flGuessedYaw = flOldPlaybackrateYaw[pEntity->EntIndex()];
+//		// set the last saved data.
+//		else  if (fabs(flOldLowerbodyYaw[pEntity->EntIndex()]) > 0.f)
+//			// thats how to resolve onetap.
+//			flGuessedYaw = flOldLowerbodyYaw[pEntity->EntIndex()];
+//		// we don't have data.
+//		else flGuessedYaw = 58.f;
+//
+//		// fire detection.
+//		if (pRecord->bDidShot && fabsf(pEntity->AnimState()->flEyePitch) < 89.f) {
+//			pData.iAntiAimType = Lagcompensation::ONSHOT;
+//
+//			// use the default yaw.
+//			pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
+//
+//			// last side.
+//			flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->flGoalFeetYaw);
+//
+//			// desync side info.
+//			if (!flGuessedYaw)
+//				pData.iDesyncSide = 0;
+//			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+//			return;
+//		}
+//
+//		// in use detection but not the greateast.
+//		if (pLocal->IsAlive() && pRecord->flDeltaAngle < 90.f && fabsf(pEntity->AnimState()->flEyePitch) < 45.f) {
+//			pData.iAntiAimType = Lagcompensation::LEGIT;
+//
+//			// use the default yaw.
+//			pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
+//
+//			// last side.
+//			flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->flGoalFeetYaw);
+//
+//			// desync side info.
+//			if (!flGuessedYaw)
+//				pData.iDesyncSide = 0;
+//			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+//			return;
+//		}
+//	}
+//
+//	// bruteforce.
+//	switch (arrMissedShots[pEntity->EntIndex()] % 3)
+//	{
+//	case 1: flGuessedYaw *= -1.f; break;
+//	case 2: flGuessedYaw *= 0.f; break;
+//	}
+//
+//	// desync side info.
+//	if (!flGuessedYaw)
+//		pData.iDesyncSide = 0;
+//	else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
+//
+//	// apply the resolver.
+//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + flGuessedYaw);
+//}
+
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
@@ -271,247 +528,77 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 
 	int iEntIndex = pEntity->EntIndex();
 
-	auto& pData = lagcomp.GetLog(iEntIndex);
-	if (!&pData)
-		return;
-
-	static std::array<float, 65> flOldLowerbodyYaw{0};
-	static std::array<float, 65> flOldPlaybackrateYaw{0};
-
-	// use it if not gonna use the resolver.
-	float flOldGoalFeetYaw = pEntity->AnimState( )->flGoalFeetYaw;
-
-	// bot or either no resolver.
-	if (!cfg::rage::resolver || pEntity->GetPlayerInfo().bFakePlayer) {
-		// reset missed shots.
-		pData.iAntiAimType = Lagcompensation::LEGIT;
-		pData.iDesyncSide = NULL;
-
-		// reset the data.
-		pData.flTimeSinceBreakingLBY = 0.f;
-		pData.flTimeSinceBodySwayRight = 0.f;
-		pData.flTimeSinceBodySwayLeft = 0.f;
-		pData.flTimeSinceBodySwaying = 0.f;
-		pData.flTimeSinceNoDesync = 0.f;
-
-		// lets go back to old feet yaw faster.
-		pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
-		return;
-	}
-
-	// the angle.
-	flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->flGoalFeetYaw);
-
-	//if ( IPT::HandleInput( C::Get<int>( Vars.iRageResolverOverrideKey ) ) )
-	//{
-	//	// overriding.
-	//	pData.iAntiAimType = Animations::OVERRIDE;
-
-	//	Vector vecPosEnemy;
-	//	if ( !I::DebugOverlay->WorldToScreen( pRecord->vecOrigin, vecPosEnemy ) )
-	//		return;
-
-	//	POINT pMouse;
-	//	GetCursorPos( &pMouse );
-	//	float flDelta = pMouse.x - vecPosEnemy.x;
-
-	//	// set yaw.
-	//	flGuessedYaw = std::clamp( flDelta, -58.f, 58.f );
-
-	//	// desync side info.
-	//	pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
-
-	//	// fix legit anti-aim.
-	//	if ( pRecord->flDeltaAngle <= 90.f )
-	//		flGuessedYaw *= -1.f;
-
-	//	// apply the resolver.
-	//	pEntity->GetAnimationState( )->flGoalFeetYaw = M::NormalizeYaw( pRecord->angEyeAngles.y ) - flGuessedYaw;
+	//auto& pData = lagcomp.GetLog(iEntIndex);
+	//if (!&pData)
 	//	return;
-	//}
 
-	// breaking the lowerbody.
-	if (fabsf(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget)) > 35.f)
-	{
-		// its breaking lby so its opposite.
-		pData.iAntiAimType = Lagcompensation::OPPOSITE;
+	static auto CalculateHighSpeedCorrection = [&](float speed) -> float {
 
-		// its less than 179.998f you might say.
-		if (fabsf(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget)) < 175.f)
+		const float highSpeedThreshold = 0;
+		const float maxCorrection = 0;
+
+		float correction = 0.0f;
+		if (speed > highSpeedThreshold)
 		{
-			// set to the opposite lowerbody.
-			flGuessedYaw = std::clamp(M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget), -60.f, 60.f) * -1.f;
-
-			// save the correct lby data.
-			if (flOldLowerbodyYaw[pEntity->EntIndex()] != flGuessedYaw)
-				flOldLowerbodyYaw[pEntity->EntIndex()] = flGuessedYaw;
-		}
-		// set the last saved data.
-		else if (fabsf(flOldLowerbodyYaw[pEntity->EntIndex()]) > 0.f)
-			// thats how to resolve onetap.
-			flGuessedYaw = flOldLowerbodyYaw[pEntity->EntIndex()];
-		// we don't have data so i assume its opposite.
-		else flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - flOldGoalFeetYaw) * -1.f;
-
-		// max desync detection.
-		if (pRecord->pLayers[3].flCycle != 0.f || pRecord->pLayers[3].flWeight != 0.f)
-			++pData.flTimeSinceNoDesync;
-		else pData.flTimeSinceNoDesync = 0.f;
-
-		// increase while breaking.
-		++pData.flTimeSinceBreakingLBY;
-
-		// use the correct data.
-		if (M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flLowerBodyYawTarget) <= 0.f) {
-			pData.flTimeSinceBodySwayRight = 0.f;
-			++pData.flTimeSinceBodySwayLeft;
-		}
-		else {
-			pData.flTimeSinceBodySwayLeft = 0.f;
-			++pData.flTimeSinceBodySwayRight;
+			float correctionFactor = (speed - highSpeedThreshold) / highSpeedThreshold;
+			correction = maxCorrection * correctionFactor;
 		}
 
-		// this is probably sway anti-aim but we need more check.
-		if (pData.flTimeSinceBreakingLBY > 11.1f && pData.flTimeSinceBodySwayLeft < 11.1f && pData.flTimeSinceBodySwayRight < 11.1f)
-			// increase.
-			++pData.flTimeSinceBodySwaying;
-		// reset data.
-		else pData.flTimeSinceBodySwaying = 0.f;
+		return correction;
+	};
 
-		// think about it.
-		if (pData.flTimeSinceBodySwaying > 11.1f)
-			pData.iAntiAimType = Lagcompensation::SWAY;
 
-		// its been fake desync for enough time.
-		if (pData.flTimeSinceNoDesync > 5.f) {
-			flGuessedYaw *= 0.f;
+	static auto ApplyHighSpeedCorrection = [&](float flEyeYaw, float flFootYaw, float flSpeed) -> float {
 
-			// its fake desync for sure.
-			pData.iAntiAimType = Lagcompensation::FAKE;
-		}
+		float flAngleDelta = M::AngleDiff(flEyeYaw, flFootYaw);
+		float flMaxCorrection = CalculateHighSpeedCorrection(flSpeed);
+		float flCorrection = std::clamp(flAngleDelta, -flMaxCorrection, flMaxCorrection);
+		return M::NormalizeAngle(flFootYaw + flCorrection);
+	};
 
-		// fire detection.
-		if (pRecord->bDidShot && fabsf(pEntity->AnimState()->flEyePitch) < 89.f) {
-			pData.iAntiAimType = Lagcompensation::ONSHOT;
+	CAnimState* pState = pEntity->AnimState();
 
-			// change known side.
-			flGuessedYaw *= -1.f;
+	float flEyeFootDelta = M::AngleDiff(pState->flEyeYaw, pState->flGoalFeetYaw);
+	float flAimMatrixWidthRange = pRecord->flDesyncDelta;
 
-			// use the default yaw.
-			pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
+	float flTempYawMax = pState->flMaxBodyYaw * flAimMatrixWidthRange;
+	float flTempYawMin = pState->flMinBodyYaw * flAimMatrixWidthRange;
 
-			// last side.
-			flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->flGoalFeetYaw);
-
-			// desync side info.
-			if (!flGuessedYaw)
-				pData.iDesyncSide = 0;
-			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
-			return;
-		}
+	if (flEyeFootDelta > flTempYawMax) {
+		pState->flGoalFeetYaw = pState->flEyeYaw - fabs(flTempYawMax);
 	}
-	else {
-		// its normal desync for sure.
-		pData.iAntiAimType = Lagcompensation::DESYNC;
-
-		// reset the data.
-		pData.flTimeSinceBreakingLBY = 0.f;
-		pData.flTimeSinceBodySwayRight = 0.f;
-		pData.flTimeSinceBodySwayLeft = 0.f;
-		pData.flTimeSinceBodySwaying = 0.f;
-		pData.flTimeSinceNoDesync = 0.f;
-
-		// from the server.
-		auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
-
-		// resolver calculations.
-		const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
-		const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
-		const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
-
-		// differences.
-		const float fDifferenceCenterPlaybackrate = fabs(flFromServerPlaybackrate - fCenterPlaybackrate);
-		const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
-		const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
-
-		// while.
-		if (GetVelocityLengthXY(pEntity) > 0.f && !pRecord->pLayers[12].flWeight && (pPrevious && pRecord->pLayers[6].flWeight == pPrevious->pLayers[6].flWeight || pRecord->vecVelocity.Length2D() > 135.f && pRecord->pLayers[6].flWeight == 1.f))
-		{
-			pData.iAntiAimType = Lagcompensation::ANIMATION;
-
-			if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
-				// center.
-				flGuessedYaw = 60.f;
-			else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
-				// right.
-				flGuessedYaw = 60.f;
-			else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
-				// left.
-				flGuessedYaw = -60.f;
-			else // center.
-				flGuessedYaw = 0.f; //flGuessedYaw = -58.f;
-
-			// save the correct moving data.
-			if (flOldPlaybackrateYaw[pEntity->EntIndex()] != flGuessedYaw)
-				flOldPlaybackrateYaw[pEntity->EntIndex()] = flGuessedYaw;
-		}
-		// set the last saved data.
-		else if (fabs(flOldPlaybackrateYaw[pEntity->EntIndex()]) > 0.f)
-			flGuessedYaw = flOldPlaybackrateYaw[pEntity->EntIndex()];
-		// set the last saved data.
-		else  if (fabs(flOldLowerbodyYaw[pEntity->EntIndex()]) > 0.f)
-			// thats how to resolve onetap.
-			flGuessedYaw = flOldLowerbodyYaw[pEntity->EntIndex()];
-		// we don't have data.
-		else flGuessedYaw = 58.f;
-
-		// fire detection.
-		if (pRecord->bDidShot && fabsf(pEntity->AnimState()->flEyePitch) < 89.f) {
-			pData.iAntiAimType = Lagcompensation::ONSHOT;
-
-			// use the default yaw.
-			pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
-
-			// last side.
-			flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->flGoalFeetYaw);
-
-			// desync side info.
-			if (!flGuessedYaw)
-				pData.iDesyncSide = 0;
-			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
-			return;
-		}
-
-		// in use detection but not the greateast.
-		if (pLocal->IsAlive() && pRecord->flDeltaAngle < 90.f && fabsf(pEntity->AnimState()->flEyePitch) < 45.f) {
-			pData.iAntiAimType = Lagcompensation::LEGIT;
-
-			// use the default yaw.
-			pEntity->AnimState()->flGoalFeetYaw = flOldGoalFeetYaw;
-
-			// last side.
-			flGuessedYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->flGoalFeetYaw);
-
-			// desync side info.
-			if (!flGuessedYaw)
-				pData.iDesyncSide = 0;
-			else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
-			return;
-		}
+	else if (flEyeFootDelta < flTempYawMin) {
+		pState->flGoalFeetYaw = pState->flEyeYaw + fabs(flTempYawMin);
 	}
 
-	// bruteforce.
-	switch (arrMissedShots[pEntity->EntIndex()] % 3)
+	pState->flGoalFeetYaw = M::NormalizeAngle(pState->flGoalFeetYaw);
+
+	if (pState->bOnGround)
 	{
-	case 1: flGuessedYaw *= -1.f; break;
-	case 2: flGuessedYaw *= 0.f; break;
+		if (pState->flSpeedNormalized > 0.1f)
+		{
+			pState->flGoalFeetYaw = M::ApproachAngle(pState->flEyeYaw, pState->flGoalFeetYaw, pState->flLastUpdateIncrement * (30.0f + 20.0f * pState->flWalkToRunTransition));
+
+			// Perform other resolver actions when the player is moving on the ground
+			if (pState->flSpeedNormalized > 250.0f)
+			{
+				// High-speed movement correction
+				//pState->flGoalFeetYaw = ApplyHighSpeedCorrection(pState->flEyeYaw, pState->flGoalFeetYaw, pState->flSpeedNormalized);
+			}
+		}
+		else
+		{
+			pState->flGoalFeetYaw = M::ApproachAngle(pState->pEntity->GetLowerBodyYaw(), pState->flGoalFeetYaw, pState->flLastUpdateIncrement * CSGO_ANIM_LOWER_CATCHUP_IDLE);
+
+			// Perform other resolver actions when the player is idle on the ground
+		}
 	}
-
-	// desync side info.
-	if (!flGuessedYaw)
-		pData.iDesyncSide = 0;
-	else pData.iDesyncSide = flGuessedYaw > 0.f ? 1 : 2;
-
-	// apply the resolver.
-	SetYaw(pRecord, flGuessedYaw);
+	else
+	{
+		if (pState->flSpeedNormalized > 250.0f)
+		{
+			// High-speed in-air movement correction
+			//pState->flGoalFeetYaw = ApplyHighSpeedCorrection(pState->flEyeYaw, pState->flGoalFeetYaw, pState->flSpeedNormalized);
+		}
+	}
 }
