@@ -77,7 +77,10 @@ void menu::Render() noexcept {
 	ImGui_ImplWin32_NewFrame();
 
 	ImGui::NewFrame();
-
+	
+	ImDrawList* pBackgroundDrawList = ImGui::GetBackgroundDrawList( );
+	D::RenderDrawData( pBackgroundDrawList );
+	
 	KeyBindList();
 	if (menu::open) {
 

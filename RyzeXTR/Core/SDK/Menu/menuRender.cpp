@@ -27,9 +27,6 @@ ETabs selectedTab = RAGE_TAB;
 EEntity selectedEsp = ENEMY;
 void menu::HandleMenuElements() noexcept {
 
-	ImDrawList* pBackgroundDrawList = ImGui::GetBackgroundDrawList( );
-	D::RenderDrawData( pBackgroundDrawList );
-
     ImGui::Begin("RyzeX", NULL, ImGuiWindowFlags_NoTitleBar);
     {
 		ImGui::SetScrollX( 0 );
