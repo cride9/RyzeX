@@ -142,12 +142,12 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 		return;
 	}
 
-	if (exploits::iShiftCommand + 24 > pCmd->iCommandNumber || exploits::bIsCurrentlyCharging) {
-		exploits::bCanCharge = true;
-		rageBotData.ClearTarget();
-		hitlogData.ClearTarget();
-		return;
-	}
+	//if (exploits::iShiftCommand + 24 > pCmd->iCommandNumber || exploits::bIsCurrentlyCharging) {
+	//	exploits::bCanCharge = true;
+	//	rageBotData.ClearTarget();
+	//	hitlogData.ClearTarget();
+	//	return;
+	//}
 
 	misc::RevolverCreateMove();
 	Vector vecEyePosition = g::vecEyePosition;

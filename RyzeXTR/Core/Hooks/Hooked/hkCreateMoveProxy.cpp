@@ -23,7 +23,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
 
-	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, exploits::bIsCurrentlyCharging ? bIsActive : !(exploits::bIsShiftingTicks && ((cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) || (cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey))) && !(cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))));
+	//original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, exploits::bIsCurrentlyCharging ? bIsActive : !(exploits::bIsShiftingTicks && ((cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) || (cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey))) && !(cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))));
+	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive );
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
@@ -93,9 +94,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		if (exploits::iShiftAmount == 12)
 			pCmd->iButtons &= ~IN_ATTACK;
 
-		if ((cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey)))
-			bSendPacket = false;
-		else
+		//if ((cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey)))
+		//	bSendPacket = true;
+		//else
 			bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
 	}
 

@@ -11,6 +11,7 @@
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Features/Changers/wtf.h"
 #include "../../Features/Misc/Playerlist.h"
+#include "../../SDK/Draw.h"
 
 bool IsKnife(int idx) {
 
@@ -25,6 +26,9 @@ bool IsKnife(int idx) {
 ETabs selectedTab = RAGE_TAB;
 EEntity selectedEsp = ENEMY;
 void menu::HandleMenuElements() noexcept {
+
+	ImDrawList* pBackgroundDrawList = ImGui::GetBackgroundDrawList( );
+	D::RenderDrawData( pBackgroundDrawList );
 
     ImGui::Begin("RyzeX", NULL, ImGuiWindowFlags_NoTitleBar);
     {
@@ -605,7 +609,8 @@ void menu::Visualtab() noexcept {
             ImGui::Checkbox("Remove recoil", &removals[2]);
             ImGui::Checkbox("Remove zoom", &removals[3]);
 			ImGui::Checkbox("Remove scope", &removals[5]);
-            if (removals[5]) {
+            if (removals[5]) 
+			{
                 ImGui::ColorEdit4("##scope stuff", scopeColor, true);
 				ImGui::ColorEdit4("##scope stuff2", scopeColorEnd);
                 ImGui::SliderFloat("Scope length", &scopeLength, 0.f, 100.f, "%.f");

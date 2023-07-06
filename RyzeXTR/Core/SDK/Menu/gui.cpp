@@ -7,6 +7,8 @@
 #include "../../SDK/math.h"
 
 #include "../InputSystem.h"
+#include "../../../Dependecies/ImGui/imgui_freetype.h"
+#include "../../SDK/Draw.h"
 
 void Style() {
 
@@ -15,20 +17,20 @@ void Style() {
 
 	io.ConfigWindowsResizeFromEdges = true;
 
-	ImFontConfig cfg;
-	cfg.FontDataOwnedByAtlas = false;
+	ImFontConfig imFontConfig = {};
+	imFontConfig.RasterizerFlags = ImGuiFreeType::LightHinting;
 
 #if NDEBUG || ALPHA
-	menu::logoFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::logoFont, 50.f, 50.f);
-	menu::xtrFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::xtrFont, 17.f, 17.f);
-	menu::childFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::childFont, 15.f, 15.f);
-	menu::tabFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::childFont, 18.f, 18.f);
+	menu::logoFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::logoFont, 50.f, 50.f, &imFontConfig, io.Fonts->GetGlyphRangesCyrillic( ) );
+	menu::xtrFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::xtrFont, 17.f, 17.f, &imFontConfig, io.Fonts->GetGlyphRangesCyrillic( ) );
+	menu::childFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::childFont, 15.f, 15.f, &imFontConfig, io.Fonts->GetGlyphRangesCyrillic( ) );
+	menu::tabFont = io.Fonts->AddFontFromMemoryTTF(byteFonts::childFont, 18.f, 18.f, &imFontConfig, io.Fonts->GetGlyphRangesCyrillic( ) );
 #endif
 #if _DEBUG
-	menu::logoFont = io.Fonts->AddFontFromFileTTF("C:\\XenoDemonCondensed-mdZP.otf", 50.f);
-	menu::xtrFont = io.Fonts->AddFontFromFileTTF("C:\\Exwayer-X3eqa.ttf", 17.f);
-	menu::childFont = io.Fonts->AddFontFromFileTTF("C:\\Big Pixel demo.otf", 15.f);
-	menu::tabFont = io.Fonts->AddFontFromFileTTF("C:\\Big Pixel demo.otf", 18.f);
+	menu::logoFont = io.Fonts->AddFontFromFileTTF("C:\\XenoDemonCondensed-mdZP.otf", 50.f, &imFontConfig, io.Fonts->GetGlyphRangesCyrillic( ) );
+	menu::xtrFont = io.Fonts->AddFontFromFileTTF("C:\\Exwayer-X3eqa.ttf", 17.f, &imFontConfig, io.Fonts->GetGlyphRangesCyrillic( ) );
+	menu::childFont = io.Fonts->AddFontFromFileTTF("C:\\Big Pixel demo.otf", 15.f, &imFontConfig, io.Fonts->GetGlyphRangesCyrillic( ) );
+	menu::tabFont = io.Fonts->AddFontFromFileTTF("C:\\Big Pixel demo.otf", 18.f, &imFontConfig, io.Fonts->GetGlyphRangesCyrillic( ) );
 #endif
 
 	st.WindowMinSize = ImVec2(1195 / 2, (760 + 200) / 2);
@@ -210,6 +212,7 @@ void menu::SetupMenu(LPDIRECT3DDEVICE9 device) noexcept {
 	ImGui::CreateContext();
 
 	Style();
+	D::SetupFonts( );
 
 	ImGui_ImplWin32_Init(window);
 	ImGui_ImplDX9_Init(device);

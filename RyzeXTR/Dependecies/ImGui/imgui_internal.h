@@ -478,6 +478,16 @@ IMGUI_API void       ImTriangleBarycentricCoords(const ImVec2& a, const ImVec2& 
 inline float         ImTriangleArea(const ImVec2& a, const ImVec2& b, const ImVec2& c) { return ImFabs((a.x * (b.y - c.y)) + (b.x * (c.y - a.y)) + (c.x * (a.y - b.y))) * 0.5f; }
 IMGUI_API ImGuiDir   ImGetDirQuadrantFromDelta(float dx, float dy);
 
+struct IMGUI_API ImBoolVector
+{
+    ImVector<int>   Storage;
+    ImBoolVector( ) { }
+    void            Resize( int sz ) { Storage.resize( ( sz + 31 ) >> 5 ); memset( Storage.Data, 0, ( size_t )Storage.Size * sizeof( Storage.Data[ 0 ] ) ); }
+    void            Clear( ) { Storage.clear( ); }
+    bool            GetBit( int n ) const { int off = ( n >> 5 ); int mask = 1 << ( n & 31 ); return ( Storage[ off ] & mask ) != 0; }
+    void            SetBit( int n, bool v ) { int off = ( n >> 5 ); int mask = 1 << ( n & 31 ); if ( v ) Storage[ off ] |= mask; else Storage[ off ] &= ~mask; }
+};
+
 // Helper: ImVec1 (1D vector)
 // (this odd construct is used to facilitate the transition between 1D and 2D, and the maintenance of some branches/patches)
 IM_MSVC_RUNTIME_CHECKS_OFF

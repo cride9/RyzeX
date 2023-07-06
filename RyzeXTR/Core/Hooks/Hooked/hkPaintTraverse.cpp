@@ -5,6 +5,7 @@
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/serversounds.h"
+#include "../../SDK/Draw.h"
 
 void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vguiPanel, bool forceRepaint, bool allowForce) {
 
@@ -30,6 +31,9 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		if (g::bStartWelcome)
 			visual::WelcomeUser("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
 #endif
+
+		D::ClearDrawData( );
+
 		serversound.Start();
 		visual::VisualRender();
 		serversound.Finish();
@@ -37,6 +41,8 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		visual::WorldEsp();
 		visual::CoolHackKeyBindList();
 		visual::DrawRadioInformation();
+
+		D::SwapDrawData( );
 
 		for (Vector& drawPos : g::drawList)
 		{
