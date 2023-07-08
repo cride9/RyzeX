@@ -142,18 +142,22 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 		return;
 	}
 
-	//if (exploits::iShiftCommand + 24 > pCmd->iCommandNumber || exploits::bIsCurrentlyCharging) {
-	//	exploits::bCanCharge = true;
-	//	rageBotData.ClearTarget();
-	//	hitlogData.ClearTarget();
-	//	return;
-	//}
+	if (exploits::bIsCurrentlyCharging) {
+		exploits::bCanCharge = true;
+		rageBotData.ClearTarget();
+		hitlogData.ClearTarget();
+		return;
+	}
 
 	misc::RevolverCreateMove();
-	Vector vecEyePosition = g::vecEyePosition;
+	//Vector vecEyePosition = g::vecEyePosition;
+	Vector vecEyePosition = InterpolateLocalEyePosition(g::vecEyePosition, 1);
 
 	misc::bPeeking = false;
 	if (Vector vecHitscan = Hitscan(pLocal, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
+
+		if (!rageBotData.pAimbotTarget)
+			return;
 
 		misc::bPeeking = false;
 		exploits::bCanCharge = false;
@@ -161,8 +165,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 			rageBotData.bCanShoot = false;
 
 		AutoStop(pLocal, pWeapon, rageBotData.pAimbotTarget, g::pCmd, vecHitscan);
-		// get better eye position.
-		// calculate aim angle.
+
 		Vector shootAngle;
 		M::VectorAngles(vecHitscan - vecEyePosition, shootAngle); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
 
@@ -220,137 +223,44 @@ void CRageBot::SelectTargets( CBaseEntity* pLocal )
 		std::sort( vecTargets.begin( ), vecTargets.end( ), LowestHealth );
 }
 
-std::array<Lagcompensation::LagRecord_t*, 2> ChooseTargetRecord(Lagcompensation::AnimationInfo_t* pLog, CBaseCombatWeapon* pWeapon) {
+std::vector<Lagcompensation::LagRecord_t*> ChooseTargetRecord(Lagcompensation::AnimationInfo_t* pLog, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
 
 	if (pLog->pRecord.size() < 2)
 		return {nullptr, nullptr};
 
-	//ragebot.vecSafePoints.clear();
-	Lagcompensation::LagRecord_t* pOnShotRecord = nullptr;
-	Lagcompensation::LagRecord_t* pSafeRecord = nullptr;
-	Lagcompensation::LagRecord_t* pSafeBackTrackRecord = nullptr;
-
-	int iSafeRecord = 0;
-	int iHeadShottableRecordIndex = 0;
-
+	std::vector<Lagcompensation::LagRecord_t*> pRecords;
 	for (int i = 0; i < pLog->iLastValid; i++) {
 
-		// get a reference from that record
-		Lagcompensation::LagRecord_t& refRecord = pLog->pRecord.at(i);
-		Vector vecCurrentSafePoint = Vector(0, 0, 0);
-		if (!lagcomp.IsValidRecord(refRecord.flSimulationTime) || refRecord.bImmune)
+		if (pRecords.size() > 3)
+			break;
+
+		Lagcompensation::LagRecord_t* pRecord = &pLog->pRecord.at(i);
+
+		if (pRecord->bBreakingLagcompensation)
+			break;
+
+		if (!pRecord->bValid || lagcomp.IsValidRecord(pRecord->flSimulationTime))
 			continue;
 
-		// check for every safeness
-		// first let's get the safest resolves
-		// check every point for a safepoint
-		std::vector<Vector> vecMultiPoints = ragebot.CreatePoints(g::vecEyePosition, pWeapon, &refRecord, HITBOX_HEAD, RESOLVE);
-			
-		// loop through the points
-		for (Vector& vecCurrent : vecMultiPoints) {
-
-			// check if its a safe record or not
-			refRecord.bSafeRecord = ragebot.SafePoint(g::vecEyePosition, pWeapon, &refRecord, vecCurrent, HITBOX_HEAD, true) >= 2;
-				
-			// if safe replace the resolve matrix with the safe matrix
-			if (refRecord.bSafeRecord) {
-
-				//ragebot.vecSafePoints.push_back(std::make_pair(vecCurrent, &refRecord));
-				//memcpy(refRecord.pMatricies[RESOLVE], refRecord.pMatricies[i], sizeof(matrix3x4_t) * 128);
-				vecCurrentSafePoint = vecCurrent;
-				break;
-			}
-		}
-
-		// Break from the loop if we got 2 entites
-		if (pOnShotRecord && pSafeRecord || vecCurrentSafePoint == Vector(0, 0, 0))
-			continue;
-
-		refRecord.Apply(pLog->pEntity, false);
-		FireBulletData_t traceData;
-		autowall.GetDamage(g::pLocal, g::vecEyePosition, vecCurrentSafePoint, pWeapon, &traceData);
-		if (!(traceData.flCurrentDamage > 0.f))
-			continue;
-
-		// haha lol
-		if (iHeadShottableRecordIndex > i) {
-			if ((refRecord.bBreakingLagcompensation && i == 0) || !refRecord.bBreakingLagcompensation) {
-				if (traceData.enterTrace.iHitGroup == HITGROUP_HEAD && traceData.flCurrentDamage > 0.f) {
-					iHeadShottableRecordIndex = i;
-				}
-			}
-		}
-
-		// check for onshot because that's what we call the safest headshot option
-		if (refRecord.bDidShot && !pOnShotRecord) {
-
-			// lagcomp breaking entities cannot be bcaktracked
-			if (refRecord.bBreakingLagcompensation && i == 0) {
-
-				pOnShotRecord = &refRecord;
-				continue;
-			}
-
-			// not lagcomp breaking entities can be easily backtracked and even force it
-			else if (!refRecord.bBreakingLagcompensation) {
-				pOnShotRecord = &refRecord;
-				continue;
-			}
-		}
-
-		if (!refRecord.bSafeRecord)
-			continue;
-
-		// non backtrackable entity -> bcs breaking lagcomp -> server is not saving this guy
-		// TODO: bypass cl_lagcompensation check -> disallow the client to be lagcompensated
-		if (refRecord.bBreakingLagcompensation && i == 0 && !pSafeRecord) {
-			pSafeRecord = &refRecord;
+		if (pRecord->bDidShot) {
+			pRecords.push_back(pRecord);
 			continue;
 		}
-		// not breaking the lagcompensation -> can be backtracked
-		else if (!refRecord.bBreakingLagcompensation && !pSafeRecord) {
-			pSafeRecord = &refRecord;
-			iSafeRecord = i;
-			continue;
-		}
+
+		Vector vecHitboxPosition = pRecord->pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RESOLVE]);
+		Trace_t traceData;
+		Ray_t traceRay(vecEyePosition, vecHitboxPosition);
+		CTraceFilter traceFilter(g::pLocal);
+
+		i::EngineTrace->TraceRay(traceRay, MASK_SHOT, &traceFilter, &traceData);
+		if (traceData.pHitEntity != nullptr && traceData.pHitEntity == pLog->pEntity)
+			if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecHitboxPosition, HITBOX_HEAD) == 3)
+				pRecords.push_back(pRecord);
 	}
+	if (!pRecords.empty())
+		return pRecords;
 
-	// if we got the 2 safe stuff let's just return them
-	if (pOnShotRecord && pSafeRecord)
-		return std::array<Lagcompensation::LagRecord_t*, 2>{pOnShotRecord, pSafeRecord};
-
-	// if we 
-	if (pOnShotRecord || pSafeRecord) {
-
-		// loop from the back to the record that we added lately (to not scan the same target)
-		for (int i = pLog->iLastValid; i > iSafeRecord; i--) {
-
-			// break out from the loop if we got a backtrackable record
-			if (pSafeBackTrackRecord)
-				break;
-
-			// get a reference from that record
-			Lagcompensation::LagRecord_t& refRecord = pLog->pRecord.at(i);
-
-			// same stuff, lagcomp break -> cant be backtracked
-			if (refRecord.bBreakingLagcompensation)
-				continue;
-
-			if (!refRecord.bSafeRecord)
-				continue;
-			
-			pSafeBackTrackRecord = &refRecord;
-		}
-	}
-
-	// if we got the 2 record let's return them
-	if (pSafeBackTrackRecord && pSafeRecord)
-		return {pSafeRecord, pSafeBackTrackRecord};
-	if (pOnShotRecord && pSafeBackTrackRecord)
-		return {pOnShotRecord, pSafeBackTrackRecord};
-
-	// if we reach this part, we didn't have any record... let's return the recent record and return nothing else
-	return { &pLog->pRecord.at(iHeadShottableRecordIndex), nullptr};
+	return { &pLog->pRecord.front() };
 }
 
 Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition) {
@@ -384,8 +294,8 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity || pLog->iLastValid >= pLog->pRecord.size() || pLog->iFirstValid >= pLog->pRecord.size()) 
 			continue;
 		
-		//std::array<Lagcompensation::LagRecord_t*, 2> arrRecords = ChooseTargetRecord(pLog, pWeapon);
-		std::array<Lagcompensation::LagRecord_t*, 2> arrRecords {&pLog->pRecord.front(), nullptr};
+		std::vector<Lagcompensation::LagRecord_t*> arrRecords = ChooseTargetRecord(pLog, pWeapon, vecEyePosition);
+		//std::array<Lagcompensation::LagRecord_t*, 2> arrRecords {&pLog->pRecord.front(), nullptr};
 
 		bool bBacktrack = false;
 		size_t iTick = 0;
@@ -454,8 +364,9 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		if (iMinimumDamage > 100)
 			flTransformedDamage = refRecord.pRecord->pEntity->GetHealth() + (iMinimumDamage - 100);
 
-		if (refRecord.flDamage < flTransformedDamage)
-			continue;
+		if (refRecord.flDamage < refRecord.pRecord->pEntity->GetHealth())
+			if (refRecord.flDamage < flTransformedDamage)
+				continue;
 
 		rageBotData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
 		rageBotData.flDamage = refRecord.flDamage;

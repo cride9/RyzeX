@@ -35,11 +35,6 @@ void Animations::ResolverLogic() {
 	// Check if we killed, or hurt the player
 	if (bResolverHandler[PLAYERHURT] || bResolverHandler[PLAYERDEATH]) {
 
-		if (pLog->iFreestandMatrix == pLog->iLastResolve)
-			pLog->iPeekingReal++;
-		else
-			pLog->iPeekingFake++;
-
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
 			"Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}]",
@@ -55,11 +50,6 @@ void Animations::ResolverLogic() {
 
 	// Check again just to be safe
 	if (pTarget->GetHealth() < refCurrentData.iHealth || !pTarget->IsAlive()) {
-
-		if (pLog->iFreestandMatrix == pLog->iLastResolve)
-			pLog->iPeekingReal++;
-		else
-			pLog->iPeekingFake++;
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
@@ -85,18 +75,14 @@ void Animations::ResolverLogic() {
 	if (data.enterTrace.pHitEntity != nullptr && data.enterTrace.pHitEntity == pTarget) {
 
 		anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
-
-		if (pLog->iFreestandMatrix == pLog->iLastResolve)
-			pLog->iPeekingFake++;
-		else
-			pLog->iPeekingReal++;
+		pLog->iLastResolve = refCurrentData.pRecord->iResolveSide;
 
 		if (refCurrentData.bBacktrack) {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
 			anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
 			misc::Print(std::format(
-				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: invalid record",
+				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: invalid record or resolver on backtrack",
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -259,6 +245,93 @@ void SetYaw(Lagcompensation::LagRecord_t* pRecord, float flYaw) {
 
 	// return result
 	pRecord->pEntity->AnimState()->flGoalFeetYaw = flFootYaw;
+}
+
+void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
+
+	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
+	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious || !pRecord)
+		return;
+
+	if (!cfg::rage::resolver)
+		return;
+
+	std::array<float, 65> flOldLowerBody{0.f};
+	int iEntIndex = pEntity->EntIndex();
+
+	auto& pData = lagcomp.GetLog(iEntIndex);
+	if (!&pData)
+		return;
+
+	std::array<int, 65> iBackupMisses{0.f};
+	if (pData.iLastResolve != 0) {
+
+		if (iBackupMisses[iEntIndex] != arrMissedShots[iEntIndex]) {
+
+			if (flOldLowerBody[iEntIndex] > 0) {
+
+				pRecord->iResolveSide = RIGHT;
+				pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta);
+			}
+			else if (flOldLowerBody[iEntIndex] < 0) {
+
+				pRecord->iResolveSide = LEFT;
+				pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta);
+			}
+			else {
+
+				pRecord->iResolveSide = LEFT;
+				pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta);
+			}
+
+			iBackupMisses[iEntIndex] = arrMissedShots[iEntIndex];
+		}
+	}
+
+	// from the server.
+	auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
+
+	// resolver calculations.
+	const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
+	const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
+	const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
+
+	// differences.
+	const float fDifferenceCenterPlaybackrate = fabs(flFromServerPlaybackrate - fCenterPlaybackrate);
+	const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
+	const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
+
+	// while.
+	if (GetVelocityLengthXY(pEntity) > 0.f && !pRecord->pLayers[12].flWeight && (pPrevious && pRecord->pLayers[6].flWeight == pPrevious->pLayers[6].flWeight || pRecord->vecVelocity.Length2D() > 135.f && pRecord->pLayers[6].flWeight == 1.f))
+	{
+		pData.iAntiAimType = Lagcompensation::ANIMATION;
+
+		if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate) {
+			flGuessedYaw = pRecord->flDesyncDelta;
+			pRecord->iResolveSide = RIGHT;
+		}
+		else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate) {
+			flGuessedYaw = pRecord->flDesyncDelta;
+			pRecord->iResolveSide = RIGHT;
+		}
+		else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate) {
+			flGuessedYaw = -pRecord->flDesyncDelta;
+			pRecord->iResolveSide = LEFT;
+		}
+		else {
+			flGuessedYaw = 0.f;
+			pRecord->iResolveSide = CENTER;
+		}
+
+		flOldLowerBody[iEntIndex] = flGuessedYaw;
+		pRecord->iResolveSide = pPrevious->iResolveSide;
+	}
+	else if (pPrevious->iResolveSide != VISUAL) {
+
+		flOldLowerBody[iEntIndex] = flGuessedYaw;
+		pRecord->iResolveSide = pPrevious->iResolveSide;
+	}
+	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + flGuessedYaw);
 }
 
 //void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
@@ -442,13 +515,13 @@ void SetYaw(Lagcompensation::LagRecord_t* pRecord, float flYaw) {
 //
 //			if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
 //				// center.
-//				flGuessedYaw = 60.f;
+//				flGuessedYaw = pRecord->flDesyncDelta;
 //			else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
 //				// right.
-//				flGuessedYaw = 60.f;
+//				flGuessedYaw = pRecord->flDesyncDelta;
 //			else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
 //				// left.
-//				flGuessedYaw = -60.f;
+//				flGuessedYaw = -pRecord->flDesyncDelta;
 //			else // center.
 //				flGuessedYaw = 0.f; //flGuessedYaw = -58.f;
 //
@@ -516,89 +589,3 @@ void SetYaw(Lagcompensation::LagRecord_t* pRecord, float flYaw) {
 //	// apply the resolver.
 //	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + flGuessedYaw);
 //}
-
-void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
-
-	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious || !pRecord)
-		return;
-
-	if (!cfg::rage::resolver)
-		return;
-
-	int iEntIndex = pEntity->EntIndex();
-
-	//auto& pData = lagcomp.GetLog(iEntIndex);
-	//if (!&pData)
-	//	return;
-
-	static auto CalculateHighSpeedCorrection = [&](float speed) -> float {
-
-		const float highSpeedThreshold = 0;
-		const float maxCorrection = 0;
-
-		float correction = 0.0f;
-		if (speed > highSpeedThreshold)
-		{
-			float correctionFactor = (speed - highSpeedThreshold) / highSpeedThreshold;
-			correction = maxCorrection * correctionFactor;
-		}
-
-		return correction;
-	};
-
-
-	static auto ApplyHighSpeedCorrection = [&](float flEyeYaw, float flFootYaw, float flSpeed) -> float {
-
-		float flAngleDelta = M::AngleDiff(flEyeYaw, flFootYaw);
-		float flMaxCorrection = CalculateHighSpeedCorrection(flSpeed);
-		float flCorrection = std::clamp(flAngleDelta, -flMaxCorrection, flMaxCorrection);
-		return M::NormalizeAngle(flFootYaw + flCorrection);
-	};
-
-	CAnimState* pState = pEntity->AnimState();
-
-	float flEyeFootDelta = M::AngleDiff(pState->flEyeYaw, pState->flGoalFeetYaw);
-	float flAimMatrixWidthRange = pRecord->flDesyncDelta;
-
-	float flTempYawMax = pState->flMaxBodyYaw * flAimMatrixWidthRange;
-	float flTempYawMin = pState->flMinBodyYaw * flAimMatrixWidthRange;
-
-	if (flEyeFootDelta > flTempYawMax) {
-		pState->flGoalFeetYaw = pState->flEyeYaw - fabs(flTempYawMax);
-	}
-	else if (flEyeFootDelta < flTempYawMin) {
-		pState->flGoalFeetYaw = pState->flEyeYaw + fabs(flTempYawMin);
-	}
-
-	pState->flGoalFeetYaw = M::NormalizeAngle(pState->flGoalFeetYaw);
-
-	if (pState->bOnGround)
-	{
-		if (pState->flSpeedNormalized > 0.1f)
-		{
-			pState->flGoalFeetYaw = M::ApproachAngle(pState->flEyeYaw, pState->flGoalFeetYaw, pState->flLastUpdateIncrement * (30.0f + 20.0f * pState->flWalkToRunTransition));
-
-			// Perform other resolver actions when the player is moving on the ground
-			if (pState->flSpeedNormalized > 250.0f)
-			{
-				// High-speed movement correction
-				//pState->flGoalFeetYaw = ApplyHighSpeedCorrection(pState->flEyeYaw, pState->flGoalFeetYaw, pState->flSpeedNormalized);
-			}
-		}
-		else
-		{
-			pState->flGoalFeetYaw = M::ApproachAngle(pState->pEntity->GetLowerBodyYaw(), pState->flGoalFeetYaw, pState->flLastUpdateIncrement * CSGO_ANIM_LOWER_CATCHUP_IDLE);
-
-			// Perform other resolver actions when the player is idle on the ground
-		}
-	}
-	else
-	{
-		if (pState->flSpeedNormalized > 250.0f)
-		{
-			// High-speed in-air movement correction
-			//pState->flGoalFeetYaw = ApplyHighSpeedCorrection(pState->flEyeYaw, pState->flGoalFeetYaw, pState->flSpeedNormalized);
-		}
-	}
-}

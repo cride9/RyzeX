@@ -117,6 +117,7 @@ namespace detour {
 	inline CDetourHook estimateAbsVelocity;
 	inline CDetourHook processMovement;
 	inline CDetourHook setupAliveLoop;
+	inline CDetourHook getObserverMode;
 }
 
 namespace h {
@@ -167,6 +168,7 @@ namespace h {
 	void __cdecl		hkDispatchSound(SoundInfoSOURCESDK_t*);
 	void __fastcall		hkSetText(void* ecx, void* edx, const char* tokenName);
 	void __fastcall		hkLevelShutDownClient(void* ecx, void* edx);
+	int __fastcall		hkGetObserverMode(CBaseEntity* ecx, void* edx);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

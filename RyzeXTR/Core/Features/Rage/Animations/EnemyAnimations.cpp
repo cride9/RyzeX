@@ -895,9 +895,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 	pEntity->SetAnimationLayers(pRecord->pLayers);
 
-	pEntity->SetAbsOrigin(vecBackupAbsOrigin);
-
-	//GetSideLayersForResolver(pEntity, pRecord); // call it here so it won't mess up anything
+	pEntity->SetAbsOrigin(pRecord->vecAbsOrigin);
 
 	pRecord->vecAbsAngles = Vector(0.0f, pState->flGoalFeetYaw, 0.0f);
 
@@ -911,22 +909,29 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	if (playerListData.bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
 	else if (pEntity->IsEnemy(g::pLocal)) {
-		//Resolver(pEntity, pRecord, pPrevious);
 		switch (arrMissedShots[pEntity->EntIndex()] % 3) {
 
 		case 0: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta);
+			pRecord->iResolveSide = RIGHT;
 			break;
+
 		case 1: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta);
+			pRecord->iResolveSide = LEFT;
 			break;
+
 		case 2: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y);
+			pRecord->iResolveSide = CENTER;
 			break;
 		}
 	}
-
+	
 	pEntity->GetPoseParameters(pRecord->flPoses);
 
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
 	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
+
+	if (pRecord->bBreakingLagcompensation)
+		lagcomp.ExtrapolatePlayer(pEntity, pRecord, pPrevious);
 
 	if (cfg::rage::enable && pEntity->GetTeam() != g::pLocal->GetTeam()) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
@@ -1065,6 +1070,7 @@ void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation:
 	// since it's getting called on each client and then getting networked, you can't really rebuild it properly
 	// if someone like me can't really reverse game code from IDA, just call the function that their client calls
 
+	// save animation data
 	CAnimState pBackupState;
 	memcpy(&pBackupState, pEntity->AnimState(), sizeof(CAnimState));
 	{

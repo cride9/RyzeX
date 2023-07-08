@@ -64,13 +64,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)output\release\</OutDir>
-    <IncludePath>$(SolutionDir)dependencies\freetype\include;$(IncludePath);$(SolutionDir)dependencies\freetype\include</IncludePath>
-    <LibraryPath>$(SolutionDir)dependencies\freetype\win32;$(LibraryPath);$(SolutionDir)dependencies\freetype\win32</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)Dependecies\freetype\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)Dependecies\freetype\win32</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Alpha|Win32'">
     <OutDir>$(SolutionDir)output\alpha\</OutDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);;$(SolutionDir)dependencies\freetype\include</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)dependencies\freetype\win32</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)Dependecies\freetype\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)Dependecies\freetype\win32</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -180,6 +180,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkFrameStageNotify.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetAlphaModulation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetColorModulation.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkGetObserverMode.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetViewModelFov.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkINetchannelHandler.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkLevelShutDownClient.cpp" />

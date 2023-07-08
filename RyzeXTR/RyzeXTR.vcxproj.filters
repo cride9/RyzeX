@@ -101,6 +101,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkGetAlphaModulation.cpp" />
     <ClCompile Include="Core\SDK\Draw.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui_freetype.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkGetObserverMode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />

@@ -104,6 +104,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 		if (!pEntity || !pEntity->IsPlayer() || !pEntity->IsAlive() || /*pEntity->GetTeam() == g::pLocal->GetTeam() ||*/ pEntity == g::pLocal) {
 			anims.arrMissedShots[i] = 0;
+			pLog->iLastResolve = 0;
 			pLog->iLastValid = 0;
 			pLog->iFirstValid = 32;
 			pLog->bLeftDormancy = true;
@@ -211,6 +212,9 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 			if (pCurrentRecord.bValid && pPlayerLogs[i].iFirstValid > j)
 				pPlayerLogs[i].iFirstValid = j;
+
+			if (pRecord.bBreakingLagcompensation)
+				pCurrentRecord.bBreakingLagcompensation = true;
 		}
 	}
 }
@@ -343,53 +347,47 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 	simulationData.bOnGround = m_pCurrentRecord->iFlags & FL_ONGROUND;
 	simulationData.bDataFilled = true;
 
-	int  iSimulationTickDelta = std::clamp(TIME_TO_TICKS(m_pCurrentRecord->flSimulationTime - m_pPrevious->flSimulationTime), 1, 15);
-	auto delta_ticks = (std::clamp(TIME_TO_TICKS(i::EngineClient->GetNetChannelInfo()->GetAvgLatency(FLOW_INCOMING) + i::EngineClient->GetNetChannelInfo()->GetAvgLatency(FLOW_OUTGOING)) + i::GlobalVars->iTickCount -
+	int iSimulationTickDelta = std::clamp(m_pCurrentRecord->iChoked, 1, 15);
+	int iDeltaTicks = (std::clamp(TIME_TO_TICKS(i::EngineClient->GetNetChannelInfo()->GetAvgLatency(FLOW_INCOMING) + i::EngineClient->GetNetChannelInfo()->GetAvgLatency(FLOW_OUTGOING)) + i::GlobalVars->iTickCount -
 		TIME_TO_TICKS(m_pCurrentRecord->flSimulationTime + lagcomp.GetClientInterpAmount()), 0, 100)) - iSimulationTickDelta;
 
-	if (delta_ticks > 0 && simulationData.bDataFilled)
+	static CConVar* sv_gravity = i::ConVar->FindVar("sv_gravity");
+
+	if (iDeltaTicks > 0 && simulationData.bDataFilled)
 	{
-		for (; delta_ticks >= 0; delta_ticks -= iSimulationTickDelta)
+		for (; iDeltaTicks >= 0; iDeltaTicks -= iSimulationTickDelta)
 		{
-			auto ticks_left = iSimulationTickDelta;
+			int iTicksLeft = iSimulationTickDelta;
 			do
 			{
-				Trace_t      trace;
-				CTraceFilter filter(g::pLocal);
+				Vector vecPredictedOrigin = simulationData.vecOrigin;
+				float flTimeToExtrapolate = TICKS_TO_TIME(i::GlobalVars->iTickCount) - m_pEntity->GetSimulationTime();
+				float flChokeTimeDelta = TICKS_TO_TIME(m_pCurrentRecord->iChoked);
+				float flGravity = sv_gravity->GetFloat();
 
-				auto predicted_origin = simulationData.vecOrigin;
-				auto time_to_extrapolate = TIME_TO_TICKS(i::GlobalVars->iTickCount) - m_pEntity->GetSimulationTime();
-				auto choke_delta_time = m_pCurrentRecord->flSimulationTime - m_pPrevious->flSimulationTime;
-				auto sv_gravity = i::ConVar->FindVar("sv_gravity")->GetFloat();
-
-				static auto predict_next_velocity = [=](Vector v0, Vector v1)
+				static auto PredictNextVelocity = [=](Vector vecCurrent, Vector vecPrevious)
 				{
-					Vector v = v1;
+					Vector vecOutput = vecPrevious;
 
-					if (v0 == v1)
-						v = v0;
-					else
-					{
-						if (v.Length2D() >= 0.1f)
-						{
-							auto a = (v1 - v0) / choke_delta_time;
-							v += a * time_to_extrapolate;
-						}
-						else
-							v = Vector();
-					}
+					if (vecCurrent == vecPrevious)
+						return vecCurrent;
 
-					return v;
+					if (vecOutput.Length2D() < 0.1f)
+						return Vector(0, 0, 0);
+
+					auto a = (vecPrevious - vecCurrent) / flChokeTimeDelta;
+					vecOutput += a * flTimeToExtrapolate;
+
+					return vecOutput;
 				};
 
-				predicted_origin = predict_next_velocity(m_pCurrentRecord->vecVelocity, m_pPrevious->vecVelocity);
-				predicted_origin.z += simulationData.vecVelocity.z - sv_gravity * time_to_extrapolate;
+				vecPredictedOrigin = PredictNextVelocity(m_pCurrentRecord->vecVelocity, m_pPrevious->vecVelocity);
+				vecPredictedOrigin.z += simulationData.vecVelocity.z - flGravity * flTimeToExtrapolate;
 
-				i::EngineTrace->TraceRay(Ray_t(simulationData.vecOrigin, predicted_origin, simulationData.pEntity->vecMins(), simulationData.pEntity->vecMaxs()), CONTENTS_SOLID, &filter, &trace);
+				m_pCurrentRecord->flSimulationTime = m_pEntity->GetSimulationTime() + flTimeToExtrapolate;
+				--iTicksLeft;
 
-				m_pCurrentRecord->flSimulationTime = m_pEntity->GetSimulationTime() + time_to_extrapolate;
-				--ticks_left;
-			} while (ticks_left);
+			} while (iTicksLeft);
 		}
 
 		m_pCurrentRecord->vecOrigin = simulationData.vecOrigin;

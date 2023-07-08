@@ -44,8 +44,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 	playerList::InitializePlayerList(pLocal);
 
-	//if (i::ClientState->iDeltaTick > 0)
-	//	i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
+	/*if (i::ClientState->iDeltaTick > 0)
+		i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);*/
 
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 

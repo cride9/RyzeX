@@ -171,6 +171,7 @@ public:
 		int iEffects{};
 		int iEntIndex{};
 		int iChoked{};
+		int iResolveSide = 0;
 	};
 
 	enum EResolverMode
@@ -237,7 +238,7 @@ public:
 		float flExploitTime;
 
 
-		EMatrixType iLastResolve{};
+		int iLastResolve{};
 		EMatrixType iFreestandMatrix{};
 		int iPeekingReal = 0;
 		int iPeekingFake = 0;

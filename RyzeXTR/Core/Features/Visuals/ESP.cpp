@@ -336,8 +336,8 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 	if (bFlags[RESOLVER]) {
 
 		auto* pLog = &lagcomp.GetLog(pEnt->EntIndex());
-		if (pLog) {
-			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, lagcomp.EResolverModeToString(pLog->iAntiAimType));
+		if (pLog && !pLog->pRecord.empty()) {
+			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, misc::GetMatrixName(pLog->pRecord.front().iResolveSide).c_str());
 			spacing += 10;
 		}
 	}
