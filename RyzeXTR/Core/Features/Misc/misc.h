@@ -62,6 +62,7 @@ namespace misc {
 	void LeftHandKnife();
 	bool ChangeName(bool, const char*);
 	bool ResetName(bool, const char*);
+	void FogOptions();
 
 	void Killsay(IGameEvent*);
 

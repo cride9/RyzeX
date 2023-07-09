@@ -81,7 +81,7 @@ public:
 	virtual bool CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount);
 	virtual void SetupShootPosition(CBaseEntity* pLocal);
 	virtual void CopyPlayerAnimationData(bool bFake, CBaseEntity* pLocal);
-	virtual void AnimationBreaker(float*);
+	virtual void AnimationBreaker(CBaseEntity*);
 
 	virtual float GetYawDelta()
 	{
@@ -95,6 +95,10 @@ public:
 	virtual std::array < matrix3x4_t, MAXSTUDIOBONES > GetDesyncMatrix()
 	{
 		return m_LocalData.m_Fake.m_Matrix;
+	}
+	virtual std::array < matrix3x4_t, MAXSTUDIOBONES > GetRealMatrix()
+	{
+		return m_LocalData.m_Real.m_Matrix;
 	}
 private:
 

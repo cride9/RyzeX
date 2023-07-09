@@ -965,3 +965,75 @@ void visual::WelcomeUser(std::string szText) {
 		i::Surface->DrawT(iAnimation / 2, 125 / 2 + 17, Color(255, 255, 255, iAlpha), g::fonts::DebugFont, true, szText.c_str());
 	}
 }
+
+void visual::WorldLightning(Color color) {
+
+	if (!i::EngineClient->IsInGame() || !g::pLocal || g::bUpdatingSkins || i::ClientState->iDeltaTick <= 0)
+		return;
+
+	if (!cfg::misc::bOverrideLampColors)
+		return;
+
+	static WorldBrushData_t* worldbrush = *reinterpret_cast<WorldBrushData_t***>(MEM::FindPattern(ENGINE_DLL, XorStr("8B 1D ? ? ? ? 56 57 83 EC")) + 2)[0];
+	
+	if (!worldbrush)
+		return;
+	
+	if (worldbrush->numworldlights <= 0)
+		return;
+
+	Vector EyePosition = g::pLocal->GetEyePosition(false);
+	static int MaxDistance = 1000;
+
+	if (!vecLights.empty()) {
+
+		for (auto NewDLight : vecLights) {
+
+			if (cfg::misc::iFlicker != 0) 
+				color[0] = color[1] = color[2] *= M::RandomInt(0, cfg::misc::iFlicker) / 255.f;
+
+			auto WorldLight = worldbrush->worldlights[NewDLight.second];
+			Vector LightPosition = { WorldLight.origin.x, WorldLight.origin.y, WorldLight.origin.z };
+			float LightDistance = LightPosition.DistTo(EyePosition);
+
+			NewDLight.first->flags = 0;
+			NewDLight.first->origin = WorldLight.origin;
+			NewDLight.first->radius = 300 * ((MaxDistance - LightDistance) / MaxDistance);
+			NewDLight.first->color[0] = color[0];
+			NewDLight.first->color[1] = color[1];
+			NewDLight.first->color[2] = color[2];
+			NewDLight.first->color[3] = 6 * (color[3] / 255);
+			NewDLight.first->die = i::GlobalVars->flCurrentTime + i::GlobalVars->flIntervalPerTick * 3; // in case of time fluctuation
+			NewDLight.first->decay = 0;
+		}
+		return;
+	}
+	else
+		vecLights.clear();
+
+	for (int i = 0; i < worldbrush->numworldlights; i++)
+	{
+		auto WorldLight = worldbrush->worldlights[i];
+		Vector LightPosition = { WorldLight.origin.x, WorldLight.origin.y, WorldLight.origin.z };
+		float LightDistance = LightPosition.DistTo(EyePosition);
+
+		// Save me from the fps eating monster
+		//if (LightDistance <= MaxDistance)
+		{
+			Dlight_t* NewDLight = i::Effects->CL_AllocDlight(i);
+			NewDLight->flags = 0;
+			NewDLight->origin = WorldLight.origin;
+			NewDLight->radius = 300 * ((MaxDistance - LightDistance) / MaxDistance);
+			NewDLight->color[0] = color[0];
+			NewDLight->color[1] = color[1];
+			NewDLight->color[2] = color[2];
+			NewDLight->color[3] = 6 * (color[3] / 255);
+			NewDLight->die = i::GlobalVars->flCurrentTime + i::GlobalVars->flIntervalPerTick * 3; // in case of time fluctuation
+			NewDLight->decay = 0;
+			NewDLight->key = i;
+
+			vecLights.push_back({ NewDLight , i});
+		}
+	}
+}
+

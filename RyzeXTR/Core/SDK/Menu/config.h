@@ -11,8 +11,12 @@ namespace cfg {
 	inline int configID = -1;
 
 	inline bool debugSwitch = false;
-	inline int debugSlider = 1;
+	inline int debugSlider1 = 1;
+	inline int debugSlider2 = 1;
+	inline int debugSlider3 = 1;
+	inline int debugSlider4 = 1;
 	inline bool debugSwitch2 = false;
+	inline float debugColorPicker[4] = {1.f, 1.f, 1.f, 1.f};
 
 	inline int m_iKeyStates[ 256 ] = { 0 };
 
@@ -143,6 +147,11 @@ namespace cfg {
 		inline int freestand[3];
 	}
 	namespace visual {
+
+		inline bool bOverrideFog = false;
+		inline int iFogStart = 200;
+		inline int iFogEnd = 1500;
+		inline float flFogColor[3] = { 1.f, 1.f, 1.f };
 
 		inline bool bEnable[3] = { false, false, false };
 
@@ -368,9 +377,14 @@ namespace cfg {
 
 		inline bool nightmode = false;
 		inline float nightmodeColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline float propsColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
 		inline int iSkybox = 0;
 		inline float flSkyboxColor[4] = { 1.f, 1.f, 1.f, 1.f };
+
+		inline bool bOverrideLampColors = false;
+		inline float flLampColors[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline int iFlicker = 0;
 
 		inline bool bEnableRadio = false;
 		inline int iRadioStation = 0;

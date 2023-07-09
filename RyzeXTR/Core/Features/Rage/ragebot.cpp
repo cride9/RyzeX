@@ -14,7 +14,21 @@
 
 bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 
+	if (a.pRecord->pEntity->GetHealth() < 70) {
+		if (a.iHitbox == HITBOX_HEAD && b.iHitbox != HITBOX_HEAD)
+			return false;
+
+		if (b.iHitbox == HITBOX_HEAD && a.iHitbox != HITBOX_HEAD)
+			return true;
+	}
+	if (a.bLethal && a.iHitbox != HITBOX_HEAD)
+		return true;
+
+	if (b.bLethal && b.iHitbox != HITBOX_HEAD)
+		return false;
+
 	if (a.bLethal && b.bLethal) {
+
 		if (a.iHitgroup != HITGROUP_HEAD && b.iHitgroup != HITGROUP_HEAD)
 			return a.flDamage > b.flDamage;
 		else if (a.iHitgroup != HITGROUP_HEAD && b.iHitgroup == HITGROUP_HEAD)
@@ -24,26 +38,6 @@ bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 	}
 
 	return a.pRecord->flDesyncDelta > b.pRecord->flDesyncDelta;
-
-	//if (a.bHead && !b.bHead && a.bSafe)
-	//	return true;
-	//else if (!a.bHead && b.bHead && b.bSafe)
-	//	return false;
-
-	//// Sort by hitbox, prioritize body over head if both are lethal
-	//if (a.bLethal && b.bLethal) {
-
-	//	if (a.iHitbox == HITBOX_HEAD && b.iHitbox != HITBOX_HEAD)
-	//		return false;
-	//	else if (a.iHitbox != HITBOX_HEAD && b.iHitbox == HITBOX_HEAD)
-	//		return true;
-	//}
-
-	//// Sort by flDamage in descending order
-	//return a.flDamage > b.flDamage;
-
-	//// If all else is equal, maintain the original order
-	//return false;
 }
 
 bool LowestFov(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
@@ -346,9 +340,6 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 					}
 				}
 			}
-			bBacktrack = true;
-			if (vecRecordSave.empty() && !arrRecords[1])
-				arrRecords[1] = &pLog->pRecord.at(pLog->iLastValid);
 		}
 	}
 
@@ -357,6 +348,9 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 	if (vecRecordSave.size() > 1)
 		std::sort(vecRecordSave.begin(), vecRecordSave.end(), HitscanComparator);
+
+	for (auto& refRecord : vecRecordSave)
+		misc::Print(std::format("{}", refRecord.iHitbox).c_str());
 
 	for (auto& refRecord : vecRecordSave) {
 
@@ -981,9 +975,6 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 
 	refVecPoints.push_back(vecCenter);
 	if (iHitbox == HITBOX_HEAD) {
-		/*refVecPoints.push_back(vecCenter + vecTop + (vecLeft * 0.8f));
-		refVecPoints.push_back(vecCenter + vecTop + (vecRight * 0.8f));
-		refVecPoints.push_back(vecCenter + vecTop);*/
 		refVecPoints.push_back(vecCenter + vecTop * flHitboxDistance);
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
@@ -992,16 +983,8 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 	refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
 	refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);
 
-	/*for (auto& something : refVecPoints)
-		g::drawList.emplace_back(something);*/
-
-	//g::drawList.emplace_back(vecCenter);
-	//if (iHitbox == HITBOX_HEAD) {
-	//	g::drawList.emplace_back(vecCenter + vecTop * flHitboxDistance);
-	//	g::drawList.emplace_back(vecCenter - vecTop * flHitboxDistance);
-	//}
-	//g::drawList.emplace_back(vecCenter + vecLeft * flHitboxDistance);
-	//g::drawList.emplace_back(vecCenter + vecRight * flHitboxDistance);
+	//for (auto& something : refVecPoints)
+	//	g::drawList.emplace_back(something);
 
 	return refVecPoints;
 }
@@ -1112,8 +1095,6 @@ int CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, L
 	mstudiobbox_t* studioBox = studioHdr->GetHitboxSet(0)->GetHitbox(iHitbox);
 	if (!studioBox)
 		return 0;
-
-	//CapsuleRebuild(studioBox, refRecord.pMatricies[VISUAL]);
 
 	if (bOnlyIntersect) {
 
@@ -1449,5 +1430,142 @@ bool CRageBot::ConfigAutoStopAggressiveness(CBaseCombatWeapon* pWeapon) {
 	}
 	else {
 		return cfg::rage::autostopAggressiveness[5];
+	}
+}
+
+void CRageBot::CapsuleRebuild(Lagcompensation::LagRecord_t* pRecord, int iHitbox) {
+
+	static float g_capsuleVertPositions[74][3] = {
+	{ -0.01, -0.01, 1.0 },	{ 0.51, 0.0, 0.86 },	{ 0.44, 0.25, 0.86 },	{ 0.25, 0.44, 0.86 },	{ -0.01, 0.51, 0.86 },	{ -0.26, 0.44, 0.86 },	{ -0.45, 0.25, 0.86 },	{ -0.51, 0.0, 0.86 },	{ -0.45, -0.26, 0.86 },
+	{ -0.26, -0.45, 0.86 },	{ -0.01, -0.51, 0.86 },	{ 0.25, -0.45, 0.86 },	{ 0.44, -0.26, 0.86 },	{ 0.86, 0.0, 0.51 },	{ 0.75, 0.43, 0.51 },	{ 0.43, 0.75, 0.51 },	{ -0.01, 0.86, 0.51 },	{ -0.44, 0.75, 0.51 },
+	{ -0.76, 0.43, 0.51 },	{ -0.87, 0.0, 0.51 },	{ -0.76, -0.44, 0.51 },	{ -0.44, -0.76, 0.51 },	{ -0.01, -0.87, 0.51 },	{ 0.43, -0.76, 0.51 },	{ 0.75, -0.44, 0.51 },	{ 1.0, 0.0, 0.01 },		{ 0.86, 0.5, 0.01 },
+	{ 0.49, 0.86, 0.01 },	{ -0.01, 1.0, 0.01 },	{ -0.51, 0.86, 0.01 },	{ -0.87, 0.5, 0.01 },	{ -1.0, 0.0, 0.01 },	{ -0.87, -0.5, 0.01 },	{ -0.51, -0.87, 0.01 },	{ -0.01, -1.0, 0.01 },	{ 0.49, -0.87, 0.01 },
+	{ 0.86, -0.51, 0.01 },	{ 1.0, 0.0, -0.02 },	{ 0.86, 0.5, -0.02 },	{ 0.49, 0.86, -0.02 },	{ -0.01, 1.0, -0.02 },	{ -0.51, 0.86, -0.02 },	{ -0.87, 0.5, -0.02 },	{ -1.0, 0.0, -0.02 },	{ -0.87, -0.5, -0.02 },
+	{ -0.51, -0.87, -0.02 },{ -0.01, -1.0, -0.02 },	{ 0.49, -0.87, -0.02 },	{ 0.86, -0.51, -0.02 },	{ 0.86, 0.0, -0.51 },	{ 0.75, 0.43, -0.51 },	{ 0.43, 0.75, -0.51 },	{ -0.01, 0.86, -0.51 },	{ -0.44, 0.75, -0.51 },
+	{ -0.76, 0.43, -0.51 },	{ -0.87, 0.0, -0.51 },	{ -0.76, -0.44, -0.51 },{ -0.44, -0.76, -0.51 },{ -0.01, -0.87, -0.51 },{ 0.43, -0.76, -0.51 },	{ 0.75, -0.44, -0.51 },	{ 0.51, 0.0, -0.87 },	{ 0.44, 0.25, -0.87 },
+	{ 0.25, 0.44, -0.87 },	{ -0.01, 0.51, -0.87 },	{ -0.26, 0.44, -0.87 },	{ -0.45, 0.25, -0.87 },	{ -0.51, 0.0, -0.87 },	{ -0.45, -0.26, -0.87 },{ -0.26, -0.45, -0.87 },{ -0.01, -0.51, -0.87 },{ 0.25, -0.45, -0.87 },
+	{ 0.44, -0.26, -0.87 },	{ 0.0, 0.0, -1.0 },
+	};
+
+	static int g_capsuleLineIndices[117] = { -1,
+	14,		0,	4,	16,	28,	40,	52,	64,	73,	70,	58,	46,	34,	22,	10,		-1,
+	14,		0,	1,	13,	25,	37,	49,	61,	73,	67,	55,	43,	31,	19,	7,		-1,
+	12,		61,	62,	63,	64,	65,	66,	67,	68,	69,	70,	71,	72,				-1,
+	12,		49,	50,	51,	52,	53,	54,	55,	56,	57,	58,	59,	60,				-1,
+	12,		37,	38,	39,	40,	41,	42,	43,	44,	45,	46,	47,	48,				-1,
+	12,		25,	26,	27,	28,	29,	30,	31,	32,	33,	34,	35,	36,				-1,
+	12,		13,	14,	15,	16,	17,	18,	19,	20,	21,	22,	23,	24,				-1,
+	12,		1,	2,	3,	4,	5,	6,	7,	8,	9,	10,	11,	12,				-1
+	};
+
+	static auto VectorNormalize = [&](Vector& v1) -> void {
+
+		v1 = v1.VectorNormalize();
+	};
+
+	static auto CrossProduct = [&](const float* v1, const float* v2, float* cross) -> void {
+
+		cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
+		cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
+		cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
+	};
+
+	static auto VectorVectors = [&](const Vector& forward, Vector& right, Vector& up) -> void {
+
+		Vector tmp;
+
+		if (forward[0] == 0 && forward[1] == 0)
+		{
+			// pitch 90 degrees up/down from identity
+			right[0] = 0;
+			right[1] = -1;
+			right[2] = 0;
+			up[0] = -forward[2];
+			up[1] = 0;
+			up[2] = 0;
+		}
+		else
+		{
+			tmp[0] = 0; tmp[1] = 0; tmp[2] = 1.0;
+			CrossProduct(forward.data(), tmp.data(), right.data());
+			right.VectorNormalize();
+			VectorNormalize(right);
+			CrossProduct(right.data(), forward.data(), up.data());
+			VectorNormalize(up);
+		}
+	};
+
+	static auto MatrixSetColumn = [&](const Vector& in, int column, matrix3x4_t& out) -> void {
+
+		out[0][column] = in.x;
+		out[1][column] = in.y;
+		out[2][column] = in.z;
+	};
+
+	static auto VectorMatrix = [&](const Vector& forward, matrix3x4_t& matrix) -> void {
+
+		Vector right, up;
+		VectorVectors(forward, right, up);
+
+		MatrixSetColumn(forward, 0, matrix);
+		MatrixSetColumn((right * -1), 1, matrix);
+		MatrixSetColumn(up, 2, matrix);
+	};
+
+	static auto VectorRotate = [&](const float* in1, const matrix3x4_t& in2, float* out) -> void {
+
+		out[0] = M::DotProduct(in1, in2[0]);
+		out[1] = M::DotProduct(in1, in2[1]);
+		out[2] = M::DotProduct(in1, in2[2]);
+	};
+
+	const auto pModel = pRecord->pEntity->GetModel();
+	if (!pModel)
+		return;
+
+	studiohdr_t* pStudioModel = i::ModelInfo->GetStudioModel(pModel);
+	if (!pStudioModel)
+		return;
+
+	mstudiobbox_t* pHitbox = pStudioModel->GetHitbox(iHitbox, 0);
+	if (!pHitbox)
+		return;
+
+	Vector vStart, vEnd;
+	vStart = M::VectorTransform(pHitbox->vecBBMin, pRecord->pMatricies[RESOLVE][pHitbox->iBone]);
+	vEnd = M::VectorTransform(pHitbox->vecBBMax, pRecord->pMatricies[RESOLVE][pHitbox->iBone]);
+	const float flRadius = pHitbox->flRadius;
+
+	Vector vecCapsuleCoreNormal = (vStart - vEnd).Normalized();
+
+	Vector vecCurrentAngles;
+	M::VectorAngles((vStart + vEnd) * 0.5f, vecCurrentAngles);
+	Vector vecForward; M::AngleVectors(vecCurrentAngles, &vecForward);
+
+	matrix3x4_t matCapsuleRotationSpace;
+	VectorMatrix(Vector(0, 0, 1), matCapsuleRotationSpace);
+
+	matrix3x4_t matCapsuleSpace;
+	VectorMatrix(vecCapsuleCoreNormal, matCapsuleSpace);
+
+	Vector v[74];
+	Vector vecLen = (vEnd - vStart);
+
+	for (int i = 0; i < 74; i++) {
+
+		Vector vecCapsuleVert = g_capsuleVertPositions[i];
+
+		VectorRotate(vecCapsuleVert.data(), matCapsuleRotationSpace, vecCapsuleVert.data());
+		VectorRotate(vecCapsuleVert.data(), matCapsuleSpace, vecCapsuleVert.data());
+
+		vecCapsuleVert *= flRadius;
+
+		if (g_capsuleVertPositions[i][2] > 0) {
+
+			vecCapsuleVert += vecLen;
+		}
+
+		v[i] = vecCapsuleVert + vStart;
+		g::drawList.push_back(v[i]);
 	}
 }

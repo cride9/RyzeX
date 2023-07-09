@@ -23,16 +23,21 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
 
-	//original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, exploits::bIsCurrentlyCharging ? bIsActive : !(exploits::bIsShiftingTicks && ((cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) || (cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey))) && !(cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))));
 	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive );
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
 
+	//CSpoofedConVar cl_lagcompensationSpoofed("cl_lagcompensation");
+	//cl_lagcompensationSpoofed.SetInt(0);
+
 	bSendPacket = true;
+	g::bSendPacket = &bSendPacket;
 	CBaseEntity* pLocal = g::pLocal = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	g::pCmd = pCmd;
 	g::vecEyePosition = pLocal->GetEyePosition(false);
+
+	pLocal->GetModelScale() = cfg::debugSlider1 * 0.01f;
 
 	lagcomp.StartLagcompensation(pLocal);
 

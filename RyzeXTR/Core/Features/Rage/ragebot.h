@@ -125,6 +125,6 @@ private:
 	HITBOX_ARRAY		ConfigSafeHitboxes(CBaseCombatWeapon*);
 
 	void				AddHitbox(int index, HITBOX_ARRAY& vecHitboxList);
-
+	void				CapsuleRebuild(Lagcompensation::LagRecord_t* pRecord, int iHitbox);
 };
 inline CRageBot ragebot;

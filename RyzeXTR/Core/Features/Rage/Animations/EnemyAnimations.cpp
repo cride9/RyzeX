@@ -890,6 +890,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 			pEntity->m_vecAbsVelocity() = vecVelocity;
 
 			UpdateClientSideAnimations(pEntity, pRecord);
+
 		}
 	}
 
@@ -911,12 +912,12 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	else if (pEntity->IsEnemy(g::pLocal)) {
 		switch (arrMissedShots[pEntity->EntIndex()] % 3) {
 
-		case 0: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta);
-			pRecord->iResolveSide = RIGHT;
+		case 0: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta);
+			pRecord->iResolveSide = LEFT;
 			break;
 
-		case 1: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta);
-			pRecord->iResolveSide = LEFT;
+		case 1: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta);
+			pRecord->iResolveSide = RIGHT;
 			break;
 
 		case 2: pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y);
@@ -927,11 +928,12 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	
 	pEntity->GetPoseParameters(pRecord->flPoses);
 
+	//lagcomp.ExtrapolatePlayer(pEntity, pRecord, pPrevious);
+
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
 	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
 
-	if (pRecord->bBreakingLagcompensation)
-		lagcomp.ExtrapolatePlayer(pEntity, pRecord, pPrevious);
+	//if (pRecord->bBreakingLagcompensation)
 
 	if (cfg::rage::enable && pEntity->GetTeam() != g::pLocal->GetTeam()) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);

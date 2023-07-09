@@ -183,6 +183,8 @@
     <ClCompile Include="Core\Hooks\Hooked\hkGetObserverMode.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetViewModelFov.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkINetchannelHandler.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkIsUsingStaticPropDebugModes.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkLevelShutDownClient.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkListLeavesInBox.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkLockCursor.cpp" />
@@ -254,6 +256,7 @@
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
     <ClInclude Include="Core\globals.h" />
     <ClInclude Include="Core\Interface\Classes\CMsg.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IVEngineEffects.h" />
     <ClInclude Include="Core\SDK\Draw.h" />
     <ClInclude Include="Core\xorstr.h" />
     <ClInclude Include="Core\Hooks\hooks.h" />

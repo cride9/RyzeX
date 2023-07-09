@@ -29,6 +29,7 @@
 #include "Interfaces/IMdlCache.h"
 #include "Interfaces/CLocalize.h"
 #include "Interfaces/IItemSystem.h"
+#include "Interfaces/IVEngineEffects.h"
 
 // Classes aka that I can't find as interface in the source kbxdbdxjk
 #include "Classes/CClientState.h"
@@ -68,6 +69,7 @@ namespace i {
 	inline IInputSystem* InputSystem;
 	inline IMDLCache* MDLCache;
 	inline ILocalize* Localize;
+	inline IVEffects* Effects;				// engine.dll -> VEngineEffects001
 
 	inline IDirect3DDevice9* DirectDevice;
 	inline IMoveHelper* MoveHelper;			// Runcommand parameter 

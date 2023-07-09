@@ -190,6 +190,10 @@ void CConfig::Setup() {
 	// visual
 	{
 		using namespace cfg::visual;
+		SetupValue(bOverrideFog, false, "visual", "bFog");
+		SetupValue(iFogStart, iFogStart, "visual", "iFogStart");
+		SetupValue(iFogEnd, iFogEnd, "visual", "iFogEnd");
+		SetupValue(flFogColor, 4, 1.f, "visual", "flFogColor");
 
 		// enemy
 		SetupValue(bEnable[ENEMY], false, "visual", "enemyEsp");
@@ -896,6 +900,7 @@ void CConfig::Setup() {
 		SetupValue(nightmodeColor[1], 1.f, "visual", "nightmodeColorG");
 		SetupValue(nightmodeColor[2], 1.f, "visual", "nightmodeColorB");
 		SetupValue(nightmodeColor[3], 1.f, "visual", "nightmodeColorA");
+		SetupValue(propsColor, 4, 1.f, "visual", "propColors");
 
 		SetupValue(bOOF, false, "misc", "bOOF");
 		SetupValue(flOOF[0], 1.f, "visual", "flOOFR");
@@ -910,6 +915,10 @@ void CConfig::Setup() {
 		SetupValue(flSkyboxColor[1], 1.f, "visual", "flSkyboxColorG");
 		SetupValue(flSkyboxColor[2], 1.f, "visual", "flSkyboxColorB");
 		SetupValue(flSkyboxColor[3], 1.f, "visual", "flSkyboxColorA");
+
+		SetupValue(bOverrideLampColors, false, "visual", "bLampColor");
+		SetupValue(flLampColors, 4, 0.f, "visual", "flLampColors");
+		SetupValue(iFlicker, 0, "visual", "iFlicker");
 
 		SetupValue(aspectRatio, false, "misc", "aspectRatio");
 		SetupValue(aspectRatioValue, 0, "misc", "aspectRatioValue");

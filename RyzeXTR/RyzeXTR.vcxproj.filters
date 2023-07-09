@@ -102,6 +102,8 @@
     <ClCompile Include="Core\SDK\Draw.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui_freetype.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetObserverMode.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkIsUsingStaticPropDebugModes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />
@@ -314,6 +316,7 @@
     <ClInclude Include="Dependecies\freetype\include\freetype\tttables.h" />
     <ClInclude Include="Dependecies\freetype\include\freetype\tttags.h" />
     <ClInclude Include="Dependecies\freetype\include\ft2build.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IVEngineEffects.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependecies\freetype\win32\freetype.lib" />

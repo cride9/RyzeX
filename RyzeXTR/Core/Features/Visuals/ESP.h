@@ -31,6 +31,7 @@ namespace visual {
 	void DrawRadioInformation();
 	void OutOfFov(CBaseEntity*);
 	void BarrelEsp(CBaseEntity*, Color);
+	void WorldLightning(Color);
 
 	void WelcomeUser(std::string szText);
 	
@@ -49,4 +50,5 @@ namespace visual {
 	inline constexpr static std::format_string<int&> moneyPrefix("${}");
 
 	inline Vector traceEnds[3] = {Vector(0, 0, 0)};
+	inline std::vector<std::pair<Dlight_t*, int>> vecLights{};
 }

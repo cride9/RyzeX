@@ -47,7 +47,12 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 	/* Clear visuals */
 	chams::materials.fill(nullptr);
 	visual::vecDormatPosition = std::array<Vector, 65>();
+	visual::vecLights.clear();
 	
+	/* Set last sendpacket pointer to true */
+	if (g::bSendPacket)
+		*g::bSendPacket = true;
+
 	/* New server = new client these needs to be rehooked */
 	UnHookClientState();
 }

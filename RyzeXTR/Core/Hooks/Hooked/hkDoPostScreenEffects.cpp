@@ -8,8 +8,10 @@ int __fastcall h::hkDoPostScreenEffect(void* thisptr, int edx, CViewSetup* pSetu
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
 		return original(thisptr, edx, pSetup);
 
-	if (g::pLocal)
+	if (g::pLocal) {
 		visual::Glow(g::pLocal);
+		visual::WorldLightning(cfg::misc::flLampColors);
+	}
 
 	return original(thisptr, edx, pSetup);
 }

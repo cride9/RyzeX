@@ -7,6 +7,10 @@ void __fastcall h::hkGetColorModulation(void* ecx, void* edx, float* r, float* g
 	
 	original(ecx, edx, r, g, b);
 
+	static CConVar* r_DrawSpecificStaticProp = i::ConVar->FindVar("r_DrawSpecificStaticProp");
+	if (r_DrawSpecificStaticProp->GetInt() != 0)
+		r_DrawSpecificStaticProp->SetValue(0);
+
 	IMaterial* pMaterial = reinterpret_cast<IMaterial*>(ecx);
 	const char* szName = pMaterial->GetName();
 	const char* szGroup = pMaterial->GetTextureGroupName();
@@ -25,15 +29,15 @@ void __fastcall h::hkGetColorModulation(void* ecx, void* edx, float* r, float* g
 
 		if (strstr(szGroup, XorStr("World textures"))) {
 
-			*r *= cfg::misc::nightmodeColor[0] /** 0.4544644448404919f*/;
-			*g *= cfg::misc::nightmodeColor[1] /** 0.4544644448404919f*/;
-			*b *= cfg::misc::nightmodeColor[2] /** 0.4544644448404919f*/;
-		}
-		else if (strstr(szGroup, XorStr("StaticProp textures"))) {
-
 			*r *= cfg::misc::nightmodeColor[0];
 			*g *= cfg::misc::nightmodeColor[1];
 			*b *= cfg::misc::nightmodeColor[2];
+		}
+		else if (strstr(szGroup, XorStr("StaticProp textures"))) {
+
+			*r *= cfg::misc::propsColor[0] * 1.2f;
+			*g *= cfg::misc::propsColor[1] * 1.2f;
+			*b *= cfg::misc::propsColor[2] * 1.2f;
 		}
 	}
 }

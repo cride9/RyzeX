@@ -235,6 +235,13 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 		if (pEnt == g::pLocal) {
 
+			if (cfg::misc::thirdpersonDistance == 0) {
+
+				i::StudioRender->SetAlphaModulation(0.f);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				return true;
+			}
+
 			matrix3x4_t* desyncMatrix = g_LocalAnimations->GetDesyncMatrix().data();
 
 			if (localDesync) {
@@ -588,6 +595,12 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 		// local
 		else if (pEntity == g::pLocal) {
+
+			if (cfg::misc::thirdpersonDistance == 0) {
+				i::StudioRender->SetAlphaModulation(0.f);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				return true;
+			}
 
 			if (attachmentChams[LOCAL]) {
 				BeginChams(chams::materials[attachmentChamsMaterial[LOCAL]], attachmentChamsColor[LOCAL], true, attachmentChamsXhair[LOCAL]);

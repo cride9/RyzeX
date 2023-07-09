@@ -84,6 +84,8 @@ namespace detour {
 	inline CDetourHook setText;
 	inline CDetourHook levelShutDown;
 	inline CDetourHook viewmodelSequenceProxy;
+	inline CDetourHook renderView;			// viewrender -> 6
+	inline CDetourHook isUsingStaticPropDebugModes;
 
 	inline CDetourHook voiceData;			// engine -> 55 8B EC 83 E4 F8 A1 ? ? ? ? 81 EC 84 01 00
 
@@ -169,6 +171,8 @@ namespace h {
 	void __fastcall		hkSetText(void* ecx, void* edx, const char* tokenName);
 	void __fastcall		hkLevelShutDownClient(void* ecx, void* edx);
 	int __fastcall		hkGetObserverMode(CBaseEntity* ecx, void* edx);
+	void __fastcall     hkRenderView(void* ecx, void* edx, CViewSetup& view, CViewSetup& hudViewSetup, int nClearFlags, int whatToDraw);
+	bool __stdcall		hkIsUsingStaticPropDebugModes();
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

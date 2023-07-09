@@ -548,7 +548,36 @@ void menu::Visualtab() noexcept {
 			ImGui::SliderInt("Distance", &thirdpersonDistance, 0, 300);
 
             ImGui::Checkbox("Nightmode", &nightmode);
-            ImGui::ColorEdit4("nightmodecolor", nightmodeColor);
+            ImGui::ColorEdit4("nightmodecolor", nightmodeColor, true);
+			ImGui::ColorEdit4("propscolor", propsColor);
+
+			ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(200, 200));
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200, 250));
+			
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
+			if (ImGui::Button("Fog options", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
+				ImGui::OpenPopup("##fogManager");
+			ImGui::PopStyleVar();
+
+			if (ImGui::BeginPopupModal("##fogManager", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar)) {
+
+				ImGui::BeginChild("##fogOptions", ImGui::GetContentRegionAvail(), true);
+				{
+					ImGui::Checkbox("Override fog", &bOverrideFog);
+					ImGui::ColorEdit3("##fog color", flFogColor);
+					ImGui::SliderInt("Fog start", &iFogStart, -100, 2000);
+					ImGui::SliderInt("Fog end", &iFogEnd, -100, 5000);
+
+					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
+					if (ImGui::Button("Close", ImVec2(ImGui::GetContentRegionAvail().x, 20.f)))
+						ImGui::CloseCurrentPopup();
+					ImGui::PopStyleVar();
+				}
+				ImGui::EndChild();
+
+				ImGui::EndPopup();
+			}
+			ImGui::PopStyleVar();
 
 			static const char* szSkyboxes[] = {
 				"None",
@@ -579,6 +608,11 @@ void menu::Visualtab() noexcept {
 
 			ImGui::Combo("Skybox", &cfg::misc::iSkybox, szSkyboxes, IM_ARRAYSIZE(szSkyboxes));
 			ImGui::ColorEdit4("##skyboxcolor", flSkyboxColor);
+
+			ImGui::Checkbox("Lamp colors", &bOverrideLampColors);
+			ImGui::ColorEdit4("##lampcolors", flLampColors);
+			if (bOverrideLampColors)
+				ImGui::SliderInt("Flicker intensity", &iFlicker, 0, 255);
 
 			ImGui::Checkbox("Out of fov", &cfg::misc::bOOF);
 			ImGui::ColorEdit4("##oofcolor", cfg::misc::flOOF);
@@ -1229,26 +1263,13 @@ void menu::Misctab() noexcept {
 
 void menu::Skintab() noexcept {
 
-//#if _DEBUG
-//    ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove );
-//    {
-//        ImGui::Checkbox("Debug button", &cfg::debugSwitch);
-//        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-//            ImGui::SetTooltip("test tooltip");
-//
-//		ImGui::Checkbox("Gather AI information ##itsnot", &cfg::debugSwitch2);
-//		ImGui::SliderFloat("Debug slider speed", &cfg::debugSlider, 0, 1000);
-//    }
-//    ImGui::EndChild();
-//#endif
 	using namespace cfg::skin;
 	ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove);
 	{
-		ImGui::SliderInt("Debug slider speed", &cfg::debugSlider, 0, 16);
+		ImGui::SliderInt("Debug1", &cfg::debugSlider1, 0, 100);
 		using namespace beforeIfuckUpEverything;
 		ImGui::Checkbox("Enable", &bEnableSkinChagner);
 		ImGui::Checkbox("Filter by weapon", &bFilterByWeapon);
-		//static int currentSelected = 0;
 
 		static int weaponBackup = -1;
 		static std::vector<std::string> skinNames{""};

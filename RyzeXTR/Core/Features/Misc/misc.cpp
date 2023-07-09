@@ -102,6 +102,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FixScopeSens();
 	ClanTag();
 	LeftHandKnife();
+	FogOptions();
 #if NDEBUG || ALPHA
 	Security();
 #endif
@@ -181,7 +182,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	if (!strcmp(pEvent->GetName(), roundStart)) {
 		BuyBot(pEvent);
 		WalkBotHandler(pEvent);
-		std::fill(anims.arrMissedShots.begin(), anims.arrMissedShots.end(), 0);
+		//std::fill(anims.arrMissedShots.begin(), anims.arrMissedShots.end(), 0);
 	}
 	if (!strcmp(pEvent->GetName(), itemPurchase)) {
 
@@ -344,7 +345,7 @@ void misc::OnlyCheatLogs() {
 
 void misc::SlideFix() {
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->GetMoveType() == MOVETYPE_LADDER || cfg::antiaim::bSlideWalk)
+	if (!g::pLocal || !g::pLocal->IsAlive() || g::pLocal->GetMoveType() == MOVETYPE_LADDER)
 		return;
 
 	g::pCmd->iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVERIGHT | IN_MOVELEFT);
@@ -932,6 +933,24 @@ void misc::ThirdPerson() {
 
 		// cam_idealdist convar.
 		offset.z = (float)cfg::misc::thirdpersonDistance;
+
+		if (offset.z == 0) {
+
+			vecEyePosition = pLocal->GetEyePosition(false);
+			Vector vecHeadPosition = pLocal->GetHitboxPosition(HITBOX_HEAD).value();
+			float flDifference = ((vecEyePosition - vecHeadPosition).Length2D()) * 0.1f;
+
+			Vector vecViewPunch = g::pLocal->GetViewPunch();
+			Vector vecAimPunch = g::pLocal->GetAimPunch();
+
+			offset.x += (vecViewPunch[0] + (vecAimPunch[0] * 2 * 0.4499999f));
+			offset.y += (vecViewPunch[1] + (vecAimPunch[1] * 2 * 0.4499999f));
+			//pSetup->angView[2] -= (vecViewPunch[2] + (vecAimPunch[2] * 2 * 0.4499999f));
+
+			i::Input->vecCameraOffset = { offset.x + flDifference, offset.y + flDifference, vecEyePosition.z - vecHeadPosition.z };
+			//i::Input->vecCameraOffset = { offset.x + (vecEyePosition - vecHeadPosition).x + cfg::debugSlider, offset.y + (vecEyePosition - vecHeadPosition).y, vecEyePosition.z - vecHeadPosition.z};
+			return;
+		}
 
 		// start pos.
 		vecEyePosition = pLocal->GetEyePosition(false);
@@ -2020,4 +2039,22 @@ void misc::Print(const std::string text, ...)
 	// print to console.
 	i::ConVar->ConsoleColorPrintf(RYZEXCOLOR, XorStr("[RyzeX] "));
 	i::ConVar->ConsoleColorPrintf(Color(240, 240, 240, 255), buf.append(XorStr("\n")).c_str());
+}
+
+void misc::FogOptions() {
+
+	static CConVar* fog_override = i::ConVar->FindVar(XorStr("fog_override"));
+	static CConVar* fog_start = i::ConVar->FindVar(XorStr("fog_start"));
+	static CConVar* fog_end = i::ConVar->FindVar(XorStr("fog_end"));
+	static CConVar* fog_color = i::ConVar->FindVar(XorStr("fog_color"));
+
+	using namespace cfg::visual;
+
+	fog_override->SetValue(bOverrideFog);
+	if (!bOverrideFog)
+		return;
+
+	fog_start->SetValue(iFogStart);
+	fog_end->SetValue(iFogEnd);
+	fog_color->SetValue(std::format("{} {} {}", flFogColor[0] * 255, flFogColor[1] * 255, flFogColor[2] * 255).c_str());
 }

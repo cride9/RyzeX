@@ -1,4 +1,5 @@
 #pragma once
+#include <deque>
 #include "SDK/CUserCmd.h"
 #include "SDK/Entity.h"
 #include "Interface/Interfaces/entityListener.h"
@@ -17,10 +18,11 @@ namespace g {
 	inline bool bUpdatingSkins = false;
 	inline bool bStartWelcome = false;
 	inline bool bWasShootingInChokeCycle = false;
+	inline bool* bSendPacket = nullptr;
 
 	inline bool bSettingUpBones[65];
 
-	inline std::vector<Vector> drawList{};
+	inline std::deque<Vector> drawList{};
 
 	namespace fonts {
 		inline HFont HealthESP;

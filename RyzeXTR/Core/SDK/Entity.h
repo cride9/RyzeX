@@ -874,6 +874,7 @@ public:
 	ADD_NETVAR(GetHitboxSet, int, "CBaseAnimating->m_nHitboxSet");
 	ADD_NETVAR(IsClientSideAnimation, bool, "CBaseAnimating->m_bClientSideAnimation");
 	ADD_NETVAR(GetCycle, float, "CBaseAnimating->m_flCycle");
+	ADD_NETVAR(GetModelScale, float, "CBaseAnimating->m_flModelScale");
 
 	//ADD_PNETVAROFFSET(GetStudioHdr, CStudioHdr, "CBaseAnimating->m_hLightingOrigin", 0x8);
 	ADD_NETVAROFFSET(GetCustomBlendingRuleMask, int, "CBaseAnimating->m_nBody", 0x4);

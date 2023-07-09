@@ -64,7 +64,7 @@ void localanimation::SetLayerSequence(CAnimationLayer* layer, int sequence) {
 	}
 }
 
-void C_LocalAnimations::AnimationBreaker(float* flPoseParameter) {
+void C_LocalAnimations::AnimationBreaker(CBaseEntity* pLocal) {
 
 	if (!cfg::antiaim::bSlideWalk)
 		return;
@@ -99,9 +99,14 @@ elseif J and client.is_alive and menu.misc.animation_breaker:get() == 6 then
 end
 	*/
 
-	flPoseParameter[8] = 0;
-	flPoseParameter[9] = 0;
-	flPoseParameter[10] = 0;
+	if (pLocal->AnimState()->bHitGroundAnimation)
+		pLocal->GetPoseParameter()[BODY_PITCH] = 0.5f;
+
+	pLocal->GetPoseParameter()[JUMP_FALL] = 1.f;
+	pLocal->GetPoseParameter()[MOVE_YAW] = 0;
+	//flPoseParameter[8] = 0;
+	//flPoseParameter[9] = 0;
+	//flPoseParameter[10] = 0;
 }
 
 /* New stuff */
@@ -233,6 +238,9 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 
 	pLocal->SetAbsOrigin(m_LocalData.m_vecAbsOrigin);
 	//if ( !g_Globals->m_Packet.m_bSkipMatrix )
+
+	AnimationBreaker(pLocal);
+
 	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Real.m_Matrix.data(), BONE_USED_BY_ANYTHING, pLocal);
 	g_LocalAnimations->UpdateDesyncAnimations(pLocal);
 
@@ -407,6 +415,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 
 	m_LocalData.m_flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(m_AnimationState.flGoalFeetYaw)));
 
+	AnimationBreaker(pLocal);
 	g_LocalAnimations->SetupPlayerBones(m_LocalData.m_Fake.m_Matrix.data(), 0, pLocal);
 
 	std::memcpy(pLocal->AnimState(), &m_AnimationState, sizeof(CAnimState));

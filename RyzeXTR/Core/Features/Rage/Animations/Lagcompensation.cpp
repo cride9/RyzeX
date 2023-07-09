@@ -334,12 +334,81 @@ void Lagcompensation::SetInterpolationFlags()
 //	return false;
 //}
 
-void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious) const
+void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* pCurrent, Lagcompensation::LagRecord_t* pPrevious) const
 {
-	if (!m_pPrevious)
+	if (!pPrevious)
 		return;
 
-	CSimulationData simulationData;
+	static CConVar* sv_gravity = i::ConVar->FindVar("sv_gravity");
+	static CConVar* sv_jump_impulse = i::ConVar->FindVar("sv_jump_impulse");
+
+	Vector velocity = pCurrent->vecVelocity;
+	int flags = pCurrent->iFlags;
+
+	if (!(flags & FL_ONGROUND))
+		velocity.z -= (i::GlobalVars->flFrameTime * sv_gravity->GetFloat());
+	else if (pPrevious->iFlags & FL_ONGROUND && !(pCurrent->iFlags & FL_ONGROUND))
+		velocity.z = sv_jump_impulse->GetFloat();
+
+	const Vector mins = m_pEntity->vecMins();
+	const Vector max = m_pEntity->vecMaxs();
+
+	const Vector src = pCurrent->vecOrigin;
+	Vector end = src + (velocity * i::GlobalVars->flFrameTime);
+
+	Ray_t ray(src, end, mins, max);
+
+	CGameTrace trace;
+	CTraceFilter filter(m_pEntity);
+
+	i::EngineTrace->TraceRay(ray, MASK_PLAYERSOLID, &filter, &trace);
+
+	if (trace.flFraction != 1.f)
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			velocity -= trace.plane.vecNormal * velocity.DotProduct(trace.plane.vecNormal);
+
+			const float dot = velocity.DotProduct(trace.plane.vecNormal);
+			if (dot < 0.f)
+			{
+				velocity.x -= dot * trace.plane.vecNormal.x;
+				velocity.y -= dot * trace.plane.vecNormal.y;
+				velocity.z -= dot * trace.plane.vecNormal.z;
+			}
+
+			end = trace.vecEnd + (velocity * (i::GlobalVars->flIntervalPerTick * (1.f - trace.flFraction)));
+
+			ray = Ray_t(trace.vecEnd, end, mins, max);
+			i::EngineTrace->TraceRay(ray, MASK_PLAYERSOLID, &filter, &trace);
+
+			if (trace.flFraction == 1.f)
+				break;
+		}
+	}
+
+	pCurrent->vecOrigin = trace.vecEnd;
+	end = trace.vecEnd;
+	end.z -= 2.f;
+
+	ray = Ray_t(pCurrent->vecOrigin, end, mins, max);
+	i::EngineTrace->TraceRay(ray, MASK_PLAYERSOLID, &filter, &trace);
+
+	flags &= ~(1 << 0);
+
+	if (trace.DidHit() && trace.plane.vecNormal.z > 0.7f)
+		flags |= (1 << 0);
+
+	pCurrent->flSimulationTime += i::GlobalVars->flIntervalPerTick;
+	m_pEntity->GetVecOrigin() = pCurrent->vecOrigin;
+	m_pEntity->SetAbsOrigin(pCurrent->vecOrigin);
+
+	pCurrent->vecVelocity = velocity;
+	m_pEntity->GetVelocity() = velocity;
+
+	//g::drawList.push_back(pCurrent->vecOrigin);
+
+	/*CSimulationData simulationData;
 
 	simulationData.pEntity = m_pEntity;
 	simulationData.vecOrigin = m_pCurrentRecord->vecOrigin;
@@ -392,7 +461,7 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 
 		m_pCurrentRecord->vecOrigin = simulationData.vecOrigin;
 		m_pCurrentRecord->vecAbsOrigin = simulationData.vecOrigin;
-	}
+	}*/
 }
 
 float Lagcompensation::GetClientInterpAmount()
