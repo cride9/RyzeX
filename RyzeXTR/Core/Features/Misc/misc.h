@@ -18,7 +18,7 @@ namespace misc {
 	inline bool bNewRound = false;
 	inline bool bDefensive = false;
 	inline bool bFilter = false;
-	inline bool bRetreat = false;
+	inline bool bRetreat = false, bTeleportBack = false;
 	inline bool exploitInitialized = false;
 	inline Vector vecRecord = Vector(0.f, 0.f, 0.f);
 	inline Vector vecEyePosition = Vector(0.f, 0.f, 0.f);
@@ -26,7 +26,6 @@ namespace misc {
 	inline int iRestChoke = 0;
 	inline CConVar* con_filter_text = nullptr;
 	inline CConVar* con_filter_enable = nullptr;
-	inline bool bPeeking = false;
 
 	void SetupRadio( );
 

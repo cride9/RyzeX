@@ -37,8 +37,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	g::pCmd = pCmd;
 	g::vecEyePosition = pLocal->GetEyePosition(false);
 
-	pLocal->GetModelScale() = cfg::debugSlider1 * 0.01f;
-
 	lagcomp.StartLagcompensation(pLocal);
 
 	Vector oldViewAngle = g::vecOriginalViewAngle = pCmd->angViewPoint;
@@ -56,6 +54,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
+		g::vecEyePosition = pLocal->GetEyePosition(false);
 		g_LocalAnimations->CopyPlayerAnimationData(false, pLocal);
 		g_LocalAnimations->SetupShootPosition(pLocal );
 
@@ -98,10 +97,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (exploits::bIsShiftingTicks) {
 		if (exploits::iShiftAmount == 12)
 			pCmd->iButtons &= ~IN_ATTACK;
-
-		//if ((cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey)))
-		//	bSendPacket = true;
-		//else
+		if (cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))
+			bSendPacket = true;
+		else
 			bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
 	}
 

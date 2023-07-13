@@ -3,6 +3,7 @@
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 #include "../../Features/Rage/antiaim.h"
+#include "../../Features/Rage/ragebot.h"
 
 static void WriteUsercmd(void* buf, CUserCmd* Cin, CUserCmd* Cout)
 {
@@ -54,7 +55,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	CUserCmd FromCmd = *pCmd;
 
 	ToCmd.iCommandNumber++;
-	ToCmd.iTickCount += ((int)(1.0f / i::GlobalVars->flIntervalPerTick)) * 3;
+	ToCmd.iTickCount += ((int)(1.0f / i::GlobalVars->flIntervalPerTick));
 
 	for (int i = 0; i < iExtraCommands; i++)
 	{

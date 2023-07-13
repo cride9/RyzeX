@@ -12,7 +12,7 @@ bool __fastcall h::hkIsFollowingEntity(void* ecx, void* edx)
 	if (!pPlayer || !g::pLocal)
 		return IsFollowingEntity(ecx, edx);
 
-	if (!pPlayer->IsAlive())
+	if (!pPlayer->IsAlive() || pPlayer->EntIndex() >= 65)
 		return IsFollowingEntity(ecx, edx);
 
 	static auto retToInterpolation = reinterpret_cast<void*>(MEM::FindPattern(CLIENT_DLL, XorStr("84 C0 0F 85 ? ? ? ? 38 05 ? ? ? ? 0F 84 ? ? ? ? 53")));

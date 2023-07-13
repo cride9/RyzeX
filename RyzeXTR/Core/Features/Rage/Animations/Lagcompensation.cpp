@@ -201,7 +201,6 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 		pLog->bLeftDormancy = false;
 
-		//FilterRecords();
 		pPlayerLogs[i].iFirstValid = 32;
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
@@ -520,7 +519,6 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 		return false;
 
 	return true;
-	return (i::GlobalVars->flCurrentTime - mflSimulationTime) < flRange;
 }
 
 int Lagcompensation::FixTickCount(const float flSimulationTime)
@@ -545,7 +543,7 @@ void Lagcompensation::UpdateIncomingSequences(INetChannel* pNetChannel)
 	}
 
 	// is cached too much sequences
-	if (vecSequences.size() > 2048U)
+	while (vecSequences.size() > 4096U)
 		vecSequences.pop_back();
 }
 

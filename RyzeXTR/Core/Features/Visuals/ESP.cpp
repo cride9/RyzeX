@@ -968,7 +968,9 @@ void visual::WelcomeUser(std::string szText) {
 
 void visual::WorldLightning(Color color) {
 
-	if (!i::EngineClient->IsInGame() || !g::pLocal || g::bUpdatingSkins || i::ClientState->iDeltaTick <= 0)
+	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
+
+	if (!i::EngineClient->IsInGame() || !pLocal || g::bUpdatingSkins || i::ClientState->iDeltaTick <= 0)
 		return;
 
 	if (!cfg::misc::bOverrideLampColors)
@@ -982,15 +984,19 @@ void visual::WorldLightning(Color color) {
 	if (worldbrush->numworldlights <= 0)
 		return;
 
-	Vector EyePosition = g::pLocal->GetEyePosition(false);
+	Vector EyePosition = g::vecEyePosition;
 	static int MaxDistance = 1000;
 
 	if (!vecLights.empty()) {
 
 		for (auto NewDLight : vecLights) {
 
-			if (cfg::misc::iFlicker != 0) 
-				color[0] = color[1] = color[2] *= M::RandomInt(0, cfg::misc::iFlicker) / 255.f;
+			if (cfg::misc::iFlicker != 0) {
+				float flRandom = M::RandomInt(0, cfg::misc::iFlicker) / 255.f;
+				color[0] /= flRandom;
+				color[1] /= flRandom;
+				color[2] /= flRandom;
+			}
 
 			auto WorldLight = worldbrush->worldlights[NewDLight.second];
 			Vector LightPosition = { WorldLight.origin.x, WorldLight.origin.y, WorldLight.origin.z };
@@ -1002,7 +1008,7 @@ void visual::WorldLightning(Color color) {
 			NewDLight.first->color[0] = color[0];
 			NewDLight.first->color[1] = color[1];
 			NewDLight.first->color[2] = color[2];
-			NewDLight.first->color[3] = 6 * (color[3] / 255);
+			NewDLight.first->color[3] = (color[3] / 255.f) * 10;
 			NewDLight.first->die = i::GlobalVars->flCurrentTime + i::GlobalVars->flIntervalPerTick * 3; // in case of time fluctuation
 			NewDLight.first->decay = 0;
 		}
@@ -1037,3 +1043,467 @@ void visual::WorldLightning(Color color) {
 	}
 }
 
+// no please dont even ask that
+char GetWeaponChar(std::string input) {
+
+	if (input == "USP-S")
+		return 'A';
+	if (input == "Glock-18")
+		return 'C';
+	if (input == "Dual Berettas")
+		return 'S';
+	if (input == "P250" || input == "Zeus x27")
+		return 'U';
+	if (input == "CZ75-Auto")
+		return 'D';
+	if (input == "R8 Revolver")
+		return 'F';
+	if (input == "MAC-10")
+		return 'L';
+	if (input == "MP7")
+		return 'X';
+	if (input == "UMP-45")
+		return 'Q';
+	if (input == "P90")
+		return 'M';
+
+
+	if (input == "SSG 08")
+		return 'N';
+	if (input == "AWP")
+		return 'R';
+	if (input == "G3SG1")
+		return 'I';
+	if (input == "SCAR-20")
+		return 'O';
+	if (input == "Desert Eagle")
+		return 'F';
+	if (input == "Knife")
+		return 'h';
+
+	if (input == "Molotov" || input == "Incendiary Grenade")
+		return 'G';
+
+	if (input == "High Explosive Grenade")
+		return 'H';
+
+	if (input == "Smoke Grenade")
+		return 'P';
+
+	if (input == "Defuse Kit")
+		return 'f';
+
+	if (input == "Medi-Shot")
+		return 'b';
+
+	return '<';
+}
+
+void visual::CustomHud() {
+
+	if (!g::pLocal)
+		return;
+
+	static CConVar* cl_draw_only_deathnotices = i::ConVar->FindVar("cl_draw_only_deathnotices");
+
+	static bool bSetBack = false;
+	if (!cfg::misc::bCustomHud) {
+		if (bSetBack) {
+			cl_draw_only_deathnotices->SetValue(0);
+			bSetBack = false;
+		}
+		return;
+	}
+	bSetBack = true;
+	if (cl_draw_only_deathnotices->GetInt() != 1)
+		cl_draw_only_deathnotices->SetValue(1);
+
+	//g::pLocal->HideHud() &= ~(HIDEHUD_CHAT | HIDEHUD_RADAR);
+
+	static std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+	std::vector<std::pair<std::string, bool>> vecWeaponNames{};
+	for (auto nIndex : g::pLocal->GetWeaponsHandle()) {
+
+		CBaseCombatWeapon* pWeapon = static_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntityFromHandle(nIndex));
+
+		if (pWeapon == nullptr)
+			continue;
+
+		CCSWeaponInfo* pWeaponData = pWeapon->GetCSWpnData();
+
+		if (pWeaponData == nullptr)
+			continue;
+
+		std::string text = "";
+		wchar_t* localizeName = i::Localize->Find(pWeaponData->szHudName);
+		if (localizeName)
+			text = converter.to_bytes(localizeName);
+
+		bool bCurrent = false;
+		if (pWeapon == g::pLocal->GetWeapon())
+			bCurrent = true;
+
+		vecWeaponNames.push_back({text, bCurrent});
+	}
+
+	int iScreenX, iScreenY;
+	i::EngineClient->GetScreenSize(iScreenX, iScreenY);
+
+	int iPadding = 50;
+	int iCenterOffset = (iScreenX / 2) - ((vecWeaponNames.size() / 2) * iPadding) + 10;
+
+	for (auto szCurrent = vecWeaponNames.rbegin(); szCurrent != vecWeaponNames.rend(); ++szCurrent) {
+
+		if ((*szCurrent).second) {
+
+			i::Surface->DrawSetColor(Color(212, 212, 212, 100));
+			i::Surface->DrawFilledRectFade(iCenterOffset - iPadding / 2, iScreenY - 70, iCenterOffset + iPadding / 2, iScreenY, 255, 0, false);
+		}
+
+		i::Surface->DrawT(iCenterOffset, iScreenY - 50, Color(255, 255, 255, 255), 0xA1, true, std::format("{}", GetWeaponChar((*szCurrent).first)).c_str());
+		iCenterOffset += iPadding;
+	}
+
+	auto DrawSquare = [&](int x, int y, int size) {
+
+		i::Surface->DrawFilledRect(x, y, x + size, y + size);
+	};
+
+	auto DrawEmptyHearth = [&](int x, int y) {
+
+		i::Surface->DrawSetColor(Color(0, 0, 0, 255));
+
+		static int iSize = 3;
+
+		// outline
+		DrawSquare(x, y, iSize);
+		for (size_t i = 1; i <= 3; i++) {
+			DrawSquare(x - iSize * i, y - iSize * i, iSize);
+			DrawSquare(x + iSize * i, y - iSize * i, iSize);
+		}
+		for (size_t i = 0; i < 3; i++)
+		{
+			DrawSquare(x + iSize * 4, y - iSize * (4 + i), iSize);
+			DrawSquare(x - iSize * 4, y - iSize * (4 + i), iSize);
+		}
+		DrawSquare(x + iSize * 3, y - iSize * 7, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 7, iSize);
+
+		DrawSquare(x + iSize * 2, y - iSize * 8, iSize);
+		DrawSquare(x - iSize * 2, y - iSize * 8, iSize);
+
+		DrawSquare(x + iSize * 1, y - iSize * 8, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 8, iSize);
+
+		DrawSquare(x, y - iSize * 7, iSize);
+		DrawSquare(x, y - iSize * 7, iSize);
+
+		// color fill
+		i::Surface->DrawSetColor(Color(40, 40, 40, 255));
+		DrawSquare(x, y - iSize, iSize);
+
+		DrawSquare(x + iSize * 1, y - iSize * 2, iSize);
+		DrawSquare(x + iSize * 3, y - iSize * 4, iSize);
+		DrawSquare(x + iSize * 2, y - iSize * 3, iSize);
+
+		DrawSquare(x - iSize * 2, y - iSize * 3, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 2, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 4, iSize);
+
+		DrawSquare(x + iSize * 3, y - iSize * 5, iSize);
+		DrawSquare(x + iSize * 3, y - iSize * 6, iSize);
+		DrawSquare(x + iSize * 2, y - iSize * 7, iSize);
+		DrawSquare(x + iSize * 1, y - iSize * 7, iSize);
+
+		DrawSquare(x - iSize * 3, y - iSize * 5, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 6, iSize);
+		DrawSquare(x - iSize * 2, y - iSize * 7, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 7, iSize);
+
+		for (size_t i = 2; i < 7; i++)
+			DrawSquare(x, y - iSize * i, iSize);
+
+		for (size_t i = 3; i < 8; i++) {
+			DrawSquare(x + iSize, y - iSize * i, iSize);
+			DrawSquare(x - iSize, y - iSize * i, iSize);
+		}
+		for (size_t i = 4; i < 8; i++) {
+			DrawSquare(x + iSize * 2, y - iSize * i, iSize);
+			DrawSquare(x - iSize * 2, y - iSize * i, iSize);
+		}
+	};
+
+	auto DrawFilledHearth = [&](int x, int y) {
+
+		i::Surface->DrawSetColor(Color(0, 0, 0, 255));
+
+		static int iSize = 3;
+
+		// outline
+		DrawSquare(x, y, iSize);
+		for (size_t i = 1; i <= 3; i++) {
+			DrawSquare(x - iSize * i, y - iSize * i, iSize);
+			DrawSquare(x + iSize * i, y - iSize * i, iSize);
+		}
+		for (size_t i = 0; i < 3; i++)
+		{
+			DrawSquare(x + iSize * 4, y - iSize * (4 + i), iSize);
+			DrawSquare(x - iSize * 4, y - iSize * (4 + i), iSize);
+		}
+		DrawSquare(x + iSize * 3, y - iSize * 7, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 7, iSize);
+
+		DrawSquare(x + iSize * 2, y - iSize * 8, iSize);
+		DrawSquare(x - iSize * 2, y - iSize * 8, iSize);
+
+		DrawSquare(x + iSize * 1, y - iSize * 8, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 8, iSize);
+
+		DrawSquare(x, y - iSize * 7, iSize);
+		DrawSquare(x, y - iSize * 7, iSize);
+
+		// color fill
+		i::Surface->DrawSetColor(Color(187, 19, 19, 255));
+		DrawSquare(x, y - iSize, iSize);
+
+		DrawSquare(x + iSize * 1, y - iSize * 2, iSize);
+		DrawSquare(x + iSize * 3, y - iSize * 4, iSize);
+		DrawSquare(x + iSize * 2, y - iSize * 3, iSize);
+
+		DrawSquare(x - iSize * 2, y - iSize * 3, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 2, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 4, iSize);
+
+	
+		i::Surface->DrawSetColor(Color(255, 19, 19, 255));
+		DrawSquare(x + iSize * 3, y - iSize * 5, iSize);
+		DrawSquare(x + iSize * 3, y - iSize * 6, iSize);
+		DrawSquare(x + iSize * 2, y - iSize * 7, iSize);
+		DrawSquare(x + iSize * 1, y - iSize * 7, iSize);
+
+		DrawSquare(x - iSize * 3, y - iSize * 5, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 6, iSize);
+		DrawSquare(x - iSize * 2, y - iSize * 7, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 7, iSize);
+
+		for (size_t i = 2; i < 7; i++)
+			DrawSquare(x, y - iSize * i, iSize);
+		
+		for (size_t i = 3; i < 8; i++) {
+			DrawSquare(x + iSize, y - iSize * i, iSize);
+			DrawSquare(x - iSize, y - iSize * i, iSize);
+		}
+		for (size_t i = 4; i < 8; i++) {
+			DrawSquare(x + iSize * 2, y - iSize * i, iSize);
+			DrawSquare(x - iSize * 2, y - iSize * i, iSize);
+		}
+
+		i::Surface->DrawSetColor(Color(255, 201, 201, 255));
+		DrawSquare(x - iSize * 2, y - iSize * 6, iSize);
+	};
+
+	auto DrawHalfFilledHearth = [&](int x, int y) {
+
+		i::Surface->DrawSetColor(Color(0, 0, 0, 255));
+
+		static int iSize = 3;
+
+		// outline
+		DrawSquare(x, y, iSize);
+		for (size_t i = 1; i <= 3; i++) {
+			DrawSquare(x - iSize * i, y - iSize * i, iSize);
+			DrawSquare(x + iSize * i, y - iSize * i, iSize);
+		}
+		for (size_t i = 0; i < 3; i++)
+		{
+			DrawSquare(x + iSize * 4, y - iSize * (4 + i), iSize);
+			DrawSquare(x - iSize * 4, y - iSize * (4 + i), iSize);
+		}
+		DrawSquare(x + iSize * 3, y - iSize * 7, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 7, iSize);
+
+		DrawSquare(x + iSize * 2, y - iSize * 8, iSize);
+		DrawSquare(x - iSize * 2, y - iSize * 8, iSize);
+
+		DrawSquare(x + iSize * 1, y - iSize * 8, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 8, iSize);
+
+		DrawSquare(x, y - iSize * 7, iSize);
+		DrawSquare(x, y - iSize * 7, iSize);
+
+		// color fill
+
+		i::Surface->DrawSetColor(Color(40, 40, 40, 255));
+		DrawSquare(x + iSize * 1, y - iSize * 2, iSize);
+		DrawSquare(x + iSize * 3, y - iSize * 4, iSize);
+		DrawSquare(x + iSize * 2, y - iSize * 3, iSize);
+
+		i::Surface->DrawSetColor(Color(187, 19, 19, 255));
+		DrawSquare(x, y - iSize, iSize);
+		DrawSquare(x - iSize * 2, y - iSize * 3, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 2, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 4, iSize);
+
+		i::Surface->DrawSetColor(Color(40, 40, 40, 255));
+		DrawSquare(x + iSize * 3, y - iSize * 5, iSize);
+		DrawSquare(x + iSize * 3, y - iSize * 6, iSize);
+		DrawSquare(x + iSize * 2, y - iSize * 7, iSize);
+		DrawSquare(x + iSize * 1, y - iSize * 7, iSize);
+
+		i::Surface->DrawSetColor(Color(255, 19, 19, 255));
+		DrawSquare(x - iSize * 3, y - iSize * 5, iSize);
+		DrawSquare(x - iSize * 3, y - iSize * 6, iSize);
+		DrawSquare(x - iSize * 2, y - iSize * 7, iSize);
+		DrawSquare(x - iSize * 1, y - iSize * 7, iSize);
+
+		for (size_t i = 2; i < 7; i++)
+			DrawSquare(x, y - iSize * i, iSize);
+
+		for (size_t i = 3; i < 8; i++) {
+			i::Surface->DrawSetColor(Color(40, 40, 40, 255));
+			DrawSquare(x + iSize, y - iSize * i, iSize);
+			i::Surface->DrawSetColor(Color(255, 19, 19, 255));
+			DrawSquare(x - iSize, y - iSize * i, iSize);
+		}
+		for (size_t i = 4; i < 8; i++) {
+			i::Surface->DrawSetColor(Color(40, 40, 40, 255));
+			DrawSquare(x + iSize * 2, y - iSize * i, iSize);
+			i::Surface->DrawSetColor(Color(255, 19, 19, 255));
+			DrawSquare(x - iSize * 2, y - iSize * i, iSize);
+		}
+
+		i::Surface->DrawSetColor(Color(255, 201, 201, 255));
+		DrawSquare(x - iSize * 2, y - iSize * 6, iSize);
+	};
+
+	const int& iHealth = g::pLocal->GetHealth();
+	float flHearthCount = iHealth / 10.f;
+	int iDrawCount = 0;
+	for (size_t i = 1; i < 10; i++) {
+
+		int offset = 0;
+		if (flHearthCount <= 3)
+			offset = M::RandomInt(-5, 5);
+		
+		if (i - flHearthCount < 1 && i - flHearthCount > 0) 
+			DrawHalfFilledHearth(iScreenX * 0.13f + (i * 26) + offset, iScreenY - 70 + offset);
+		
+		else if (i > flHearthCount) 
+			DrawEmptyHearth(iScreenX * 0.13f + (i * 26) + offset, iScreenY - 70 + offset);
+		
+		else if (iHealth > 0)
+			DrawFilledHearth(iScreenX * 0.13f + (i * 26) + offset, iScreenY - 70 + offset);
+		
+	}
+
+	//i::Surface->DrawT(50 + (fDistance * flFactor), iScreenY - 70, Color(255, 255, 255), g::fonts::DebugFont, true, std::format("{}", g::pLocal->GetHealth()).c_str());
+
+	auto DrawArrow = [&](int x, int y) {
+
+		static int iSize = 3;
+
+		i::Surface->DrawSetColor(Color(63, 63, 63, 255));
+		DrawSquare(x, y, iSize);
+		DrawSquare(x + iSize, y - iSize, iSize);
+		DrawSquare(x - iSize, y - iSize, iSize);
+		DrawSquare(x + iSize * 2, y - iSize * 2, iSize);
+
+		i::Surface->DrawSetColor(Color(224, 224, 224, 255));
+		DrawSquare(x, y - iSize, iSize);
+		DrawSquare(x - iSize, y - iSize * 2, iSize);
+		DrawSquare(x + iSize, y - iSize * 2, iSize);
+		DrawSquare(x, y - iSize * 3, iSize);
+
+		i::Surface->DrawSetColor(Color(198, 198, 198, 255));
+		DrawSquare(x, y - iSize * 2, iSize);
+		DrawSquare(x + iSize, y - iSize * 3, iSize);
+
+		i::Surface->DrawSetColor(Color(40, 30, 11, 255));
+		DrawSquare(x + iSize * 2, y - iSize * 3, iSize);
+		DrawSquare(x + iSize * 3, y - iSize * 4, iSize);
+		DrawSquare(x + iSize * 4, y - iSize * 5, iSize);
+		DrawSquare(x + iSize * 5, y - iSize * 6, iSize);
+		DrawSquare(x + iSize * 6, y - iSize * 7, iSize);
+		DrawSquare(x + iSize * 7, y - iSize * 8, iSize);
+		DrawSquare(x + iSize * 8, y - iSize * 9, iSize);
+
+		i::Surface->DrawSetColor(Color(137, 103, 39, 255));
+		DrawSquare(x + iSize * 2, y - iSize * 4, iSize);
+		DrawSquare(x + iSize * 3, y - iSize * 5, iSize);
+		DrawSquare(x + iSize * 4, y - iSize * 6, iSize);
+		DrawSquare(x + iSize * 5, y - iSize * 7, iSize);
+		DrawSquare(x + iSize * 6, y - iSize * 8, iSize);
+		DrawSquare(x + iSize * 7, y - iSize * 9, iSize);
+		DrawSquare(x + iSize * 8, y - iSize * 10, iSize);
+
+		i::Surface->DrawSetColor(Color(150, 150, 150, 255));
+		DrawSquare(x + iSize * 9, y - iSize * 9, iSize);
+		DrawSquare(x + iSize * 7, y - iSize * 9, iSize);
+		DrawSquare(x + iSize * 9, y - iSize * 10, iSize);
+		DrawSquare(x + iSize * 10, y - iSize * 9, iSize);
+
+		i::Surface->DrawSetColor(Color(216, 216, 216, 255));
+		DrawSquare(x + iSize * 9, y - iSize * 10, iSize);
+		DrawSquare(x + iSize * 9, y - iSize * 11, iSize);
+		DrawSquare(x + iSize * 8, y - iSize * 11, iSize);
+
+		i::Surface->DrawSetColor(Color(255, 255, 255, 255));
+		DrawSquare(x + iSize * 10, y - iSize * 12, iSize);
+
+		i::Surface->DrawSetColor(Color(68, 68, 68, 255));
+		DrawSquare(x + iSize * 9, y - iSize * 8, iSize);
+		DrawSquare(x + iSize * 10, y - iSize * 9, iSize);
+		DrawSquare(x + iSize * 10, y - iSize * 10, iSize);
+		DrawSquare(x + iSize * 11, y - iSize * 11, iSize);
+		DrawSquare(x + iSize * 12, y - iSize * 12, iSize);
+
+	};
+
+	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
+	if (!pWeapon)
+		return;
+
+	DrawArrow(iScreenX * 0.87f, iScreenY - 50);
+	i::Surface->DrawT(iScreenX * 0.87f + 15, iScreenY - 50, Color(255, 255, 255, 255), g::fonts::DebugFont, true, std::format("{}/{}", pWeapon->GetAmmo(), pWeapon->GetAmmoReserve()).c_str());
+}
+
+void visual::Hat() {
+
+	if (!cfg::misc::bHat)
+		return;
+
+	if (g::pLocal && i::Input->bCameraInThirdPerson) {
+
+		Vector vecHeadPosition = g_LocalAnimations->GetRealMatrix().at(BONE_HEAD).at(3);
+
+		float flStep = (2 * M_PI) / 18.f;
+		float flRadius = 9;
+
+		for (float rotation = 0; rotation < (M_PI * 2.0); rotation += flStep) {
+
+			Vector topRim(flRadius * cos(rotation) + vecHeadPosition.x, flRadius * sin(rotation) + vecHeadPosition.y, vecHeadPosition.z + 2);
+			Vector bottomRim(flRadius / 2 * cos(rotation) + vecHeadPosition.x, flRadius / 2.f * sin(rotation) + vecHeadPosition.y, vecHeadPosition.z + 8);
+
+			Vector topRimPredict(flRadius * cos(rotation + flStep) + vecHeadPosition.x, flRadius * sin(rotation + flStep) + vecHeadPosition.y, vecHeadPosition.z + 2);
+			Vector bottomRimPredict(flRadius / 2 * cos(rotation + flStep) + vecHeadPosition.x, flRadius / 2.f * sin(rotation + flStep) + vecHeadPosition.y, vecHeadPosition.z + 8);
+
+			Vector topOnScreen, botOnScreen, topOnScreenPredict, botOnScreenPredict;
+			if (!i::DebugOverlay->ScreenPosition(topRim, topOnScreen))
+			{
+				if (!i::DebugOverlay->ScreenPosition(bottomRim, botOnScreen)) {
+
+					i::Surface->DrawSetColor(Color(cfg::misc::flHat));
+
+					i::Surface->DrawLine(topOnScreen.x, topOnScreen.y, botOnScreen.x, botOnScreen.y);
+
+					if (!i::DebugOverlay->ScreenPosition(topRimPredict, topOnScreenPredict))
+						i::Surface->DrawLine(topOnScreen.x, topOnScreen.y, topOnScreenPredict.x, topOnScreenPredict.y);
+
+					if (!i::DebugOverlay->ScreenPosition(bottomRimPredict, botOnScreenPredict))
+						i::Surface->DrawLine(botOnScreen.x, botOnScreen.y, botOnScreenPredict.x, botOnScreenPredict.y);
+
+				}
+			}
+		}
+	}
+}

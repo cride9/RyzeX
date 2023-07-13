@@ -533,6 +533,7 @@ public:
 
 	// normal netvars
 	ADD_NETVAR(GetViewPunch, Vector, "CBasePlayer->m_viewPunchAngle");
+	ADD_NETVAR(HideHud, int, "CBasePlayer->m_iHideHUD");
 	ADD_NETVAR(GetAimPunch, Vector, "CBasePlayer->m_aimPunchAngle");
 	ADD_NETVAR(GetAimPunchVelocity, Vector, "CBasePlayer->m_aimPunchAngleVel" );
 	ADD_NETVAR(GetViewOffset, Vector, "CBasePlayer->m_vecViewOffset[0]");

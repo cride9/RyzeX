@@ -446,6 +446,13 @@ namespace cfg {
 		inline bool bKillsay = false;
 		inline std::string bombBuffer = "RyzeXTR";
 		inline std::string killSayBuffer = "";
+
+		inline bool bSkinnyBoy = false;
+		inline int iSkinnyBoy = 0;
+
+		inline bool bHat = false;
+		inline float flHat[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline bool bCustomHud = false;
 	
 	}
 	namespace skin {

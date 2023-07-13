@@ -219,6 +219,7 @@ public:
 		CBaseEntity* pEntity;
 
 		bool bLeftDormancy{};
+		bool bJitterAntiAim{};
 
 		int iLastUpdateTick;
 		int iLastValid;
@@ -240,8 +241,7 @@ public:
 
 		int iLastResolve{};
 		EMatrixType iFreestandMatrix{};
-		int iPeekingReal = 0;
-		int iPeekingFake = 0;
+		std::array<int, MAX> iHitSide;
 
 		Lagcompensation::EResolverMode iAntiAimType;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;

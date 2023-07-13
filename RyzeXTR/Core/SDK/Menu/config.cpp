@@ -964,6 +964,13 @@ void CConfig::Setup() {
 		SetupValue(bKillsay, false, "misc", "bKillsay");
 		SetupValue(killSayBuffer, "", "misc", "killSayBuffer");
 
+		SetupValue(bSkinnyBoy, false, "misc", "bKinnyBoy");
+		SetupValue(iSkinnyBoy, 0, "misc", "iSkinnyBoy");
+
+		SetupValue(bHat, false, "misc", "bHat");
+		SetupValue(flHat, 4, 1.f, "misc", "flHat");
+		SetupValue(bCustomHud, false, "misc", "bCustomHud");
+
 		SetupValue(removals, false, 6, "misc", "removals");
 		SetupValue(drawViewmodelOnScope, false, "misc", "drawViewmodelOnScope");
 		SetupValue(scopeColor[0], 1.f, "visual", "scopeColorR");

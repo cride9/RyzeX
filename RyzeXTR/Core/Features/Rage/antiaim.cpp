@@ -355,6 +355,9 @@ bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 		if (!info)
 			return false;
 
+		if (info->nWeaponType == WEAPONTYPE_C4 || info->nWeaponType == WEAPONTYPE_HEALTHSHOT)
+			return false;
+
 		if (info->nWeaponType == WEAPONTYPE_GRENADE) {
 
 			auto pNade = static_cast<CBaseCSGrenade*>(pWeapon);

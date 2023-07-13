@@ -62,7 +62,7 @@ public:
 			text = converter.from_bytes(_Input);
 		}
 		catch (std::range_error){
-			util::LogConsole(std::format("Name: {} cannot be converted (not utf-8)\n", _Input).c_str());
+			//util::LogConsole(std::format("Name: {} cannot be converted (not utf-8)\n", _Input).c_str());
 			return;
 		}
 
@@ -71,6 +71,17 @@ public:
 		DrawSetTextColor(Color);
 		DrawSetTextPos(Center ? X - w / 2 : X, Y);
 		DrawPrintText(text.c_str(), text.size());
+	}
+
+	void DrawT(int X, int Y, Color Color, HFont Font, bool Center, wchar_t* _Input, ...) noexcept {
+
+		int w, h;
+
+		GetTextSize(Font, _Input, w, h);
+		DrawSetTextFont(Font);
+		DrawSetTextColor(Color);
+		DrawSetTextPos(Center ? X - w / 2 : X, Y);
+		DrawPrintText(_Input, lstrlenW(_Input));
 	}
 
 	void DrawSetColor(Color colDraw)

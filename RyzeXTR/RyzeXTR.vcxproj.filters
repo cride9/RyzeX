@@ -38,7 +38,6 @@
     <ClCompile Include="Core\Hooks\Hooked\hkAllocKeyValuesMemory.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkClMove.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkCreateMoveProxy.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkDispatchSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoExtraBoneProcessing.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModel.cpp" />
@@ -60,7 +59,6 @@
     <ClCompile Include="Core\Hooks\Hooked\hkRunCommand.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkSetText.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkStartSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkWriteUserCmdDeltaToBuffer.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\ImGui\ImGuiHooks.cpp" />
     <ClCompile Include="Core\Hooks\hooks.cpp" />
@@ -101,9 +99,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkGetAlphaModulation.cpp" />
     <ClCompile Include="Core\SDK\Draw.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui_freetype.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkGetObserverMode.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkIsUsingStaticPropDebugModes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />

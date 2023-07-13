@@ -41,43 +41,10 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		visual::WorldEsp();
 		visual::CoolHackKeyBindList();
 		visual::DrawRadioInformation();
+		visual::CustomHud();
+		visual::Hat();
 
 		D::SwapDrawData( );
-
-		if (g::pLocal && i::Input->bCameraInThirdPerson) {
-
-			Vector vecHeadPosition = g::pLocal->GetBonePosition(BONE_HEAD).value();
-
-			float flStep = (2 * M_PI) / 18.f;
-			float flRadius = 9;
-
-			for (float rotation = 0; rotation < (M_PI * 2.0); rotation += flStep) {
-
-				Vector topRim(flRadius * cos(rotation) + vecHeadPosition.x, flRadius * sin(rotation) + vecHeadPosition.y, vecHeadPosition.z + 2);
-				Vector bottomRim(flRadius / 2 * cos(rotation) + vecHeadPosition.x, flRadius / 2.f * sin(rotation) + vecHeadPosition.y, vecHeadPosition.z + 8);
-
-				Vector topRimPredict(flRadius * cos(rotation + flStep) + vecHeadPosition.x, flRadius * sin(rotation + flStep) + vecHeadPosition.y, vecHeadPosition.z + 2);
-				Vector bottomRimPredict(flRadius / 2 * cos(rotation + flStep) + vecHeadPosition.x, flRadius / 2.f * sin(rotation + flStep) + vecHeadPosition.y, vecHeadPosition.z + 8);
-
-				Vector topOnScreen, botOnScreen, topOnScreenPredict, botOnScreenPredict;
-				if (!i::DebugOverlay->ScreenPosition(topRim, topOnScreen))
-				{
-					if (!i::DebugOverlay->ScreenPosition(bottomRim, botOnScreen)) {
-
-						i::Surface->DrawSetColor(255, 255, 255, 255);
-
-						i::Surface->DrawLine(topOnScreen.x, topOnScreen.y, botOnScreen.x, botOnScreen.y);
-
-						if (!i::DebugOverlay->ScreenPosition(topRimPredict, topOnScreenPredict))
-							i::Surface->DrawLine(topOnScreen.x, topOnScreen.y, topOnScreenPredict.x, topOnScreenPredict.y);
-
-						if (!i::DebugOverlay->ScreenPosition(bottomRimPredict, botOnScreenPredict))
-							i::Surface->DrawLine(botOnScreen.x, botOnScreen.y, botOnScreenPredict.x, botOnScreenPredict.y);
-
-					}
-				}
-			}
-		}
 
 		for (Vector& drawPos : g::drawList)
 		{
@@ -180,6 +147,5 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		}
 	}
 
-	
 	original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
 }

@@ -626,6 +626,9 @@ void menu::Visualtab() noexcept {
 			ImGui::ColorEdit4("##Projectilecolor", cfg::misc::flProjectileESP);
 
             ImGui::Checkbox("Preserve killfeed", &preserveKillfeed);
+			ImGui::Checkbox("Custom hud", &bCustomHud);
+			ImGui::Checkbox("Draw hat", &bHat);
+			ImGui::ColorEdit4("##flhatColor", cfg::misc::flHat);
 
             ImGui::Checkbox("Aspect ratio", &aspectRatio);
             ImGui::SliderInt("Ratio", &aspectRatioValue, 0, 100);
@@ -744,6 +747,9 @@ void menu::Visualtab() noexcept {
             if (m_iHitSound > 0)
 				ImGui::SliderFloat("Hitsound volume", &m_flHitSoundVolume, 0.f, 100.f, "%.f");
             ImGui::Checkbox("Paper mode", &cfg::model::paperMode);
+			ImGui::Checkbox("Skinny boy", &cfg::misc::bSkinnyBoy);
+			if (cfg::misc::bSkinnyBoy)
+				ImGui::SliderInt("Scale##3", &cfg::misc::iSkinnyBoy, 0, 100);
             ImGui::Checkbox("Keybind list", &keyBindList);
 			ImGui::Checkbox("Keybind list OLD", &bKeyBindListOldEnable);
 			if (bKeyBindListOldEnable) {
@@ -1266,7 +1272,7 @@ void menu::Skintab() noexcept {
 	using namespace cfg::skin;
 	ImGui::BeginChild("left", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y), true, ImGuiWindowFlags_NoMove);
 	{
-		ImGui::SliderInt("Debug1", &cfg::debugSlider1, 0, 100);
+		//ImGui::SliderInt("Debug1", &cfg::debugSlider1, 0, 100);
 		using namespace beforeIfuckUpEverything;
 		ImGui::Checkbox("Enable", &bEnableSkinChagner);
 		ImGui::Checkbox("Filter by weapon", &bFilterByWeapon);

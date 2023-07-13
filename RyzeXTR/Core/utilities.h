@@ -7,6 +7,7 @@
 #include <fstream>
 #include "SDK/pe.h"
 #include "SDK/Memory.h"
+#include <comdef.h>
 
 #define RYZEXCOLOR Color(111, 203, 255)
 #define INRANGE(x,a,b)   (x >= a && x <= b)
@@ -288,5 +289,43 @@ namespace util {
 		}
 
 		return vecReturnValue;
+	}
+
+	inline bool IsFontInstalled(const wchar_t* fontName)
+	{
+		HDC hdc = GetDC(nullptr);
+		LOGFONT lf;
+		ZeroMemory(&lf, sizeof(LOGFONT));
+		lf.lfCharSet = DEFAULT_CHARSET;
+		wcsncpy_s(_bstr_t(lf.lfFaceName), LF_FACESIZE, fontName, LF_FACESIZE - 1);
+
+		bool fontFound = false;
+		EnumFontFamiliesEx(hdc, &lf, [](const LOGFONT* lplf, const TEXTMETRIC* lptm, DWORD, LPARAM lParam) -> int {
+			*(reinterpret_cast<bool*>(lParam)) = true;
+			return 0;
+			}, reinterpret_cast<LPARAM>(&fontFound), 0);
+
+		ReleaseDC(nullptr, hdc);
+		return fontFound;
+	}
+
+	inline bool InstallFontFromByteArray(const BYTE* fontData, DWORD dataSize)
+	{
+		DWORD fileSize = sizeof(fontData);
+
+		// Install the font from memory
+		HANDLE hFont = AddFontMemResourceEx((void*)&fontData[0], fileSize, NULL, &fileSize);
+		if (hFont == NULL) {
+			// Handle the error if the font cannot be installed
+			return false;
+		}
+
+		// Use the installed font in your application
+		// ...
+
+		// Clean up the resources
+		RemoveFontMemResourceEx(hFont);
+
+		return true;
 	}
 }

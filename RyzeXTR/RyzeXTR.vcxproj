@@ -170,7 +170,6 @@
     <ClCompile Include="Core\Hooks\Hooked\hkAllocKeyValuesMemory.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkClMove.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkCreateMoveProxy.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkDispatchSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoExtraBoneProcessing.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModel.cpp" />
@@ -180,10 +179,8 @@
     <ClCompile Include="Core\Hooks\Hooked\hkFrameStageNotify.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetAlphaModulation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetColorModulation.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkGetObserverMode.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetViewModelFov.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkINetchannelHandler.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkIsUsingStaticPropDebugModes.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkLevelShutDownClient.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkListLeavesInBox.cpp" />
@@ -196,7 +193,6 @@
     <ClCompile Include="Core\Hooks\Hooked\hkRunCommand.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkSetText.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkStartSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkWriteUserCmdDeltaToBuffer.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\ImGui\ImGuiHooks.cpp" />
     <ClCompile Include="Core\Hooks\hooks.cpp" />

@@ -40,7 +40,6 @@ void h::SetupHooks() {
 	HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
 	HookTable(detour::processMovement, i::GameMovement, 1, &hkProcessMovement);
 	HookTable(detour::renderView, (**reinterpret_cast<void***>(MEM::FindPattern(CLIENT_DLL, XorStr("8B 0D ? ? ? ? FF 75 0C 8B 45 08")) + 0x2)), 6, &hkRenderView);
-	//HookTable(detour::installStringTableCallback, i::ClientDll, table::installStringTableCallback, &hkInstallStringTableCallback);
 
 	// Signature hooks
 	HookSignature(detour::clMove, ENGINE_DLL, "55 8B EC 81 EC ? ? ? ? 53 56 8A F9", &hkClMove);
@@ -68,10 +67,6 @@ void h::SetupHooks() {
 	HookSignature(detour::setText, CLIENT_DLL, "55 8B EC 8B 45 08 85 C0 53", &hkSetText);
 	HookSignature(detour::levelShutDown, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 30 C6", &hkLevelShutDownClient);
 	HookSignature(detour::setupAliveLoop, CLIENT_DLL, "55 8B EC 51 56 8B 71 60 83 BE 9C 29 ? ? ? 0F 84 93 ? ? ? 8B", &hkSetupAliveLoop);
-	//HookSignature(detour::isUsingStaticPropDebugModes, ENGINE_DLL, "8B 0D ? ? ? ? 81 F9 ? ? ? ? 75 ? A1 ? ? ? ? 35 ? ? ? ? EB ? 8B 01 FF 50 ? 83 F8 ? 0F 85 ? ? ? ? 8B 0D", &hkIsUsingStaticPropDebugModes);
-	//HookSignature(detour::getObserverMode, CLIENT_DLL, "56 8B F1 8B 06 FF ? ? ? ? ? 83 ? ? ? ? ? ? 75 17", &hkGetObserverMode);
-	//HookSignature(detour::dispatchSound, ENGINE_DLL, "55 8B EC 81 EC ?? ?? ?? ?? 56 8B F1 8D 4D 98 E8", &hkDispatchSound);
-	//HookSignature(detour::startSound, ENGINE_DLL, "55 8B EC 81 ? ? ? ? ? 53 56 8B F1 57 8B 7E", &hkStartSound);
 
 	menu::DestroyDirectX();
 

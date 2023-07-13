@@ -14,13 +14,6 @@
 
 bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 
-	if (a.pRecord->pEntity->GetHealth() < 70) {
-		if (a.iHitbox == HITBOX_HEAD && b.iHitbox != HITBOX_HEAD)
-			return false;
-
-		if (b.iHitbox == HITBOX_HEAD && a.iHitbox != HITBOX_HEAD)
-			return true;
-	}
 	if (a.bLethal && a.iHitbox != HITBOX_HEAD)
 		return true;
 
@@ -38,39 +31,6 @@ bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 	}
 
 	return a.pRecord->flDesyncDelta > b.pRecord->flDesyncDelta;
-}
-
-bool LowestFov(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
-
-	if (pEnt1 == nullptr)
-		return false; // pEnt1 is nullptr, move it to the back
-	if (pEnt2 == nullptr)
-		return true; // pEnt2 is nullptr, move it to the back
-
-	auto firstPriority = playerList::arrPlayers[pEnt1->EntIndex()].iPriority;
-	auto secondPriority = playerList::arrPlayers[pEnt2->EntIndex()].iPriority;
-
-	if (firstPriority == 1 && secondPriority != 1)
-		return true; // pEnt1 has priority 1, move it to the front
-	if (firstPriority != 1 && secondPriority == 1)
-		return false; // pEnt2 has priority 1, move it to the front
-
-	const Vector vecEyePosition = g::vecEyePosition;
-	Vector vecCalcAngle;
-
-	auto pEnt1Hitbox = pEnt1->GetHitboxPosition( HITBOX_UPPER_CHEST, lagcomp.GetLog(pEnt1->EntIndex()).pCachedMatrix.data());
-	auto pEnt2Hitbox = pEnt2->GetHitboxPosition( HITBOX_UPPER_CHEST, lagcomp.GetLog(pEnt2->EntIndex()).pCachedMatrix.data());
-
-	M::VectorAngles( pEnt1Hitbox - vecEyePosition, vecCalcAngle );
-	Vector vecDistanceBetween1 = ( g::vecOriginalViewAngle - vecCalcAngle.NormalizeAngle( ) );
-
-	M::VectorAngles( pEnt2Hitbox - vecEyePosition, vecCalcAngle );
-	Vector vecDistanceBetween2 = ( g::vecOriginalViewAngle - vecCalcAngle.NormalizeAngle( ) );
-
-	float flFirstFov = abs( (vecDistanceBetween1).NormalizeAngle().Length2D( ) );
-	float flSecondFov = abs( (vecDistanceBetween2).NormalizeAngle().Length2D( ) );
-
-	return flFirstFov < flSecondFov;
 }
 
 bool LowestHealth(CBaseEntity* pEnt1, CBaseEntity* pEnt2) {
@@ -144,21 +104,17 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 	}
 
 	misc::RevolverCreateMove();
-	//Vector vecEyePosition = g::vecEyePosition;
-	Vector vecEyePosition = InterpolateLocalEyePosition(g::vecEyePosition, 1);
+	Vector vecEyePosition = g::vecEyePosition;
+	//Vector vecEyePosition = InterpolateLocalEyePosition(g::vecEyePosition, 1);
 
-	misc::bPeeking = false;
 	if (Vector vecHitscan = Hitscan(pLocal, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
 
 		if (!rageBotData.pAimbotTarget)
 			return;
 
-		misc::bPeeking = false;
 		exploits::bCanCharge = false;
 		if (cfg::rage::betweenshots)
 			rageBotData.bCanShoot = false;
-
-		AutoStop(pLocal, pWeapon, rageBotData.pAimbotTarget, g::pCmd, vecHitscan);
 
 		Vector shootAngle;
 		M::VectorAngles(vecHitscan - vecEyePosition, shootAngle); // https://www.unknowncheats.me/forum/counterstrike-global-offensive/137492-math-hack-1-coding-aimbot-stop-using-calcangle.html
@@ -169,6 +125,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 
 				rageBotData.bCanShoot = true;
 				Vector vecAngle = (shootAngle -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
+
 				pCmd->angViewPoint = vecAngle;
 				if (!cfg::rage::bSilentAim)
 					i::EngineClient->SetViewAngles(vecAngle);
@@ -224,9 +181,6 @@ std::vector<Lagcompensation::LagRecord_t*> ChooseTargetRecord(Lagcompensation::A
 
 	std::vector<Lagcompensation::LagRecord_t*> pRecords;
 	for (int i = 0; i < pLog->iLastValid; i++) {
-
-		if (pRecords.size() > 3)
-			break;
 
 		Lagcompensation::LagRecord_t* pRecord = &pLog->pRecord.at(i);
 
@@ -300,6 +254,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 				continue;
 
 			pCurrentApplied->Apply(pEntity, false);
+			AutoStop(pLocal, pWeapon, rageBotData.pAimbotTarget, g::pCmd, pCurrentApplied->pEntity->GetHitboxPosition(HITBOX_STOMACH, pCurrentApplied->pMatricies[RESOLVE]));
 			for (size_t iHitbox = 0; iHitbox < HITBOX_MAX; iHitbox++) {
 
 				multiPointed.clear();
@@ -348,9 +303,6 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 	if (vecRecordSave.size() > 1)
 		std::sort(vecRecordSave.begin(), vecRecordSave.end(), HitscanComparator);
-
-	for (auto& refRecord : vecRecordSave)
-		misc::Print(std::format("{}", refRecord.iHitbox).c_str());
 
 	for (auto& refRecord : vecRecordSave) {
 
@@ -469,6 +421,9 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 
 	flFinalHitchance = static_cast< int >( ( float( iHits ) / ( iAccuracry / 100.f ) ) );
 
+	if (flFinalHitchance >= iChance * 0.8f && IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick && !misc::bRetreat)
+		misc::bTeleportBack = true;
+
 	if (flFinalHitchance >= iChance) {
 		rageBotData.flHitchance = flFinalHitchance;
 		return true;
@@ -484,7 +439,10 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	if ( !ConfigAutoStop( pWeapon ) )
 		return;
 
-	if ( !(pLocal->GetFlags( ) & FL_ONGROUND ) && !ConfigAutoStopInAir( pWeapon ) )
+	if ((pCmd->iButtons & IN_JUMP || !(g::pLocal->GetFlags() & FL_ONGROUND)) && !ConfigAutoStopInAir(pWeapon))
+		return;
+
+	if (pWeapon->GetAmmo() == 0)
 		return;
 
 	// server is currently in nospread, no need to autostop
@@ -492,7 +450,7 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 		return;
 
 	if (!ConfigAutoStopBetweenShots(pWeapon) && !CheckShootingCondition( pCmd, pLocal, pWeapon) )
-			return;
+		return;
 
 	if ( rageBotData.bCanShoot )
 		return;
@@ -503,7 +461,30 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	if (exploits::bIsShiftingTicks && !(IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick))
 		return;
 
-	float flIdealSpeed = ( 0.28f ) * (pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
+	Vector vecEyePositionPredicted = InterpolateLocalEyePosition(g::vecEyePosition, 1);
+	int iAggressiveness = ConfigAutoStopAggressiveness(pWeapon);
+	switch (iAggressiveness) {
+	case 0:
+		vecEyePositionPredicted = InterpolateLocalEyePosition(g::vecEyePosition, 1); break;
+	case 1:
+		vecEyePositionPredicted = InterpolateLocalEyePosition(g::vecEyePosition, 2); break;
+	case 2:
+		vecEyePositionPredicted = InterpolateLocalEyePosition(g::vecEyePosition, 4); break;
+	case 3:
+		vecEyePositionPredicted = InterpolateLocalEyePosition(g::vecEyePosition, 5); break;
+	}
+
+	if (IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick)
+		vecEyePositionPredicted = InterpolateLocalEyePosition(g::vecEyePosition, 6);
+
+	if (autowall.GetDamage(pLocal, vecEyePositionPredicted, vecShootPosition, pWeapon) < 20)
+		return;
+
+	float flMultiplier = 0.28f;
+	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::iTicksToStore > 0)
+		flMultiplier = 0.18f;
+
+	float flIdealSpeed = (flMultiplier) * (pLocal->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
 
 	pCmd->iButtons &= ~IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT;
 
@@ -1163,7 +1144,7 @@ bool CRageBot::ShouldSendPacket(bool& bSendPacket) {
 	if (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind))
 		return bSendPacket;
 
-	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey))
+	if (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::iTicksToStore != 0)
 		return false;
 
 	return true;
@@ -1409,7 +1390,7 @@ bool CRageBot::ConfigAutoStopBetweenShots(CBaseCombatWeapon* pWeapon) {
 	}
 }
 
-bool CRageBot::ConfigAutoStopAggressiveness(CBaseCombatWeapon* pWeapon) {
+int CRageBot::ConfigAutoStopAggressiveness(CBaseCombatWeapon* pWeapon) {
 
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex();
 

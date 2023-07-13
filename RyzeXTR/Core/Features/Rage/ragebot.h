@@ -118,7 +118,7 @@ private:
 	bool				ConfigAutoStop( CBaseCombatWeapon*);
 	bool				ConfigAutoStopInAir(CBaseCombatWeapon*);
 	bool				ConfigAutoStopBetweenShots(CBaseCombatWeapon*);
-	bool				ConfigAutoStopAggressiveness(CBaseCombatWeapon*);
+	int					ConfigAutoStopAggressiveness(CBaseCombatWeapon*);
 	HITBOX_ARRAY		ConfigHitboxes(CBaseCombatWeapon*);
 	std::pair<int, int> ConfigMultipoint(CBaseCombatWeapon*);
 	HITBOX_ARRAY		ConfigMultiHitboxes(CBaseCombatWeapon*);

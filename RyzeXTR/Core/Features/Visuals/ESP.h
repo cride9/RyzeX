@@ -32,6 +32,8 @@ namespace visual {
 	void OutOfFov(CBaseEntity*);
 	void BarrelEsp(CBaseEntity*, Color);
 	void WorldLightning(Color);
+	void CustomHud();
+	void Hat();
 
 	void WelcomeUser(std::string szText);
 	

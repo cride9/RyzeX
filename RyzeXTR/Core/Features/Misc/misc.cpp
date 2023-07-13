@@ -31,20 +31,20 @@ void misc::SetupRadio( )
 
 	static std::pair<std::string, char> channels[ ] =
 	{
-		__( "http://radio.infowaste.xyz:8010/radio.mp3" ),					  // Gabber
-		__( "http://kathy.torontocast.com:3140/stream" ),                     // Rock
-		__( "http://radiosputnik.nl:8002/sputnik" ),                          // Techno
-		__( "http://64.20.39.8:8071/stream" ),                                // Rap
-		__( "http://radio4.vip-radios.fm:8020/stream128k-AAC-Chill_autodj" ), // Chill
-		__( "http://mp3.stream.tb-group.fm/clt.mp3" ),                        // Club
-		__( "http://mp3.stream.tb-group.fm/ht.mp3" ),                         // House
-		__( "http://69.195.153.34/cvgm192" ),                                 // 8-Bit
-		__( "http://8bit.fm:8000/live" ),                                     // 8-Bit Alternative
-		__( "http://ec2.yesstreaming.net:1910/stream" ),                      // Lo-Fi
-		__( "http://eurobeat.stream.laut.fm/eurobeat" ),					  // Eurobeat
-		__( "https://nightcore-berlin.stream.laut.fm/nightcore-berlin" ),     // Nightcore
-		__( "https://icast.connectmedia.hu/5202/live.mp3"),					  // Radio 1
-		__("http://stream-158.zeno.fm/71ntub27u18uv?zs=R4yvq6kaRPyekzJdUwP1VA") // Phonk radio
+		__( XorStr("http://radio.infowaste.xyz:8010/radio.mp3") ),					  // Gabber
+		__(XorStr("http://kathy.torontocast.com:3140/stream")),                     // Rock
+		__(XorStr("http://radiosputnik.nl:8002/sputnik")),                          // Techno
+		__(XorStr("http://64.20.39.8:8071/stream")),                                // Rap
+		__(XorStr("http://radio4.vip-radios.fm:8020/stream128k-AAC-Chill_autodj")), // Chill
+		__(XorStr("http://mp3.stream.tb-group.fm/clt.mp3")),                        // Club
+		__(XorStr("http://mp3.stream.tb-group.fm/ht.mp3")),                         // House
+		__(XorStr("http://69.195.153.34/cvgm192")),                                 // 8-Bit
+		__(XorStr("http://8bit.fm:8000/live")),                                     // 8-Bit Alternative
+		__(XorStr("http://ec2.yesstreaming.net:1910/stream")),                      // Lo-Fi
+		__(XorStr("http://eurobeat.stream.laut.fm/eurobeat")),					  // Eurobeat
+		__(XorStr("https://nightcore-berlin.stream.laut.fm/nightcore-berlin")),     // Nightcore
+		__(XorStr("https://icast.connectmedia.hu/5202/live.mp3")),					  // Radio 1
+		__(XorStr("http://stream-158.zeno.fm/71ntub27u18uv?zs=R4yvq6kaRPyekzJdUwP1VA")) // Phonk radio
 	};
 
 	bool bShouldDisable = false;
@@ -103,6 +103,8 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	ClanTag();
 	LeftHandKnife();
 	FogOptions();
+	if (cfg::misc::bSkinnyBoy)
+		g::pLocal->GetModelScale() = cfg::misc::iSkinnyBoy * 0.01f;
 #if NDEBUG || ALPHA
 	Security();
 #endif
@@ -269,6 +271,17 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	if (!cfg::antiaim::idealTick)
 		return;
 
+	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
+	if (!pWeapon)
+		return;
+
+	CCSWeaponInfo* pWeaponData = pWeapon->GetCSWpnData();
+	if (!pWeaponData)
+		return;
+
+	if (pWeaponData->nWeaponType >= 7)
+		return;
+
 	static bool bPositionSet;
 
 	static Vector vecOrigin;
@@ -285,7 +298,7 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 			pLocal->SetupBones(matrixRecord, 128, 0, i::GlobalVars->flCurrentTime);
 		}
 
-		if (pCmd->iButtons & IN_ATTACK)
+		if (pCmd->iButtons & IN_ATTACK && antiaim::ShouldDisableAntiaim(pCmd, *g::bSendPacket) || bTeleportBack)
 			bRetreat = true;
 	}
 	else {
@@ -309,6 +322,7 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 		if ((vecOrigin - pLocal->GetVecOrigin()).Length2D() < 2.f) {
 			bRetreat = false;
+			bTeleportBack = false;
 		}
 	}
 }
@@ -1020,12 +1034,6 @@ void misc::FakeLag(bool& bSendPacket) {
 		return;
 	}
 
-	if (bPeeking && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey) && exploits::iTicksToStore > 0) {
-		bSendPacket = i::ClientState->nChokedCommands >= ((*GameRules)->m_bIsValveDS() ? 6 : 14);
-		misc::Print(std::format("Choked ticks: {}", i::ClientState->nChokedCommands));
-		return;
-	}
-
 	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey))
 		return;
 
@@ -1080,6 +1088,7 @@ void misc::FakeLag(bool& bSendPacket) {
 	else
 		iCurrentChoke = cfg::antiaim::fakelag;
 
+	//if (!exploits::bShouldRecharge && exploits::iTicksToStore != 0 && !exploits::bIsShiftingTicks)
 	iMax = ((cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) || (cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey))) ? 1 : iMax;
 	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
 	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;
