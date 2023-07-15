@@ -23,10 +23,12 @@ void p::Destroy()
 
 void p::BaseViewModelSequence(const CRecvProxyData* pData, void* pStruct, void* pOut)
 {
+	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
+
 	const auto oSequence = hkBaseViewModelSequence->GetOriginal();
 
 	// sanity checks
-	if (g::pLocal == nullptr || !g::pLocal->IsAlive())
+	if (pLocal == nullptr || !pLocal->IsAlive())
 		return oSequence(pData, pStruct, pOut);
 
 	// get modifiable proxy data

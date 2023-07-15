@@ -18,18 +18,15 @@
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
 	static auto original = detour::createMove.GetOriginal<decltype(&h::hkCreateMoveProxy)>();
-	
+
 	// call original first so our movement and other stuff will be sent normally
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
 
-	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive );
+	invokeStdcall<void>(adr(original), ROP::EngineGadget_t::uReturnGadget, nSequenceNumber, flInputSampleFrametime, bIsActive);
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
-
-	//CSpoofedConVar cl_lagcompensationSpoofed("cl_lagcompensation");
-	//cl_lagcompensationSpoofed.SetInt(0);
 
 	bSendPacket = true;
 	g::bSendPacket = &bSendPacket;
@@ -100,7 +97,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		if (cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))
 			bSendPacket = true;
 		else
-			bSendPacket = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() == WEAPON_SSG08 ? true : exploits::iShiftAmount == 1 ? true : false : exploits::iShiftAmount == 1 ? true : false; // Only send on the last shifted
+			bSendPacket = exploits::iShiftAmount == 0 ? true : false;
 	}
 
 	if (bSendPacket)

@@ -6,7 +6,8 @@ void __fastcall h::hkSetText(void* ecx, void* edx, const char* tokenName) {
 	static auto original = detour::setText.GetOriginal<decltype(&h::hkSetText)>();
 
 	if (!g::pLocal || !g::pLocal->GetWeapon() || !g::pCmd)
-		return original(ecx, edx, tokenName);
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, tokenName);
+		//return original(ecx, edx, tokenName);
 
 	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
 
@@ -23,10 +24,10 @@ void __fastcall h::hkSetText(void* ecx, void* edx, const char* tokenName) {
 			if (flTransition >= (i * 0.18f))
 				thisText += cfg::misc::bombBuffer[i];
 
-		return original(ecx, edx, thisText.c_str());
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, thisText.c_str());
 	}
 	else
 		timerLmao = 0.f;
 
-	return original(ecx, edx, tokenName);
+	return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, tokenName);
 }

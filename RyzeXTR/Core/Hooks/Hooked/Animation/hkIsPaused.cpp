@@ -10,5 +10,5 @@ bool __stdcall h::hkIsPaused() {
 	if (_ReturnAddress() == (void*)ExtrapolationReturn)
 		return true;
 
-	return original();
+	return invokeStdcall<bool>(adr(original), ROP::EngineGadget_t::uReturnGadget);
 }

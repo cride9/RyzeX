@@ -14,19 +14,21 @@
 
 bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 
+	if (!a.pRecord || !b.pRecord)
+		return false;
+
 	if (a.bLethal && a.iHitbox != HITBOX_HEAD)
 		return true;
 
 	if (b.bLethal && b.iHitbox != HITBOX_HEAD)
 		return false;
 
-	if (a.bLethal && b.bLethal) {
+	if (a.iHitbox == HITBOX_HEAD && b.iHitbox == HITBOX_HEAD) {
 
-		if (a.iHitgroup != HITGROUP_HEAD && b.iHitgroup != HITGROUP_HEAD)
-			return a.flDamage > b.flDamage;
-		else if (a.iHitgroup != HITGROUP_HEAD && b.iHitgroup == HITGROUP_HEAD)
+		if (a.bHead && !b.bHead)
 			return true;
-		else if (a.iHitgroup == HITGROUP_HEAD && b.iHitgroup != HITGROUP_HEAD)
+
+		else if (!a.bHead && b.bHead)
 			return false;
 	}
 
@@ -200,7 +202,7 @@ std::vector<Lagcompensation::LagRecord_t*> ChooseTargetRecord(Lagcompensation::A
 		Ray_t traceRay(vecEyePosition, vecHitboxPosition);
 		CTraceFilter traceFilter(g::pLocal);
 
-		i::EngineTrace->TraceRay(traceRay, MASK_SHOT, &traceFilter, &traceData);
+		i::EngineTrace->TraceRay(traceRay, MASK_SHOT | CONTENTS_GRATE, &traceFilter, &traceData);
 		if (traceData.pHitEntity != nullptr && traceData.pHitEntity == pLog->pEntity)
 			if (ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecHitboxPosition, HITBOX_HEAD) == 3)
 				pRecords.push_back(pRecord);
@@ -243,7 +245,6 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 			continue;
 		
 		std::vector<Lagcompensation::LagRecord_t*> arrRecords = ChooseTargetRecord(pLog, pWeapon, vecEyePosition);
-		//std::array<Lagcompensation::LagRecord_t*, 2> arrRecords {&pLog->pRecord.front(), nullptr};
 
 		bool bBacktrack = false;
 		size_t iTick = 0;
@@ -291,7 +292,11 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 							if (playerList::arrPlayers[data.enterTrace.pHitEntity->EntIndex()].iPriority == FRIEND)
 								continue;
 
-						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage > pEntity->GetHealth(), bBacktrack));
+						bool bHead = false;
+						if (iHitbox == HITBOX_HEAD) 
+							bHead = bCollidePoint(vecEyePosition, vecPoint, pEntity->StudioHitbox(HITBOX_HEAD), pCurrentApplied->pMatricies[RESOLVE]);
+						
+						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage > pEntity->GetHealth(), bBacktrack, bHead));
 					}
 				}
 			}
@@ -316,7 +321,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 
 		rageBotData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
 		rageBotData.flDamage = refRecord.flDamage;
-		rageBotData.iHitbox = refRecord.iHitgroup;
+		rageBotData.iHitbox = refRecord.iHitbox;
 		rageBotData.iHitGroup = refRecord.iHitgroup;
 
 		return refRecord.vecPoint;
@@ -421,9 +426,6 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 
 	flFinalHitchance = static_cast< int >( ( float( iHits ) / ( iAccuracry / 100.f ) ) );
 
-	if (flFinalHitchance >= iChance * 0.8f && IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick && !misc::bRetreat)
-		misc::bTeleportBack = true;
-
 	if (flFinalHitchance >= iChance) {
 		rageBotData.flHitchance = flFinalHitchance;
 		return true;
@@ -473,9 +475,6 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	case 3:
 		vecEyePositionPredicted = InterpolateLocalEyePosition(g::vecEyePosition, 5); break;
 	}
-
-	if (IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick)
-		vecEyePositionPredicted = InterpolateLocalEyePosition(g::vecEyePosition, 6);
 
 	if (autowall.GetDamage(pLocal, vecEyePositionPredicted, vecShootPosition, pWeapon) < 20)
 		return;
@@ -956,6 +955,7 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 
 	refVecPoints.push_back(vecCenter);
 	if (iHitbox == HITBOX_HEAD) {
+		refVecPoints.push_back(vecCenter + vecTop * (flRadius * 0.95f));
 		refVecPoints.push_back(vecCenter + vecTop * flHitboxDistance);
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
@@ -1034,6 +1034,9 @@ std::vector<Vector> CRageBot::CreatePoints( CBaseEntity * pTarget, Lagcompensati
 #pragma runtime_checks( "", off )
 bool CRageBot::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4_t* aMatrix) {
 
+	if (!pHitbox)
+		return false;
+
 	Ray_t Ray(vecStart, vecEnd);
 
 	Trace_t Trace;
@@ -1084,15 +1087,15 @@ int CRageBot::SafePoint( Vector & vecEyePosition, CBaseCombatWeapon * pWeapon, L
 		Trace_t centerTrace; CTraceFilter centerFilter(g::pLocal, TRACE_ENTITIES_ONLY);
 
 		pRecord->ApplyMatrix(pRecord->pEntity, LEFT);
-		if (i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT, pRecord->pEntity, &leftTrace); leftTrace.pHitEntity && leftTrace.pHitEntity == pRecord->pEntity)
+		if (i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT | CONTENTS_GRATE, pRecord->pEntity, &leftTrace); leftTrace.pHitEntity && leftTrace.pHitEntity == pRecord->pEntity)
 			iSafePoint++;
 
 		pRecord->ApplyMatrix(pRecord->pEntity, RIGHT);
-		if (i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT, pRecord->pEntity, &rightTrace); rightTrace.pHitEntity && rightTrace.pHitEntity == pRecord->pEntity)
+		if (i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT | CONTENTS_GRATE, pRecord->pEntity, &rightTrace); rightTrace.pHitEntity && rightTrace.pHitEntity == pRecord->pEntity)
 			iSafePoint++;
 
 		pRecord->ApplyMatrix(pRecord->pEntity, CENTER);
-		if (i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT, pRecord->pEntity, &centerTrace); centerTrace.pHitEntity && centerTrace.pHitEntity == pRecord->pEntity)
+		if (i::EngineTrace->ClipRayToEntity(Ray_t(vecEyePosition, vecShootposition), MASK_SHOT | CONTENTS_GRATE, pRecord->pEntity, &centerTrace); centerTrace.pHitEntity && centerTrace.pHitEntity == pRecord->pEntity)
 			iSafePoint++;
 	}
 	else {

@@ -9,8 +9,9 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 
 	misc::ThirdPerson();
 
-	if (!g::pLocal || !g::pLocal->IsAlive()) 
-		return original(ecx, edx, pSetup);
+	if (!g::pLocal || !g::pLocal->IsAlive())
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pSetup);
+		//return original(ecx, edx, pSetup);
 
 	if (cfg::misc::removals[3])
 		pSetup->flFOV = cfg::misc::fov;
@@ -33,5 +34,5 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 	}
 	
 
-	original(ecx, edx, pSetup);
+	invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pSetup);
 }

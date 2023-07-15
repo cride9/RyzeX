@@ -6,8 +6,9 @@ void __fastcall h::hkPacketStart( void* ecx, void* edx, int sequence, int outgoi
 {
 	static auto original = detour::packetStart.GetOriginal<decltype( &hkPacketStart )>( );
 
-	if ( packetManager.ShouldProcessPacketStart( outgoing ) )
-		return original( ecx, edx, sequence, outgoing );
+	if (packetManager.ShouldProcessPacketStart(outgoing))
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, sequence, outgoing);
+		/*original( ecx, edx, sequence, outgoing )*/;
 }
 
 void __fastcall h::hkPacketEnd( void* ecx, void* edx )
@@ -17,7 +18,8 @@ void __fastcall h::hkPacketEnd( void* ecx, void* edx )
 	int nCommandsAcknowledged = i::ClientState->iCommandAck - i::ClientState->iLastCommandAck;
 	if (nCommandsAcknowledged <= 0) {
 		util::Print("hkPacketEnd returned");
-		return original(ecx, edx);
+		//return original(ecx, edx);
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget);
 	}
 
 	CClientState* ClientState = static_cast<CClientState*>(ecx);
@@ -32,25 +34,26 @@ void __fastcall h::hkPacketEnd( void* ecx, void* edx )
 	}
 
 	networking.OnPacketEnd(static_cast<CClientState*>(ecx));
-	return original( ecx, edx );
+	return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget);
 }
 
 bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
 {
 	static auto original = detour::temptEntities.GetOriginal<decltype( &hkTemptEntities )>( );
 
-	if ( !g::pLocal || !i::EngineClient->IsInGame( ) )
-		return original( ecx, edx, msg );
+	if (!g::pLocal || !i::EngineClient->IsInGame())
+		return invokeFastcall<bool>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, msg);
+		//return original( ecx, edx, msg );
 
 	// filtering events
 	if ( !g::pLocal->IsAlive( ) )
-		return original( ecx, edx, msg );
+		return invokeFastcall<bool>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, msg);
 
 	CEventInfo* pEventInfo = i::ClientState->pEvents; //0x4DEC
 	CEventInfo* pNextEvent = nullptr;
 
 	if ( !pEventInfo )
-		return original( ecx, edx, msg );
+		return invokeFastcall<bool>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, msg);
 
 	do
 	{
@@ -75,5 +78,5 @@ bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
 	} 
 
 	while ( pNextEvent != nullptr );
-		return original( ecx, edx, msg );
+		return invokeFastcall<bool>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, msg);
 }

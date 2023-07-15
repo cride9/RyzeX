@@ -23,19 +23,20 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(ecx);
 
 	if (pEntity != g::pLocal)
-		return original(ecx, edx);
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
+		//return original(ecx, edx);
 
 	if (!pEntity->IsAlive())
-		return original(ecx, edx);
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
 
 	int& SimulationTick = *pEntity->GetOffsetPointer<int>( 0x2ACU );
 	CCommandContext* pCommandContext = pEntity->GetOffsetPointer<CCommandContext>(0x350C);
 
 	if ( SimulationTick == i::GlobalVars->iTickCount )
-		return original( ecx, edx );
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
 
 	if ( !pCommandContext || !pCommandContext->bNeedsProcessing )
-		return original( ecx, edx );
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
 
 	if ( pCommandContext->pCmd.iTickCount >= std::numeric_limits< int >::max( ) )
 	{
@@ -51,7 +52,7 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	const int iTickBaseBackup = pEntity->GetTickBase( );
 	pEntity->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
 
-	original(ecx, edx);
+	invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
 
 	prediction.SaveViewmodelData(pEntity);
 	return networking.SaveNetvarData( pCommandContext->nCommandNumber );

@@ -10,11 +10,12 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 	static auto original = detour::runCommand.GetOriginal<decltype(&h::hkRunCommand)>();
 
 	if (!g::pCmd)
-		return original(ecx, edx, pEnt, pCmd, pMovehelper);
+		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pEnt, pCmd, pMovehelper);
+		//return original(ecx, edx, pEnt, pCmd, pMovehelper);
 
 	i::MoveHelper = pMovehelper;
 
-	original(ecx, edx, pEnt, pCmd, pMovehelper);
+	invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pEnt, pCmd, pMovehelper);
 
 	misc::RevolverRunCommand(pEnt);
 }

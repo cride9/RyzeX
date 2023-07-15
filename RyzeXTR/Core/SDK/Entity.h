@@ -1047,6 +1047,7 @@ public:
 	bool					CanShoot(CWeaponCSBase* pBaseWeapon, int iTickbase = -1);
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecEnd, bool bSmokeCheck = false);
 	bool					IsBreakable();
+	mstudiobbox_t*			StudioHitbox(int iHitbox);
 	bool					SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut );
 	void					InvalidateBoneCache();
 	float					GetSequenceCycleRate(CStudioHdr*, int);

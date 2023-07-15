@@ -45,7 +45,7 @@ void Animations::ResolverLogic() {
 			info.szName,
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
-			misc::GetHitgroupName(iHitHitbox), misc::GetHitgroupName(refCurrentData.iHitbox),
+			misc::GetHitgroupName(iHitHitbox), misc::GetHitgroupName(refCurrentData.iHitGroup),
 			iHitDmg, refCurrentData.flDamage
 		));
 		refCurrentData.ClearTarget();
@@ -65,7 +65,7 @@ void Animations::ResolverLogic() {
 			info.szName,
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
-			misc::GetHitgroupName(iHitHitbox), misc::GetHitgroupName(refCurrentData.iHitbox),
+			misc::GetHitgroupName(iHitHitbox), misc::GetHitgroupName(refCurrentData.iHitGroup),
 			iHitDmg, refCurrentData.flDamage
 		));
 		refCurrentData.ClearTarget();
@@ -87,7 +87,7 @@ void Animations::ResolverLogic() {
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
-				misc::GetHitgroupName(refCurrentData.iHitbox),
+				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flDamage
 			));
 			refCurrentData.ClearTarget();
@@ -100,7 +100,7 @@ void Animations::ResolverLogic() {
 			info.szName,
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
-			misc::GetHitgroupName(refCurrentData.iHitbox),
+			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flDamage
 		));
 		refCurrentData.ClearTarget();
@@ -115,7 +115,7 @@ void Animations::ResolverLogic() {
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
-				misc::GetHitgroupName(refCurrentData.iHitbox),
+				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flDamage
 			));
 			refCurrentData.ClearTarget();
@@ -126,7 +126,7 @@ void Animations::ResolverLogic() {
 		Trace_t traceData;
 		Ray_t rayData(refCurrentData.vecLocalShootPosition, bulletImpact);
 		CTraceFilter filterData(g::pLocal, TRACE_ENTITIES_ONLY);
-		i::EngineTrace->TraceRay(rayData, MASK_SHOT, &filterData, &traceData);
+		i::EngineTrace->TraceRay(rayData, MASK_SHOT | CONTENTS_GRATE, &filterData, &traceData);
 
 		if (traceData.pHitEntity != nullptr && traceData.pHitEntity == refCurrentData.pAimbotTarget || data.flCurrentDamage == 0.f) {
 
@@ -136,7 +136,7 @@ void Animations::ResolverLogic() {
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
-				misc::GetHitgroupName(refCurrentData.iHitbox),
+				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flDamage
 			));
 			refCurrentData.ClearTarget();
@@ -149,7 +149,7 @@ void Animations::ResolverLogic() {
 			info.szName,
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
-			misc::GetHitgroupName(refCurrentData.iHitbox),
+			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flDamage
 		));
 		refCurrentData.ClearTarget();

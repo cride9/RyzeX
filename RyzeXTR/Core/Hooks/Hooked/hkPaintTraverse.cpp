@@ -147,5 +147,6 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		}
 	}
 
-	original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
+	invokeFastcall<void>(pPanels, edx, adr(original), ROP::ClientGadget_t::uReturnGadget, vguiPanel, forceRepaint, allowForce);
+	//original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
 }

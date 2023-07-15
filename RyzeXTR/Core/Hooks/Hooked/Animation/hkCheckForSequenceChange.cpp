@@ -8,7 +8,7 @@ void __fastcall	h::hkCheckForSequenceChange(void* entityPointer, void* edx, void
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 
 	if (pEnt && !pEnt->IsAlive())
-		return original(entityPointer, edx, unused1, unused2, unused3, interpolation);
+		return invokeFastcall<void>(adr(entityPointer), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, unused1, unused2, unused3, interpolation);
 
-	return original(entityPointer, edx, unused1, unused2, unused3, false);
+	return invokeFastcall<void>(adr(entityPointer), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, unused1, unused2, unused3, interpolation);
 }

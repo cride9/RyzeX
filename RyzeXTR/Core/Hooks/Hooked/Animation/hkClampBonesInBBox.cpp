@@ -32,7 +32,7 @@ void __fastcall h::hkClampBonesInBBox(CBaseEntity* pEntity, void* edx, matrix3x4
 	if (pEntity == g::pLocal)
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(i::GlobalVars->iTickCount);
 
-	original(pEntity, edx, pMatrix, iBoneMask);
+	invokeFastcall<void>(adr(pEntity), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, pMatrix, iBoneMask);
 
 	i::GlobalVars->flCurrentTime = flCurtime;
 }

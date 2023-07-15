@@ -11,6 +11,9 @@
 #include "../SDK/Menu/config.h"
 #include "../SDK/X86RetSpoof.h"
 
+#define adr(s) uintptr_t(s)
+using namespace x86RetSpoof;
+
 namespace table {
 
 	inline constexpr auto D3DEndScene = 42;
@@ -141,7 +144,7 @@ namespace h {
 
 	void* __fastcall	hkAllocKeyValuesMemory(CKeyValuesSystem*, int, int);
 	void __fastcall		hkCreateMoveProxy(IBaseClientDLL*, int, int, float, bool);
-	void __fastcall		hkFrameStageNotify(IBaseClientDLL*, void*, EStage);
+	void __stdcall		hkFrameStageNotify(EStage);
 	void __fastcall		hkPaintTraverse(uintptr_t, int, unsigned int, bool, bool);
 	void __cdecl		hkClMove(float, bool);
 	void __fastcall		hkOverrideView(void*, void*, CViewSetup*);

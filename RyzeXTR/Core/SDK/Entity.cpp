@@ -646,6 +646,26 @@ bool CBaseEntity::IsBreakable()
 	return true;
 }
 
+mstudiobbox_t* CBaseEntity::StudioHitbox(int iHitbox) {
+
+	if (!this)
+		return nullptr;
+
+	const Model_t* model = this->GetModel();
+	if (!model)
+		return nullptr;
+
+	studiohdr_t* studioHdr = i::ModelInfo->GetStudioModel(model);
+	if (!studioHdr)
+		return nullptr;
+
+	mstudiobbox_t* studioBox = studioHdr->GetHitboxSet(0)->GetHitbox(iHitbox);
+	if (!studioBox)
+		return nullptr;
+
+	return studioBox;
+}
+
 bool CBaseEntity::IsFakeducking() {
 
 	static float flStoredTicks;

@@ -362,15 +362,15 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 
 	i::EngineTrace->TraceRay(ray, MASK_PLAYERSOLID, &filter, &trace);
 
-	if (trace.flFraction != 1.f)
-	{
-		for (int i = 0; i < 2; i++)
-		{
+	if (trace.flFraction != 1.f) {
+
+		for (int i = 0; i < 2; i++) {
+
 			velocity -= trace.plane.vecNormal * velocity.DotProduct(trace.plane.vecNormal);
 
 			const float dot = velocity.DotProduct(trace.plane.vecNormal);
-			if (dot < 0.f)
-			{
+			if (dot < 0.f) {
+
 				velocity.x -= dot * trace.plane.vecNormal.x;
 				velocity.y -= dot * trace.plane.vecNormal.y;
 				velocity.z -= dot * trace.plane.vecNormal.z;

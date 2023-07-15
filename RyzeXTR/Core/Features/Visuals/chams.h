@@ -6,6 +6,42 @@
 #include "../../SDK/Menu/config.h"
 #include <format>
 
+constexpr static const char* CoolChams =
+
+R"#("VertexLitGeneric"{
+		  
+	"$basetexture" "models/weapons/customization/paints/anodized_multi/smoke"
+	"$nofog" "1"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[1 1 1]"
+	"$phong" "1"
+	"$basemapalphaphongmask" "1"
+	"$phongboost" "0"
+	"$rimlight" "1"
+	"$phongtint" "[1 1 1]"
+	"$rimlightexponent" "9999999"
+	"$rimlightboost" "0"
+	"$selfillum" "1"
+	"$ignorez" "0"
+ 
+	"Proxies"
+	{
+		"TextureScroll"
+		{
+			"textureScrollVar" "$basetexturetransform"
+			"textureScrollRate" "0.08"
+			"textureScrollAngle" "45"
+		}
+ 
+		"TextureScroll"
+		{
+			"textureScrollVar" "$bumptransform"
+			"textureScrollRate" "0.01"
+			"textureScrollAngle" "45"
+		}   
+	}
+})#";
+
 constexpr static const char* GlowChams =
 
 R"#("VertexLitGeneric"
