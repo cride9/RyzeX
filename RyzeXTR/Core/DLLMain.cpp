@@ -28,9 +28,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
 	if (fdwReason == DLL_PROCESS_ATTACH) {
 
-		//static auto InitSafeModuleFn = (void(__fastcall*)(void*, void*))MEM::FindPattern(CLIENT_DLL, XorStr("56 8B 71 3C B8"));
-		//if (InitSafeModuleFn)
-		//	InitSafeModuleFn((void*)hinstDLL, nullptr);
+		static auto InitSafeModuleFn = (void(__fastcall*)(void*, void*))MEM::FindPattern(CLIENT_DLL, XorStr("56 8B 71 3C B8"));
+		if (InitSafeModuleFn)
+			InitSafeModuleFn((void*)hinstDLL, nullptr);
 
 		DisableThreadLibraryCalls(hinstDLL);
 
@@ -75,7 +75,7 @@ void SetupFonts() {
 	i::Surface->SetFontGlyphSet(g::fonts::SkeetFont, XorStr("Verdana"), 25, FW_EXTRABOLD, 0, 0, FONTFLAG_DROPSHADOW | FONTFLAG_ANTIALIAS);
 	i::Surface->SetFontGlyphSet(g::fonts::DebugFont, XorStr("Small Fonts"), 16, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 
-	util::Print("Fonts initialized");
+	util::Print(XorStr("Fonts initialized"));
 }
 
 DWORD WINAPI CheatThread(PVOID hinstDLL) {
@@ -103,11 +103,6 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	g::bStartWelcome = true;
 	misc::SetupRadio();
 
-#if _DEBUG
-
-	while (!GetAsyncKeyState(VK_DELETE))
-		Sleep(200);
-
 	// destroy radio
 	BASS::bass_init = FALSE;
 	BASS_Stop( );
@@ -124,8 +119,6 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 
 	delete Config2;
 	delete g_LocalAnimations;
-
-#endif
 
 #if NDEBUG || ALPHA
 

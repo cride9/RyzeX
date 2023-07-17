@@ -240,11 +240,11 @@ void SetUpMovement(Lagcompensation::LagRecord_t* pRecord, CAnimState* pState, La
 		pState->flWalkToRunTransition = min(0.99f, pState->flWalkToRunTransition);
 	}
 	char szWeaponMoveSeq[64];
-	sprintf_s(szWeaponMoveSeq, "move_%s", pState->GetWeaponPrefix());
+	sprintf_s(szWeaponMoveSeq, XorStr("move_%s"), pState->GetWeaponPrefix());
 
 	int nWeaponMoveSeq = m_pPlayer->LookupSequence(szWeaponMoveSeq);
 	if (nWeaponMoveSeq == -1)
-		nWeaponMoveSeq = m_pPlayer->LookupSequence("move");
+		nWeaponMoveSeq = m_pPlayer->LookupSequence(XorStr("move"));
 
 	if (m_pPlayer->GetMoveState() != pState->nPreviousMoveState)
 		pState->flStutterStep += 10;
@@ -308,12 +308,12 @@ void Animations::RebuiltLayer6(CAnimState* m_pState, CBaseEntity* pEntity, Lagco
 	AnimationData_t& m_AnimationData = pAnimationData[pEntity->EntIndex()];
 
 	char m_szDestination[64];
-	sprintf_s(m_szDestination, "move_%s", m_pState->GetWeaponPrefix());
+	sprintf_s(m_szDestination, XorStr("move_%s"), m_pState->GetWeaponPrefix());
 
 	int m_nMoveSequence = pEntity->LookupSequence(m_szDestination);
 	if (m_nMoveSequence == -1)
 	{
-		m_nMoveSequence = pEntity->LookupSequence("move");
+		m_nMoveSequence = pEntity->LookupSequence(XorStr("move"));
 	}
 
 	// NOTE: 
@@ -429,7 +429,7 @@ Vector DeterminePlayerVelocity(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 	}
 
 	/* Define const */
-	static CConVar* sv_maxspeed = i::ConVar->FindVar("sv_maxspeed");
+	static CConVar* sv_maxspeed = i::ConVar->FindVar(XorStr("sv_maxspeed"));
 	const float flMaxSpeed = sv_maxspeed->GetFloat();
 
 	/* Get animation layers */

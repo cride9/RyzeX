@@ -100,6 +100,7 @@
     <ClCompile Include="Core\SDK\Draw.cpp" />
     <ClCompile Include="Dependecies\ImGui\imgui_freetype.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\VerifyReturnAddress.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />

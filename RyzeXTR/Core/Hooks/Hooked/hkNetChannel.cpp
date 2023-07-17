@@ -10,13 +10,13 @@ void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool hea
 	static auto original = detour::processPacket.GetOriginal<decltype( &hkProcessPacket )>( );
 
 	if (!i::ClientState->pNetChannel)
-		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, packet, header);
-		//return original( ecx, edx, packet, header );
+		//return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, packet, header);
+		return original( ecx, edx, packet, header );
 
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
-		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, packet, header);
+		return original(ecx, edx, packet, header);
 
-	invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, packet, header);
+	original(ecx, edx, packet, header);
 
 	// get this from CL_FireEvents string "Failed to execute event for classId" in engine.dll
 	for ( CEventInfo* it{ i::ClientState->pEvents }; it != nullptr; it = it->pNext )
@@ -128,8 +128,8 @@ bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMe
 	//	}
 	//}
 	
-	//return original( thisptr, edx, pMessage, bForceReliable, bVoice );
-	return invokeFastcall<bool>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pMessage, bForceReliable, bVoice);
+	return original( thisptr, edx, pMessage, bForceReliable, bVoice );
+	//return invokeFastcall<bool>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pMessage, bForceReliable, bVoice);
 }
 
 
@@ -192,8 +192,9 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	INetChannelInfo* pNetChannelInfo = i::EngineClient->GetNetChannelInfo( );
 	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag"  );
 
-	if ( !i::EngineClient->IsInGame( ) || !cfg::misc::fakePing || pDatagram != nullptr || pNetChannelInfo == nullptr || sv_maxunlag == nullptr )
-		return invokeFastcall<int>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pDatagram);
+	if (!i::EngineClient->IsInGame() || !cfg::misc::fakePing || pDatagram != nullptr || pNetChannelInfo == nullptr || sv_maxunlag == nullptr)
+		return original(thisptr, edx, pDatagram);
+		//return invokeFastcall<int>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pDatagram);
 
 	const int iOldInReliableState = thisptr->iInReliableState;
 	const int iOldInSequenceNr = thisptr->iInSequenceNr;
@@ -202,7 +203,7 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	const float flMaxLatency = std::fmax( 0.f, std::clamp( cfg::misc::fakePingFactor / 1000.f, 0.f, 1000.f/*sv_maxunlag->GetFloat( )*/ ) - pNetChannelInfo->GetLatency( FLOW_OUTGOING ) );
 	lagcomp.AddLatencyToNetChannel( thisptr, flMaxLatency );
 
-	const int iReturn = invokeFastcall<int>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pDatagram);
+	const int iReturn = original(thisptr, edx, pDatagram);
 
 	thisptr->iInReliableState = iOldInReliableState;
 	thisptr->iInSequenceNr = iOldInSequenceNr;

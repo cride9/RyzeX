@@ -13,8 +13,8 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
 	static auto original = detour::levelShutDown.GetOriginal<decltype(&h::hkLevelShutDownClient)>();
 
-	invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
-	//original(ecx, edx);
+	//invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
+	original(ecx, edx);
 
 	auto pLocal = CBaseEntity::GetLocalPlayer();
 	if (pLocal && pLocal->IsAlive())

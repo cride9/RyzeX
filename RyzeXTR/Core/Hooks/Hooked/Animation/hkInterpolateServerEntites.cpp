@@ -10,8 +10,8 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 		return original(ecx, edx);
 
 	lagcomp.SetInterpolationFlags();
-	invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
-	//original(ecx, edx);
+	//invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
+	original(ecx, edx);
 
 	anims.InterpolateMatricies();
 	g_LocalAnimations->InterpolateMatricies();

@@ -51,6 +51,10 @@ void misc::SetupRadio( )
 
 	while (!bShouldDisable)
 	{
+#ifdef NDEBUG
+
+#endif
+
 #ifdef _DEBUG
 		if (GetAsyncKeyState(VK_DELETE))
 			bShouldDisable = true;
@@ -115,29 +119,29 @@ void misc::SkyboxChanger() {
 
 	static std::string szSkyboxes[] = {
 	"",
-	"cs_baggage_skybox_",
-	"cs_tibet",
-	"vietnam",
-	"sky_lunacy",
-	"embassy",
-	"italy",
-	"jungle",
-	"office",
-	"sky_cs15_daylight01_hdr",
-	"sky_cs15_daylight02_hdr",
-	"sky_cs15_daylight03_hdr",
-	"sky_cs15_daylight04_hdr",
-	"sky_day02_05",
-	"nukeblank",
-	"dustblank",
-	"sky_venice",
-	"sky_csgo_cloudy01",
-	"sky_csgo_night02",
-	"sky_csgo_night02b",
-	"vertigo",
-	"vertigoblue_hdr",
-	"sky_dust",
-	"sky_hr_aztec"
+XorStr("cs_baggage_skybox_"),
+	XorStr("cs_tibet"),
+	XorStr("vietnam"),
+	XorStr("sky_lunacy"),
+	XorStr("embassy"),
+	XorStr("italy"),
+	XorStr("jungle"),
+	XorStr("office"),
+	XorStr("sky_cs15_daylight01_hdr"),
+	XorStr("sky_cs15_daylight02_hdr"),
+	XorStr("sky_cs15_daylight03_hdr"),
+	XorStr("sky_cs15_daylight04_hdr"),
+	XorStr("sky_day02_05"),
+	XorStr("nukeblank"),
+	XorStr("dustblank"),
+	XorStr("sky_venice"),
+	XorStr("sky_csgo_cloudy01"),
+	XorStr("sky_csgo_night02"),
+	XorStr("sky_csgo_night02b"),
+	XorStr("vertigo"),
+	XorStr("vertigoblue_hdr"),
+	XorStr("sky_dust"),
+	XorStr("sky_hr_aztec")
 	};
 
 	static bool bRefreshNewGame = false;
@@ -249,7 +253,7 @@ void misc::ServerHitboxes() {
 
 void misc::RemovePostProcessing() {
 
-	static CConVar* mat_postprocess_enable = i::ConVar->FindVar("mat_postprocess_enable");
+	static CConVar* mat_postprocess_enable = i::ConVar->FindVar(XorStr("mat_postprocess_enable"));
 
 	mat_postprocess_enable->SetValue(cfg::misc::removals[4] ? 0 : 1);
 }
@@ -257,7 +261,7 @@ void misc::RemovePostProcessing() {
 void misc::Security() {
 
 	// dont even ask that
-	static auto showerror = i::ConVar->FindVar("cl_showerror");
+	static auto showerror = i::ConVar->FindVar(XorStr("cl_showerror"));
 
 	if (showerror->GetInt() != 0)
 		showerror->SetValue(0);
@@ -400,7 +404,7 @@ void misc::BulletImpactFrameStage(CBaseEntity* pLocal) {
 			iLastCount = pImpactList.Count();
 	}
 	catch(std::exception) {
-		throw std::runtime_error(std::format("BulletImpactFrameStage crashed\nMemory at: {}\nLocalPlayer: {}\nEngine LocalPlayer: {}", uintptr_t(pLocal + 0x11C50), uintptr_t(pLocal), uintptr_t(CBaseEntity::GetLocalPlayer())).c_str());
+		throw std::runtime_error(std::format(XorStr("BulletImpactFrameStage crashed\nMemory at: {}\nLocalPlayer: {}\nEngine LocalPlayer: {}"), uintptr_t(pLocal + 0x11C50), uintptr_t(pLocal), uintptr_t(CBaseEntity::GetLocalPlayer())).c_str());
 	}
 }
 
@@ -416,12 +420,12 @@ void misc::BulletImpact(IGameEvent* pEvent) {
 
 	if (pEvent != nullptr) {
 
-		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
 		if (iUser != i::EngineClient->GetLocalPlayer())
 			return;
 
-		Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+		Vector vecImpact = Vector(pEvent->GetInt(XorStr("x")), pEvent->GetInt(XorStr("y")), pEvent->GetInt(XorStr("z")));
 
 		i::DebugOverlay->AddBoxOverlay(
 			vecImpact,
@@ -445,55 +449,54 @@ void misc::BuyBot(IGameEvent* event) { // need menu element
 	std::string buy = "";
 
 	switch (cfg::misc::pistols) {
-
-	case 1: buy += "buy glock;buy usp_silencer;buy hkp2000;"; break;
-	case 2: buy += "buy elite;"; break;
-	case 3: buy += "buy p250;"; break;
-	case 4: buy += "buy cz75a;buy fiveseven; buy tec9;"; break;
-	case 5: buy += "buy deagle;buy revolver;"; break;
+	case 1: buy += XorStr("buy glock;buy usp_silencer;buy hkp2000;"); break;
+	case 2: buy += XorStr("buy elite;"); break;
+	case 3: buy += XorStr("buy p250;"); break;
+	case 4: buy += XorStr("buy cz75a;buy fiveseven; buy tec9;"); break;
+	case 5: buy += XorStr("buy deagle;buy revolver;"); break;
 	}
-	switch (cfg::misc::snipers) {
 
-	case 1: buy += "buy ssg08;"; break;
-	case 2: buy += "buy awp;"; break;
-	case 3: buy += "buy scar20;buy g3sg1;"; break;
+	switch (cfg::misc::snipers) {
+	case 1: buy += XorStr("buy ssg08;"); break;
+	case 2: buy += XorStr("buy awp;"); break;
+	case 3: buy += XorStr("buy scar20;buy g3sg1;"); break;
 	}
 
 	if (cfg::misc::equipments[0])
-		buy += "buy vesthelm;";
+		buy += XorStr("buy vesthelm;");
 
 	if (cfg::misc::equipments[1])
-		buy += "buy taser;";
+		buy += XorStr("buy taser;");
 
 	if (cfg::misc::equipments[2])
-		buy += "buy defuser;";
+		buy += XorStr("buy defuser;");
 
 	if (cfg::misc::grenades[0])
-		buy += "buy molotov;buy incgrenade;";
+		buy += XorStr("buy molotov;buy incgrenade;");
 
 	if (cfg::misc::grenades[1])
-		buy += "buy decoy;";
+		buy += XorStr("buy decoy;");
 
 	if (cfg::misc::grenades[2])
-		buy += "buy flashbang;";
+		buy += XorStr("buy flashbang;");
 
 	if (cfg::misc::grenades[3])
-		buy += "buy hegrenade;";
+		buy += XorStr("buy hegrenade;");
 
 	if (cfg::misc::grenades[4])
-		buy += "buy smokegrenade;";
+		buy += XorStr("buy smokegrenade;");
 
 	i::EngineClient->ExecuteClientCmd(buy.c_str());
 }
 
 void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
-	IClientEntity* pAttacker = i::EntityList->GetClientEntity( i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "attacker" ) ) );
+	IClientEntity* pAttacker = i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker"))));
 
 	if ( !pAttacker || pAttacker != g::pLocal )
 		return;
 
-	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity( i::EngineClient->GetPlayerForUserID( pEvent->GetInt( "userid" ) ) ) );
+	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")))));
 
 	if ( !pEntity || pEntity == g::pLocal )
 		return;
@@ -523,7 +526,7 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
 	// play hit sound
 	if ( cfg::misc::m_iHitSound == 1 ) {
-		i::EngineSoundClient->EmitAmbientSound( "buttons\\arena_switch_press_02.wav", cfg::misc::m_flHitSoundVolume / 100.f );
+		i::EngineSoundClient->EmitAmbientSound("buttons\\arena_switch_press_02.wav", cfg::misc::m_flHitSoundVolume / 100.f);
 		// physics\\metal\\paintcan_impact_hard3.wav
 	}
 	else if ( cfg::misc::m_iHitSound == 2 && !cfg::misc::m_szWavPath.empty( ) ) {
@@ -651,8 +654,8 @@ void misc::FastStop(CUserCmd* pCmd) {
 		Vector vecForward;
 		M::AngleVectors(vecDirection, &vecForward);
 
-		static auto cl_forwardspeed = i::ConVar->FindVar("cl_forwardspeed");
-		static auto cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
+		static auto cl_forwardspeed = i::ConVar->FindVar(XorStr("cl_forwardspeed"));
+		static auto cl_sidespeed = i::ConVar->FindVar(XorStr("cl_sidespeed"));
 
 		auto negative_forward_speed = -cl_forwardspeed->GetFloat();
 		auto negative_side_speed = -cl_sidespeed->GetFloat();
@@ -695,7 +698,7 @@ void misc::Slowwalk(CUserCmd* pCmd, float flSpeed) {
 
 void misc::AspectRatio() {
 
-	static CConVar* r_aspectratio = i::ConVar->FindVar("r_aspectratio");
+	static CConVar* r_aspectratio = i::ConVar->FindVar(XorStr("r_aspectratio"));
 
 	if (!cfg::misc::aspectRatio) {
 		r_aspectratio->SetValue(0);
@@ -981,34 +984,6 @@ void misc::ThirdPerson() {
 	}
 }
 
-//void misc::ThirdPerson() {
-//
-//	if (!cfg::misc::thirdperson || !g::pLocal)
-//		return;
-//
-//	static std::string tpfix = "cam_idealpitch 0;" "cam_idealyaw 0;" "thirdperson;";
-//	static bool didSetThirdPerson = false;
-//	static CConVar* svcheats = i::ConVar->FindVar("sv_cheats");
-//
-//	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && g::pLocal->IsAlive()) {
-//
-//		if (!didSetThirdPerson) {
-//
-//			*(int*)((DWORD)&svcheats->fnChangeCallbacks + 0xC) = 0; // ew
-//			svcheats->SetValue(1);
-//
-//			i::EngineClient->ExecuteClientCmd(tpfix.c_str());
-//			didSetThirdPerson = true;
-//		}
-//		static CConVar* cam_idealdist = i::ConVar->FindVar("cam_idealdist");
-//		cam_idealdist->SetValue(cfg::misc::thirdpersonDistance);
-//	}
-//	else {
-//		i::EngineClient->ExecuteClientCmd("firstperson");
-//		didSetThirdPerson = false;
-//	}
-//}
-
 void misc::FakeLag(bool& bSendPacket) {
 
 	enum FAKELAGTYPE {
@@ -1039,7 +1014,7 @@ void misc::FakeLag(bool& bSendPacket) {
 
 	static int iCurrentChoke = 0;
 
-	static CConVar* sv_maxspeed = i::ConVar->FindVar("sv_maxspeed");
+	static CConVar* sv_maxspeed = i::ConVar->FindVar(XorStr("sv_maxspeed"));
 	float flVelocity = g::pLocal->GetVelocity().Length2D();
 	float flMaxVelocity = g::pLocal->GetWeapon() ? g::pLocal->IsScoped() ? g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[1] : g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[0] : sv_maxspeed->GetFloat();
 	static bool bChokeCycleEnded = false;
@@ -1100,7 +1075,7 @@ void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
 	BeamInfo_t info;
 	info.m_nType = TE_BEAMPOINTS;
 	//info.m_pszModelName = "sprites/purplelaser1.vmt";
-	info.m_pszModelName = "sprites/white.vmt";
+	info.m_pszModelName = XorStr("sprites/white.vmt");
 	info.m_nModelIndex = -1;
 	info.m_flHaloScale = -1.0f;
 	info.m_flLife = 3.0f;
@@ -1132,13 +1107,13 @@ void misc::BulletTracer(IGameEvent* pEvent) {
 		return;
 
 	/* Get this once, so the beams won't deform bcs of multiple impact -> multiple position */
-	auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 	CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iUser));
 
 	if (!pEntity)
 		return;
 
-	Vector vecImpact = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+	Vector vecImpact = Vector(pEvent->GetInt(XorStr("x")), pEvent->GetInt(XorStr("y")), pEvent->GetInt(XorStr("z")));
 
 	if (pEntity == g::pLocal && cfg::visual::bBulletTracer[LOCAL])
 		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[LOCAL]);
@@ -1156,7 +1131,7 @@ void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bWorldCrosshair)
 		return;
 
-	auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
 	if (iUser != g::pLocal->EntIndex())
 		return;
@@ -1165,7 +1140,7 @@ void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
 
 	cfg::misc::flWorldCrosshairColor[3] = 1.f;
 	visual::flWorldCrosshairLength[i] = i::GlobalVars->flCurrentTime;
-	visual::vecWorldCrosshair[i] = Vector(pEvent->GetInt("x"), pEvent->GetInt("y"), pEvent->GetInt("z"));
+	visual::vecWorldCrosshair[i] = Vector(pEvent->GetInt(XorStr("x")), pEvent->GetInt(XorStr("y")), pEvent->GetInt(XorStr("z")));
 	i++;
 	if (i >= 5)
 		i = 0;
@@ -1174,7 +1149,7 @@ void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
 void misc::FixScopeSens() {
 
 	// zoom_sensitivity_ratio_mouse 
-	static CConVar* zoom_sensitivity_ratio_mouse = i::ConVar->FindVar("zoom_sensitivity_ratio_mouse");
+	static CConVar* zoom_sensitivity_ratio_mouse = i::ConVar->FindVar(XorStr("zoom_sensitivity_ratio_mouse"));
 
 	if (!g::pLocal || !g::pLocal->GetWeapon()) {
 		zoom_sensitivity_ratio_mouse->SetValue(1);
@@ -1476,8 +1451,8 @@ void misc::MoveToPosition() {
 
 void Friction(float flFriction, Vector* vecVelocity)
 {
-	static CConVar* sv_friction = i::ConVar->FindVar("sv_friction");
-	static CConVar* sv_stopspeed = i::ConVar->FindVar("sv_stopspeed");
+	static CConVar* sv_friction = i::ConVar->FindVar(XorStr("sv_friction"));
+	static CConVar* sv_stopspeed = i::ConVar->FindVar(XorStr("sv_stopspeed"));
 	float	speed, newspeed, control;
 	float	friction;
 	float	drop;
@@ -1609,24 +1584,24 @@ void misc::ClanTag() {
 			}*/
 			bShouldPrint = true;
 			switch (iMainTime) {
-			case 0: util::SetClan("R"); break;
-			case 1: util::SetClan("TR"); break;
-			case 2: util::SetClan("XTR"); break;
-			case 3: util::SetClan("eXTR"); break;
-			case 4: util::SetClan("zeXTR"); break;
-			case 5: util::SetClan("yzeXTR"); break;
-			case 6: util::SetClan("RyzeXTR"); break;
-			case 7: util::SetClan("RyzeXTR"); break;
-			case 8: util::SetClan("RyzeXTR"); break;
-			case 9: util::SetClan("RyzeXTR"); break;
-			case 10: util::SetClan("RyzeXT"); break;
-			case 11: util::SetClan("RyzeX"); break;
-			case 12: util::SetClan("Ryze"); break;
-			case 13: util::SetClan("Ryz"); break;
-			case 14: util::SetClan("Ry"); break;
-			case 15: util::SetClan("R"); break;
-			case 16: util::SetClan(""); break;
-			case 17: util::SetClan(""); break;
+			case 0: util::SetClan(XorStr("R")); break;
+			case 1: util::SetClan(XorStr("TR")); break;
+			case 2: util::SetClan(XorStr("XTR")); break;
+			case 3: util::SetClan(XorStr("eXTR")); break;
+			case 4: util::SetClan(XorStr("zeXTR")); break;
+			case 5: util::SetClan(XorStr("yzeXTR")); break;
+			case 6: util::SetClan(XorStr("RyzeXTR")); break;
+			case 7: util::SetClan(XorStr("RyzeXTR")); break;
+			case 8: util::SetClan(XorStr("RyzeXTR")); break;
+			case 9: util::SetClan(XorStr("RyzeXTR")); break;
+			case 10: util::SetClan(XorStr("RyzeXT")); break;
+			case 11: util::SetClan(XorStr("RyzeX")); break;
+			case 12: util::SetClan(XorStr("Ryze")); break;
+			case 13: util::SetClan(XorStr("Ryz")); break;
+			case 14: util::SetClan(XorStr("Ry")); break;
+			case 15: util::SetClan(XorStr("R")); break;
+			case 16: util::SetClan(XorStr("")); break;
+			case 17: util::SetClan(XorStr("")); break;
 			}
 		}
 		else {
@@ -1642,16 +1617,16 @@ void misc::Killsay(IGameEvent* pEvent) {
 	if (!cfg::misc::bKillsay)
 		return;
 
-	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
+	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));
 	if (int iLocalIndex = i::EngineClient->GetLocalPlayer(); iUserID != iLocalIndex && iAttacker == iLocalIndex) {
-		i::EngineClient->ExecuteClientCmd(std::format("say \"{}\"", cfg::misc::killSayBuffer).c_str());
+		i::EngineClient->ExecuteClientCmd(std::format(XorStr("say \"{}\""), cfg::misc::killSayBuffer).c_str());
 	}
 }
 
 void misc::ThirdPersonDisableOnDeath(IGameEvent* pEvent) {
 
-	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
 	if (iUserID == i::EngineClient->GetLocalPlayer() && i::Input->bCameraInThirdPerson)
 		i::Input->ToFirstPerson();
@@ -1662,9 +1637,9 @@ void misc::CapsuleHandler(IGameEvent* pEvent) {
 	if (!g::pLocal || !cfg::misc::bDrawCapsule)
 		return;
 
-	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
-	int iHitgroup = pEvent->GetInt("hitgroup");
+	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
+	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));
+	int iHitgroup = pEvent->GetInt(XorStr("hitgroup"));
 	if (int iLocalIndex = i::EngineClient->GetLocalPlayer(); iUserID != iLocalIndex && iAttacker == iLocalIndex) {
 		CapsuleOnHit(iUserID, iHitgroup, Color(cfg::misc::flDrawCapsuleColor), 3.f);
 	}
@@ -1710,26 +1685,16 @@ std::string misc::GetHitgroupName(int iHitgroup) {
 
 	switch (iHitgroup)
 	{
-	case HITGROUP_GENERIC:
-		return "None";
-	case HITGROUP_HEAD:
-		return "Head";
-	case HITGROUP_CHEST:
-		return "Chest";
-	case HITGROUP_STOMACH:
-		return "Stomach";
-	case HITGROUP_LEFTARM:
-		return "Left arm";
-	case HITGROUP_RIGHTARM:
-		return "Right arm";
-	case HITGROUP_LEFTLEG:
-		return "Left lef";
-	case HITGROUP_RIGHTLEG:
-		return "Right leg";
-	case HITGROUP_NECK:
-		return "Neck";
-	case HITGROUP_GEAR:
-		return "Gear";
+	case HITGROUP_GENERIC: return XorStr("None");
+	case HITGROUP_HEAD: return XorStr("Head");
+	case HITGROUP_CHEST: return XorStr("Chest");
+	case HITGROUP_STOMACH: return XorStr("Stomach");
+	case HITGROUP_LEFTARM: return XorStr("Left arm");
+	case HITGROUP_RIGHTARM: return XorStr("Right arm");
+	case HITGROUP_LEFTLEG: return XorStr("Left leg");
+	case HITGROUP_RIGHTLEG: return XorStr("Right leg");
+	case HITGROUP_NECK: return XorStr("Neck");
+	case HITGROUP_GEAR: return XorStr("Gear");
 	}
 }
 
@@ -1737,20 +1702,13 @@ std::string misc::GetMatrixName(int iType) {
 
 	switch (iType)
 	{
-	case VISUAL:
-		return "VISUAL";
-	case RESOLVE:
-		return "RESOLVE";
-	case LEFT:
-		return "LEFT";
-	case RIGHT:
-		return "RIGHT";
-	case CENTER:
-		return "CENTER";
-	case MAX:
-		return "MAX";
-	default:
-		return "UNKNOWN";
+	case VISUAL: return XorStr("VISUAL");
+	case RESOLVE: return XorStr("RESOLVE");
+	case LEFT: return XorStr("LEFT");
+	case RIGHT: return XorStr("RIGHT");
+	case CENTER: return XorStr("CENTER");
+	case MAX: return XorStr("MAX");
+	default: return XorStr("UNKNOWN");
 	}
 }
 
@@ -1766,7 +1724,7 @@ void misc::LeftHandKnife() {
 		return;
 	}
 
-	static CConVar* convar = i::ConVar->FindVar("cl_righthand");
+	static CConVar* convar = i::ConVar->FindVar(XorStr("cl_righthand"));
 	static int iBackupValue = convar->GetInt();
 	if (bSaveAgain) {
 		iBackupValue = convar->GetInt();
@@ -2065,5 +2023,5 @@ void misc::FogOptions() {
 
 	fog_start->SetValue(iFogStart);
 	fog_end->SetValue(iFogEnd);
-	fog_color->SetValue(std::format("{} {} {}", flFogColor[0] * 255, flFogColor[1] * 255, flFogColor[2] * 255).c_str());
+	fog_color->SetValue(std::format(XorStr("{} {} {}"), flFogColor[0] * 255, flFogColor[1] * 255, flFogColor[2] * 255).c_str());
 }

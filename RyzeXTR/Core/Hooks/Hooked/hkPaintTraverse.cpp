@@ -16,7 +16,7 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
-#if NDEBUG
+#if RELEASE
 		//misc::Print("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
 		if (g::bStartWelcome)
 			visual::WelcomeUser("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
@@ -147,6 +147,6 @@ void __fastcall h::hkPaintTraverse(uintptr_t pPanels, int edx, unsigned int vgui
 		}
 	}
 
-	invokeFastcall<void>(pPanels, edx, adr(original), ROP::ClientGadget_t::uReturnGadget, vguiPanel, forceRepaint, allowForce);
-	//original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
+	//invokeFastcall<void>(pPanels, edx, adr(original), ROP::ClientGadget_t::uReturnGadget, vguiPanel, forceRepaint, allowForce);
+	original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
 }

@@ -69,7 +69,7 @@ Vector VelocityExtrapolate( CBaseEntity* player, Vector aimPos )
 
 void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacket ) {
 
-	static CConVar* recoilScale = i::ConVar->FindVar( "weapon_recoil_scale" );
+	static CConVar* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
 	if ( !pLocal || !cfg::rage::enable || (!IPT::HandleInput(cfg::rage::ragebotbind) && cfg::rage::ragebotbind) || g::bUpdatingSkins) {
 		exploits::bCanCharge = true;
 		rageBotData.ClearTarget();
@@ -344,7 +344,7 @@ bool CRageBot::Hitchance( CBaseEntity* pEnt, CBaseCombatWeapon* pWeapon, Vector 
 	//if ( exploits::bIsShiftingTicks || ( cfg::rage::doubletap && IPT::HandleInput( cfg::rage::doubletapkey ) && i::GlobalVars->flCurrentTime - pWeapon->GetLastShotTime( ) <= TICKS_TO_TIME( 15 ) ) )
 	//	return true;
 
-	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar( "weapon_accuracy_nospread" );
+	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar(XorStr("weapon_accuracy_nospread"));
 	// server is currently in nospread, no need to calculate anything, just shoot
 	if ( weapon_accuracy_nospread->GetInt( ) >= 1 )
 		return true;
@@ -448,7 +448,7 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 		return;
 
 	// server is currently in nospread, no need to autostop
-	if ( i::ConVar->FindVar( "weapon_accuracy_nospread" )->GetInt( ) >= 1 )
+	if (i::ConVar->FindVar(XorStr("weapon_accuracy_nospread"))->GetInt() >= 1)
 		return;
 
 	if (!ConfigAutoStopBetweenShots(pWeapon) && !CheckShootingCondition( pCmd, pLocal, pWeapon) )
@@ -503,8 +503,8 @@ void CRageBot::AutoStop( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, CBaseE
 	Vector forward;
 	M::AngleVectors( direction, &forward );
 
-	static auto cl_forwardspeed = i::ConVar->FindVar( "cl_forwardspeed" );
-	static auto cl_sidespeed = i::ConVar->FindVar( "cl_sidespeed" );
+	static auto cl_forwardspeed = i::ConVar->FindVar(XorStr("cl_forwardspeed"));
+	static auto cl_sidespeed = i::ConVar->FindVar(XorStr("cl_sidespeed"));
 
 	auto negative_forward_speed = -cl_forwardspeed->GetFloat( );
 	auto negative_side_speed = -cl_sidespeed->GetFloat( );
@@ -690,7 +690,7 @@ bool CRageBot::ConfigAutoStop( CBaseCombatWeapon* pWeapon ) {
 void CRageBot::AddHitbox(int index, std::array<bool, HITBOX_MAX>& vecHitboxList) {
 
 	// server only allows headshots, so let's only push_back head and return!
-	if (i::ConVar->FindVar("mp_damage_headshot_only")->GetBool()) {
+	if (i::ConVar->FindVar(XorStr("mp_damage_headshot_only"))->GetBool()) {
 		vecHitboxList[HITBOX_HEAD] = true;
 		return;
 	}

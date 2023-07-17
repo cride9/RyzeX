@@ -23,7 +23,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
 
-	invokeStdcall<void>(adr(original), ROP::EngineGadget_t::uReturnGadget, nSequenceNumber, flInputSampleFrametime, bIsActive);
+	//invokeStdcall<void>(adr(original), ROP::EngineGadget_t::uReturnGadget, nSequenceNumber, flInputSampleFrametime, bIsActive);
+	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;

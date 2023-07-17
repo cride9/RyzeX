@@ -28,11 +28,11 @@ void CAutoWall::ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const fl
 
 	const bool bHeavyArmor = pEntity->HasHeavyArmor( );
 
-	static CConVar* mp_damage_scale_ct_head = i::ConVar->FindVar( "mp_damage_scale_ct_head" );
-	static CConVar* mp_damage_scale_t_head = i::ConVar->FindVar( "mp_damage_scale_t_head" );
+	static CConVar* mp_damage_scale_ct_head = i::ConVar->FindVar(XorStr("mp_damage_scale_ct_head"));
+	static CConVar* mp_damage_scale_t_head = i::ConVar->FindVar(XorStr("mp_damage_scale_t_head"));
 
-	static CConVar* mp_damage_scale_ct_body = i::ConVar->FindVar("mp_damage_scale_ct_body" );
-	static CConVar* mp_damage_scale_t_body = i::ConVar->FindVar( "mp_damage_scale_t_body" );
+	static CConVar* mp_damage_scale_ct_body = i::ConVar->FindVar(XorStr("mp_damage_scale_ct_body"));
+	static CConVar* mp_damage_scale_t_body = i::ConVar->FindVar(XorStr("mp_damage_scale_t_body"));
 
 	float flHeadDamageScale = pEntity->GetTeam( ) == TEAM_CT ? mp_damage_scale_ct_head->GetFloat( ) : pEntity->GetTeam( ) == TEAM_TT ? mp_damage_scale_t_head->GetFloat( ) : 1.0f;
 	const float flBodyDamageScale = pEntity->GetTeam( ) == TEAM_CT ? mp_damage_scale_ct_body->GetFloat( ) : pEntity->GetTeam( ) == TEAM_TT ? mp_damage_scale_t_body->GetFloat( ) : 1.0f;
@@ -193,7 +193,7 @@ bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vect
 			Ray_t rayWorld( vecStart, vecEnd );
 			i::EngineTrace->TraceRay( rayWorld, MASK_SHOT_HULL | CONTENTS_HITBOX, nullptr, &exitTrace );
 
-			if ( static CConVar* sv_clip_penetration_traces_to_players = i::ConVar->FindVar( "sv_clip_penetration_traces_to_players" ); sv_clip_penetration_traces_to_players != nullptr && sv_clip_penetration_traces_to_players->GetBool( ) )
+			if (static CConVar* sv_clip_penetration_traces_to_players = i::ConVar->FindVar(XorStr("sv_clip_penetration_traces_to_players")); sv_clip_penetration_traces_to_players != nullptr && sv_clip_penetration_traces_to_players->GetBool())
 			{
 				CTraceFilter filter( pClipPlayer );
 				ClipTraceToPlayers( vecEnd, vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &exitTrace, -60.f );
@@ -254,8 +254,8 @@ bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInf
 {
 	// @ida handlebulletpenetration: client.dll @ E8 ? ? ? ? 83 C4 40 84 C0
 
-	static CConVar* ff_damage_reduction_bullets = i::ConVar->FindVar( "ff_damage_reduction_bullets" );
-	static CConVar* ff_damage_bullet_penetration = i::ConVar->FindVar( "ff_damage_bullet_penetration" );
+	static CConVar* ff_damage_reduction_bullets = i::ConVar->FindVar(XorStr("ff_damage_reduction_bullets"));
+	static CConVar* ff_damage_bullet_penetration = i::ConVar->FindVar(XorStr("ff_damage_bullet_penetration"));
 
 	const float flReductionDamage = ff_damage_reduction_bullets->GetFloat( );
 	const float flPenetrateDamage = ff_damage_bullet_penetration->GetFloat( );

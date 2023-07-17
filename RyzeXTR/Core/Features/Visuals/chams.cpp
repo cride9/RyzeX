@@ -9,14 +9,14 @@
 #include "../../SDK/Menu/gui.h"
 #include "../Misc/Playerlist.h"
 
-constexpr std::string_view szScrollProxies = R"#(
+static std::string_view szScrollProxies = XorStr(R"#(
 	"texturescroll"
     {
         "texturescrollvar" "$basetexturetransform"
         "texturescrollrate" "0.4"
         "texturescrollangle" "90"
     }
-)#";
+)#");
 
 IMaterial* RyzeCreateMaterial(std::string_view szName, std::string_view szShader, const char* szMaterial) {
 	
@@ -227,8 +227,9 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 	if (szModelName.find("player\\contactshadow") != std::string_view::npos) {
 		static float reset[4] = { 0, 0, 0, 0 };
 		BeginChams(materials[0], reset, false, false);
+		original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		//invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-		invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+		//invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 		return true;
 	}
 
@@ -239,8 +240,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			if (cfg::misc::thirdpersonDistance == 0) {
 
 				i::StudioRender->SetAlphaModulation(0.f);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-				//original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				return true;
 			}
 
@@ -252,23 +252,23 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					EndChams();
 					if (cfg::model::bBlend && pEnt->IsScoped())
 						i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f); 
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 
 				if (desyncMatrix && !desyncMatrix->GetOrigin().IsZero()) {
 					BeginChams(materials[localDesyncType], localDesyncColor, false, localDesyncXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 			}
 			if (cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind)) {
 
 				if (!local) {
 					EndChams();
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 
 				BeginChams(materials[ANIMATED], localIdealTickColor, false, true);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (local) {
 
@@ -276,46 +276,46 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					BeginChams(materials[localType], localXQZColor, true, localXQZXhair);
 					if (cfg::model::bBlend && pEnt->IsScoped())
 						i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[localType], localColor, false, localXhair);
 				if (cfg::model::bBlend && pEnt->IsScoped())
 					i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 
 				EndChams();
 				if (cfg::model::bBlend && pEnt->IsScoped())
 					i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (localOverlay) {
 
 				if (localOverlayXQZ) {
 					BeginChams(materials[GLOW], localOverlayXQZColor, true, localOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[GLOW], localOverlayColor, false, localOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (localThinOverlay) {
 
 				if (localThinOverlayXQZ) {
 					BeginChams(materials[THINGLOW], localThinOverlayXQZColor, true, localThinOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[THINGLOW], localThinOverlayColor, false, localThinOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (localAnimOverlay) {
 
 				if (localAnimOverlayXQZ) {
 					BeginChams(materials[ANIMATED], localAnimOverlayXQZColor, true, localAnimOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[ANIMATED], localAnimOverlayColor, false, localAnimOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}
@@ -325,42 +325,42 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 				if (teamXQZ) {
 					BeginChams(materials[teamType], teamXQZColor, true, teamXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[teamType], teamColor, false, teamXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 
 				EndChams();
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (teamOverlay) {
 
 				if (teamOverlayXQZ) {
 					BeginChams(materials[GLOW], teamOverlayXQZColor, true, teamOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[GLOW], teamOverlayColor, false, teamOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (teamThinOverlay) {
 
 				if (teamThinOverlayXQZ) {
 					BeginChams(materials[THINGLOW], teamThinOverlayXQZColor, true, teamThinOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[THINGLOW], teamThinOverlayColor, false, teamThinOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (teamAnimOverlay) {
 
 				if (teamAnimOverlayXQZ) {
 					BeginChams(materials[ANIMATED], teamAnimOverlayXQZColor, true, teamAnimOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[ANIMATED], teamAnimOverlayColor, false, teamAnimOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}
@@ -416,7 +416,8 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 					if (!pMatrix->GetOrigin().IsZero()) {
 						BeginChams(materials[enemyBTType], enemyBTColor, true, enemyBTXhair);
-						invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pMatrix, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+						original(i::StudioRender, 0, pResults, info, pMatrix, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+						//invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pMatrix, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 					}
 				}
 			}
@@ -424,42 +425,42 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 				if (enemyXQZ) {
 					BeginChams(materials[enemyType], enemyXQZColor, true, enemyXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[enemyType], enemyColor, false, enemyXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 
 				EndChams();
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (enemyOverlay) {
 
 				if (enemyOverlayXQZ) {
 					BeginChams(materials[GLOW], enemyOverlayXQZColor, true, enemyOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[GLOW], enemyOverlayColor, false, enemyOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (enemyThinOverlay) {
 
 				if (enemyThinOverlayXQZ) {
 					BeginChams(materials[THINGLOW], enemyThinOverlayXQZColor, true, enemyThinOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[THINGLOW], enemyThinOverlayColor, false, enemyThinOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (enemyAnimOverlay) {
 
 				if (enemyAnimOverlayXQZ) {
 					BeginChams(materials[ANIMATED], enemyAnimOverlayXQZColor, true, enemyAnimOverlayXQZXhair);
-					invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[ANIMATED], enemyAnimOverlayColor, false, enemyAnimOverlayXhair);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}
@@ -478,23 +479,23 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 		if (viewmodel) {
 			BeginChams(materials[viewmodelType], viewmodelColor, false, viewmodelXhair);
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		else {
 			EndChams();
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		if (viewmodelOverlay) {
 			BeginChams(materials[GLOW], viewmodelOverlayColor, false, viewmodelOverlayXhair);
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		if (viewmodelThinOverlay) {
 			BeginChams(materials[THINGLOW], viewmodelThinOverlayColor, false, viewmodelThinOverlayXhair);
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		if (viewmodelAnimOverlay) {
 			BeginChams(materials[ANIMATED], viewmodelAnimOverlayColor, false, viewmodelAnimOverlayXhair);
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		return true;
 	}
@@ -507,28 +508,28 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 		if (weapon) {
 			BeginChams(materials[weaponType], weaponColor, false, weaponXhair);
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		else {
 			if (i::StudioRender->IsForcedMaterialOverride()) {
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 				EndChams();
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 		}
 		if (weaponOverlay) {
 			BeginChams(materials[GLOW], weaponOverlayColor, false, weaponOverlayXhair);
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		if (weaponThinOverlay) {
 			BeginChams(materials[THINGLOW], weaponThinOverlayColor, false, weaponThinOverlayXhair);
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		if (weaponAnimOverlay) {
 			BeginChams(materials[ANIMATED], weaponAnimOverlayColor, false, weaponAnimOverlayXhair);
-			invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+			original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		}
 		return true;
 	}
@@ -561,36 +562,36 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 			if (attachmentChams[ENEMY]) {
 				BeginChams(chams::materials[attachmentChamsMaterial[ENEMY]], attachmentChamsColor[ENEMY], true, attachmentChamsXhair[ENEMY]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[attachmentChamsMaterial[ENEMY]], attachmentChamsColor[ENEMY], false, attachmentChamsXhair[ENEMY]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 				if (!i::StudioRender->IsForcedMaterialOverride())
 					EndChams();
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentOverlay[ENEMY]) {
 				BeginChams(chams::materials[GLOW], attachmentOverlayColor[ENEMY], true, attachmentOverlayXhair[ENEMY]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[GLOW], attachmentOverlayColor[ENEMY], false, attachmentOverlayXhair[ENEMY]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentThinOverlay[ENEMY]) {
 				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[ENEMY], true, attachmentThinOverlayXhair[ENEMY]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[ENEMY], false, attachmentThinOverlayXhair[ENEMY]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentAnimatedOverlay[ENEMY]) {
 				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[ENEMY], true, attachmentAnimatedOverlayXhair[ENEMY]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[ENEMY], false, attachmentAnimatedOverlayXhair[ENEMY]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}
@@ -600,42 +601,42 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 			if (cfg::misc::thirdpersonDistance == 0) {
 				i::StudioRender->SetAlphaModulation(0.f);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				return true;
 			}
 
 			if (attachmentChams[LOCAL]) {
 				BeginChams(chams::materials[attachmentChamsMaterial[LOCAL]], attachmentChamsColor[LOCAL], true, attachmentChamsXhair[LOCAL]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[attachmentChamsMaterial[LOCAL]], attachmentChamsColor[LOCAL], false, attachmentChamsXhair[LOCAL]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 				if (!i::StudioRender->IsForcedMaterialOverride())
 					EndChams();
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentOverlay[LOCAL]) {
 				BeginChams(chams::materials[GLOW], attachmentOverlayColor[LOCAL], true, attachmentOverlayXhair[LOCAL]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[GLOW], attachmentOverlayColor[LOCAL], false, attachmentOverlayXhair[LOCAL]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentThinOverlay[LOCAL]) {
 				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[LOCAL], true, attachmentThinOverlayXhair[LOCAL]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[LOCAL], false, attachmentThinOverlayXhair[LOCAL]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentAnimatedOverlay[LOCAL]) {
 				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[LOCAL], true, attachmentAnimatedOverlayXhair[LOCAL]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[LOCAL], false, attachmentAnimatedOverlayXhair[LOCAL]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}
@@ -644,36 +645,36 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 			if (attachmentChams[TEAM]) {
 				BeginChams(chams::materials[attachmentChamsMaterial[TEAM]], attachmentChamsColor[TEAM], true, attachmentChamsXhair[TEAM]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[attachmentChamsMaterial[TEAM]], attachmentChamsColor[TEAM], false, attachmentChamsXhair[TEAM]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 				if (!i::StudioRender->IsForcedMaterialOverride())
 					EndChams();
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentOverlay[TEAM]) {
 				BeginChams(chams::materials[GLOW], attachmentOverlayColor[TEAM], true, attachmentOverlayXhair[TEAM]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[GLOW], attachmentOverlayColor[TEAM], false, attachmentOverlayXhair[TEAM]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentThinOverlay[TEAM]) {
 				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[TEAM], true, attachmentThinOverlayXhair[TEAM]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[THINGLOW], attachmentThinOverlayColor[TEAM], false, attachmentThinOverlayXhair[TEAM]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (attachmentAnimatedOverlay[TEAM]) {
 				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[TEAM], true, attachmentAnimatedOverlayXhair[TEAM]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 				BeginChams(chams::materials[ANIMATED], attachmentAnimatedOverlayColor[TEAM], false, attachmentAnimatedOverlayXhair[TEAM]);
-				invokeFastcall<void>(adr(i::StudioRender), 0, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}

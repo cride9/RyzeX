@@ -178,7 +178,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 		if (m_Record)
 		{
 			/* set player data from the animation record */ 
-			pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar(XorStr("weapon_recoil_scale"))->GetFloat();
 			pLocal->GetVelocity() = m_Record->m_vecVelocity;
 			pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
 			pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
@@ -337,7 +337,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 		if (m_Record)
 		{
 			/* set player data from the animation record */
-			pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			pLocal->GetThirdpersonRecoil() = m_Record->m_angAimPunch.x * i::ConVar->FindVar(XorStr("weapon_recoil_scale"))->GetFloat();
 			pLocal->GetVelocity() = m_Record->m_vecVelocity;
 			pLocal->GetVecAbsVelocity() = m_Record->m_vecVelocity;
 			pLocal->GetDuckAmount() = m_Record->m_flDuckAmount;
@@ -611,7 +611,7 @@ void C_LocalAnimations::SetupShootPosition(CBaseEntity* pLocal)
 			const float m_flOldBodyPitch = pLocal->GetPoseParameter()[12];
 
 			/* determine m_flThirdpersonRecoil */
-			const float m_flThirdpersonRecoil = pLocal->GetAimPunch().x * i::ConVar->FindVar("weapon_recoil_scale")->GetFloat();
+			const float m_flThirdpersonRecoil = pLocal->GetAimPunch().x * i::ConVar->FindVar(XorStr("weapon_recoil_scale"))->GetFloat();
 
 			/* set body pitch */
 			pLocal->GetPoseParameter()[12] = std::clamp(M::AngleDiff(M::NormalizeAngle(m_flThirdpersonRecoil), 0.0f), 0.0f, 1.0f);

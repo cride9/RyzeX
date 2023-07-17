@@ -466,13 +466,13 @@ void CSkinChanger::Event(IGameEvent* pEvent)
 	const std::string uNameHash = pEvent->GetName();
 
 	/* update stattrak */
-	if (uNameHash == "player_death")
+	if (uNameHash == cachedEvents::playerDeath)
 	{
-		CBaseEntity* pAttacker = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"))));
+		CBaseEntity* pAttacker = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")))));
 
 		if (pAttacker == g::pLocal)
 		{
-			CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"))));
+			CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")))));
 
 			if (pEntity != nullptr && pEntity != g::pLocal)
 			{
@@ -560,7 +560,7 @@ void CSkinChanger::Event(IGameEvent* pEvent)
 	}
 
 	/* reset update timer to 0 on round start */
-	if (uNameHash == "round_start")
+	if (uNameHash == cachedEvents::roundStart)
 	{
 		flUpdateTime = 0.0f;
 	}
@@ -568,7 +568,7 @@ void CSkinChanger::Event(IGameEvent* pEvent)
 
 void CSkinChanger::Dump()
 {
-	const auto V_UCS2ToUTF8 = static_cast<int(*)(const wchar_t* ucs2, char* utf8, int len)>(reinterpret_cast<void*>(util::GetExportAddress(util::GetModuleBaseHandle(("vstdlib.dll")), ("V_UCS2ToUTF8"))));
+	const auto V_UCS2ToUTF8 = static_cast<int(*)(const wchar_t* ucs2, char* utf8, int len)>(reinterpret_cast<void*>(util::GetExportAddress(util::GetModuleBaseHandle(XorStr("vstdlib.dll")), XorStr("V_UCS2ToUTF8"))));
 	std::ifstream items = std::ifstream("csgo/scripts/items/items_game_cdn.txt");
 	std::string gameItems = std::string(std::istreambuf_iterator <char> { items }, std::istreambuf_iterator <char> { });
 
@@ -728,5 +728,5 @@ void CSkinChanger::Dump()
 		inf.m_colColor[3] = m_pPaintKit->m_rgbaColor[3];
 		SkinColors.push_back(inf);
 	}
-	util::Print("Skins dumped");
+	util::Print(XorStr("Skins dumped"));
 }

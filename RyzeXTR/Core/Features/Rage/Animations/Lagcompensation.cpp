@@ -338,8 +338,8 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 	if (!pPrevious)
 		return;
 
-	static CConVar* sv_gravity = i::ConVar->FindVar("sv_gravity");
-	static CConVar* sv_jump_impulse = i::ConVar->FindVar("sv_jump_impulse");
+	static CConVar* sv_gravity = i::ConVar->FindVar(XorStr("sv_gravity"));
+	static CConVar* sv_jump_impulse = i::ConVar->FindVar(XorStr("sv_jump_impulse"));
 
 	Vector velocity = pCurrent->vecVelocity;
 	int flags = pCurrent->iFlags;
@@ -465,24 +465,24 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 
 float Lagcompensation::GetClientInterpAmount()
 {
-	if (!i::ConVar->FindVar("cl_interpolate")->GetInt())
+	if (!i::ConVar->FindVar(XorStr("cl_interpolate"))->GetInt())
 		return 0.0f;
 
-	static CConVar* m_pMinUpdateRate = i::ConVar->FindVar("sv_minupdaterate");
-	static CConVar* m_pMaxUpdateRate = i::ConVar->FindVar("sv_maxupdaterate");
+	static CConVar* m_pMinUpdateRate = i::ConVar->FindVar(XorStr("sv_minupdaterate"));
+	static CConVar* m_pMaxUpdateRate = i::ConVar->FindVar(XorStr("sv_maxupdaterate"));
 
-	float m_flLerpAmount = i::ConVar->FindVar("cl_interp")->GetFloat();
-	float m_nUpdateRate = i::ConVar->FindVar("cl_updaterate")->GetFloat();
+	float m_flLerpAmount = i::ConVar->FindVar(XorStr("cl_interp"))->GetFloat();
+	float m_nUpdateRate = i::ConVar->FindVar(XorStr("cl_updaterate"))->GetFloat();
 
 	if (m_pMinUpdateRate && m_pMaxUpdateRate)
 		m_nUpdateRate = std::clamp(m_nUpdateRate, m_pMinUpdateRate->GetFloat(), m_pMaxUpdateRate->GetFloat());
 
-	float flLerpRatio = i::ConVar->FindVar("cl_interp_ratio")->GetFloat();
+	float flLerpRatio = i::ConVar->FindVar(XorStr("cl_interp_ratio"))->GetFloat();
 	if (flLerpRatio == 0)
 		flLerpRatio = 1.0f;
 
-	static CConVar* pMin = i::ConVar->FindVar("sv_client_min_interp_ratio");
-	static CConVar* pMax = i::ConVar->FindVar("sv_client_max_interp_ratio");
+	static CConVar* pMin = i::ConVar->FindVar(XorStr("sv_client_min_interp_ratio"));
+	static CConVar* pMax = i::ConVar->FindVar(XorStr("sv_client_max_interp_ratio"));
 
 	if (pMin && pMax && pMin->GetFloat() != -1)
 		flLerpRatio = std::clamp(flLerpRatio, pMin->GetFloat(), pMax->GetFloat());

@@ -4,6 +4,7 @@
 #include "../../Misc/Playerlist.h"
 #include "../../../SDK/Menu/config.h"
 #include "../../Networking/networking.h"
+#include "../../../xorstr.h"
 
 void Animations::ResolverLogic() {
 
@@ -41,7 +42,7 @@ void Animations::ResolverLogic() {
 		pLog->iHitSide[refCurrentData.pRecord->iResolveSide]++;
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
-			"Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}]",
+			("Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}]"),
 			info.szName,
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -61,7 +62,7 @@ void Animations::ResolverLogic() {
 		pLog->iHitSide[refCurrentData.pRecord->iResolveSide]++;
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
-			"Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}]",
+			("Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}]"),
 			info.szName,
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -83,7 +84,7 @@ void Animations::ResolverLogic() {
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
 			anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
 			misc::Print(std::format(
-				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: invalid record or resolver on backtrack",
+				("Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: invalid record or resolver on backtrack"),
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -96,7 +97,7 @@ void Animations::ResolverLogic() {
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
-			"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: resolver",
+			("Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: resolver"),
 			info.szName,
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -111,7 +112,7 @@ void Animations::ResolverLogic() {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
 			misc::Print(std::format(
-				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: correction",
+				("Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: correction"),
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -132,7 +133,7 @@ void Animations::ResolverLogic() {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
 			misc::Print(std::format(
-				"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: occlusion",
+				("Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: occlusion"),
 				info.szName,
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -145,7 +146,7 @@ void Animations::ResolverLogic() {
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
-			"Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: spread",
+			("Missed {} | [hc] {} | [bt] {} | [hg] {} | [dmg] {} | missed due to: spread"),
 			info.szName,
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
@@ -161,40 +162,40 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 	if (!ragebot.hitlogData.pAimbotTarget || !g::pLocal)
 		return;
 
-	if (!strcmp(pEvent->GetName(), "weapon_fire")) {
+	if (!strcmp(pEvent->GetName(), cachedEvents::weaponFire)) {
 
-		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
 		if (iUser == i::EngineClient->GetLocalPlayer()) {
 			bResolverHandler[WEAPONFIRE] = true;
 		}
 	}
-	if (!strcmp(pEvent->GetName(), "player_hurt")) {
+	if (!strcmp(pEvent->GetName(), cachedEvents::playerHurt)) {
 
-		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
+		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));
 		auto targetIndex = ragebot.hitlogData.pAimbotTarget->EntIndex();
 
 		if (iAttacker == i::EngineClient->GetLocalPlayer() && iUser == targetIndex) {
 			bResolverHandler[PLAYERHURT] = true;
-			iHitDmg = pEvent->GetInt("dmg_health");
-			iHitHitbox = pEvent->GetInt("hitgroup");
+			iHitDmg = pEvent->GetInt(XorStr("dmg_health"));
+			iHitHitbox = pEvent->GetInt(XorStr("hitgroup"));
 		}
 	}
-	if (!strcmp(pEvent->GetName(), "bullet_impact")) {
+	if (!strcmp(pEvent->GetName(), cachedEvents::bulletImpact)) {
 
-		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
 		if (iUser != i::EngineClient->GetLocalPlayer())
 			return;
 
-		bulletImpact = Vector(pEvent->GetFloat("x"), pEvent->GetFloat("y"), pEvent->GetFloat("z"));
+		bulletImpact = Vector(pEvent->GetFloat(XorStr("x")), pEvent->GetFloat(XorStr("y")), pEvent->GetFloat(XorStr("z")));
 		bResolverHandler[BULLETIMPACT] = true;
 	}
-	if (!strcmp(pEvent->GetName(), "player_death")) {
+	if (!strcmp(pEvent->GetName(), cachedEvents::playerDeath)) {
 
-		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("userid"));
-		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt("attacker"));
+		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
+		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));
 		auto targetIndex = ragebot.hitlogData.pAimbotTarget->EntIndex();
 
 		if (iAttacker == i::EngineClient->GetLocalPlayer() && iUser == targetIndex) {
@@ -290,8 +291,8 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 		return;
 	}
 
-	std::array<int, 65> arrMissedShotsBackup{0};
-	if (arrMissedShots[pEntity->EntIndex()] != arrMissedShotsBackup[pEntity->EntIndex()]) {
+	static std::array<int, 65> arrMissedShotsBackup{0};
+	if (arrMissedShots[pEntity->EntIndex()] != arrMissedShotsBackup[pEntity->EntIndex()] && arrMissedShots[pEntity->EntIndex()] > 0) {
 
 		switch (pLog->iLastResolve) {
 
@@ -307,39 +308,25 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 			SetYaw(pRecord, RIGHT);
 			break;
 		}
+		arrMissedShots[pEntity->EntIndex()] = arrMissedShotsBackup[pEntity->EntIndex()];
+		return;
 	}
-
-	if (pLog->bJitterAntiAim) {
+	else {
 
 		switch (pPrevious->iResolveSide) {
 
 		case LEFT:
-			SetYaw(pRecord, RIGHT);
+			SetYaw(pRecord, LEFT);
 			break;
 
 		case CENTER:
-			SetYaw(pRecord, RIGHT);
+			SetYaw(pRecord, CENTER);
 			break;
 
 		case RIGHT:
-			SetYaw(pRecord, LEFT);
+			SetYaw(pRecord, RIGHT);
 			break;
 		}
-		return;
-	}
-	switch (pPrevious->iResolveSide) {
-
-	case LEFT:
-		SetYaw(pRecord, LEFT);
-		break;
-
-	case CENTER:
-		SetYaw(pRecord, CENTER);
-		break;
-
-	case RIGHT:
-		SetYaw(pRecord, RIGHT);
-		break;
 	}
 
 	//switch (arrMissedShots[pEntity->EntIndex()] % 3) {
