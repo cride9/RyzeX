@@ -12,10 +12,9 @@ void __fastcall h::hkRenderView(void* ecx, void* edx, CViewSetup& view, CViewSet
 
 	if (cfg::misc::thirdpersonDistance == 0) {
 		i::Input->bCameraInThirdPerson = false;
-		//invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, &view, &hudViewSetup, nClearFlags, whatToDraw);
-		original(ecx, edx, view, hudViewSetup, nClearFlags, whatToDraw);
+		detour::renderView.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx, &view, &hudViewSetup, nClearFlags, whatToDraw);
 		i::Input->bCameraInThirdPerson = bBackup;
 	}
 	else
-		original(ecx, edx, view, hudViewSetup, nClearFlags, whatToDraw);
+		detour::renderView.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx, &view, &hudViewSetup, nClearFlags, whatToDraw);
 }

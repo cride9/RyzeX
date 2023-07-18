@@ -1,6 +1,7 @@
 #pragma once
 #include "minhook.h"
 #include <list>
+#include "../../Core/SDK/X86RetSpoof.h"
 
 /*
  * detour hooking implementation using minhook
@@ -127,6 +128,24 @@ public:
 	Fn GetOriginal()
 	{
 		return (Fn)pOriginalFn;
+	}
+
+	template <typename Fn, typename... StackArgs>
+	Fn CallOriginal(uintptr_t iGadget, void* ecx, void* edx, StackArgs... args) {
+
+		return x86RetSpoof::invokeFastcall<Fn>(reinterpret_cast<std::uintptr_t>(ecx), reinterpret_cast<std::uintptr_t>(edx), reinterpret_cast<std::uintptr_t>(pOriginalFn), iGadget, args...);
+	}
+
+	template <typename Fn, typename... StackArgs>
+	Fn CallOriginal(uintptr_t iGadget, void* ecx, int edx, StackArgs... args) {
+
+		return x86RetSpoof::invokeFastcall<Fn>(reinterpret_cast<std::uintptr_t>(ecx), edx, reinterpret_cast<std::uintptr_t>(pOriginalFn), iGadget, args...);
+	}
+
+	template <typename Fn, typename... StackArgs>
+	Fn CallOriginalCdecl(uintptr_t iGadget, StackArgs... args) {
+
+		return x86RetSpoof::invokeCdecl<Fn>(reinterpret_cast<std::uintptr_t>(pOriginalFn), iGadget, args...);
 	}
 
 	/* get hook state */

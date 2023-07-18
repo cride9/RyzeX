@@ -10,11 +10,10 @@ bool __fastcall h::hkIsFollowingEntity(void* ecx, void* edx)
 	CBaseEntity* pPlayer = (CBaseEntity*)(ecx);
 
 	if (!pPlayer || !g::pLocal)
-		//return invokeFastcall<bool>(adr(ecx), adr(edx), adr(IsFollowingEntity), ROP::ClientGadget_t::uReturnGadget);
-		return IsFollowingEntity(ecx, edx);
+		return detour::isFollowingEntity.CallOriginal<bool>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 
 	if (!pPlayer->IsAlive() || pPlayer->EntIndex() >= 65)
-		return IsFollowingEntity(ecx, edx);
+		return detour::isFollowingEntity.CallOriginal<bool>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 
 	static auto retToInterpolation = reinterpret_cast<void*>(MEM::FindPattern(CLIENT_DLL, XorStr("84 C0 0F 85 ? ? ? ? 38 05 ? ? ? ? 0F 84 ? ? ? ? 53")));
 
@@ -22,5 +21,5 @@ bool __fastcall h::hkIsFollowingEntity(void* ecx, void* edx)
 	if (_ReturnAddress() == retToInterpolation && pPlayer != g::pLocal) 
 		return true;
 
-	return IsFollowingEntity(ecx, edx);
+	return detour::isFollowingEntity.CallOriginal<bool>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 }

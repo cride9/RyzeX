@@ -1507,3 +1507,98 @@ void visual::Hat() {
 		}
 	}
 }
+
+void visual::CrossHair() {
+
+	if (g::pLocal) {
+
+		if (cfg::misc::removals[5] && g::pLocal->IsScoped() && i::EngineClient->IsInGame()) {
+
+			int iHeight = 0;
+			int iWidth = 0;
+			i::EngineClient->GetScreenSize(iWidth, iHeight);
+
+			float flSize = iHeight * (cfg::misc::scopeLength / 100.f);
+
+			i::Surface->DrawSetColor(cfg::misc::scopeColor);
+			i::Surface->DrawFilledRectFade(
+				iWidth / 2 - flSize - 15,
+				iHeight / 2 - 1,
+				iWidth / 2 - 15,
+				iHeight / 2,
+				0, cfg::misc::scopeColor[3] * 255.f, true);
+
+			i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+			i::Surface->DrawFilledRectFade(
+				iWidth / 2 - flSize - 15,
+				iHeight / 2 - 1,
+				iWidth / 2 - 15,
+				iHeight / 2,
+				cfg::misc::scopeColorEnd[3] * 255.f, 0, true);
+
+			i::Surface->DrawSetColor(cfg::misc::scopeColor);
+			i::Surface->DrawFilledRectFade(
+				iWidth / 2 + 15,
+				iHeight / 2 - 1,
+				iWidth / 2 + flSize + 15,
+				iHeight / 2,
+				cfg::misc::scopeColor[3] * 255.f, 0, true);
+
+			i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+			i::Surface->DrawFilledRectFade(
+				iWidth / 2 + 15,
+				iHeight / 2 - 1,
+				iWidth / 2 + flSize + 15,
+				iHeight / 2,
+				0, cfg::misc::scopeColorEnd[3] * 255.f, true);
+
+			i::Surface->DrawSetColor(cfg::misc::scopeColor);
+			i::Surface->DrawFilledRectFade(
+				iWidth / 2 - 1,
+				iHeight / 2 - flSize - 15,
+				iWidth / 2,
+				iHeight / 2 - 15,
+				0, cfg::misc::scopeColor[3] * 255.f, false);
+
+			i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+			i::Surface->DrawFilledRectFade(
+				iWidth / 2 - 1,
+				iHeight / 2 - flSize - 15,
+				iWidth / 2,
+				iHeight / 2 - 15,
+				cfg::misc::scopeColorEnd[3] * 255.f, 0, false);
+
+			i::Surface->DrawSetColor(cfg::misc::scopeColor);
+			i::Surface->DrawFilledRectFade(
+				iWidth / 2 - 1,
+				iHeight / 2 + 15,
+				iWidth / 2,
+				iHeight / 2 + flSize + 15,
+				cfg::misc::scopeColor[3] * 255.f, 0, false);
+
+			i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+			i::Surface->DrawFilledRectFade(
+				iWidth / 2 - 1,
+				iHeight / 2 + 15,
+				iWidth / 2,
+				iHeight / 2 + flSize + 15,
+				0, cfg::misc::scopeColorEnd[3] * 255.f, false);
+		}
+	}
+}
+
+void visual::DrawList() {
+
+	for (Vector& drawPos : g::drawList)
+	{
+		Vector screenPosition;
+		if (i::DebugOverlay->ScreenPosition(drawPos, screenPosition))
+			continue;
+
+		i::Surface->DrawSetColor(Color(255, 255, 255, 255));
+		i::Surface->DrawFilledRect(screenPosition.x - 2, screenPosition.y - 2, screenPosition.x + 2, screenPosition.y + 2);
+	}
+
+	while (g::drawList.size() > 24)
+		g::drawList.pop_front();
+}

@@ -11,12 +11,11 @@ void __fastcall	h::hkUpdateClientSideAnimations(void* entityPointer, void* edx) 
 
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 	if (!pEnt || !pEnt->IsAlive() || pEnt->IsDormant())
-		//return invokeFastcall<void>(adr(entityPointer), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
-		return original(entityPointer, edx);
+		return detour::clientAnimation.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx);
 
 	// like this the client wont fuck up animations since WE DO NOT ALLOW it to happen LOL
 	if (g::bAllowAnimations[pEnt->EntIndex()])
-		return original(entityPointer, edx);
+		return detour::clientAnimation.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx);
 	else
 		return;
 }

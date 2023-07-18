@@ -10,13 +10,12 @@ void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool hea
 	static auto original = detour::processPacket.GetOriginal<decltype( &hkProcessPacket )>( );
 
 	if (!i::ClientState->pNetChannel)
-		//return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, packet, header);
-		return original( ecx, edx, packet, header );
+		return detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
 
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
-		return original(ecx, edx, packet, header);
+		return detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
 
-	original(ecx, edx, packet, header);
+	detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
 
 	// get this from CL_FireEvents string "Failed to execute event for classId" in engine.dll
 	for ( CEventInfo* it{ i::ClientState->pEvents }; it != nullptr; it = it->pNext )
@@ -63,7 +62,7 @@ bool __fastcall h::hkSVCMsg_VoiceData( void* thistr, void* edx, C_SVCMsg_VoiceDa
 	//	BSOD( );
 	//}
 
-	return invokeFastcall<bool>(adr(thistr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, Message);
+	return detour::voiceData.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, thistr, edx, Message);
 	//return original( thistr, edx, Message );
 }
 
@@ -128,8 +127,8 @@ bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMe
 	//	}
 	//}
 	
-	return original( thisptr, edx, pMessage, bForceReliable, bVoice );
-	//return invokeFastcall<bool>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pMessage, bForceReliable, bVoice);
+	return detour::sendNetMsg.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, thisptr, edx, pMessage, bForceReliable, bVoice);
+	//return original( thisptr, edx, pMessage, bForceReliable, bVoice );
 }
 
 
@@ -162,7 +161,7 @@ void __fastcall h::hkSetChoked( void* ecx, void* edx )
 		pNetChannel->iChokedPackets = nChokedCommands;
 	}
 
-	return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget);
+	return detour::setChoked.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx);
 	/*
 	void CNetChan::SetChoked( void )
 	{
@@ -193,8 +192,7 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag"  );
 
 	if (!i::EngineClient->IsInGame() || !cfg::misc::fakePing || pDatagram != nullptr || pNetChannelInfo == nullptr || sv_maxunlag == nullptr)
-		return original(thisptr, edx, pDatagram);
-		//return invokeFastcall<int>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, pDatagram);
+		return detour::sendDatagram.CallOriginal<int>(ROP::EngineGadget_t::uReturnGadget, thisptr, edx, pDatagram);
 
 	const int iOldInReliableState = thisptr->iInReliableState;
 	const int iOldInSequenceNr = thisptr->iInSequenceNr;

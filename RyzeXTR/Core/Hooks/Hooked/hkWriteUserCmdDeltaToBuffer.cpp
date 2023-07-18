@@ -25,8 +25,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	static auto original = detour::writeUserCmd.GetOriginal<decltype(&h::hkWriteUserCmdDeltaToBuffer)>();
 
 	if (!exploits::iDefensive)
-		//return invokeFastcall<bool>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, nSlot, buf, nFrom, nTo, bNewCommand);
-		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
+		return detour::writeUserCmd.CallOriginal<bool>(ROP::ClientGadget_t::uReturnGadget, ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
 
 	int* pNumBackupCommands = (int*)((uintptr_t)(buf)-0x30);
 	int* pNumNewCommands = (int*)((uintptr_t)(buf)-0x2C);
@@ -40,7 +39,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	*pNumBackupCommands = 0;
 	for (nTo = iNextCommand - iNewCommands + 1; nTo <= iNextCommand; nTo++)
 	{
-		if (!original(ecx, edx, nSlot, buf, nFrom, nTo, true))
+		if (!detour::writeUserCmd.CallOriginal<bool>(ROP::ClientGadget_t::uReturnGadget, ecx, edx, nSlot, buf, nFrom, nTo, true))
 			return false;
 
 		nFrom = nTo;

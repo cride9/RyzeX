@@ -35,6 +35,10 @@ namespace visual {
 	void CustomHud();
 	void Hat();
 
+    void CrossHair();
+
+    void DrawList();
+
 	void WelcomeUser(std::string szText);
 	
 	void WorldEsp();

@@ -162,7 +162,9 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 	if (!ragebot.hitlogData.pAimbotTarget || !g::pLocal)
 		return;
 
-	if (!strcmp(pEvent->GetName(), cachedEvents::weaponFire)) {
+	std::string_view szEventName = pEvent->GetName();
+
+	if (szEventName.find(cachedEvents::weaponFire) != std::string_view::npos) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
@@ -170,7 +172,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 			bResolverHandler[WEAPONFIRE] = true;
 		}
 	}
-	if (!strcmp(pEvent->GetName(), cachedEvents::playerHurt)) {
+	if (szEventName.find(cachedEvents::playerHurt) != std::string_view::npos) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));
@@ -182,7 +184,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 			iHitHitbox = pEvent->GetInt(XorStr("hitgroup"));
 		}
 	}
-	if (!strcmp(pEvent->GetName(), cachedEvents::bulletImpact)) {
+	if (szEventName.find(cachedEvents::bulletImpact) != std::string_view::npos) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
@@ -192,7 +194,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 		bulletImpact = Vector(pEvent->GetFloat(XorStr("x")), pEvent->GetFloat(XorStr("y")), pEvent->GetFloat(XorStr("z")));
 		bResolverHandler[BULLETIMPACT] = true;
 	}
-	if (!strcmp(pEvent->GetName(), cachedEvents::playerDeath)) {
+	if (szEventName.find(cachedEvents::playerDeath) != std::string_view::npos) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));

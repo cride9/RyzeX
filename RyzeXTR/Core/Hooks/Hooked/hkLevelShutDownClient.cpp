@@ -13,8 +13,7 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
 	static auto original = detour::levelShutDown.GetOriginal<decltype(&h::hkLevelShutDownClient)>();
 
-	//invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
-	original(ecx, edx);
+	detour::levelShutDown.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 
 	auto pLocal = CBaseEntity::GetLocalPlayer();
 	if (pLocal && pLocal->IsAlive())
@@ -55,5 +54,5 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 		*g::bSendPacket = true;
 
 	/* New server = new client these needs to be rehooked */
-	UnHookClientState();
+	//UnHookClientState();
 }

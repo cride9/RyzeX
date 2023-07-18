@@ -167,12 +167,12 @@ void hkPostFrameStageNotify(EStage curStage) {
 	}
 }
 
-void __stdcall h::hkFrameStageNotify(EStage curStage) {
+void __fastcall h::hkFrameStageNotify(void* ecx, void* edx, EStage curStage) {
 
 	static auto original = detour::frameStageNotify.GetOriginal<decltype(&h::hkFrameStageNotify)>();
 
 	hkPreFrameStageNotify(curStage);
-	original(curStage);
-	//invokeStdcall<void>(adr(original), ROP::EngineGadget_t::uReturnGadget, curStage);
+	//original(curStage);
+	detour::frameStageNotify.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, curStage);
 	hkPostFrameStageNotify(curStage);
 }

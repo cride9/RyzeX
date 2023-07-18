@@ -14,12 +14,12 @@ void __fastcall h::hkDrawModel(IStudioRender* thisptr, int edx, DrawModelResults
 
 	if (g::pLocal) {
 
-		bClearOverride = chams::DrawChams(g::pLocal, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 		misc::RemoveSmoke();
+		bClearOverride = chams::DrawChams(g::pLocal, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 	}
 
-	//invokeFastcall<void>(adr(thisptr), edx, adr(original), ROP::ClientGadget_t::uReturnGadget, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-	original(thisptr, edx, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)thisptr, edx, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+	//original(thisptr, edx, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 	if (bClearOverride)
 		i::StudioRender->ForcedMaterialOverride(nullptr);

@@ -17,21 +17,21 @@ bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 	if (!a.pRecord || !b.pRecord)
 		return false;
 
+	// First, sort by bLethal and HITBOX_HEAD
 	if (a.bLethal && a.iHitbox != HITBOX_HEAD)
 		return true;
-
 	if (b.bLethal && b.iHitbox != HITBOX_HEAD)
 		return false;
 
+	// Then, sort by bHead for HITBOX_HEAD
 	if (a.iHitbox == HITBOX_HEAD && b.iHitbox == HITBOX_HEAD) {
-
 		if (a.bHead && !b.bHead)
 			return true;
-
-		else if (!a.bHead && b.bHead)
+		if (!a.bHead && b.bHead)
 			return false;
 	}
 
+	// Finally, sort by flDesyncDelta if none of the previous conditions match
 	return a.pRecord->flDesyncDelta > b.pRecord->flDesyncDelta;
 }
 

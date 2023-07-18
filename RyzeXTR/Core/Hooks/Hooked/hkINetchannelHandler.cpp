@@ -7,36 +7,33 @@ void __fastcall h::hkPacketStart( void* ecx, void* edx, int sequence, int outgoi
 	static auto original = detour::packetStart.GetOriginal<decltype( &hkPacketStart )>( );
 
 	if (packetManager.ShouldProcessPacketStart(outgoing))
-		//return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, sequence, outgoing);
-		return original(ecx, edx, sequence, outgoing);
+		return detour::packetStart.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, sequence, outgoing);
+		//return original(ecx, edx, sequence, outgoing);
 }
 
 void __fastcall h::hkPacketEnd( void* ecx, void* edx )
 {
 	static auto original = detour::packetEnd.GetOriginal<decltype( &hkPacketEnd )>( );
 
-	int nCommandsAcknowledged = i::ClientState->iCommandAck - i::ClientState->iLastCommandAck;
-	if (nCommandsAcknowledged <= 0) {
-		//util::Print("hkPacketEnd returned");
-		return original(ecx, edx);
-		//return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget);
-	}
+	//int nCommandsAcknowledged = i::ClientState->iCommandAck - i::ClientState->iLastCommandAck;
+	//util::Print(std::format("{} - {}", i::ClientState->iCommandAck, i::ClientState->iLastCommandAck).c_str());
+	//if (nCommandsAcknowledged <= 0) {
+	//	return original(ecx, edx);
+	//}
+	//
+	//CClientState* ClientState = static_cast<CClientState*>(ecx);
 
-	CClientState* ClientState = static_cast<CClientState*>(ecx);
+	//if (ClientState->pNetChannel && !(ClientState->nChokedCommands % 4)) {
 
-	if (ClientState->pNetChannel && !(ClientState->nChokedCommands % 4)) {
-
-		const auto current_choke = ClientState->pNetChannel->iChokedPackets;
-		ClientState->pNetChannel->iChokedPackets = 0;
-		ClientState->pNetChannel->SendDatagram(0);
-		--ClientState->pNetChannel->iOutSequenceNr;
-		ClientState->pNetChannel->iChokedPackets = current_choke;
-	}
+	//	const auto current_choke = ClientState->pNetChannel->iChokedPackets;
+	//	ClientState->pNetChannel->iChokedPackets = 0;
+	//	ClientState->pNetChannel->SendDatagram(0);
+	//	--ClientState->pNetChannel->iOutSequenceNr;
+	//	ClientState->pNetChannel->iChokedPackets = current_choke;
+	//}
 
 	networking.OnPacketEnd(static_cast<CClientState*>(ecx));
-	return original(ecx, edx);
-
-	//return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget);
+	return detour::packetEnd.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx);
 }
 
 bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
@@ -44,18 +41,17 @@ bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
 	static auto original = detour::temptEntities.GetOriginal<decltype( &hkTemptEntities )>( );
 
 	if (!g::pLocal || !i::EngineClient->IsInGame())
-		//return invokeFastcall<bool>(adr(ecx), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, msg);
-		return original( ecx, edx, msg );
+		return detour::temptEntities.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, msg);
 
 	// filtering events
 	if ( !g::pLocal->IsAlive( ) )
-		return original(ecx, edx, msg);
+		return detour::temptEntities.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, msg);
 
 	CEventInfo* pEventInfo = i::ClientState->pEvents; //0x4DEC
 	CEventInfo* pNextEvent = nullptr;
 
 	if ( !pEventInfo )
-		return original(ecx, edx, msg);
+		return detour::temptEntities.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, msg);
 
 	do
 	{
@@ -80,5 +76,5 @@ bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
 	} 
 	while ( pNextEvent != nullptr );
 
-	return original(ecx, edx, msg);
+	return detour::temptEntities.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, msg);
 }

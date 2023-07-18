@@ -1366,7 +1366,7 @@ void menu::HandleLogoDrawing() noexcept {
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("Developer").x);
 	ImGui::Text("Developer");
 #endif
-#if NDEBUG
+#if RELEASE
 	ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("User").x);
 	ImGui::Text("User");
 #endif

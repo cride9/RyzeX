@@ -45,12 +45,12 @@ public:
 
 namespace cachedEvents {
 
-	inline static const char* playerHurt = XorStr("player_hurt");
-	inline static const char* playerDeath = XorStr("player_death");
-	inline static const char* bulletImpact = XorStr("bullet_impact");
-	inline static const char* weaponFire = XorStr("weapon_fire");
-	inline static const char* roundStart = XorStr("round_start");
-	inline static const char* itemPurchase = XorStr("item_purchase");
+	inline static std::string playerHurt = ("player_hurt");
+	inline static std::string playerDeath = ("player_death");
+	inline static std::string bulletImpact = ("bullet_impact");
+	inline static std::string weaponFire = ("weapon_fire");
+	inline static std::string roundStart = ("round_start");
+	inline static std::string itemPurchase = ("item_purchase");
 }
 
 class IGameEventManager

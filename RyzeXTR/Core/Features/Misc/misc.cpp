@@ -107,6 +107,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	ClanTag();
 	LeftHandKnife();
 	FogOptions();
+	PreserveKillfeed(nullptr);
 	if (cfg::misc::bSkinnyBoy)
 		g::pLocal->GetModelScale() = cfg::misc::iSkinnyBoy * 0.01f;
 #if NDEBUG || ALPHA
@@ -167,30 +168,34 @@ using namespace cachedEvents;
 void misc::EventHandler(IGameEvent* pEvent) {
 
 	//CheatLog(pEvent);
+
+	const std::string& szEventName = pEvent->GetName();
+
 	PreserveKillfeed(pEvent);
-	if (!strcmp(pEvent->GetName(), playerHurt)) {
+	if (szEventName.find(cachedEvents::playerHurt) != std::string_view::npos) {
+
 		HandlePlayerHitEffects(pEvent);
 		CapsuleHandler(pEvent);
 	}
-	if (!strcmp(pEvent->GetName(), playerDeath)) {
+	if (szEventName.find(cachedEvents::playerDeath) != std::string_view::npos) {
 		CapsuleHandler(pEvent);
 		Killsay(pEvent);
 		ThirdPersonDisableOnDeath(pEvent);
 	}
-	if (!strcmp(pEvent->GetName(), bulletImpact)) {
+	if (szEventName.find(cachedEvents::bulletImpact) != std::string_view::npos) {
 		WorldCrosshairHandler(pEvent);
 		BulletImpact(pEvent);
 		BulletTracer(pEvent);
 	}
-	if (!strcmp(pEvent->GetName(), weaponFire)) {
+	if (szEventName.find(cachedEvents::weaponFire) != std::string_view::npos) {
 
 	}
-	if (!strcmp(pEvent->GetName(), roundStart)) {
+	if (szEventName.find(cachedEvents::roundStart) != std::string_view::npos) {
 		BuyBot(pEvent);
 		WalkBotHandler(pEvent);
 		//std::fill(anims.arrMissedShots.begin(), anims.arrMissedShots.end(), 0);
 	}
-	if (!strcmp(pEvent->GetName(), itemPurchase)) {
+	if (szEventName.find(cachedEvents::itemPurchase) != std::string_view::npos) {
 
 	}
 	//if (!strcmp(pEvent->GetName(), "bomb_beginplant")) {
@@ -526,7 +531,7 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
 	// play hit sound
 	if ( cfg::misc::m_iHitSound == 1 ) {
-		i::EngineSoundClient->EmitAmbientSound("buttons\\arena_switch_press_02.wav", cfg::misc::m_flHitSoundVolume / 100.f);
+		i::EngineSoundClient->EmitAmbientSound(XorStr("buttons\\arena_switch_press_02.wav"), cfg::misc::m_flHitSoundVolume / 100.f);
 		// physics\\metal\\paintcan_impact_hard3.wav
 	}
 	else if ( cfg::misc::m_iHitSound == 2 && !cfg::misc::m_szWavPath.empty( ) ) {
@@ -565,19 +570,38 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 }
 
 using namespace cachedEvents;
-void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
+void misc::PreserveKillfeed(IGameEvent* pEvent) { // need menu element
 
 	static DWORD* _death_notice = reinterpret_cast<DWORD*>(util::FindHudElement(XorStr("CCSGO_HudDeathNotice")));
 	static void(__thiscall * _clear_notices)(DWORD) = (void(__thiscall*)(DWORD))MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 0C 53 56 8B 71 58"));
+	
+	if (g::pLocal) {
 
-	if (!strcmp(event->GetName(), playerDeath)) {
+		static float flSpawnTime = g::pLocal->GetSpawnTime();
+		if (pEvent == nullptr && flSpawnTime != g::pLocal->GetSpawnTime()) {
 
-		auto pAttacker = i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(event->GetInt(XorStr("attacker"))));
+			if (_death_notice)
+				_death_notice = reinterpret_cast<DWORD*>(util::FindHudElement(XorStr("CCSGO_HudDeathNotice")));
+			if (_clear_notices)
+				_clear_notices(((DWORD)_death_notice - 20));
+
+			flSpawnTime = g::pLocal->GetSpawnTime();
+		}
+	}
+
+	if (!pEvent)
+		return;
+
+	const std::string_view& szEventName = pEvent->GetName();
+
+	if (szEventName.find(playerDeath) != std::string_view::npos) {
+
+		auto pAttacker = i::EntityList->GetClientEntity(i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker"))));
 
 		if (!pAttacker || pAttacker != g::pLocal)
 			return;
 
-		int index = i::EngineClient->GetPlayerForUserID(event->GetInt(XorStr("userid")));
+		int index = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
 		if (!index)
 			return;
@@ -591,7 +615,7 @@ void misc::PreserveKillfeed(IGameEvent* event) { // need menu element
 		if (_death_notice)
 			*(float*)((DWORD)_death_notice + 0x50) = cfg::misc::preserveKillfeed ? FLT_MAX : 1.5; // need menu element
 	}
-	else if (!strcmp(event->GetName(), roundStart)) {
+	else if (szEventName.find(roundStart) != std::string_view::npos) {
 
 		g_LocalAnimations->ResetData();
 		for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
@@ -1218,8 +1242,8 @@ void misc::RemoveSmoke() {
 
 void misc::WalkBotHandler(IGameEvent* pEvent) {
 
-	if (!strcmp(pEvent->GetName(), roundStart))
-		bNewRound = true;
+	//if (!strcmp(pEvent->GetName(), roundStart))
+	//	bNewRound = true;
 }
 
 void TraceRayBot(CUserCmd* pCmd);

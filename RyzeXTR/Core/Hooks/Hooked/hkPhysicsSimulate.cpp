@@ -23,20 +23,19 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	CBaseEntity* pEntity = reinterpret_cast<CBaseEntity*>(ecx);
 
 	if (pEntity != g::pLocal)
-		//return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget);
-		return original(ecx, edx);
+		return detour::physicsSimulate.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 
 	if (!pEntity->IsAlive())
-		return original(ecx, edx);
+		return detour::physicsSimulate.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 
 	int& SimulationTick = *pEntity->GetOffsetPointer<int>( 0x2ACU );
 	CCommandContext* pCommandContext = pEntity->GetOffsetPointer<CCommandContext>(0x350C);
 
 	if ( SimulationTick == i::GlobalVars->iTickCount )
-		return original(ecx, edx);
+		return detour::physicsSimulate.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 
 	if ( !pCommandContext || !pCommandContext->bNeedsProcessing )
-		return original(ecx, edx);
+		return detour::physicsSimulate.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 
 	if ( pCommandContext->pCmd.iTickCount >= std::numeric_limits< int >::max( ) )
 	{
@@ -52,7 +51,7 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	const int iTickBaseBackup = pEntity->GetTickBase( );
 	pEntity->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
 
-	original(ecx, edx);
+	detour::physicsSimulate.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
 
 	prediction.SaveViewmodelData(pEntity);
 	return networking.SaveNetvarData( pCommandContext->nCommandNumber );
