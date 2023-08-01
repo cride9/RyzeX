@@ -60,6 +60,7 @@ struct playerSettings_t {
 	Vector vecOrigin;
 	Vector vecAngles;
 
+	bool bForceSafe = false;
 	bool bOverrideResolver;
 	int flOverrideYaw;
 	int teamID;
@@ -183,6 +184,7 @@ namespace playerList {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(180, 101));
 		ImGui::PushFont(menu::childFont);
+		ImGui::SetNextWindowSizeConstraints(ImVec2(640, 407), ImVec2(640, 800));
 		ImGui::Begin("##playerlist", NULL, ImGuiWindowFlags_NoTitleBar);
 		{
 			ImGui::BeginChild("##topbar", ImVec2(ImGui::GetContentRegionAvail().x, 30), true);
@@ -205,6 +207,7 @@ namespace playerList {
 				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 
 				// always make local first
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 1.f, 0.f, 1.f));
 				for (auto& thisPlayer : arrPlayers) {
 					if (thisPlayer.bLocalPlayer) {
 						if (!bAdminInject) {
@@ -219,16 +222,21 @@ namespace playerList {
 						DrawRecord(thisPlayer);
 					}
 				}
+				ImGui::PopStyleColor();
 				// CT-s
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(107.f / 255.f, 207.f / 255.f, 234.f / 255.f, 1.f));
 				for (auto& thisPlayer : arrPlayers) {
 					if (thisPlayer.iTeamID == TEAM_CT && !thisPlayer.bLocalPlayer)
 						DrawRecord(thisPlayer);
 				}
+				ImGui::PopStyleColor();
 				// T-s
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(221.f / 255.f, 199.f / 255.f, 131.f / 255.f, 1.f));
 				for (auto& thisPlayer : arrPlayers) {
 					if (thisPlayer.iTeamID == TEAM_TT && !thisPlayer.bLocalPlayer)
 						DrawRecord(thisPlayer);
 				}
+				ImGui::PopStyleColor();
 				// other
 				for (auto& thisPlayer : arrPlayers) {
 					if (thisPlayer.iTeamID != TEAM_TT && thisPlayer.iTeamID != TEAM_CT && !thisPlayer.bLocalPlayer)
@@ -279,6 +287,9 @@ namespace playerList {
 						iFollowPlayerIndex = iFollowPlayerIndex != currentSelected.iIndex ? currentSelected.iIndex : -1;
 
 					ImGui::SameLine();
+					if (ImGui::Button("Force Safe", ImVec2(100, 20), currentSelected.bForceSafe))
+						currentSelected.bForceSafe = !currentSelected.bForceSafe;
+
 					if (ImGui::Button("Override yaw", ImVec2(100, 20), currentSelected.bOverrideResolver))
 						currentSelected.bOverrideResolver = !currentSelected.bOverrideResolver;
 
@@ -307,9 +318,9 @@ namespace playerList {
 
 					if (bCrideInject) {
 
-						ImGui::SameLine();
-						if (ImGui::Button("BSOD Nigger", ImVec2(100, 20)))
-							currentSelected.BlueScreenNigger = true;
+						//ImGui::SameLine();
+						//if (ImGui::Button("BSOD Nigger", ImVec2(100, 20)))
+						//	currentSelected.BlueScreenNigger = true;
 					}
 				}
 				ImGui::PopStyleVar();

@@ -75,7 +75,9 @@ public:
 
 	void ResolverHandler(IGameEvent*);
 	void ResolverLogic();
+	void SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw);
 	void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
+	void PostResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 
 	/* PASTED FUNTIONS */
 	void RebuiltLayer6(CAnimState*, CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity);

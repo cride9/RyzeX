@@ -222,11 +222,12 @@ public:
 		bool bJitterAntiAim{};
 
 		int iLastUpdateTick;
-		int iLastValid;
+		int iLastValid = 0;
 		int iFirstValid = 32;
 		int iShots;
 		int iWalkToRunTransitionState;
 		int iDesyncSide;
+		int iPostResolveSide = 0;
 
 		float flTimeSinceLegit;
 		float flTimeSinceNoDesync;
@@ -237,7 +238,6 @@ public:
 		float flSpawntime;
 		float flWalkToRunTransition;
 		float flExploitTime;
-
 
 		int iLastResolve{};
 		EMatrixType iFreestandMatrix{};

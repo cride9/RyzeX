@@ -837,6 +837,7 @@ public:
 	ADD_NETVAR(GetTeam, int, "CBaseEntity->m_iTeamNum");
 	ADD_NETVAR(GetOwnerEntityHandle, CBaseHandle, "CBaseEntity->m_hOwnerEntity");
 	ADD_NETVAR(GetCollisionGroup, int, "CBaseEntity->m_CollisionGroup");
+	ADD_NETVAR(bReadyToDraw, bool, "CBaseEntity->m_bReadyToDraw");
 
 	ADD_PNETVAR(IsSpotted, bool, "CBaseEntity->m_bSpotted");
 	ADD_PNETVAR(GetCollision, ICollideable, "CBaseEntity->m_Collision");
@@ -956,6 +957,24 @@ public:
 	const char* GetClassname() {
 		// @ida: client.dll @ [8B 01 FF 90 ? ? ? ? 90 + 0x4] / sizeof(std::uintptr_t)
 		return util::CallVFunc<const char*>(this, 143);
+	}
+
+
+	bool PrecacheModel(const char* szModelName)
+	{
+		INetworkStringTable* m_pModelPrecacheTable = i::StringContainer->FindTable("modelprecache");
+
+		int idx = INVALID_STRING_INDEX;
+		if (m_pModelPrecacheTable)
+		{
+			i::ModelInfo->FindOrLoadModel(szModelName);
+			idx = m_pModelPrecacheTable->AddString(false, szModelName);
+			if (idx == INVALID_STRING_INDEX)
+				return false;
+		}
+		
+		this->SetModelIndex(idx);
+		return true;
 	}
 
 	void SetModelIndex(int index) {

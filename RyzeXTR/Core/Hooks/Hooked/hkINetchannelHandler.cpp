@@ -7,8 +7,7 @@ void __fastcall h::hkPacketStart( void* ecx, void* edx, int sequence, int outgoi
 	static auto original = detour::packetStart.GetOriginal<decltype( &hkPacketStart )>( );
 
 	if (packetManager.ShouldProcessPacketStart(outgoing))
-		return detour::packetStart.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, sequence, outgoing);
-		//return original(ecx, edx, sequence, outgoing);
+		return original(ecx, edx, sequence, outgoing);
 }
 
 void __fastcall h::hkPacketEnd( void* ecx, void* edx )
@@ -33,7 +32,8 @@ void __fastcall h::hkPacketEnd( void* ecx, void* edx )
 	//}
 
 	networking.OnPacketEnd(static_cast<CClientState*>(ecx));
-	return detour::packetEnd.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx);
+	return original(ecx, edx);
+	//return detour::packetEnd.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx);
 }
 
 bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
@@ -41,17 +41,17 @@ bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
 	static auto original = detour::temptEntities.GetOriginal<decltype( &hkTemptEntities )>( );
 
 	if (!g::pLocal || !i::EngineClient->IsInGame())
-		return detour::temptEntities.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, msg);
+		return original( ecx, edx, msg);
 
 	// filtering events
 	if ( !g::pLocal->IsAlive( ) )
-		return detour::temptEntities.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, msg);
+		return original(ecx, edx, msg);
 
 	CEventInfo* pEventInfo = i::ClientState->pEvents; //0x4DEC
 	CEventInfo* pNextEvent = nullptr;
 
 	if ( !pEventInfo )
-		return detour::temptEntities.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, msg);
+		return original(ecx, edx, msg);
 
 	do
 	{
@@ -76,5 +76,5 @@ bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
 	} 
 	while ( pNextEvent != nullptr );
 
-	return detour::temptEntities.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, msg);
+	return original(ecx, edx, msg);
 }

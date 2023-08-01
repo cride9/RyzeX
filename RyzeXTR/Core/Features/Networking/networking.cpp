@@ -22,6 +22,9 @@ inline bool IsFloatValid( float flOriginal, float flCurrent )
 
 void CNetworking::SaveNetvarData( int nCommand )
 {
+	if (!g::pLocal)
+		return; 
+	
 	iLastCommandNumber = nCommand;
 	pCompressData[ nCommand % 150 ].nTickbase = g::pLocal->GetTickBase( );
 	pCompressData[ nCommand % 150 ].flDuckAmount = g::pLocal->GetDuckAmount( );
@@ -50,6 +53,9 @@ void CNetworking::SaveNetvarData( int nCommand )
 
 void CNetworking::RestoreNetvarData( int nCommand )
 {
+	if (!g::pLocal)
+		return;
+
 	volatile auto aNetVars = &pCompressData[ nCommand % 150 ];
 	if ( aNetVars->nTickbase != g::pLocal->GetTickBase( ) )
 		return;
@@ -101,6 +107,9 @@ void CNetworking::RestoreNetvarData( int nCommand )
 
 void CNetworking::OnPacketEnd( CClientState* ClientState )
 {
+	if (!g::pLocal)
+		return; 
+	
 	prediction.AdjustViewmodelData( g::pLocal );
 	return this->RestoreNetvarData( i::ClientState->iLastCommandAck );
 }
@@ -136,6 +145,8 @@ int CNetworking::GetServerTick() {
 
 int CNetworking::GetCorrectedTickbase() {
 
+	if (!g::pLocal)
+		return 0; 
 	return g::pLocal->GetTickBase();
 	//return pCompressData[iLastCommandNumber % 150].nTickbase;
 }

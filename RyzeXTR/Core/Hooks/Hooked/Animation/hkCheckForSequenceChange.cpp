@@ -8,7 +8,7 @@ void __fastcall	h::hkCheckForSequenceChange(void* entityPointer, void* edx, void
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 
 	if (pEnt && !pEnt->IsAlive())
-		return detour::sequenceChange.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx, hdr, nCurSequence, bForceNewSequence, bInterpolate);
+		return original( entityPointer, edx, hdr, nCurSequence, bForceNewSequence, bInterpolate);
 
-	return detour::sequenceChange.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx, hdr, nCurSequence, bForceNewSequence, bInterpolate);
+	return original(entityPointer, edx, hdr, nCurSequence, bForceNewSequence, bInterpolate);
 }

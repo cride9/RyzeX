@@ -146,7 +146,6 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 	case FLICK:
 
-		flDesyncValue = 120.f * bInvertValue;
 		if (flickJitter) {
 
 			iChangeOnTick++;

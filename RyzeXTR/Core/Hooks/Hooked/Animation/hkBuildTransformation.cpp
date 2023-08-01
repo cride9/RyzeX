@@ -7,14 +7,14 @@ void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudio
 
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 	if (!pEnt || !pEnt->IsAlive())
-		return detour::buildTransform.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx, hdr, pos, q, &transform, mask, computed);
+		return original( entityPointer, edx, hdr, pos, q, transform, mask, computed);
 
 	auto backup = hdr->vecBoneFlags;
 
 	for (auto i = 0; i < hdr->vecBoneFlags.Count(); i++)
 		hdr->vecBoneFlags.Element(i) &= ~BONE_ALWAYS_PROCEDURAL;
 
-	detour::buildTransform.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx, hdr, pos, q, &transform, mask, computed);
+	original(entityPointer, edx, hdr, pos, q, transform, mask, computed);
 
 	hdr->vecBoneFlags = backup;
 }

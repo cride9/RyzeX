@@ -35,6 +35,7 @@ namespace M
 	// Get
 	/* export specific functions addresses from libraries handles to get able call them */
 	bool	Setup();
+	void VectorITransform(const Vector& in1, const matrix3x4_t& in2, Vector& out);
 	/* convert vector to angles */
 	void	VectorAngles(const Vector& vecForward, Vector& angView);
 	/* convert angles to x, y, z vectors */
@@ -59,6 +60,8 @@ namespace M
 	/* rotates given center point and outputs to given outpoint by given angle */
 	void	RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutPoint);
 
+	void VectorMatrix(const Vector& forward, matrix3x4_t& matrix);
+
 	void ConcatTransforms(const matrix3x4_t&, const matrix3x4_t&, matrix3x4_t&);
 
 	void VectorTransform(const Vector&, const matrix3x4_t&, Vector&);
@@ -70,6 +73,16 @@ namespace M
 	void SinCos(float, float*, float*);
 
 	float NormalizeYaw(float);
+
+	void CrossProduct(const float* v1, const float* v2, float* cross);
+
+	void VectorVectors(const Vector& forward, Vector& right, Vector& up);
+
+	void VectorRotate(const float* in1, const matrix3x4_t& in2, float* out);
+
+    void VectorIRotate(const Vector& in1, const matrix3x4_t& in2, Vector& out);
+
+	void MatrixSetColumn(const Vector& in, int column, matrix3x4_t& out);
 
 	float NormalizeAngle(float flAngle);
 

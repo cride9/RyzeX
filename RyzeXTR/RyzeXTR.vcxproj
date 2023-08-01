@@ -160,6 +160,7 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsHltv.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsPaused.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkModifyEyePosition.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessInterpolatedList.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessMovement.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupAliveLoop.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupBones.cpp" />
@@ -253,6 +254,7 @@
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
     <ClInclude Include="Core\globals.h" />
     <ClInclude Include="Core\Interface\Classes\CMsg.h" />
+    <ClInclude Include="Core\Interface\Interfaces\CNetworkStringTableContainer.h" />
     <ClInclude Include="Core\Interface\Interfaces\IVEngineEffects.h" />
     <ClInclude Include="Core\SDK\Draw.h" />
     <ClInclude Include="Core\xorstr.h" />

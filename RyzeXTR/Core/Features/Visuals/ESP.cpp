@@ -1599,6 +1599,6 @@ void visual::DrawList() {
 		i::Surface->DrawFilledRect(screenPosition.x - 2, screenPosition.y - 2, screenPosition.x + 2, screenPosition.y + 2);
 	}
 
-	while (g::drawList.size() > 24)
+	while (g::drawList.size() > 32)
 		g::drawList.pop_front();
 }

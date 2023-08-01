@@ -9,16 +9,16 @@ void __fastcall h::hkCalculateView(void* entityPointer, void* edx, Vector& eyeOr
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 
 	if (pEnt != g::pLocal)
-		return detour::calculateView.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx, &eyeOrigin, &eyeAngles, &zNear, &zFar, &fov);
+		return original( entityPointer, edx, eyeOrigin, eyeAngles, zNear, zFar, fov);
 
 	if (!pEnt->IsAlive())
-		return detour::calculateView.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx, &eyeOrigin, &eyeAngles, &zNear, &zFar, &fov);
+		return original(entityPointer, edx, eyeOrigin, eyeAngles, zNear, zFar, fov);
 
 	const auto backup = pEnt->UseNewAnimationState();
 
 	pEnt->UseNewAnimationState() = false;
 
-	detour::calculateView.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, edx, &eyeOrigin, &eyeAngles, &zNear, &zFar, &fov);
+	original(entityPointer, edx, eyeOrigin, eyeAngles, zNear, zFar, fov);
 
 	pEnt->UseNewAnimationState() = backup;
 }

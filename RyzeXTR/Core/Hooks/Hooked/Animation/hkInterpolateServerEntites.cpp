@@ -11,7 +11,7 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 
 	lagcomp.SetInterpolationFlags();
 
-	detour::interpolateEntites.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
+	original( ecx, edx);
 
 	anims.InterpolateMatricies();
 	g_LocalAnimations->InterpolateMatricies();

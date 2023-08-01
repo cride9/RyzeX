@@ -10,12 +10,13 @@ void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool hea
 	static auto original = detour::processPacket.GetOriginal<decltype( &hkProcessPacket )>( );
 
 	if (!i::ClientState->pNetChannel)
-		return detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
+		return original(ecx, edx, packet, header);
+		//return detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
 
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
-		return detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
+		return original(ecx, edx, packet, header);
 
-	detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
+	original(ecx, edx, packet, header);//detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
 
 	// get this from CL_FireEvents string "Failed to execute event for classId" in engine.dll
 	for ( CEventInfo* it{ i::ClientState->pEvents }; it != nullptr; it = it->pNext )
@@ -85,6 +86,8 @@ bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMe
 	if ( pMessage->GetGroup( ) == INetChannelInfo::VOICE )
 		bVoice = true;
 	
+	return original(thisptr, edx, pMessage, bForceReliable, bVoice);
+
 	//C_CLCMsg_VoiceData msg = { };
 	//using ConstructVoiceMessage_t = uint32_t( __fastcall* )( void*, void* );
 	//static ConstructVoiceMessage_t ConstructVoiceMessage = reinterpret_cast< ConstructVoiceMessage_t >( MEM::FindPattern(ENGINE_DLL, XorStr("56 57 8B F9 8D 4F 08 C7 07 ? ? ? ? E8 ? ? ? ? C7") ) );
@@ -192,7 +195,7 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag"  );
 
 	if (!i::EngineClient->IsInGame() || !cfg::misc::fakePing || pDatagram != nullptr || pNetChannelInfo == nullptr || sv_maxunlag == nullptr)
-		return detour::sendDatagram.CallOriginal<int>(ROP::EngineGadget_t::uReturnGadget, thisptr, edx, pDatagram);
+		return original(thisptr, edx, pDatagram);/*detour::sendDatagram.CallOriginal<int>(ROP::EngineGadget_t::uReturnGadget, thisptr, edx, pDatagram);*/
 
 	const int iOldInReliableState = thisptr->iInReliableState;
 	const int iOldInSequenceNr = thisptr->iInSequenceNr;

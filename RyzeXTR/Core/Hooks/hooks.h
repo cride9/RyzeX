@@ -112,13 +112,13 @@ namespace detour {
 	inline CDetourHook animationState;
 	inline CDetourHook clientAnimation;
 	inline CDetourHook setupBones;
-	inline CDetourHook interpolationList;
 	inline CDetourHook extraBoneProcessing;
 	inline CDetourHook interpolateEntites;
 	inline CDetourHook isFollowingEntity;
 	inline CDetourHook estimateAbsVelocity;
 	inline CDetourHook processMovement;
 	inline CDetourHook setupAliveLoop;
+	inline CDetourHook baseInterpolatePart;
 }
 
 namespace h {
@@ -169,6 +169,7 @@ namespace h {
 	void __fastcall		hkLevelShutDownClient(void* ecx, void* edx);
 	void __fastcall     hkRenderView(void* ecx, void* edx, CViewSetup& view, CViewSetup& hudViewSetup, int nClearFlags, int whatToDraw);
 	bool __fastcall     hkVerifyReturnAddress(void* edx, void* ecx, const char* moduleName);
+	int __fastcall		hkBaseInterpolatePart(CBaseEntity* pEntity, void* edx, float& currentTime, Vector& oldOrigin, Vector& oldAngles, int& bNoMoreChanges);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );
@@ -202,7 +203,6 @@ namespace h {
 	void __fastcall		hkEstimateAbsVelocity(CBaseEntity*, void*, Vector&);
 	void __fastcall		hkProcessMovement(void* ecx, void* edx, CBaseEntity* pEntity, CMoveData* pMove);
 	void __fastcall		hkSetupAliveLoop(void* ecx, void* edx);
-	//int					hkInterpolationList();
 	long CALLBACK        hkWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 	inline LPVOID oldpacketStart;

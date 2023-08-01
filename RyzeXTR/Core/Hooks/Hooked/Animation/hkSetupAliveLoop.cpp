@@ -3,7 +3,7 @@
 
 void __fastcall h::hkSetupAliveLoop(void* ecx, void* edx) {
 
-	//static auto original = detour::setupAliveLoop.GetOriginal<decltype(&h::hkSetupAliveLoop)>();
+	static auto original = detour::setupAliveLoop.GetOriginal<decltype(&h::hkSetupAliveLoop)>();
 
 	CAnimState* pState = static_cast <CAnimState*> (ecx);
 	if (!pState->pEntity || pState->pEntity != g::pLocal)

@@ -18,8 +18,8 @@ void __fastcall h::hkDrawModel(IStudioRender* thisptr, int edx, DrawModelResults
 		bClearOverride = chams::DrawChams(g::pLocal, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 	}
 
-	detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)thisptr, edx, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-	//original(thisptr, edx, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)thisptr, edx, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+	original(thisptr, edx, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 
 	if (bClearOverride)
 		i::StudioRender->ForcedMaterialOverride(nullptr);

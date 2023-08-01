@@ -196,6 +196,9 @@ void Prediction::RestoreNetvars(int iCommand, CBaseEntity* pLocal)
 
 void Prediction::SaveViewmodelData(CBaseEntity* pLocal)
 {
+	if (!pLocal)
+		return;
+
 	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( pLocal->GetViewModel( ) );
 
 	if ( !hViewmodel )
@@ -209,6 +212,9 @@ void Prediction::SaveViewmodelData(CBaseEntity* pLocal)
 
 void Prediction::AdjustViewmodelData(CBaseEntity* pLocal)
 {
+	if (!pLocal)
+		return;
+
 	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( pLocal->GetViewModel( ) );
 
 	if ( !hViewmodel )

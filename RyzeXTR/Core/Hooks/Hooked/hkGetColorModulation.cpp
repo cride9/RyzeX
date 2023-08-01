@@ -5,7 +5,7 @@ void __fastcall h::hkGetColorModulation(void* ecx, void* edx, float* r, float* g
 
 	static auto original = detour::getColorModulation.GetOriginal<decltype(&h::hkGetColorModulation)>();
 	
-	detour::getColorModulation.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, ecx, edx, r, g, b);
+	original(ecx, edx, r, g, b);
 
 	static CConVar* r_DrawSpecificStaticProp = i::ConVar->FindVar("r_DrawSpecificStaticProp");
 	if (r_DrawSpecificStaticProp->GetInt() != 0)

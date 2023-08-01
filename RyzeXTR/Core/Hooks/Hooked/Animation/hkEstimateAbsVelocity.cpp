@@ -24,6 +24,6 @@ void __fastcall h::hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector
 		return;
 
 	// all good to go, you can estimate the player abs velocity
-	detour::estimateAbsVelocity.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, pPlayer, edx, &vecVelocity);
-	//EstimateAbsVelocity(pPlayer, edx, pLog->pRecord.front().vecVelocity);
+	//detour::estimateAbsVelocity.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, pPlayer, edx, &vecVelocity);
+	EstimateAbsVelocity(pPlayer, edx, pLog->pRecord.front().vecVelocity);
 }

@@ -193,7 +193,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 	if (szEventName.find(cachedEvents::roundStart) != std::string_view::npos) {
 		BuyBot(pEvent);
 		WalkBotHandler(pEvent);
-		//std::fill(anims.arrMissedShots.begin(), anims.arrMissedShots.end(), 0);
+		std::fill(anims.arrMissedShots.begin(), anims.arrMissedShots.end(), 0);
 	}
 	if (szEventName.find(cachedEvents::itemPurchase) != std::string_view::npos) {
 
@@ -319,15 +319,12 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && IPT::HandleInput(cfg::antiaim::idealTickBind) && bRetreat) {
 
-		if ((vecOrigin - pLocal->GetVecOrigin()).Length2D() > 3.29217472f) {
+		Vector vecAngle;
+		M::VectorAngles(vecOrigin - g::vecEyePosition, vecAngle);
 
-			Vector vecAngle;
-			M::VectorAngles(vecOrigin - pLocal->GetEyePosition(false), vecAngle);
-
-			g::vecOriginalViewAngle.y = vecAngle.y;
-			g::pCmd->flForwardMove += 450.f;
-			g::pCmd->flSideMove = 0.f;
-		}
+		g::vecOriginalViewAngle.y = vecAngle.y;
+		pCmd->flForwardMove = 450.f;
+		pCmd->flSideMove = 0.f;
 
 		if ((vecOrigin - pLocal->GetVecOrigin()).Length2D() < 2.f) {
 			bRetreat = false;

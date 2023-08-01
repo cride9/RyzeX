@@ -26,6 +26,7 @@ void i::SetupInterfaces() {
 	MDLCache = GetInterface<IMDLCache>(DATACACHE_DLL, XorStr("MDLCache004"));
 	Localize = GetInterface<ILocalize>(LOCALIZE_DLL, XorStr("Localize_001"));
 	Effects = GetInterface<IVEffects>(ENGINE_DLL, XorStr("VEngineEffects001"));
+	StringContainer = GetInterface<CNetworkStringTableContainer>(ENGINE_DLL, XorStr("VEngineClientStringTable001"));
 
 	ClientState = **reinterpret_cast<CClientState***>(MEM::FindPattern(ENGINE_DLL, XorStr("A1 ? ? ? ? 8B 88 ? ? ? ? 85 C9 75 07")) + 0x1);
 	if (ClientState == nullptr)

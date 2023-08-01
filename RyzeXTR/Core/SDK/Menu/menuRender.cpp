@@ -1214,7 +1214,9 @@ void menu::Misctab() noexcept {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(219.f / 255.f, 216.f / 255.f, 0.f, 1.f));
         ImGui::Checkbox("!Local hitboxes!", &m_bDrawServerHitbox);
         ImGui::Checkbox("!Entity hitboxes!", &m_bDrawServerHitboxOnAllEntities);
-        ImGui::PopStyleColor();
+		ImGui::SliderInt("##nej1", &cfg::debugSlider1, -50, 200);
+		ImGui::SliderInt("##nej2", &cfg::debugSlider2, -50, 200);
+		ImGui::PopStyleColor();
 #endif
 
         ImGui::Checkbox("Russian roulette", &m_bRussianRoulette);

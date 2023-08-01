@@ -14,6 +14,7 @@
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
 #include "../../SDK/InputSystem.h"
+#include <shlobj.h>
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 

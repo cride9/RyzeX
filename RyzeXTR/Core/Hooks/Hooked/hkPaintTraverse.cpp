@@ -16,6 +16,12 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
 
+		//if (g::pLocal) {
+
+		//	i::Surface->DrawT(1200, 500, Color(255, 255, 255), g::fonts::DebugFont, true, std::to_string(reinterpret_cast<uintptr_t>(g::pLocal)).c_str());
+		//	i::Surface->DrawT(1200, 700, Color(255, 255, 255), g::fonts::DebugFont, true, std::to_string(reinterpret_cast<uintptr_t>(g::pLocal->GetClientRenderable())).c_str());
+		//}
+
 #if RELEASE
 		//misc::Print("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
 		if (g::bStartWelcome)
@@ -44,12 +50,12 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		visual::CustomHud();
 		visual::Hat();
 		visual::CrossHair();
-#ifdef DEBUG
+#ifdef _DEBUG
 		visual::DrawList();
 #endif
 		D::SwapDrawData( );
 	}
 
-	detour::paintTraverse.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, pPanels, edx, vguiPanel, forceRepaint, allowForce);
-	//original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
+	//detour::paintTraverse.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, pPanels, edx, vguiPanel, forceRepaint, allowForce);
+	original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
 }

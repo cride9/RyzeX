@@ -12,10 +12,10 @@ bool __fastcall h::hkSetupBones(void* ecx, void* edx, matrix3x4_t* matrix, int m
 
 	bool bResult = true;
 	if (!g::pLocal || !pEnt->IsAlive() || !pEnt->IsPlayer() || /*(pEnt->GetTeam() == g::pLocal->GetTeam() && pEnt != g::pLocal) ||*/ g::bUpdatingSkins)
-		return detour::setupBones.CallOriginal<bool>(ROP::ClientGadget_t::uReturnGadget, ecx, edx, matrix, maxbones, bonemask, curtime);
+		return original( ecx, edx, matrix, maxbones, bonemask, curtime);
 
 	if (g::bSettingUpBones[pEnt->EntIndex()])
-		return detour::setupBones.CallOriginal<bool>(ROP::ClientGadget_t::uReturnGadget, ecx, edx, matrix, maxbones, bonemask, curtime);
+		return original( ecx, edx, matrix, maxbones, bonemask, curtime);
 
 	if (matrix) {
 		if (pEnt == g::pLocal)

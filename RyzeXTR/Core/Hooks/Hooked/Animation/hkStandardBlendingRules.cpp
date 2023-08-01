@@ -8,12 +8,12 @@ void __fastcall h::hkStandardBlendingRules(void* entityPointer, void* unused1, v
 	const auto pEnt = reinterpret_cast<CBaseEntity*>(entityPointer);
 
 	if (!pEnt->IsAlive())
-		return detour::blendingRules.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, unused1, pStudioHdr, pos, q, currentTime, boneMask);
+		return original( entityPointer, unused1, pStudioHdr, pos, q, currentTime, boneMask);
 
 	if (!(pEnt->GetEffects() & 8))
 		pEnt->GetEffects() |= 8;
 
-	detour::blendingRules.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, entityPointer, unused1, pStudioHdr, pos, q, currentTime, boneMask);
+	original( entityPointer, unused1, pStudioHdr, pos, q, currentTime, boneMask);
 
 	pEnt->GetEffects() &= ~8;
 }

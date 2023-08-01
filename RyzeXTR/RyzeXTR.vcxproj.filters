@@ -101,6 +101,7 @@
     <ClCompile Include="Dependecies\ImGui\imgui_freetype.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\VerifyReturnAddress.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessInterpolatedList.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\agentchanger.h" />
@@ -314,6 +315,7 @@
     <ClInclude Include="Dependecies\freetype\include\freetype\tttags.h" />
     <ClInclude Include="Dependecies\freetype\include\ft2build.h" />
     <ClInclude Include="Core\Interface\Interfaces\IVEngineEffects.h" />
+    <ClInclude Include="Core\Interface\Interfaces\CNetworkStringTableContainer.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependecies\freetype\win32\freetype.lib" />

@@ -4,6 +4,7 @@
 #include "../../../SDK/InputSystem.h"
 #include "../exploits.h"
 #include "../../Misc/Playerlist.h"
+#include "../../../Interface/Classes/CCSGameRulesProxy.h"
 
 Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 {
@@ -134,6 +135,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 			pLog->iLastValid = 0;
 			pLog->iFirstValid = 32;
 			pLog->bLeftDormancy = true;
+			pLog->pCachedMatrix = std::array<matrix3x4_t, 128U>();
 			continue;
 		}
 
@@ -266,6 +268,9 @@ void Lagcompensation::FilterRecords()
 
 void Lagcompensation::SetInterpolationFlags()
 {
+	if ((*GameRules)->m_bIsValveDS())
+		return;
+
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++) {
 
 		if (playerList::arrPlayers[i].iIndex != i)

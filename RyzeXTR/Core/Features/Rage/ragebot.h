@@ -9,7 +9,7 @@ struct Hitscan_t {
 	Hitscan_t() {
 
 	}
-	Hitscan_t(Lagcompensation::LagRecord_t* recordPointer, Vector hitboxVector, float damageFloat, int hitboxInt, int hitgroupInt, bool safeBool, bool lethalBool, bool backtrackBool, bool headBool) {
+	Hitscan_t(Lagcompensation::LagRecord_t* recordPointer, Vector hitboxVector, float damageFloat, int hitboxInt, int hitgroupInt, bool safeBool, bool lethalBool, bool backtrackBool, bool headBool, bool baimBool) {
 		pRecord = recordPointer;
 		vecPoint = hitboxVector;
 		flDamage = damageFloat;
@@ -19,6 +19,7 @@ struct Hitscan_t {
 		bLethal = lethalBool;
 		bBacktrack = backtrackBool;
 		bHead = headBool;
+		bBaim = baimBool;
 	}
 
 	Lagcompensation::LagRecord_t* pRecord = nullptr;
@@ -30,6 +31,7 @@ struct Hitscan_t {
 	bool bLethal = false;
 	bool bBacktrack = false;
 	bool bHead = false;
+	bool bBaim = false;
 };
 
 class CRageBot {
@@ -37,9 +39,10 @@ class CRageBot {
 public:
 
 	void CreateMove(CUserCmd*, CBaseEntity*, bool&);
-	bool bSendPacketThisTick;
-	int iTickCount = 0;
+	bool bSendPacketThisTick = false;
 	bool bSetTickCount = false;
+	bool bStartPing = false;
+	int iTickCount = 0;
 	std::vector<std::pair<Vector, Lagcompensation::LagRecord_t*>> vecSafePoints{};
 
 	struct rageBotData_t
@@ -92,7 +95,7 @@ public:
 	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE);
 	std::array<Vector, 6> HitboxPoints(Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, Vector&, int);
 	bool bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);
-	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector, int iHitbox, bool bOnlyIntersectFind = false);
+	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector, int iHitbox, int iMustIntersect = 0);
 
 private:
 

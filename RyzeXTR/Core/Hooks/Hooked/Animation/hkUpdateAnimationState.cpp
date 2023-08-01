@@ -10,12 +10,11 @@ void __vectorcall h::hkUpdateAnimationState(CAnimState* pAnimstate, void* edx, f
 	const auto pEnt = pAnimstate->pEntity;
 
 	if (!pEnt || !pEnt->IsAlive() || !pEnt->IsPlayer() || pEnt == g::pLocal)
-		return invokeFastcall<void>(adr(pAnimstate), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, z, y, x, unknown1);
-		//return original(pAnimstate, edx, z, y, x, unknown1);
+		return original(pAnimstate, edx, z, y, x, unknown1);
 
 	auto pLog = &lagcomp.GetLog(pEnt->EntIndex());
 	if (!pLog || pLog->pRecord.empty())
-		return invokeFastcall<void>(adr(pAnimstate), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, z, y, x, unknown1);
+		return original(pAnimstate, edx, z, y, x, unknown1);
 
-	return invokeFastcall<void>(adr(pAnimstate), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, z, y, x, unknown1);
+	return original(pAnimstate, edx, z, y, x, unknown1);
 }

@@ -28,6 +28,13 @@ bool M::Setup()
 	return true;
 }
 
+void M::VectorITransform(const Vector& in1, const matrix3x4_t& in2, Vector& out)
+{
+	out.x = (in1.x - in2[0][3]) * in2[0][0] + (in1.y - in2[1][3]) * in2[1][0] + (in1.z - in2[2][3]) * in2[2][0];
+	out.y = (in1.x - in2[0][3]) * in2[0][1] + (in1.y - in2[1][3]) * in2[1][1] + (in1.z - in2[2][3]) * in2[2][1];
+	out.z = (in1.x - in2[0][3]) * in2[0][2] + (in1.y - in2[1][3]) * in2[1][2] + (in1.z - in2[2][3]) * in2[2][2];
+}
+
 void M::VectorTransform(const Vector& in, const matrix3x4_t& matrix, Vector& out) {
 
 	Vector diff;
@@ -369,6 +376,68 @@ float M::NormalizeYaw(float flYaw) {
 	while (yaww < -180.0f) yaww += 360.0f;
 	while (yaww > 180.0f) yaww -= 360.0f;
 	return yaww;
+}
+
+void M::CrossProduct(const float* v1, const float* v2, float* cross)
+{
+	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
+	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
+	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
+}
+
+void M::VectorVectors(const Vector& forward, Vector& right, Vector& up)
+{
+	Vector tmp;
+
+	if (fabs(forward[0]) < 1e-6 && fabs(forward[1]) < 1e-6)
+	{
+		// pitch 90 degrees up/down from identity
+		right[0] = 0;
+		right[1] = -1;
+		right[2] = 0;
+		up[0] = -forward[2];
+		up[1] = 0;
+		up[2] = 0;
+	}
+	else
+	{
+		tmp[0] = 0; tmp[1] = 0; tmp[2] = 1.0;
+		CrossProduct(forward.data(), tmp.data(), right.data());
+		right.VectorNormalize();
+		CrossProduct(right.data(), forward.data(), up.data());
+		up.VectorNormalize();
+	}
+}
+
+void M::VectorRotate(const float* in1, const matrix3x4_t& in2, float* out)
+{
+	out[0] = DotProduct(in1, in2[0]);
+	out[1] = DotProduct(in1, in2[1]);
+	out[2] = DotProduct(in1, in2[2]);
+}
+
+void M::VectorIRotate(const Vector& in1, const matrix3x4_t& in2, Vector& out)
+{
+	out.x = in1.x * in2[0][0] + in1.y * in2[1][0] + in1.z * in2[2][0];
+	out.y = in1.x * in2[0][1] + in1.y * in2[1][1] + in1.z * in2[2][1];
+	out.z = in1.x * in2[0][2] + in1.y * in2[1][2] + in1.z * in2[2][2];
+}
+
+void M::MatrixSetColumn(const Vector& in, int column, matrix3x4_t& out)
+{
+	out[0][column] = in.x;
+	out[1][column] = in.y;
+	out[2][column] = in.z;
+}
+
+void M::VectorMatrix(const Vector& forward, matrix3x4_t& matrix) {
+
+	Vector right, up; 
+	VectorVectors(forward, right, up);
+
+	MatrixSetColumn(forward, 0, matrix);
+	MatrixSetColumn((right * -1), 1, matrix);
+	MatrixSetColumn(up, 2, matrix);
 }
 
 void M::RotateCenter(const ImVec2& vecCenter, const float flAngle, ImVec2* pOutPoint)

@@ -81,7 +81,14 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 		std::memcpy(m_PoseParameters.data(), pEntity->GetPoseParameter().data(), sizeof(float) * 24);
 		std::memcpy(&m_AnimationState, pEntity->AnimState(), sizeof(CAnimState));
 
-		pEntity->AnimState()->flGoalFeetYaw = GetYawRotation(nRotationSide);
+		//pEntity->AnimState()->flGoalFeetYaw = GetYawRotation(nRotationSide);
+
+		switch (nRotationSide)
+		{
+		case -1: pEntity->AnimState()->flGoalFeetYaw = pRecord->vecEyeAngles.y - pRecord->flDesyncDelta; break;
+		case 0: pEntity->AnimState()->flGoalFeetYaw = pRecord->vecEyeAngles.y; break;
+		case 1: pEntity->AnimState()->flGoalFeetYaw = pRecord->vecEyeAngles.y + pRecord->flDesyncDelta; break;
+		}
 
 		UpdateClientSideAnimations(pEntity, pRecord);
 
@@ -909,7 +916,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
 	if (playerListData.bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
-	else if (pEntity->IsEnemy(g::pLocal))
+	else if (pEntity->IsEnemy(g::pLocal)) 
 		Resolver(pEntity, pRecord, pPrevious);
 	
 	pEntity->GetPoseParameters(pRecord->flPoses);
@@ -1081,7 +1088,7 @@ void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation:
 		pEntity->SetUpMovement();
 
 		// Save the layerdata
-		pRecord->LayerData[CENTER] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[6]);
+		pRecord->LayerData[CENTER] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE]);
 
 		// Restore the values to not mess with our client animations by calling layer6 too many times
 		pRecord->Restore(pEntity);

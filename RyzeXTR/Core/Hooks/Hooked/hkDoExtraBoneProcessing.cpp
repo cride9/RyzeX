@@ -8,17 +8,18 @@ void __fastcall h::hkDoExtraBoneProcessing(void* ecx, void* edx, CStudioHdr* hdr
 	CBaseEntity* pEnt = reinterpret_cast<CBaseEntity*>(ecx);
 
 	if (!pEnt)
-		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, hdr, pos, q, matrix, boneComputed, context);
+		return original(ecx, edx, hdr, pos, q, matrix, boneComputed, context);
 
 	if (pEnt->IsPlayer() && pEnt->IsAlive()) {
 
 		const auto bOnGround = pEnt->AnimState()->bOnGround;
 		pEnt->AnimState()->bOnGround = false;
 
-		invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, hdr, pos, q, matrix, boneComputed, context);
+		original(ecx, edx, hdr, pos, q, matrix, boneComputed, context);
+		//invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, hdr, pos, q, matrix, boneComputed, context);
 
 		pEnt->AnimState()->bOnGround = bOnGround;
 	}
 	else
-		return invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, hdr, pos, q, matrix, boneComputed, context);
+		return original(ecx, edx, hdr, pos, q, matrix, boneComputed, context);
 }

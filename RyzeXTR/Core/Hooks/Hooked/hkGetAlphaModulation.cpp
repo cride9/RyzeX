@@ -4,10 +4,9 @@ float __fastcall h::hkGetAlphaModulation(void* ecx, void* edx) {
 
 	static auto original = detour::getAlphaModulation.GetOriginal<decltype(&h::hkGetAlphaModulation)>();
 
-
 	IMaterial* pMaterial = static_cast<IMaterial*>(ecx);
 	if (!pMaterial || pMaterial->IsErrorMaterial())
-		return detour::getAlphaModulation.CallOriginal<float>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
+		return original( ecx, edx);
 
 	const char* szGroup = pMaterial->GetTextureGroupName();
 
@@ -18,5 +17,5 @@ float __fastcall h::hkGetAlphaModulation(void* ecx, void* edx) {
 	else if (strstr(szGroup, XorStr("SkyBox textures")))
 		return cfg::misc::flSkyboxColor[3];
 
-	return detour::getAlphaModulation.CallOriginal<float>(ROP::ClientGadget_t::uReturnGadget, ecx, edx);
+	return original(ecx, edx);
 }
