@@ -236,8 +236,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 		if (pEnt == g::pLocal) {
 
-			g_LocalAnimations->TransformateMatricies();
-
 			if (cfg::misc::thirdpersonDistance == 0) {
 
 				i::StudioRender->SetAlphaModulation(0.f);
@@ -250,7 +248,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 			if (localDesync) {
 
-				if (!local) {
+				if (!bChams[0]) {
 					EndChams();
 					if (cfg::model::bBlend && pEnt->IsScoped())
 						i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f); 
@@ -265,7 +263,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			}
 			if (cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind)) {
 
-				if (!local) {
+				if (!bChams[0]) {
 					EndChams();
 					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
@@ -274,15 +272,15 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				original(i::StudioRender, 0, pResults, info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				//detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 			}
-			if (local) {
+			if (bChams[0]) {
 
-				if (localXQZ) {
-					BeginChams(materials[localType], localXQZColor, true, localXQZXhair);
+				if (bChamsXQZ[0]) {
+					BeginChams(materials[iType[0]], ChamsColorXQZ[0], true, bXhairXQZ[0]);
 					if (cfg::model::bBlend && pEnt->IsScoped())
 						i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
 					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[localType], localColor, false, localXhair);
+				BeginChams(materials[iType[0]], ChamsColor[0], false, bXhair[0]);
 				if (cfg::model::bBlend && pEnt->IsScoped())
 					i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
 				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
@@ -294,44 +292,44 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
 				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (localOverlay) {
+			if (bOverlay[0]) {
 
-				if (localOverlayXQZ) {
-					BeginChams(materials[GLOW], localOverlayXQZColor, true, localOverlayXQZXhair);
+				if (bOverlayXQZ[0]) {
+					BeginChams(materials[GLOW], OverlayColor[0], true, bOverlayXhairXQZ[0]);
 					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[GLOW], localOverlayColor, false, localOverlayXhair);
+				BeginChams(materials[GLOW], OverlayColor[0], false, bOverlayXhairXQZ[0]);
 				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (localThinOverlay) {
+			if (bThinOverlay[0]) {
 
-				if (localThinOverlayXQZ) {
-					BeginChams(materials[THINGLOW], localThinOverlayXQZColor, true, localThinOverlayXQZXhair);
+				if (bThinOverlayXQZ[0]) {
+					BeginChams(materials[THINGLOW], ThinOverlayColor[0], true, bThinOverlayXhairXQZ[0]);
 					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[THINGLOW], localThinOverlayColor, false, localThinOverlayXhair);
+				BeginChams(materials[THINGLOW], ThinOverlayColor[0], false, bThinOverlayXhairXQZ[0]);
 				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (localAnimOverlay) {
+			if (bAnimOverlay[0]) {
 
-				if (localAnimOverlayXQZ) {
-					BeginChams(materials[ANIMATED], localAnimOverlayXQZColor, true, localAnimOverlayXQZXhair);
+				if (bAnimOverlayXQZ[0]) {
+					BeginChams(materials[ANIMATED], AnimOverlayColor[0], true, bAnimOverlayXhairXQZ[0]);
 					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[ANIMATED], localAnimOverlayColor, false, localAnimOverlayXhair);
+				BeginChams(materials[ANIMATED], AnimOverlayColor[0], false, bAnimOverlayXhairXQZ[0]);
 				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}
 		else if (pEnt->GetTeam() == g::pLocal->GetTeam()) {
 
-			if (team) {
+			if (bChams[1]) {
 
-				if (teamXQZ) {
-					BeginChams(materials[teamType], teamXQZColor, true, teamXQZXhair);
+				if (bChamsXQZ[1]) {
+					BeginChams(materials[iType[1]], ChamsColorXQZ[1], true, bXhairXQZ[1]);
 					original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[teamType], teamColor, false, teamXhair);
+				BeginChams(materials[iType[1]], ChamsColor[1], false, bXhair[1]);
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
@@ -339,56 +337,36 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				EndChams();
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (teamOverlay) {
+			if (bOverlay[1]) {
 
-				if (teamOverlayXQZ) {
-					BeginChams(materials[GLOW], teamOverlayXQZColor, true, teamOverlayXQZXhair);
+				if (bOverlayXQZ[1]) {
+					BeginChams(materials[GLOW], OverlayColorXQZ[1], true, bOverlayXhairXQZ[1]);
 					original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[GLOW], teamOverlayColor, false, teamOverlayXhair);
+				BeginChams(materials[GLOW], OverlayColor[1], false, bOverlayXhair[1]);
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (teamThinOverlay) {
+			if (bThinOverlay[1]) {
 
-				if (teamThinOverlayXQZ) {
-					BeginChams(materials[THINGLOW], teamThinOverlayXQZColor, true, teamThinOverlayXQZXhair);
+				if (bThinOverlayXQZ[1]) {
+					BeginChams(materials[THINGLOW], ThinOverlayColorXQZ[1], true, bThinOverlayXhairXQZ[1]);
 					original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[THINGLOW], teamThinOverlayColor, false, teamThinOverlayXhair);
+				BeginChams(materials[THINGLOW], ThinOverlayColor[1], false, bThinOverlayXhair[1]);
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (teamAnimOverlay) {
+			if (bAnimOverlay[1]) {
 
-				if (teamAnimOverlayXQZ) {
-					BeginChams(materials[ANIMATED], teamAnimOverlayXQZColor, true, teamAnimOverlayXQZXhair);
+				if (bAnimOverlayXQZ[1]) {
+					BeginChams(materials[ANIMATED], AnimOverlayColorXQZ[1], true, bAnimOverlayXhairXQZ[1]);
 					original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[ANIMATED], teamAnimOverlayColor, false, teamAnimOverlayXhair);
+				BeginChams(materials[ANIMATED], AnimOverlayColor[1], false, bAnimOverlayXhair[1]);
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}
 		else {
-
-#if _DEBUG
-			if (lagcomp.GetLog(pEnt->EntIndex()).pEntity) {
-
-				if (lagcomp.GetLog(pEnt->EntIndex()).pRecord.size() >= 2) {
-
-					auto lastrecord = lagcomp.GetLog(pEnt->EntIndex()).pRecord.front();
-
-					BeginChams(materials[FLAT], teamAnimOverlayXQZColor, true, teamAnimOverlayXQZXhair);
-					detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, lastrecord.pMatricies[LEFT], flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-
-					BeginChams(materials[FLAT], teamAnimOverlayColor, true, teamAnimOverlayXQZXhair);
-					detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, lastrecord.pMatricies[RIGHT], flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-
-					BeginChams(materials[FLAT], teamThinOverlayXQZColor, true, teamAnimOverlayXQZXhair);
-					detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, lastrecord.pMatricies[CENTER], flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-				}
-			}
-#endif
-
 			if (enemyBTEnable) {
 
 				auto pLog = &lagcomp.GetLog(pEnt->EntIndex());
@@ -410,13 +388,13 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				//	}
 				//}
 			}
-			if (enemy) {
+			if (bChams[2]) {
 
-				if (enemyXQZ) {
-					BeginChams(materials[enemyType], enemyXQZColor, true, enemyXQZXhair);
+				if (bChamsXQZ[2]) {
+					BeginChams(materials[iType[2]], ChamsColorXQZ[2], true, bXhairXQZ[2]);
 					original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[enemyType], enemyColor, false, enemyXhair);
+				BeginChams(materials[iType[2]], ChamsColor[2], false, bXhair[2]);
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
@@ -424,31 +402,31 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				EndChams();
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (enemyOverlay) {
+			if (bOverlay[2]) {
 
-				if (enemyOverlayXQZ) {
-					BeginChams(materials[GLOW], enemyOverlayXQZColor, true, enemyOverlayXQZXhair);
+				if (bOverlayXQZ[2]) {
+					BeginChams(materials[GLOW], OverlayColorXQZ[2], true, bOverlayXhairXQZ[2]);
 					original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[GLOW], enemyOverlayColor, false, enemyOverlayXhair);
+				BeginChams(materials[GLOW], OverlayColor[2], false, bOverlayXhair[2]);
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (enemyThinOverlay) {
+			if (bThinOverlay[2]) {
 
-				if (enemyThinOverlayXQZ) {
-					BeginChams(materials[THINGLOW], enemyThinOverlayXQZColor, true, enemyThinOverlayXQZXhair);
+				if (bThinOverlayXQZ[2]) {
+					BeginChams(materials[THINGLOW], ThinOverlayColorXQZ[2], true, bThinOverlayXhairXQZ[2]);
 					original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[THINGLOW], enemyThinOverlayColor, false, enemyThinOverlayXhair);
+				BeginChams(materials[THINGLOW], ThinOverlayColor[2], false, bThinOverlayXhair[2]);
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
-			if (enemyAnimOverlay) {
+			if (bAnimOverlay[2]) {
 
-				if (enemyAnimOverlayXQZ) {
-					BeginChams(materials[ANIMATED], enemyAnimOverlayXQZColor, true, enemyAnimOverlayXQZXhair);
+				if (bAnimOverlayXQZ[2]) {
+					BeginChams(materials[ANIMATED], AnimOverlayColorXQZ[2], true, bAnimOverlayXhairXQZ[2]);
 					original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				BeginChams(materials[ANIMATED], enemyAnimOverlayColor, false, enemyAnimOverlayXhair);
+				BeginChams(materials[ANIMATED], AnimOverlayColor[2], false, bAnimOverlayXhair[2]);
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;

@@ -17,7 +17,12 @@ bool HitscanComparator(const Hitscan_t& a, const Hitscan_t& b) {
 	if (!a.pRecord || !b.pRecord)
 		return false;
 
-	// First, sort by bLethal and HITBOX_HEAD
+	if (a.bSafe && !b.bSafe)
+		return true;
+
+	if (a.bMiddle && !b.bMiddle)
+		return true;
+
 	if (a.bLethal && a.bBaim != HITBOX_HEAD)
 		return true;
 	else if (b.bLethal && b.bBaim != HITBOX_HEAD)
@@ -196,7 +201,7 @@ std::vector<Lagcompensation::LagRecord_t*> ChooseTargetRecord(Lagcompensation::A
 			continue;
 		}
 
-		anims.PostResolver(pRecord->pEntity, pRecord);
+		//anims.PostResolver(pRecord->pEntity, pRecord);
 
 		const int iHitboxToCheck = ((cfg::rage::forceBaim && IPT::HandleInput(cfg::rage::forceBaimKey)) || pRecord->pEntity->GetHealth() < pWeapon->GetCSWpnData()->iDamage) ? HITBOX_STOMACH : HITBOX_HEAD;
 
@@ -276,8 +281,9 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 						continue;
 				}
 
+				int iScannedPoints = -1;
 				for (Vector& vecPoint : multiPointed) {
-
+					iScannedPoints++;
 					int iSafePoint = SafePoint(vecEyePosition, pWeapon, pCurrentApplied, vecPoint, iHitbox);
 					if (vecSelectedSafePoints[iHitbox]) {
 
@@ -299,7 +305,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 						if (iHitbox == HITBOX_HEAD) 
 							bHead = bCollidePoint(vecEyePosition, vecPoint, pEntity->StudioHitbox(HITBOX_HEAD), pCurrentApplied->pMatricies[RESOLVE]);
 						
-						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage > pEntity->GetHealth(), bBacktrack, bHead, data.enterTrace.iHitGroup != HITGROUP_HEAD));
+						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, flDamage, iHitbox, data.enterTrace.iHitGroup, iSafePoint == 3, flDamage > pEntity->GetHealth(), bBacktrack, bHead, data.enterTrace.iHitGroup != HITGROUP_HEAD, iScannedPoints == 0));
 					}
 				}
 			}
@@ -523,22 +529,22 @@ std::pair<int, int> CRageBot::ConfigMultipoint( CBaseCombatWeapon* pWeapon ) {
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
-		return std::make_pair( cfg::rage::autoHeadPoints, cfg::rage::autoBodyPoints );
+		return std::make_pair( cfg::rage::HeadPoints[0], cfg::rage::BodyPoints[0]);
 	}
 	else if ( iDefinitionIndex == WEAPON_SSG08 ) {
-		return std::make_pair( cfg::rage::scoutHeadPoints, cfg::rage::scoutBodyPoints );
+		return std::make_pair( cfg::rage::HeadPoints[1], cfg::rage::BodyPoints[1]);
 	}
 	else if ( iDefinitionIndex == WEAPON_AWP ) {
-		return std::make_pair( cfg::rage::awpHeadPoints, cfg::rage::awpBodyPoints );
+		return std::make_pair( cfg::rage::HeadPoints[2], cfg::rage::BodyPoints[2]);
 	}
 	else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
-		return std::make_pair( cfg::rage::heavypistolHeadPoints, cfg::rage::heavypistolBodyPoints );
+		return std::make_pair( cfg::rage::HeadPoints[3], cfg::rage::BodyPoints[3]);
 	}
 	else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
-		return std::make_pair( cfg::rage::pistolHeadPoints, cfg::rage::pistolBodyPoints );
+		return std::make_pair( cfg::rage::HeadPoints[4], cfg::rage::BodyPoints[4]);
 	}
 	else {
-		return std::make_pair( cfg::rage::etcHeadPoints, cfg::rage::etcBodyPoints );
+		return std::make_pair( cfg::rage::HeadPoints[5], cfg::rage::BodyPoints[5]);
 	}
 }
 
@@ -547,25 +553,25 @@ int CRageBot::ConfigMinimumDamage( CBaseCombatWeapon* pWeapon ) {
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
-		return cfg::rage::autoMindmg;
+		return cfg::rage::Mindmg[0];
 	}
 	else if ( iDefinitionIndex == WEAPON_SSG08 ) {
-		return cfg::rage::scoutMindmg;
+		return cfg::rage::Mindmg[1];
 	}
 	else if ( iDefinitionIndex == WEAPON_AWP ) {
-		return cfg::rage::awpMindmg;
+		return cfg::rage::Mindmg[2];
 	}
 	else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
-		return cfg::rage::heavypistolMindmg;
+		return cfg::rage::Mindmg[3];
 	}
 	else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
-		return cfg::rage::pistolMindmg;
+		return cfg::rage::Mindmg[4];
 	}
 	else if ( iDefinitionIndex == WEAPON_TASER ) {
 		return 110;
 	}
 	else {
-		return cfg::rage::etcMindmg;
+		return cfg::rage::Mindmg[5];
 	}
 }
 
@@ -574,25 +580,25 @@ int CRageBot::ConfigOverrideDamage( CBaseCombatWeapon* pWeapon ) {
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
-		return cfg::rage::autoOverride;
+		return cfg::rage::Override[0];
 	}
 	else if ( iDefinitionIndex == WEAPON_SSG08 ) {
-		return cfg::rage::scoutOverride;
+		return cfg::rage::Override[1];
 	}
 	else if ( iDefinitionIndex == WEAPON_AWP ) {
-		return cfg::rage::awpOverride;
+		return cfg::rage::Override[2];
 	}
 	else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
-		return cfg::rage::heavypistolOverride;
+		return cfg::rage::Override[3];
 	}
 	else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
-		return cfg::rage::pistolOverride;
+		return cfg::rage::Override[4];
 	}
 	else if ( iDefinitionIndex == WEAPON_TASER ) {
 		return 110;
 	}
 	else {
-		return cfg::rage::etcOverride;
+		return cfg::rage::Override[5];
 	}
 }
 
@@ -601,25 +607,25 @@ int CRageBot::ConfigHitChance( CBaseCombatWeapon* pWeapon ) {
 	auto iDefinitionIndex = pWeapon->GetItemDefinitionIndex( );
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
-		return cfg::rage::autoHitchance;
+		return cfg::rage::Hitchance[0];
 	}
 	else if ( iDefinitionIndex == WEAPON_SSG08 ) {
-		return cfg::rage::scoutHitchance;
+		return cfg::rage::Hitchance[1];
 	}
 	else if ( iDefinitionIndex == WEAPON_AWP ) {
-		return cfg::rage::awpHitchance;
+		return cfg::rage::Hitchance[2];
 	}
 	else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
-		return cfg::rage::heavypistolHitchance;
+		return cfg::rage::Hitchance[3];
 	}
 	else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
-		return cfg::rage::pistolHitchance;
+		return cfg::rage::Hitchance[4];
 	}
 	else if ( iDefinitionIndex == WEAPON_TASER ) {
 		return 72;
 	}
 	else {
-		return cfg::rage::etcHitchance;
+		return cfg::rage::Hitchance[5];
 	}
 }
 
@@ -744,31 +750,31 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigHitboxes( CBaseCombatWeapon * pWeap
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::autoHitboxes[ i ] )
+			if ( cfg::rage::Hitboxes[0][ i ] )
 				AddHitbox( i, vecHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_SSG08 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::scoutHitboxes[ i ] )
+			if ( cfg::rage::Hitboxes[1][ i ] )
 				AddHitbox( i, vecHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_AWP ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::awpHitboxes[ i ] )
+			if ( cfg::rage::Hitboxes[2][ i ] )
 				AddHitbox( i, vecHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::heavypistolHitboxes[ i ] )
+			if ( cfg::rage::Hitboxes[3][ i ] )
 				AddHitbox( i, vecHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::pistolHitboxes[ i ] )
+			if ( cfg::rage::Hitboxes[4][ i ] )
 				AddHitbox( i, vecHitboxes );
 		}
 	}
@@ -778,7 +784,7 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigHitboxes( CBaseCombatWeapon * pWeap
 	}
 	else {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::etcHitboxes[ i ] )
+			if ( cfg::rage::Hitboxes[5][ i ] )
 				AddHitbox( i, vecHitboxes );
 		}
 	}
@@ -793,31 +799,31 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes( CBaseCombatWeapon * 
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::autoMultiHitboxes[ i ] )
+			if ( cfg::rage::MultiHitboxes[0][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_SSG08 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::scoutMultiHitboxes[ i ] )
+			if ( cfg::rage::MultiHitboxes[1][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_AWP ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::awpMultiHitboxes[ i ] )
+			if ( cfg::rage::MultiHitboxes[2][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::heavypistolMultiHitboxes[ i ] )
+			if ( cfg::rage::MultiHitboxes[3][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::pistolMultiHitboxes[ i ] )
+			if ( cfg::rage::MultiHitboxes[4][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
@@ -827,7 +833,7 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigMultiHitboxes( CBaseCombatWeapon * 
 	}
 	else {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::etcMultiHitboxes[ i ] )
+			if ( cfg::rage::MultiHitboxes[5][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
@@ -842,31 +848,31 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigSafeHitboxes( CBaseCombatWeapon * p
 
 	if ( iDefinitionIndex == WEAPON_SCAR20 || iDefinitionIndex == WEAPON_G3SG1 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::autoSafeHitboxes[ i ] )
+			if ( cfg::rage::SafeHitboxes[0][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_SSG08 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::scoutSafeHitboxes[ i ] )
+			if ( cfg::rage::SafeHitboxes[1][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_AWP ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::awpSafeHitboxes[ i ] )
+			if ( cfg::rage::SafeHitboxes[2][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_REVOLVER || iDefinitionIndex == WEAPON_DEAGLE ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::heavypistolSafeHitboxes[ i ] )
+			if ( cfg::rage::SafeHitboxes[3][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
 	else if ( iDefinitionIndex == WEAPON_USP_SILENCER || iDefinitionIndex == WEAPON_HKP2000 || iDefinitionIndex == WEAPON_ELITE || iDefinitionIndex == WEAPON_P250 || iDefinitionIndex == WEAPON_FIVESEVEN || iDefinitionIndex == WEAPON_CZ75A || iDefinitionIndex == WEAPON_GLOCK || iDefinitionIndex == WEAPON_TEC9 ) {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::pistolSafeHitboxes[ i ] )
+			if ( cfg::rage::SafeHitboxes[4][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
@@ -876,7 +882,7 @@ std::array<bool, HITBOX_MAX> CRageBot::ConfigSafeHitboxes( CBaseCombatWeapon * p
 	}
 	else {
 		for ( int i = 0; i < 6; i++ ) {
-			if ( cfg::rage::etcSafeHitboxes[ i ] )
+			if ( cfg::rage::SafeHitboxes[5][ i ] )
 				AddHitbox( i, arrHitboxes );
 		}
 	}
@@ -1045,7 +1051,7 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) - (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) - (vecRight * (flHitboxDistance * 0.5f)));
 
-		if (bGenerateMore) {
+		/*if (bGenerateMore) {
 
 			refVecPoints.push_back(vecCenter + vecTop * (flHitboxDistance * 0.5f));
 			refVecPoints.push_back(vecCenter - vecTop * (flHitboxDistance * 0.5f));
@@ -1054,16 +1060,16 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 			refVecPoints.push_back(vecCenter + (vecTop * (flHitboxDistance * 0.5f)) + (vecRight * ((flHitboxDistance * 0.25f))));
 			refVecPoints.push_back(vecCenter + (vecTop * (flHitboxDistance * 0.5f)) - (vecLeft * ((flHitboxDistance * 0.25f))));
 			refVecPoints.push_back(vecCenter + (vecTop * (flHitboxDistance * 0.5f)) - (vecRight * ((flHitboxDistance * 0.25f))));
-		}
+		}*/
 	}
 	refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
 	refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);
 
-	if (bGenerateMore) {
+	/*if (bGenerateMore) {
 
 		refVecPoints.push_back(vecCenter + vecLeft * (flHitboxDistance * 0.5f));
 		refVecPoints.push_back(vecCenter + vecRight * (flHitboxDistance * 0.5f));
-	}
+	}*/
 
 	//for (auto& something : refVecPoints)
 	//	g::drawList.push_back(something);

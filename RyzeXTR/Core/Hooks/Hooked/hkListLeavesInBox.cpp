@@ -8,7 +8,7 @@ int __fastcall h::hkListLeavesInBox(void* thisptr, int edx, const Vector& vecMin
 
 	static std::uintptr_t uInsertIntoTree = (uintptr_t)(MEM::FindPattern(CLIENT_DLL, XorStr("56 52 FF 50 18")) + 0x5);
 
-	if (cfg::model::enemy && reinterpret_cast<std::uintptr_t>(_ReturnAddress()) == uInsertIntoTree) {
+	if (cfg::model::iType[2] && reinterpret_cast<std::uintptr_t>(_ReturnAddress()) == uInsertIntoTree) {
 
 		if (const auto pInfo = *reinterpret_cast<RenderableInfo_t**>(reinterpret_cast<std::uintptr_t>(_AddressOfReturnAddress()) + 0x14); pInfo != nullptr) {
 			

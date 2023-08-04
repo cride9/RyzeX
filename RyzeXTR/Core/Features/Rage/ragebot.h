@@ -9,7 +9,7 @@ struct Hitscan_t {
 	Hitscan_t() {
 
 	}
-	Hitscan_t(Lagcompensation::LagRecord_t* recordPointer, Vector hitboxVector, float damageFloat, int hitboxInt, int hitgroupInt, bool safeBool, bool lethalBool, bool backtrackBool, bool headBool, bool baimBool) {
+	Hitscan_t(Lagcompensation::LagRecord_t* recordPointer, Vector hitboxVector, float damageFloat, int hitboxInt, int hitgroupInt, bool safeBool, bool lethalBool, bool backtrackBool, bool headBool, bool baimBool, bool middleBool) {
 		pRecord = recordPointer;
 		vecPoint = hitboxVector;
 		flDamage = damageFloat;
@@ -20,6 +20,7 @@ struct Hitscan_t {
 		bBacktrack = backtrackBool;
 		bHead = headBool;
 		bBaim = baimBool;
+		bMiddle = middleBool;
 	}
 
 	Lagcompensation::LagRecord_t* pRecord = nullptr;
@@ -32,6 +33,7 @@ struct Hitscan_t {
 	bool bBacktrack = false;
 	bool bHead = false;
 	bool bBaim = false;
+	bool bMiddle = false;
 };
 
 class CRageBot {
