@@ -47,7 +47,7 @@ namespace cachedEvents {
 
 	inline static std::string playerHurt = ("player_hurt");
 	inline static std::string playerDeath = ("player_death");
-	inline static std::string bulletImpact = ("bullet_impact");
+	inline static std::string bBulletImpact = ("bullet_impact");
 	inline static std::string weaponFire = ("weapon_fire");
 	inline static std::string roundStart = ("round_start");
 	inline static std::string itemPurchase = ("item_purchase");

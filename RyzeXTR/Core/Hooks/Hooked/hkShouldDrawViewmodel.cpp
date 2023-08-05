@@ -5,5 +5,5 @@ bool __fastcall h::hkShouldDrawViewmodel(void* ecx, void* edx) {
 
 	static auto original = detour::drawViewmodel.GetOriginal<decltype(&h::hkShouldDrawViewmodel)>();
 
-	return cfg::misc::drawViewmodelOnScope ? true : original(ecx, edx);
+	return cfg::misc::bOnScopeViewmodel ? true : original(ecx, edx);
 }

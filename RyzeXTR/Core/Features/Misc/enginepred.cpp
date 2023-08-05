@@ -1,5 +1,6 @@
 #include "enginepred.h"
 #include "../../globals.h"
+#include "../Networking/networking.h"
 
 void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 {
@@ -29,9 +30,9 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 
 	// the big ol tb fixer upper
 	if ( !pLastCmd || pLastCmd->bHasBeenPredicted )
-		SeqDiff = SequenceNumber - pLocal->GetTickBase( );
+		SeqDiff = SequenceNumber - networking.GetCorrectedTickbase();
 
-	TickBase = max(pLocal->GetTickBase( ),
+	TickBase = max(networking.GetCorrectedTickbase(),
 		SequenceNumber - SeqDiff );
 
 	pLastCmd = g::pCmd;

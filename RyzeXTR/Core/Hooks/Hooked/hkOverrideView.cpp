@@ -12,12 +12,12 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return original(ecx, edx, pSetup);
 
-	if (cfg::misc::removals[3])
-		pSetup->flFOV = cfg::misc::fov;
+	if (cfg::misc::bRemovals[3])
+		pSetup->flFOV = cfg::misc::iDebugFov;
 	else if (!g::pLocal->IsScoped())
-		pSetup->flFOV = cfg::misc::fov;
+		pSetup->flFOV = cfg::misc::iDebugFov;
 
-	if (cfg::misc::removals[2]) {
+	if (cfg::misc::bRemovals[2]) {
 
 		Vector vecViewPunch = g::pLocal->GetViewPunch();
 		Vector vecAimPunch = g::pLocal->GetAimPunch();
@@ -27,7 +27,7 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 		pSetup->angView[2] -= (vecViewPunch[2] + (vecAimPunch[2] * 2 * 0.4499999f));
 	}
 
-	if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+	if (IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck) {
 		pSetup->vecOrigin.z = g::pLocal->GetAbsOrigin().z + 64.f;
 	}
 

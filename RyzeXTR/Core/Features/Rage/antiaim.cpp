@@ -17,7 +17,7 @@ static bool jitter = false;
 
 void HandleJitter(AATYPE type) {
 
-	int tickbase = g::pLocal->GetTickBase();
+	int tickbase = networking.GetCorrectedTickbase();
 	static int last_tick = 0;
 	static float flCurtime = i::GlobalVars->flCurrentTime;
 	if (last_tick + (i::ClientState->nChokedCommands + 1) < tickbase || last_tick > tickbase)
@@ -84,9 +84,9 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 	}
 
 	bool bInitializedFreestand = false;
-	if (freestand[type] == 1)
+	if (iFreestand[type] == 1)
 		bInitializedFreestand = FreeStandingDistance(pCmd, pCmd->angViewPoint);
-	if (freestand[type] == 2)
+	if (iFreestand[type] == 2)
 		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
 
 	if (iYawBase[type] == 1 && !bInitializedFreestand)
@@ -106,14 +106,14 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 		}
 	}
 
-	if (bodyLean[type])
-		pCmd->angViewPoint.y += bodyLean[bInverted][type];
+	if (flBodyLean[type])
+		pCmd->angViewPoint.y += flBodyLean[bInverted][type];
 
 	// add real jitter
-	if (modifier[type] == 1)
-		pCmd->angViewPoint.y += jitter ? -(jittervalue[type]) : (jittervalue[type]);
-	else if (modifier[type] == 2)
-		pCmd->angViewPoint.y += M::GenerateRandom(-jittervalue[type], jittervalue[type]);
+	if (iModifier[type] == 1)
+		pCmd->angViewPoint.y += jitter ? -(iJitterValue[type]) : (iJitterValue[type]);
+	else if (iModifier[type] == 2)
+		pCmd->angViewPoint.y += M::GenerateRandom(-iJitterValue[type], iJitterValue[type]);
 
 	float flDesyncValue = 0.f;
 	static int iChangeOnTick = 0;
@@ -219,8 +219,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	
 	// shooting checks
 	if (antiaim::ShouldDisableAntiaim(pCmd, bSendPacket)) {
-		if (!(cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey)))
-			bSendPacket = (cfg::antiaim::fakeduck && IPT::HandleInput(cfg::antiaim::fakeduckbind)) ? bSendPacket : (cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) ? false : true;
+		if (!(cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey)))
+			bSendPacket = (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey)) ? bSendPacket : (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) ? false : true;
 		return;
 	}
 
@@ -340,7 +340,7 @@ void antiaim::Update( CUserCmd* m_pCmd )
 
 bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 
 {
-	const auto time = TICKS_TO_TIME(g::pLocal->GetTickBase());
+	const auto time = TICKS_TO_TIME(networking.GetCorrectedTickbase());
 
 	//if (misc::CanFireWeapon(time) && pCmd->iButtons & IN_ATTACK)
 	//	return true;

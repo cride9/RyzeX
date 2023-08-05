@@ -2,6 +2,7 @@
 #include "math.h"
 #include "../globals.h"
 #include "../Hooks/hooks.h"
+#include "../Features/Networking/networking.h"
 
 CBaseEntity* CBaseEntity::GetLocalPlayer()
 {
@@ -407,7 +408,7 @@ bool CBaseEntity::IsTargetingLocal(CBaseEntity* pLocal)
 bool CBaseEntity::CanShoot(CWeaponCSBase* pBaseWeapon, int iTickbase)
 {
 	if (iTickbase == -1)
-		iTickbase = this->GetTickBase();
+		iTickbase = this == g::pLocal ? networking.GetCorrectedTickbase() : this->GetTickBase();
 	const float flServerTime = TICKS_TO_TIME(iTickbase);
 
 	// check is have ammo

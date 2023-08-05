@@ -71,7 +71,7 @@ public:
 	void UpdateClientSideAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	std::array<int, 65> arrMissedShots{0};
 	bool didHurt = false, didFire = false, didImpact = false, didDie = false;
-	Vector bulletImpact = Vector( 0, 0, 0 );
+	Vector bBulletImpact = Vector( 0, 0, 0 );
 
 	void ResolverHandler(IGameEvent*);
 	void ResolverLogic();

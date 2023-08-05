@@ -27,112 +27,61 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::rage;
 
-		SetupValue(enable, false, "rage", "Rageenable");
-		SetupValue(overrideBind, 0, "rage", "overrideBind");
-		SetupValue( m_bEnableBacktrack, false, "rage", "Ragebacktrack" );
-		SetupValue(forceBaim, false, "rage", "forceBaim");
-		SetupValue(forceBaimKey, 0, "rage", "forceBaimKey");
-		SetupValue(aimbotTargetSelection, 0, "rage", "aimbotTargetSelection");
+		SetupValue(bEnable, false, "rage", "Rageenable");
+		SetupValue(iOverrideBind, 0, "rage", "overrideBind");
+		SetupValue(bForceBaim, false, "rage", "forceBaim");
+		SetupValue(iForceBaimKey, 0, "rage", "forceBaimKey");
 		SetupValue(iAimbotFov, 180, "rage", "aimbotfov");
 		SetupValue(bSilentAim, false, "rage", "bSiletAim");
-		SetupValue(ragebotbind, 0, "rage", "ragebotbind");
+		SetupValue(iAimbotKey, 0, "rage", "ragebotbind");
+		SetupValue(bOverride, false, "rage", "bOverride");
 
-		SetupValue( autostop[ 0 ], false, "rage", "autostop1" );
-		SetupValue( autostop[ 1 ], false, "rage", "autostop2" );
-		SetupValue( autostop[ 2 ], false, "rage", "autostop3" );
-		SetupValue( autostop[ 3 ], false, "rage", "autostop4" );
-		SetupValue( autostop[ 4 ], false, "rage", "autostop5" );
-		SetupValue( autostop[ 5 ], false, "rage", "autostop6" );
+		SetupValue( bAutostop[ 0 ], false, "rage", "autostop1" );
+		SetupValue( bAutostop[ 1 ], false, "rage", "autostop2" );
+		SetupValue( bAutostop[ 2 ], false, "rage", "autostop3" );
+		SetupValue( bAutostop[ 3 ], false, "rage", "autostop4" );
+		SetupValue( bAutostop[ 4 ], false, "rage", "autostop5" );
+		SetupValue( bAutostop[ 5 ], false, "rage", "autostop6" );
 
-		SetupValue(m_bAutoStopInAir, 6 ,false, "rage", "autostopair");
+		for (size_t i = 0; i < 6; i++)
+			SetupValue(bConditions[i], 2, false, "rage", std::format("condition{}", i));
 
-		SetupValue( betweenshots[ 0 ], false, "rage", "betweenshots1" );
-		SetupValue( betweenshots[ 1 ], false, "rage", "betweenshots2" );
-		SetupValue( betweenshots[ 2 ], false, "rage", "betweenshots3" );
-		SetupValue( betweenshots[ 3 ], false, "rage", "betweenshots4" );
-		SetupValue( betweenshots[ 4 ], false, "rage", "betweenshots5" );
-		SetupValue( betweenshots[ 5 ], false, "rage", "betweenshots6" );
+		SetupValue( bAutostopAggressiveness[ 0 ], false, "rage", "autostopAggressiveness1" );
+		SetupValue( bAutostopAggressiveness[ 1 ], false, "rage", "autostopAggressiveness2" );
+		SetupValue( bAutostopAggressiveness[ 2 ], false, "rage", "autostopAggressiveness3" );
+		SetupValue( bAutostopAggressiveness[ 3 ], false, "rage", "autostopAggressiveness4" );
+		SetupValue( bAutostopAggressiveness[ 4 ], false, "rage", "autostopAggressiveness5" );
+		SetupValue( bAutostopAggressiveness[ 5 ], false, "rage", "autostopAggressiveness6" );
 
-		SetupValue( autostopAggressiveness[ 0 ], false, "rage", "autostopAggressiveness1" );
-		SetupValue( autostopAggressiveness[ 1 ], false, "rage", "autostopAggressiveness2" );
-		SetupValue( autostopAggressiveness[ 2 ], false, "rage", "autostopAggressiveness3" );
-		SetupValue( autostopAggressiveness[ 3 ], false, "rage", "autostopAggressiveness4" );
-		SetupValue( autostopAggressiveness[ 4 ], false, "rage", "autostopAggressiveness5" );
-		SetupValue( autostopAggressiveness[ 5 ], false, "rage", "autostopAggressiveness6" );
+		SetupValue( bAutoScope[ 0 ], false, "rage", "autoscope1" );
+		SetupValue( bAutoScope[ 1 ], false, "rage", "autoscope2" );
+		SetupValue( bAutoScope[ 2 ], false, "rage", "autoscope3" );
 
-		SetupValue( autoscope[ 0 ], false, "rage", "autoscope1" );
-		SetupValue( autoscope[ 1 ], false, "rage", "autoscope2" );
-		SetupValue( autoscope[ 2 ], false, "rage", "autoscope3" );
+		SetupValue(bForceSafePoint[0], false, "rage", "forceSafePoint1");
+		SetupValue(bForceSafePoint[1], false, "rage", "forceSafePoint2");
+		SetupValue(bForceSafePoint[2], false, "rage", "forceSafePoint3");
+		SetupValue(bForceSafePoint[3], false, "rage", "forceSafePoint4");
+		SetupValue(bForceSafePoint[4], false, "rage", "forceSafePoint5");
+		SetupValue(bForceSafePoint[5], false, "rage", "forceSafePoint6");
 
-		SetupValue(forceSafePoint[0], false, "rage", "forceSafePoint1");
-		SetupValue(forceSafePoint[1], false, "rage", "forceSafePoint2");
-		SetupValue(forceSafePoint[2], false, "rage", "forceSafePoint3");
-		SetupValue(forceSafePoint[3], false, "rage", "forceSafePoint4");
-		SetupValue(forceSafePoint[4], false, "rage", "forceSafePoint5");
-		SetupValue(forceSafePoint[5], false, "rage", "forceSafePoint6");
+		SetupValue(bDoubletap, false, "rage", "Ragedoubletap");
+		SetupValue(iDoubletapKey, 0, "rage", "Ragedoubletapkey");
 
-		SetupValue(doubletap, false, "rage", "Ragedoubletap");
-		SetupValue(doubletapkey, 0, "rage", "Ragedoubletapkey");
+		SetupValue(bHideshot, false, "rage", "bHideshot");
+		SetupValue(iHideShotKey, 0, "rage", "iHideshot");
 
-		SetupValue(hideshot, false, "rage", "bHideshot");
-		SetupValue(hideshotkey, 0, "rage", "iHideshot");
+		SetupValue(bResolver, false, "rage", "Rageresolver");
 
-		SetupValue(resolver, false, "rage", "Rageresolver");
-
-		SetupValue(etcMultiHitboxes, false, 6, "rage", "etcMultiHitboxes");
-		SetupValue(etcHitboxes, false, 6, "rage", "etcHitboxes");
-		SetupValue(etcSafeHitboxes, false, 6, "rage", "etcSafeHitboxes");
-		SetupValue(etcHitchance, 0, "rage", "etcHitchance");
-		SetupValue(etcMindmg, 0, "rage", "etcMindmg");
-		SetupValue(etcHeadPoints, 0, "rage", "etcHeadPoints");
-		SetupValue(etcBodyPoints, 0, "rage", "etcBodyPoints");
-		SetupValue(etcOverride, 0, "rage", "etcOverride");
-
-		SetupValue(autoMultiHitboxes, false, 6, "rage", "autoMultiHitboxes");
-		SetupValue(autoHitboxes, false, 6, "rage", "autoHitboxes");
-		SetupValue(autoSafeHitboxes, false, 6, "rage", "autoSafeHitboxes");
-		SetupValue(autoHitchance, 0, "rage", "autoHitchance");
-		SetupValue(autoMindmg, 0, "rage", "autoMindmg");
-		SetupValue(autoHeadPoints, 0, "rage", "autoHeadPoints");
-		SetupValue(autoBodyPoints, 0, "rage", "autoBodyPoints");
-		SetupValue(autoOverride, 0, "rage", "autoOverride");
-
-		SetupValue(scoutMultiHitboxes, false, 6, "rage", "scoutMultiHitboxes");
-		SetupValue(scoutHitboxes, false, 6, "rage", "scoutHitboxes");
-		SetupValue(scoutSafeHitboxes, false, 6, "rage", "scoutSafeHitboxes");
-		SetupValue(scoutHitchance, 0, "rage", "scoutHitchance");
-		SetupValue(scoutMindmg, 0, "rage", "scoutMindmg");
-		SetupValue(scoutHeadPoints, 0, "rage", "scoutHeadPoints");
-		SetupValue(scoutBodyPoints, 0, "rage", "scoutBodyPoints");
-		SetupValue(scoutOverride, 0, "rage", "scoutOverride");
-
-		SetupValue(awpMultiHitboxes, false, 6, "rage", "awpMultiHitboxes");
-		SetupValue(awpHitboxes, false, 6, "rage", "awpHitboxes");
-		SetupValue(awpSafeHitboxes, false, 6, "rage", "awpSafeHitboxes");
-		SetupValue(awpHitchance, 0, "rage", "awpHitchance");
-		SetupValue(awpMindmg, 0, "rage", "awpMindmg");
-		SetupValue(awpHeadPoints, 0, "rage", "awpHeadPoints");
-		SetupValue(awpBodyPoints, 0, "rage", "awpBodyPoints");
-		SetupValue(awpOverride, 0, "rage", "awpOverride");
-
-		SetupValue(pistolMultiHitboxes, false, 6, "rage", "pistolMultiHitboxes");
-		SetupValue(pistolHitboxes, false, 6, "rage", "pistolHitboxes");
-		SetupValue(pistolSafeHitboxes, false, 6, "rage", "pistolSafeHitboxes");
-		SetupValue(pistolHitchance, 0, "rage", "pistolHitchance");
-		SetupValue(pistolMindmg, 0, "rage", "pistolMindmg");
-		SetupValue(pistolHeadPoints, 0, "rage", "pistolHeadPoints");
-		SetupValue(pistolBodyPoints, 0, "rage", "pistolBodyPoints");
-		SetupValue(pistolOverride, 0, "rage", "pistolOverride");
-
-		SetupValue(heavypistolMultiHitboxes, false, 6, "rage", "heavypistolMultiHitboxes");
-		SetupValue(heavypistolHitboxes, false, 6, "rage", "heavypistolHitboxes");
-		SetupValue(heavypistolSafeHitboxes, false, 6, "rage", "heavypistolSafeHitboxes");
-		SetupValue(heavypistolHitchance, 0, "rage", "heavypistolHitchance");
-		SetupValue(heavypistolMindmg, 0, "rage", "heavypistolMindmg");
-		SetupValue(heavypistolHeadPoints, 0, "rage", "heavypistolHeadPoints");
-		SetupValue(heavypistolBodyPoints, 0, "rage", "heavypistolBodyPoints");
-		SetupValue(heavypistolOverride, 0, "rage", "heavypistolOverride");
-
+		for (size_t i = 0; i < 6; i++) {
+			SetupValue(bMultiHitboxes[i], false, 6, "rage", std::format("multihitbox{}", i));
+			SetupValue(bHitboxes[i], false, 6, "rage", std::format("hitbox{}", i));
+			SetupValue(bSafeHitboxes[i], false, 6, "rage", std::format("safehitbox{}", i));
+			SetupValue(iHitchances[i], 0, "rage", std::format("hitchance{}", i));
+			SetupValue(iMinDamages[i], 0, "rage", std::format("mindmg{}", i));
+			SetupValue(iHeadPoints[i], 0, "rage", std::format("headpoints{}", i));
+			SetupValue(iBodyPoints[i], 0, "rage", std::format("bodypoints{}", i));
+			SetupValue(iOverride[i], 0, "rage", std::format("override{}", i));
+		}
 	}
 	
 	// antiaim
@@ -150,41 +99,42 @@ void CConfig::Setup() {
 		SetupValue(iYawBase, 3, 0, "antiaim", "yawbase");
 		SetupValue(bSlideWalk, 0, "antiaim", "slidewalk");
 		SetupValue(bInvertOnShoot, false, 3, "antiaim", "bInvertOnShoot");
-		SetupValue(bodyLean[0], 3, 0.f, "antiaim", "bodyLean1");
-		SetupValue(bodyLean[1], 3, 0.f, "antiaim", "bodyLean2");
+		SetupValue(flBodyLean[0], 3, 0.f, "antiaim", "bodyLean1");
+		SetupValue(flBodyLean[1], 3, 0.f, "antiaim", "bodyLean2");
 		SetupValue(bAntiJitter, false, 3, "antiaim", "bAntiJitter");
 
-		SetupValue(modifier,3, 0, "antiaim", "modifier");
+		SetupValue(iModifier,3, 0, "antiaim", "modifier");
 
-		SetupValue(jittervalue, 3, 0, "antiaim", "jittervalue");
-		SetupValue(invertangle, 3, 0.f, "antiaim", "invertangle");
+		SetupValue(iJitterValue, 3, 0, "antiaim", "jittervalue");
+		SetupValue(iInvertAngle, 3, 0.f, "antiaim", "invertangle");
 
 		SetupValue(iDesyncType, 3, 0, "antiaim", "desynctype");
 		SetupValue(iInverterBind, 0, "antiaim", "desyncinverter");
+		SetupValue(bInverter, 0, "antiaim", "bInverter");
 		SetupValue(iFlickOffset, 3, 0, "antiaim", "flickOffset");
 		SetupValue(flickAngleSwitch, 3, 0, "antiaim", "flickAngleSwitch");
 
-		SetupValue( m_bSwayDesync, false, 3, "antiaim", "swaylby" );
+		SetupValue(bSwayDesync, false, 3, "antiaim", "swaylby" );
 		
-		SetupValue(enableFakelag, false, "antiaim", "fakelagswitch");
-		SetupValue(fakelag, 0, "antiaim", "fakelag");
-		SetupValue(fakelagmin, 0, "antiaim", "fakelagmin");
-		SetupValue(fakelagmax, 0, "antiaim", "fakelagmax");
-		SetupValue(fakelagType, 0, "antiaim", "fakelagType");
+		SetupValue(bFakelag, false, "antiaim", "fakelagswitch");
+		SetupValue(iFakelag, 0, "antiaim", "fakelag");
+		SetupValue(iFakelagMin, 0, "antiaim", "fakelagmin");
+		SetupValue(iFakeLagMax, 0, "antiaim", "fakelagmax");
+		SetupValue(iFakeLagType, 0, "antiaim", "fakelagType");
 
-		SetupValue(defensive, false, "antiaim", "defensive");
+		SetupValue(bDefensive, false, "antiaim", "defensive");
 
-		SetupValue(fakewalk, 0, "antiaim", "fakewalk");
-		SetupValue(fakeduck, false, "antiaim", "fakeduck");
-		SetupValue(fakeduckbind, 0, "antiaim", "fakeduckbind");
-		SetupValue(idealTick, false, "antiaim", "idealTick");
-		SetupValue(idealTickBind, 0, "antiaim", "idealTickBind");
+		SetupValue(iFakeWalkSpeed, 0, "antiaim", "fakewalk");
+		SetupValue(bFakeDuck, false, "antiaim", "fakeduck");
+		SetupValue(iFakeDuckKey, 0, "antiaim", "fakeduckbind");
+		SetupValue(bAutoPeek, false, "antiaim", "idealTick");
+		SetupValue(iAutoPeek, 0, "antiaim", "idealTickBind");
 
-		SetupValue(fakewalkenable, false, "antiaim", "fakewalk");
-		SetupValue(fakewalk, 0, "antiaim", "fakewalkspeed");
-		SetupValue(fakewalkKey, 0, "antiaim", "fakewalkbind");
+		SetupValue(bFakeWalk, false, "antiaim", "fakewalk");
+		SetupValue(iFakeWalkSpeed, 0, "antiaim", "fakewalkspeed");
+		SetupValue(iFakeWalkKey, 0, "antiaim", "fakewalkbind");
 
-		SetupValue(freestand, 3, 0, "antiaim", "freestand");
+		SetupValue(iFreestand, 3, 0, "antiaim", "freestand");
 	}
 
 	// visual
@@ -577,8 +527,6 @@ void CConfig::Setup() {
 		SetupValue(attachmentAnimatedOverlayColor[TEAM], 4, 1.f, "model", "attachmentAnimatedOverlayColorTEAM");
 		SetupValue(attachmentAnimatedOverlayColor[LOCAL], 4, 1.f, "model", "attachmentAnimatedOverlayColorLOCAL");
 
-		SetupValue(enemyType, 0, "model", "enemyType");
-
 		SetupValue(enemyBTEnable, 0, "model", "enemyBTEnable");
 		SetupValue(enemyBTType, 0, "model", "enemyBTType");
 		SetupValue(enemyBTXhair, 0, "model", "enemyBTXhair");
@@ -587,218 +535,46 @@ void CConfig::Setup() {
 		SetupValue(enemyBTColor[2], 0.000f, "model", "enemyBTColorB");
 		SetupValue(enemyBTColor[3], 0.570f, "model", "enemyBTColorA");
 
-		// chams
-		SetupValue(enemy, false, "model", "enemy");
-		SetupValue(enemyXQZ, false, "model", "enemyXQZ");
+		SetupValue(iType, 3, 0, "model", "iType");
 
-		SetupValue(enemyColor[0], 0.834f, "model", "enemyColorR"); // (0.834f, 0.834f, 0.834f, 1.000f)
-		SetupValue(enemyColor[1], 0.834f, "model", "enemyColorG");
-		SetupValue(enemyColor[2], 0.834f, "model", "enemyColorB");
-		SetupValue(enemyColor[3], 1.f, "model", "enemyColorA");
+		SetupValue(bChams, 3, 0, "model", "bChams");
+		SetupValue(bChamsXQZ, 3, 0, "model", "bChamsXQZ");
+		SetupValue(bXhair, 3, 0, "model", "bXhair");
+		SetupValue(bXhairXQZ, 3, 0, "model", "bXhairXQZ");
 
-		SetupValue(enemyXQZColor[0], 0.771f, "model", "enemyXQZColorR"); // (0.771f, 0.771f, 0.771f, 0.327f)
-		SetupValue(enemyXQZColor[1], 0.771f, "model", "enemyXQZColorG");
-		SetupValue(enemyXQZColor[2], 0.771f, "model", "enemyXQZColorB");
-		SetupValue(enemyXQZColor[3], 0.327f, "model", "enemyXQZColorA");
+		SetupValue(bOverlay, 3, 0, "model", "bOverlay");
+		SetupValue(bOverlayXQZ, 3, 0, "model", "bOverlayXQZ");
+		SetupValue(bOverlayXhair, 3, 0, "model", "bOverlayXhair");
+		SetupValue(bOverlayXhairXQZ, 3, 0, "model", "bOverlayXhairXQZ");
 
-		SetupValue(enemyXhair, false, "model", "enemyXhair");
-		SetupValue(enemyXQZXhair, false, "model", "enemyXQZXhair");
+		SetupValue(bThinOverlay, 3, 0, "model", "bThinOverlay");
+		SetupValue(bThinOverlayXQZ, 3, 0, "model", "bThinOverlayXQZ");
+		SetupValue(bThinOverlayXhair, 3, 0, "model", "bThinOverlayXhair");
+		SetupValue(bThinOverlayXhairXQZ, 3, 0, "model", "bThinOverlayXhairXQZ");
 
-		// overlay
-		SetupValue(enemyOverlay, false, "model", "enemyOverlay");
-		SetupValue(enemyOverlayXQZ, false, "model", "enemyOverlayXQZ");
+		SetupValue(bAnimOverlay, 3, 0, "model", "bAnimOverlay");
+		SetupValue(bAnimOverlayXQZ, 3, 0, "model", "bAnimOverlayXQZ");
+		SetupValue(bAnimOverlayXhair, 3, 0, "model", "bAnimOverlayXhair");
+		SetupValue(bAnimOverlayXhairXQZ, 3, 0, "model", "bAnimOverlayXhairXQZ");
 
-		SetupValue(enemyOverlayColor[0], 0.146f, "model", "enemyOverlayColorR"); // (0.146f, 0.104f, 0.252f, 1.000f)
-		SetupValue(enemyOverlayColor[1], 0.104f, "model", "enemyOverlayColorG");
-		SetupValue(enemyOverlayColor[2], 0.252f, "model", "enemyOverlayColorB");
-		SetupValue(enemyOverlayColor[3], 1.f, "model", "enemyOverlayColorA");
+		for (size_t i = 0; i < 3; i++)
+		{
+			SetupValue(ChamsColor[i], 4, 0.f, "model", std::format("ChamsColor{}", i));
+			SetupValue(ChamsColorXQZ[i], 4, 0.f, "model", std::format("ChamsColorXQZ{}", i));
 
-		SetupValue(enemyOverlayXQZColor[0], 0.132f, "model", "enemyOverlayXQZColorR"); // (0.132f, 0.000f, 0.168f, 1.000f)
-		SetupValue(enemyOverlayXQZColor[1], 0.000f, "model", "enemyOverlayXQZColorG");
-		SetupValue(enemyOverlayXQZColor[2], 0.168f, "model", "enemyOverlayXQZColorB");
-		SetupValue(enemyOverlayXQZColor[3], 1.f, "model", "enemyOverlayXQZColorA");
+			SetupValue(OverlayColor[i], 4, 0.f, "model", std::format("OverlayColor{}", i));
+			SetupValue(OverlayColorXQZ[i], 4, 0.f, "model", std::format("OverlayColorXQZ{}", i));
 
-		SetupValue(enemyOverlayXhair, false, "model", "enemyOverlayXhair");
-		SetupValue(enemyOverlayXQZXhair, false, "model", "enemyOverlayXQZXhair");
+			SetupValue(ThinOverlayColor[i], 4, 0.f, "model", std::format("ThinOverlayColor{}", i));
+			SetupValue(ThinOverlayColorXQZ[i], 4, 0.f, "model", std::format("ThinOverlayColorXQZ{}", i));
 
-		// glow
-		SetupValue(enemyThinOverlay, false, "model", "enemyThinOverlay");
-		SetupValue(enemyThinOverlayXQZ, false, "model", "enemyThinOverlayXQZ");
-
-		SetupValue(enemyThinOverlayColor[0], 0.019f, "model", "enemyThinOverlayColorR"); // (0.019f, 0.000f, 0.227f, 1.000f)
-		SetupValue(enemyThinOverlayColor[1], 0.000f, "model", "enemyThinOverlayColorG");
-		SetupValue(enemyThinOverlayColor[2], 0.227f, "model", "enemyThinOverlayColorB");
-		SetupValue(enemyThinOverlayColor[3], 1.f, "model", "enemyThinOverlayColorA");
-
-		SetupValue(enemyThinOverlayXQZColor[0], 1.f, "model", "enemyThinOverlayXQZColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
-		SetupValue(enemyThinOverlayXQZColor[1], 1.f, "model", "enemyThinOverlayXQZColorG");
-		SetupValue(enemyThinOverlayXQZColor[2], 1.f, "model", "enemyThinOverlayXQZColorB");
-		SetupValue(enemyThinOverlayXQZColor[3], 1.f, "model", "enemyThinOverlayXQZColorA");
-
-		SetupValue(enemyThinOverlayXhair, false, "model", "enemyThinOverlayXhair");
-		SetupValue(enemyThinOverlayXQZXhair, false, "model", "enemyThinOverlayXQZXhair");
-
-		// animated
-		SetupValue(enemyAnimOverlay, false, "model", "enemyAnimOverlay");
-		SetupValue(enemyAnimOverlayXQZ, false, "model", "enemyAnimOverlayXQZ");
-
-		SetupValue(enemyAnimOverlayColor[0], 0.429f, "model", "enemyAnimOverlayColorR"); // (0.429f, 0.928f, 1.000f, 1.000f)
-		SetupValue(enemyAnimOverlayColor[1], 0.928f, "model", "enemyAnimOverlayColorG");
-		SetupValue(enemyAnimOverlayColor[2], 1.000f, "model", "enemyAnimOverlayColorB");
-		SetupValue(enemyAnimOverlayColor[3], 1.f, "model", "enemyAnimOverlayColorA");
-
-		SetupValue(enemyAnimOverlayXQZColor[0], 0.494f, "model", "enemyAnimOverlayXQZColorR"); // (0.494f, 0.000f, 0.000f, 1.000f)
-		SetupValue(enemyAnimOverlayXQZColor[1], 0.000f, "model", "enemyAnimOverlayXQZColorG");
-		SetupValue(enemyAnimOverlayXQZColor[2], 0.000f, "model", "enemyAnimOverlayXQZColorB");
-		SetupValue(enemyAnimOverlayXQZColor[3], 1.f, "model", "enemyAnimOverlayXQZColorA");
-
-		SetupValue(enemyAnimOverlayXhair, false, "model", "enemyAnimOverlayXhair");
-		SetupValue(enemyAnimOverlayXQZXhair, false, "model", "enemyAnimOverlayXQZXhair");
-
-		// teammate
-		SetupValue(teamType, 0, "model", "teamType");
-
-		// chams
-		SetupValue(team, false, "model", "team");
-		SetupValue(teamXQZ, false, "model", "teamXQZ");
-
-		SetupValue(teamColor[0], 0.591f, "model", "teamColorR"); // (0.591f, 0.591f, 0.591f, 1.000f)
-		SetupValue(teamColor[1], 0.591f, "model", "teamColorG");
-		SetupValue(teamColor[2], 0.591f, "model", "teamColorB");
-		SetupValue(teamColor[3], 1.f, "model", "teamColorA");
-
-		SetupValue(teamXQZColor[0], 0.723f, "model", "teamXQZColorR"); // (0.723f, 0.723f, 0.723f, 0.404f)
-		SetupValue(teamXQZColor[1], 0.723f, "model", "teamXQZColorG");
-		SetupValue(teamXQZColor[2], 0.723f, "model", "teamXQZColorB");
-		SetupValue(teamXQZColor[3], 0.404f, "model", "teamXQZColorA");
-
-		SetupValue(teamXhair, false, "model", "teamXhair");
-		SetupValue(teamXQZXhair, false, "model", "teamXQZXhair");
-
-		// overlay
-		SetupValue(teamOverlay, false, "model", "teamOverlay");
-		SetupValue(teamOverlayXQZ, false, "model", "teamOverlayXQZ");
-
-		SetupValue(teamOverlayColor[0], 0.070f, "model", "teamOverlayColorR"); // (0.070f, 0.154f, 0.073f, 1.000f)
-		SetupValue(teamOverlayColor[1], 0.154f, "model", "teamOverlayColorG");
-		SetupValue(teamOverlayColor[2], 0.073f, "model", "teamOverlayColorB");
-		SetupValue(teamOverlayColor[3], 1.f, "model", "teamOverlayColorA");
-
-		SetupValue(teamOverlayXQZColor[0], 0.034f, "model", "teamOverlayXQZColorR"); // (0.034f, 0.047f, 0.098f, 1.000f)
-		SetupValue(teamOverlayXQZColor[1], 0.047f, "model", "teamOverlayXQZColorG");
-		SetupValue(teamOverlayXQZColor[2], 0.098f, "model", "teamOverlayXQZColorB");
-		SetupValue(teamOverlayXQZColor[3], 1.f, "model", "teamOverlayXQZColorA");
-
-		SetupValue(teamOverlayXhair, false, "model", "teamOverlayXhair");
-		SetupValue(teamOverlayXQZXhair, false, "model", "teamOverlayXQZXhair");
-
-		// glow
-		SetupValue(teamThinOverlay, false, "model", "teamThinOverlay");
-		SetupValue(teamThinOverlayXQZ, false, "model", "teamThinOverlayXQZ");
-
-		SetupValue(teamThinOverlayColor[0], 0.216f, "model", "teamThinOverlayColorR"); // (0.216f, 0.209f, 0.051f, 1.000f)
-		SetupValue(teamThinOverlayColor[1], 0.209f, "model", "teamThinOverlayColorG");
-		SetupValue(teamThinOverlayColor[2], 0.051f, "model", "teamThinOverlayColorB");
-		SetupValue(teamThinOverlayColor[3], 1.f, "model", "teamThinOverlayColorA");
-		 
-		SetupValue(teamThinOverlayXQZColor[0], 0.045f, "model", "teamThinOverlayXQZColorR"); // (0.045f, 0.033f, 0.133f, 1.000f)
-		SetupValue(teamThinOverlayXQZColor[1], 0.033f, "model", "teamThinOverlayXQZColorG");
-		SetupValue(teamThinOverlayXQZColor[2], 0.133f, "model", "teamThinOverlayXQZColorB");
-		SetupValue(teamThinOverlayXQZColor[3], 1.f, "model", "teamThinOverlayXQZColorA");
-
-		SetupValue(teamThinOverlayXhair, false, "model", "teamThinOverlayXhair");
-		SetupValue(teamThinOverlayXQZXhair, false, "model", "teamThinOverlayXQZXhair");
-
-		// animated
-		SetupValue(teamAnimOverlay, false, "model", "teamAnimOverlay");
-		SetupValue(teamAnimOverlayXQZ, false, "model", "teamAnimOverlayXQZ");
-
-		SetupValue(teamAnimOverlayColor[0], 0.132f, "model", "teamAnimOverlayColorR"); // (0.132f, 0.074f, 0.813f, 1.000f)
-		SetupValue(teamAnimOverlayColor[1], 0.074f, "model", "teamAnimOverlayColorG");
-		SetupValue(teamAnimOverlayColor[2], 0.813f, "model", "teamAnimOverlayColorB");
-		SetupValue(teamAnimOverlayColor[3], 1.f, "model", "teamAnimOverlayColorA");
-
-		SetupValue(teamAnimOverlayXQZColor[0], 0.267f, "model", "teamAnimOverlayXQZColorR"); // (0.267f, 0.674f, 0.486f, 1.000f)
-		SetupValue(teamAnimOverlayXQZColor[1], 0.674f, "model", "teamAnimOverlayXQZColorG");
-		SetupValue(teamAnimOverlayXQZColor[2], 0.486f, "model", "teamAnimOverlayXQZColorB");
-		SetupValue(teamAnimOverlayXQZColor[3], 1.f, "model", "teamAnimOverlayXQZColorA");
-
-		SetupValue(teamAnimOverlayXhair, false, "model", "teamAnimOverlayXhair");
-		SetupValue(teamAnimOverlayXQZXhair, false, "model", "teamAnimOverlayXQZXhair");
-
-		// local
-		SetupValue(localType, 0, "model", "localType");
+			SetupValue(AnimOverlayColor[i], 4, 0.f, "model", std::format("AnimOverlayColor{}", i));
+			SetupValue(AnimOverlayColorXQZ[i], 4, 0.f, "model", std::format("AnimOverlayColorXQZ{}", i));
+		}
 
 		// chams
 		SetupValue(bBlend, false, "model", "bBlend");
 		SetupValue(flBlend, false, "model", "flBlend");
-
-		SetupValue(local, false, "model", "local");
-		SetupValue(localXQZ, false, "model", "localXQZ");
-
-		SetupValue(localColor[0], 0.490f, "model", "localColorR");  // (0.490f, 0.490f, 0.490f, 1.000f)
-		SetupValue(localColor[1], 0.490f, "model", "localColorG");
-		SetupValue(localColor[2], 0.490f, "model", "localColorB");
-		SetupValue(localColor[3], 1.f, "model", "localColorA");
-
-		SetupValue(localXQZColor[0], 1.f, "model", "localXQZColorR"); // (1.000f, 0.753f, 0.000f, 0.333f)
-		SetupValue(localXQZColor[1], 0.753f, "model", "localXQZColorG");
-		SetupValue(localXQZColor[2], 0.f, "model", "localXQZColorB");
-		SetupValue(localXQZColor[3], 0.333f, "model", "localXQZColorA");
-
-		SetupValue(localXhair, false, "model", "localXhair");
-		SetupValue(localXQZXhair, false, "model", "localXQZXhair");
-
-		// overlay
-		SetupValue(localOverlay, false, "model", "localOverlay");
-		SetupValue(localOverlayXQZ, false, "model", "localOverlayXQZ");
-
-		SetupValue(localOverlayColor[0], 0.012f, "model", "localOverlayColorR"); // (0.012f, 0.000f, 0.092f, 1.000f)
-		SetupValue(localOverlayColor[1], 0.000f, "model", "localOverlayColorG");
-		SetupValue(localOverlayColor[2], 0.092f, "model", "localOverlayColorB");
-		SetupValue(localOverlayColor[3], 1.f, "model", "localOverlayColorA");
-
-		SetupValue(localOverlayXQZColor[0], 1.f, "model", "localOverlayXQZColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
-		SetupValue(localOverlayXQZColor[1], 1.f, "model", "localOverlayXQZColorG");
-		SetupValue(localOverlayXQZColor[2], 1.f, "model", "localOverlayXQZColorB");
-		SetupValue(localOverlayXQZColor[3], 1.f, "model", "localOverlayXQZColorA");
-
-		SetupValue(localOverlayXhair, false, "model", "localOverlayXhair");
-		SetupValue(localOverlayXQZXhair, false, "model", "localOverlayXQZXhair");
-
-		// glow
-		SetupValue(localThinOverlay, false, "model", "localThinOverlay");
-		SetupValue(localThinOverlayXQZ, false, "model", "localThinOverlayXQZ");
-
-		SetupValue(localThinOverlayColor[0], 0.000f, "model", "localThinOverlayColorR"); // (0.000f, 0.017f, 0.016f, 1.000f)
-		SetupValue(localThinOverlayColor[1], 0.017f, "model", "localThinOverlayColorG");
-		SetupValue(localThinOverlayColor[2], 0.016f, "model", "localThinOverlayColorB");
-		SetupValue(localThinOverlayColor[3], 1.f, "model", "localThinOverlayColorA");
-
-		SetupValue(localThinOverlayXQZColor[0], 1.f, "model", "localThinOverlayXQZColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
-		SetupValue(localThinOverlayXQZColor[1], 1.f, "model", "localThinOverlayXQZColorG");
-		SetupValue(localThinOverlayXQZColor[2], 1.f, "model", "localThinOverlayXQZColorB");
-		SetupValue(localThinOverlayXQZColor[3], 1.f, "model", "localThinOverlayXQZColorA");
-
-		SetupValue(localThinOverlayXhair, false, "model", "localThinOverlayXhair");
-		SetupValue(localThinOverlayXQZXhair, false, "model", "localThinOverlayXQZXhair");
-
-		// animated
-		SetupValue(localAnimOverlay, false, "model", "localAnimOverlay");
-		SetupValue(localAnimOverlayXQZ, false, "model", "localAnimOverlayXQZ");
-
-		SetupValue(localAnimOverlayColor[0], 0.251f, "model", "localAnimOverlayColorR"); // (0.251f, 0.340f, 0.515f, 1.000f)
-		SetupValue(localAnimOverlayColor[1], 0.340f, "model", "localAnimOverlayColorG");
-		SetupValue(localAnimOverlayColor[2], 0.515f, "model", "localAnimOverlayColorB");
-		SetupValue(localAnimOverlayColor[3], 1.f, "model", "localAnimOverlayColorA");
-
-		SetupValue(localAnimOverlayXQZColor[0], 1.f, "model", "localAnimOverlayXQZColorR"); // (1.000f, 1.000f, 1.000f, 1.000f)
-		SetupValue(localAnimOverlayXQZColor[1], 1.f, "model", "localAnimOverlayXQZColorG");
-		SetupValue(localAnimOverlayXQZColor[2], 1.f, "model", "localAnimOverlayXQZColorB");
-		SetupValue(localAnimOverlayXQZColor[3], 1.f, "model", "localAnimOverlayXQZColorA");
-
-		SetupValue(localAnimOverlayXhair, false, "model", "localAnimOverlayXhair");
-		SetupValue(localAnimOverlayXQZXhair, false, "model", "localAnimOverlayXQZXhair");
 
 		// ideal tick
 		SetupValue(localIdealTick, false, "model", "localIdealTick");
@@ -883,24 +659,24 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::misc;
 
-		SetupValue(keyBindList, true, "misc", "keybindList");
-		SetupValue(bKeyBindListOldEnable, "false", "misc", "bKeyBindListOldEnable");
-		SetupValue(bKeyBindListOld, false, 10, "misc", "bKeyBindListOld");
-		SetupValue(bunnyhop, false, "misc", "bunnyhop");
-		SetupValue(autoStrafe, false, "misc", "autoStrafe");
-		SetupValue(faststop, false, "misc", "faststop");
-		SetupValue(infiniteDuck, false, "misc", "infiniteDuck");
-		SetupValue(blockbot, false, "misc", "blockbot");
-		SetupValue(blockbotKey, 0, "misc", "blockbotKey");
-		SetupValue(clantag, false, "misc", "clantag");
+		SetupValue(bKeyBindList, true, "misc", "keybindList");
+		SetupValue(bKeyBindList, "false", "misc", "bKeyBindListOldEnable");
+		SetupValue(iKeyBindList, false, 10, "misc", "bKeyBindListOld");
+		SetupValue(bBunnyHop, false, "misc", "bunnyhop");
+		SetupValue(bAutoStrafe, false, "misc", "autoStrafe");
+		SetupValue(bFastStop, false, "misc", "faststop");
+		SetupValue(bInfiniteDuck, false, "misc", "infiniteDuck");
+		SetupValue(bBlockbot, false, "misc", "blockbot");
+		SetupValue(iBlockbotKey, 0, "misc", "blockbotKey");
+		SetupValue(bClantag, false, "misc", "clantag");
 		SetupValue(bInvertKnife, false, "misc", "bInvertKnife");
 
-		SetupValue(nightmode, false, "misc", "nightmode");
-		SetupValue(nightmodeColor[0], 1.f, "visual", "nightmodeColorR");
-		SetupValue(nightmodeColor[1], 1.f, "visual", "nightmodeColorG");
-		SetupValue(nightmodeColor[2], 1.f, "visual", "nightmodeColorB");
-		SetupValue(nightmodeColor[3], 1.f, "visual", "nightmodeColorA");
-		SetupValue(propsColor, 4, 1.f, "visual", "propColors");
+		SetupValue(bNightmode, false, "misc", "nightmode");
+		SetupValue(flNightmodeColor[0], 1.f, "visual", "nightmodeColorR");
+		SetupValue(flNightmodeColor[1], 1.f, "visual", "nightmodeColorG");
+		SetupValue(flNightmodeColor[2], 1.f, "visual", "nightmodeColorB");
+		SetupValue(flNightmodeColor[3], 1.f, "visual", "nightmodeColorA");
+		SetupValue(flPropColor, 4, 1.f, "visual", "propColors");
 
 		SetupValue(bOOF, false, "misc", "bOOF");
 		SetupValue(flOOF[0], 1.f, "visual", "flOOFR");
@@ -920,13 +696,13 @@ void CConfig::Setup() {
 		SetupValue(flLampColors, 4, 0.f, "visual", "flLampColors");
 		SetupValue(iFlicker, 0, "visual", "iFlicker");
 
-		SetupValue(aspectRatio, false, "misc", "aspectRatio");
-		SetupValue(aspectRatioValue, 0, "misc", "aspectRatioValue");
+		SetupValue(bAspectRatio, false, "misc", "aspectRatio");
+		SetupValue(iAspectRatio, 0, "misc", "aspectRatioValue");
 
-		SetupValue(preserveKillfeed, false, "misc", "preserveKillfeed");
-		SetupValue(bulletImpact, false, "misc", "bulletImpact");
-		SetupValue(impactColor[0], 4, 1.f, "misc", "impactColorS");
-		SetupValue(impactColor[1], 4, 1.f, "misc", "impactColorC");
+		SetupValue(bPreserveKillfeed, false, "misc", "preserveKillfeed");
+		SetupValue(bBulletImpact, false, "misc", "bulletImpact");
+		SetupValue(flImpactColor[0], 4, 1.f, "misc", "impactColorS");
+		SetupValue(flImpactColor[1], 4, 1.f, "misc", "impactColorC");
 
 		SetupValue(bDroppedWeaponESP, false, "misc", "bDroppedWeaponESP");
 		SetupValue(flDroppedWeaponESP, 4, 1.f, "misc", "flDroppedWeaponESP");
@@ -934,7 +710,7 @@ void CConfig::Setup() {
 		SetupValue(bProjectileESP, false, "misc", "bProjectileESP");
 		SetupValue(flProjectileESP, 4, 1.f, "misc", "flProjectileESP");
 
-		SetupValue(onlyCheatLogs, false, "misc", "onlyCheatLogs");
+		SetupValue(bOnlyCheatlog, false, "misc", "onlyCheatLogs");
 
 		SetupValue(bDrawCapsule, false, "misc", "bDrawCapsule");
 		SetupValue(flDrawCapsuleColor[0], 1.f, "visual", "flDrawCapsuleColorR"); // (0.000f, 0.246f, 0.646f, 1.000f)
@@ -953,16 +729,16 @@ void CConfig::Setup() {
 		SetupValue(flWorldCrosshairColor[2], 1.f, "visual", "flWorldCrosshairColorB");
 		SetupValue(flWorldCrosshairColor[3], 1.f, "visual", "flWorldCrosshairColorA");
 
-		SetupValue(thirdperson, false, "misc", "thirdperson");
-		SetupValue(thirdpersonbind, 0, "misc", "thirdpersonbind");
-		SetupValue(thirdpersonDistance, 160, "misc", "thirdpersonDistance");
+		SetupValue(bThirdPerson, false, "misc", "thirdperson");
+		SetupValue(iThirdPersonKey, 0, "misc", "thirdpersonbind");
+		SetupValue(iThirdPersonDistance, 160, "misc", "thirdpersonDistance");
 
-		SetupValue(viewmodelFov, 66, "misc", "viewmodelFov");
-		SetupValue(fov, 90, "misc", "fov");
+		SetupValue(iViewModelFov, 66, "misc", "viewmodelFov");
+		SetupValue(iDebugFov, 90, "misc", "fov");
 
-		SetupValue(bombBuffer, "RyzeXTR", "misc", "bombText");
+		SetupValue(szBombBuffer, "RyzeXTR", "misc", "bombText");
 		SetupValue(bKillsay, false, "misc", "bKillsay");
-		SetupValue(killSayBuffer, "", "misc", "killSayBuffer");
+		SetupValue(szKillsayBuffer, "", "misc", "killSayBuffer");
 
 		SetupValue(bSkinnyBoy, false, "misc", "bKinnyBoy");
 		SetupValue(iSkinnyBoy, 0, "misc", "iSkinnyBoy");
@@ -971,30 +747,30 @@ void CConfig::Setup() {
 		SetupValue(flHat, 4, 1.f, "misc", "flHat");
 		SetupValue(bCustomHud, false, "misc", "bCustomHud");
 
-		SetupValue(removals, false, 6, "misc", "removals");
-		SetupValue(drawViewmodelOnScope, false, "misc", "drawViewmodelOnScope");
-		SetupValue(scopeColor[0], 1.f, "visual", "scopeColorR");
-		SetupValue(scopeColor[1], 1.f, "visual", "scopeColorG");
-		SetupValue(scopeColor[2], 1.f, "visual", "scopeColorB");
-		SetupValue(scopeColor[3], 1.f, "visual", "scopeColorA");
-		SetupValue(scopeColorEnd[0], 1.f, "visual", "scopeColorEndR");
-		SetupValue(scopeColorEnd[1], 1.f, "visual", "scopeColorEndG");
-		SetupValue(scopeColorEnd[2], 1.f, "visual", "scopeColorEndB");
-		SetupValue(scopeColorEnd[3], 1.f, "visual", "scopeColorEndA");
-		SetupValue(scopeLength, 1.f, "visual", "scopeLength");
+		SetupValue(bRemovals, false, 6, "misc", "removals");
+		SetupValue(bOnScopeViewmodel, false, "misc", "drawViewmodelOnScope");
+		SetupValue(flScopeColor[0], 1.f, "visual", "scopeColorR");
+		SetupValue(flScopeColor[1], 1.f, "visual", "scopeColorG");
+		SetupValue(flScopeColor[2], 1.f, "visual", "scopeColorB");
+		SetupValue(flScopeColor[3], 1.f, "visual", "scopeColorA");
+		SetupValue(flScopeColorEnd[0], 1.f, "visual", "scopeColorEndR");
+		SetupValue(flScopeColorEnd[1], 1.f, "visual", "scopeColorEndG");
+		SetupValue(flScopeColorEnd[2], 1.f, "visual", "scopeColorEndB");
+		SetupValue(flScopeColorEnd[3], 1.f, "visual", "scopeColorEndA");
+		SetupValue(iScopeLength, 1.f, "visual", "scopeLength");
 
-		SetupValue(pistols, 0, "misc", "autobuypistol");
-		SetupValue(snipers, 0, "misc", "autobuyrifles");
-		SetupValue(equipments, false, 3, "misc", "autobuyequipments");
-		SetupValue(grenades, false, 5, "misc", "autobuygrenades");
-		SetupValue(autobuyEnabled, false, "misc", "autobuyEnabled");
+		SetupValue(iPistols, 0, "misc", "autobuypistol");
+		SetupValue(iSnipers, 0, "misc", "autobuyrifles");
+		SetupValue(bEquipments, false, 3, "misc", "autobuyequipments");
+		SetupValue(bGrenades, false, 5, "misc", "autobuygrenades");
+		SetupValue(bAutobuy, false, "misc", "autobuyEnabled");
 
-		SetupValue(fakePing, false, "misc", "fakeping");
-		SetupValue(fakePingFactor, 0.f, "misc", "fakepingFactor");
+		SetupValue(bFakePing, false, "misc", "fakeping");
+		SetupValue(flFakePingFactor, 0.f, "misc", "fakepingFactor");
 
-		SetupValue( m_iHitSound, 0, "misc", "hitsoundtype" );
-		SetupValue( m_flHitSoundVolume, 100.f, "misc", "hitsoundvolume" );
-		SetupValue( m_szWavPath, "", "misc", "hitsoundpath" );
+		SetupValue( iHitSound, 0, "misc", "hitsoundtype" );
+		SetupValue( flHitSoundVolume, 100.f, "misc", "hitsoundvolume" );
+		SetupValue( szWavPath, "", "misc", "hitsoundpath" );
 		SetupValue(cfg::m_iKeyStates, 256, 0, "misc", "keystates");
 
 	}
@@ -1098,8 +874,13 @@ void CConfig::CreateMainDirectory( )
 		throw std::runtime_error( "Failed to create config directory" );
 }
 
+std::string cfgName = "";
+void SaveThread();
 void CConfig::Save(std::string ConfigName)
 {
+	if (bSaving || ConfigName.empty())
+		return;
+
 	bSaving = true;
 
 	static TCHAR path[MAX_PATH];
@@ -1134,6 +915,67 @@ void CConfig::Save(std::string ConfigName)
 			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), reinterpret_cast<std::string*>(value->value)->c_str(), file.c_str());
 	};
 
+	//auto saveStuff = [&]() {
+
+	//	// Create separate threads for each type of value
+	//	std::thread intsThread(saveInts);
+	//	std::thread floatsThread(saveFloats);
+	//	std::thread boolsThread(saveBools);
+	//	std::thread stringsThread(saveStrings);
+
+	//	// Wait for all threads to finish
+	//	intsThread.join();
+	//	floatsThread.join();
+	//	boolsThread.join();
+	//	stringsThread.join();
+
+	//};
+	//std::thread save(saveStuff);
+	//save.join();
+
+	cfgName = ConfigName;
+	auto handle = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(SaveThread), nullptr, 0, nullptr);
+	CloseHandle(handle);
+
+	bSaving = false;
+}
+
+void SaveThread() {
+
+	Config2->bSaving = true;
+
+	static TCHAR path[MAX_PATH];
+	std::string folder, file;
+
+	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
+	{
+		folder = std::string(path) + "\\ryzextr\\";
+		file = std::string(path) + "\\ryzextr\\" + cfgName + ".xtr";
+	}
+
+	CreateDirectory(folder.c_str(), NULL);
+
+	// Define lambda functions for saving each type of value
+	auto saveInts = [&]() {
+		for (auto value : Config2->ints)
+			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
+	};
+
+	auto saveFloats = [&]() {
+		for (auto value : Config2->floats)
+			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
+	};
+
+	auto saveBools = [&]() {
+		for (auto value : Config2->bools)
+			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
+	};
+
+	auto saveStrings = [&]() {
+		for (auto value : Config2->strings)
+			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), reinterpret_cast<std::string*>(value->value)->c_str(), file.c_str());
+	};
+
 	// Create separate threads for each type of value
 	std::thread intsThread(saveInts);
 	std::thread floatsThread(saveFloats);
@@ -1146,42 +988,15 @@ void CConfig::Save(std::string ConfigName)
 	boolsThread.join();
 	stringsThread.join();
 
-	bSaving = false;
+	Config2->RefreshConfigs();
+	Config2->bSaving = false;
 }
-
-
-//void CConfig::Save(std::string ConfigName)
-//{
-//	bSaving = true;
-//
-//	static TCHAR path[MAX_PATH];
-//	std::string folder, file;
-//
-//	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
-//	{
-//		folder = std::string(path) + "\\ryzextr\\";
-//		file = std::string(path) + "\\ryzextr\\" + ConfigName + ".xtr";
-//	}
-//
-//	CreateDirectory(folder.c_str(), NULL);
-//
-//	for (auto value : ints)
-//		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
-//
-//	for (auto value : floats)
-//		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
-//
-//	for (auto value : bools)
-//		WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
-//
-//	for ( auto value : strings )
-//		WritePrivateProfileString( value->category.c_str( ), value->name.c_str( ), reinterpret_cast< std::string* >( value->value )->c_str( ), file.c_str( ) );
-//
-//	bSaving = false;
-//}
 
 void CConfig::Load(std::string ConfigName)
 {
+	if (bSaving)
+		return;
+
 	bSaving = true;
 
 	static TCHAR path[MAX_PATH];
@@ -1245,7 +1060,7 @@ void CConfig::RefreshSounds( )
 		if ( it.path( ).filename( ).extension( ) == ".wav" )
 		{
 			//printf( std::format("found sound file: {}" , it.path( ).filename( ).string( ) ) );
-			vecSoundFileNames.push_back( it.path( ).filename( ).string( ) );
+			vecSoundFileNames.push_back( it.path( ).filename( ).string( ).c_str() );
 		}
 	}
 }
@@ -1270,9 +1085,10 @@ void CConfig::RefreshConfigs() {
 		if (it.path().filename().extension() == ".xtr")
 		{
 			//printf( std::format("found sound file: {}" , it.path( ).filename( ).string( ) ) );
-			vecConfigs.push_back(it.path().filename().string());
+			vecConfigs.push_back(it.path().filename().string().c_str());
+			
 			for (int i = 0; i < 4; i++)
-				vecConfigs.back().pop_back();;
+				vecConfigs.back().pop_back();
 		}
 	}
 }

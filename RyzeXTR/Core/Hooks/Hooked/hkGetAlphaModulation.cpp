@@ -11,9 +11,9 @@ float __fastcall h::hkGetAlphaModulation(void* ecx, void* edx) {
 	const char* szGroup = pMaterial->GetTextureGroupName();
 
 	if (strstr(szGroup, XorStr("World textures")))
-		return cfg::misc::nightmodeColor[3];
+		return cfg::misc::flNightmodeColor[3];
 	else if (strstr(szGroup, XorStr("StaticProp textures")))
-		return cfg::misc::propsColor[3];
+		return cfg::misc::flPropColor[3];
 	else if (strstr(szGroup, XorStr("SkyBox textures")))
 		return cfg::misc::flSkyboxColor[3];
 

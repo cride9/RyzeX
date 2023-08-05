@@ -728,7 +728,7 @@ void visual::CoolHackKeyBindList() {
 
 	// g::fonts::SkeetFont
 
-	if (!cfg::misc::bKeyBindListOld)
+	if (!cfg::misc::iKeyBindList)
 		return;
 
 	int iWidth;
@@ -743,57 +743,57 @@ void visual::CoolHackKeyBindList() {
 	//}
 
 	int spacing = 10;
-	if (IPT::HandleInput(cfg::rage::ragebotbind) && cfg::rage::enable && cfg::misc::bKeyBindListOld[0]) {
+	if (IPT::HandleInput(cfg::rage::iAimbotKey) && cfg::rage::bEnable && cfg::misc::iKeyBindList[0]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "AIMBOT");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::rage::doubletapkey) && cfg::rage::doubletap && cfg::misc::bKeyBindListOld[1]) {
+	if (IPT::HandleInput(cfg::rage::iDoubletapKey) && cfg::rage::bDoubletap && cfg::misc::iKeyBindList[1]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, exploits::iTicksToStore ? Color(255, 255, 255) : Color(255, 0, 0), g::fonts::SkeetFont, false, "DT");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::rage::hideshotkey) && cfg::rage::hideshot && cfg::misc::bKeyBindListOld[1]) {
+	if (IPT::HandleInput(cfg::rage::iHideShotKey) && cfg::rage::bHideshot && cfg::misc::iKeyBindList[1]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "OSAA");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::rage::forceBaimKey) && cfg::rage::forceBaim && cfg::misc::bKeyBindListOld[2]) {
+	if (IPT::HandleInput(cfg::rage::iForceBaimKey) && cfg::rage::bForceBaim && cfg::misc::iKeyBindList[2]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BODY");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::rage::overrideBind) && cfg::misc::bKeyBindListOld[3]) {
+	if (IPT::HandleInput(cfg::rage::iOverrideBind) && cfg::misc::iKeyBindList[3]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "DMG");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::antiaim::fakewalkKey) && cfg::antiaim::fakewalkenable && cfg::misc::bKeyBindListOld[4]) {
+	if (IPT::HandleInput(cfg::antiaim::iFakeWalkKey) && cfg::antiaim::bFakeWalk && cfg::misc::iKeyBindList[4]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "SLOW");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck && cfg::misc::bKeyBindListOld[5]) {
+	if (IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck && cfg::misc::iKeyBindList[5]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (i::ClientState->nChokedCommands * 8), 255), max(191 - i::ClientState->nChokedCommands * 8, 0), 61, 255), g::fonts::SkeetFont, false, "DUCK");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::antiaim::idealTickBind) && cfg::antiaim::idealTick && cfg::misc::bKeyBindListOld[6]) {
+	if (IPT::HandleInput(cfg::antiaim::iAutoPeek) && cfg::antiaim::bAutoPeek && cfg::misc::iKeyBindList[6]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, misc::bRetreat ? Color(255, 0, 0) : Color(255, 255, 255), g::fonts::SkeetFont, false, "PEEK");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && cfg::misc::thirdperson && cfg::misc::bKeyBindListOld[7]) {
+	if (IPT::HandleInput(cfg::misc::iThirdPersonKey) && cfg::misc::bThirdPerson && cfg::misc::iKeyBindList[7]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "TP");
 		spacing += 30;
 	}
-	if (IPT::HandleInput(cfg::misc::blockbotKey) && cfg::misc::blockbot && cfg::misc::bKeyBindListOld[8]) {
+	if (IPT::HandleInput(cfg::misc::iBlockbotKey) && cfg::misc::bBlockbot && cfg::misc::iKeyBindList[8]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BLOCK");
 		spacing += 30;
 	}
-	if (auto pNetChannelInfo = i::EngineClient->GetNetChannelInfo(); pNetChannelInfo && cfg::misc::bKeyBindListOld[9]) {
+	if (auto pNetChannelInfo = i::EngineClient->GetNetChannelInfo(); pNetChannelInfo && cfg::misc::iKeyBindList[9]) {
 
 		int outgoing = (pNetChannelInfo->GetLatency(FLOW_OUTGOING) + pNetChannelInfo->GetLatency(FLOW_INCOMING)) * 100;
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (outgoing), 255), max(191 - outgoing, 0), 61, 255), g::fonts::SkeetFont, false, "PING");
@@ -1512,77 +1512,77 @@ void visual::CrossHair() {
 
 	if (g::pLocal) {
 
-		if (cfg::misc::removals[5] && g::pLocal->IsScoped() && i::EngineClient->IsInGame()) {
+		if (cfg::misc::bRemovals[5] && g::pLocal->IsScoped() && i::EngineClient->IsInGame()) {
 
 			int iHeight = 0;
 			int iWidth = 0;
 			i::EngineClient->GetScreenSize(iWidth, iHeight);
 
-			float flSize = iHeight * (cfg::misc::scopeLength / 100.f);
+			float flSize = iHeight * (cfg::misc::iScopeLength / 100.f);
 
-			i::Surface->DrawSetColor(cfg::misc::scopeColor);
+			i::Surface->DrawSetColor(cfg::misc::flScopeColor);
 			i::Surface->DrawFilledRectFade(
 				iWidth / 2 - flSize - 15,
 				iHeight / 2 - 1,
 				iWidth / 2 - 15,
 				iHeight / 2,
-				0, cfg::misc::scopeColor[3] * 255.f, true);
+				0, cfg::misc::flScopeColor[3] * 255.f, true);
 
-			i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+			i::Surface->DrawSetColor(Color(cfg::misc::flScopeColorEnd));
 			i::Surface->DrawFilledRectFade(
 				iWidth / 2 - flSize - 15,
 				iHeight / 2 - 1,
 				iWidth / 2 - 15,
 				iHeight / 2,
-				cfg::misc::scopeColorEnd[3] * 255.f, 0, true);
+				cfg::misc::flScopeColorEnd[3] * 255.f, 0, true);
 
-			i::Surface->DrawSetColor(cfg::misc::scopeColor);
+			i::Surface->DrawSetColor(cfg::misc::flScopeColor);
 			i::Surface->DrawFilledRectFade(
 				iWidth / 2 + 15,
 				iHeight / 2 - 1,
 				iWidth / 2 + flSize + 15,
 				iHeight / 2,
-				cfg::misc::scopeColor[3] * 255.f, 0, true);
+				cfg::misc::flScopeColor[3] * 255.f, 0, true);
 
-			i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+			i::Surface->DrawSetColor(Color(cfg::misc::flScopeColorEnd));
 			i::Surface->DrawFilledRectFade(
 				iWidth / 2 + 15,
 				iHeight / 2 - 1,
 				iWidth / 2 + flSize + 15,
 				iHeight / 2,
-				0, cfg::misc::scopeColorEnd[3] * 255.f, true);
+				0, cfg::misc::flScopeColorEnd[3] * 255.f, true);
 
-			i::Surface->DrawSetColor(cfg::misc::scopeColor);
+			i::Surface->DrawSetColor(cfg::misc::flScopeColor);
 			i::Surface->DrawFilledRectFade(
 				iWidth / 2 - 1,
 				iHeight / 2 - flSize - 15,
 				iWidth / 2,
 				iHeight / 2 - 15,
-				0, cfg::misc::scopeColor[3] * 255.f, false);
+				0, cfg::misc::flScopeColor[3] * 255.f, false);
 
-			i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+			i::Surface->DrawSetColor(Color(cfg::misc::flScopeColorEnd));
 			i::Surface->DrawFilledRectFade(
 				iWidth / 2 - 1,
 				iHeight / 2 - flSize - 15,
 				iWidth / 2,
 				iHeight / 2 - 15,
-				cfg::misc::scopeColorEnd[3] * 255.f, 0, false);
+				cfg::misc::flScopeColorEnd[3] * 255.f, 0, false);
 
-			i::Surface->DrawSetColor(cfg::misc::scopeColor);
+			i::Surface->DrawSetColor(cfg::misc::flScopeColor);
 			i::Surface->DrawFilledRectFade(
 				iWidth / 2 - 1,
 				iHeight / 2 + 15,
 				iWidth / 2,
 				iHeight / 2 + flSize + 15,
-				cfg::misc::scopeColor[3] * 255.f, 0, false);
+				cfg::misc::flScopeColor[3] * 255.f, 0, false);
 
-			i::Surface->DrawSetColor(Color(cfg::misc::scopeColorEnd));
+			i::Surface->DrawSetColor(Color(cfg::misc::flScopeColorEnd));
 			i::Surface->DrawFilledRectFade(
 				iWidth / 2 - 1,
 				iHeight / 2 + 15,
 				iWidth / 2,
 				iHeight / 2 + flSize + 15,
-				0, cfg::misc::scopeColorEnd[3] * 255.f, false);
+				0, cfg::misc::flScopeColorEnd[3] * 255.f, false);
 		}
 	}
 }

@@ -8,7 +8,7 @@
 
 void Animations::ResolverLogic() {
 
-	if (!ragebot.hitlogData.pAimbotTarget || !g::pLocal || bulletImpact == Vector(0, 0, 0) || !ragebot.hitlogData.pTargetMatrix)
+	if (!ragebot.hitlogData.pAimbotTarget || !g::pLocal || bBulletImpact == Vector(0, 0, 0) || !ragebot.hitlogData.pTargetMatrix)
 		return;
 
 	// make pointers and references for easier handling
@@ -31,7 +31,7 @@ void Animations::ResolverLogic() {
 
 	// Simulate a bullet shot
 	FireBulletData_t data;
-	autowall.GetDamage(g::pLocal, refCurrentData.vecLocalShootPosition, bulletImpact, g::pLocal->GetWeapon(), &data);
+	autowall.GetDamage(g::pLocal, refCurrentData.vecLocalShootPosition, bBulletImpact, g::pLocal->GetWeapon(), &data);
 
 	// Check if we killed, or hurt the player
 	if (bResolverHandler[PLAYERHURT] || bResolverHandler[PLAYERDEATH]) {
@@ -129,7 +129,7 @@ void Animations::ResolverLogic() {
 
 		// check for occlusion
 		Trace_t traceData;
-		Ray_t rayData(refCurrentData.vecLocalShootPosition, bulletImpact);
+		Ray_t rayData(refCurrentData.vecLocalShootPosition, bBulletImpact);
 		CTraceFilter filterData(g::pLocal, TRACE_ENTITIES_ONLY);
 		i::EngineTrace->TraceRay(rayData, MASK_SHOT | CONTENTS_GRATE, &filterData, &traceData);
 
@@ -190,14 +190,14 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 			iHitHitbox = pEvent->GetInt(XorStr("hitgroup"));
 		}
 	}
-	if (szEventName.find(cachedEvents::bulletImpact) != std::string_view::npos) {
+	if (szEventName.find(cachedEvents::bBulletImpact) != std::string_view::npos) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 
 		if (iUser != i::EngineClient->GetLocalPlayer())
 			return;
 
-		bulletImpact = Vector(pEvent->GetFloat(XorStr("x")), pEvent->GetFloat(XorStr("y")), pEvent->GetFloat(XorStr("z")));
+		bBulletImpact = Vector(pEvent->GetFloat(XorStr("x")), pEvent->GetFloat(XorStr("y")), pEvent->GetFloat(XorStr("z")));
 		bResolverHandler[BULLETIMPACT] = true;
 	}
 	if (szEventName.find(cachedEvents::playerDeath) != std::string_view::npos) {
@@ -261,7 +261,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 		return;
 #endif
 
-	if (!cfg::rage::resolver)
+	if (!cfg::rage::bResolver)
 		return;
 
 	const int iEntityID = pEntity->EntIndex();

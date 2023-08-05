@@ -6,14 +6,63 @@
 #include "../../../Dependecies/ImGui/imgui_impl_win32.h"
 #include "../../../Dependecies/ImGui/imgui_impl_dx9.h"
 
+#include "config.h"
+#include "../../Features/Misc/Playerlist.h"
+
+#define ANIMATIONSPEED 8.f
+
+namespace clr {
+
+	// general
+	inline ImVec4 theme = ImColor(172, 171, 255);
+
+	// text clr
+	inline ImVec4 text_active = ImColor(212, 212, 212);
+	inline ImVec4 text_hov = ImColor(122, 122, 123, 255);
+	inline ImVec4 text_off = ImColor(92, 92, 93, 255);
+	inline ImVec4 text_preview = ImColor(255, 255, 255, 15);
+
+	// combo selectable clr
+	inline ImVec4 text_selectable = ImColor(145, 92, 191);
+	inline ImVec4 bg_selectable = ImColor(52, 51, 77, 90);
+	inline ImVec4 bg_selectableHov = ImColor(52, 51, 77, 50);
+	inline ImVec4 bg_selectableAct = ImColor(52, 51, 77, 50);
+	// windows
+	inline ImVec4 window = ImColor(92, 92, 93, 255);
+
+	// childs
+	inline ImVec4 child = ImColor(92, 92, 93, 255);
+	inline ImVec4 childBorder = ImColor(52, 51, 77);
+	inline ImVec4 childBG = ImColor(7, 0, 13, 120);
+
+	// frames
+	inline ImVec4 frame_active = ImColor(7, 0, 13, 75);
+	inline ImVec4 frame_hov = ImColor(7, 0, 13, 75);
+	inline ImVec4 frame = ImColor(7, 0, 13, 75);
+
+	// elements
+	inline ImVec4 element_bg = ImColor(7, 0, 13, 75);
+	inline ImVec4 element_bg_active = ImColor(7, 0, 13, 75);
+	inline ImVec4 element_frame = ImColor(52, 51, 77, 125);
+	inline ImVec4 element_frame_active = ImColor(52, 51, 77, 255);
+
+	// buttons
+	inline ImVec4 button_bg = ImColor(7, 0, 13, 0);
+	inline ImVec4 button_bg_active = ImColor(7, 0, 13, 125);
+	inline ImVec4 button_frame = ImColor(52, 51, 77, 0);
+	inline ImVec4 button_frame_active = ImColor(88, 86, 130, 255);
+}
+
 enum ETabs : int {
 
+	UNDEFINED = -1,
 	RAGE_TAB,
 	ANTIAIM_TAB,
 	VISUAL_TAB,
 	MISC_TAB,
 	SKIN_TAB,
-	CONFIG_TAB
+	CONFIG_TAB,
+	PLAYERLST
 };
 
 enum EEntity : int {
@@ -52,30 +101,29 @@ enum EWEAPON : int {
 	AWP,
 	PISTOL,
 	HEAVY_PISTOL,
-	OTHER
+	OTHER,
+	ZEUS
 };
 
 namespace menu {
 
-	inline ImFont* logoFont = nullptr;
-	inline ImFont* xtrFont = nullptr;
-	inline ImFont* childFont = nullptr;
-	inline ImFont* tabFont = nullptr;
-
-	inline int tabindex = 0;
+	inline ImFont* tabIcons = nullptr;
+	inline ImFont* tabIconsPreview = nullptr;
+	inline ImFont* weaponIcons = nullptr;
+	inline ImFont* defaultFont = nullptr;
+	inline ImFont* defaultFontBigger = nullptr;
+	inline int iSelectedTab = 0;
 
 	inline bool open = true;
 	inline bool setup = false;
+	inline bool bPressedSave = false;
+	inline bool bWarningMethod = false;
 
 	inline HWND window = nullptr;
 	inline WNDCLASSEX windowClass = {};
 
 	inline LPDIRECT3DDEVICE9 device = nullptr;
 	inline LPDIRECT3D9 d3d9 = nullptr;
-
-	inline bool pressedSave = false;
-	inline bool warningMethod = false;
-	static const char* cfgitem[] = { "semi-rage", "hvh", "baim", "headshot" };
 
 	bool SetupWindowClass(const char* szWindowClassName) noexcept;
 	void DestroyWindowClass() noexcept;
@@ -91,24 +139,25 @@ namespace menu {
 	void SetupMenu(LPDIRECT3DDEVICE9 device) noexcept;
 	void Destroy() noexcept;
 
+	bool DrawCustomChildRounding(const char* str_id, const ImVec2& size_arg, bool border, ImGuiWindowFlags extra_flags, ImDrawFlags drawflags);
+	void DrawRandomTexture(const ImVec2& center, float radius, ImU32 col, int num_segments, float randomness);
+	void DrawBackgroundTexture(float i);
+	bool ButtonCenteredOnLine(const char* label, float alignment, bool bSelected);
+	void Text(const char* label, float alignment, bool vertically = false);
+	bool Checkbox(const char* label, bool* bValue, float alignment);
+
+	void Style();
 	void Render() noexcept;
 
+	void Rage(ImVec2 savedCursorPosition);
+	void AntiAim(ImVec2 savedCursorPosition);
+	void Visual(ImVec2 savedCursorPosition);
+	void Misc(ImVec2 savedCursorPosition);
+	void Skins(ImVec2 savedCursorPosition);
+	void Config(ImVec2 savedCursorPosition);
+	void PlayerList(ImVec2 savedCursorPosition);
+	void SaveWarning(bool& saved, bool type) noexcept;
 	void HandleMenuElements() noexcept;
-	void Tabselection() noexcept;
-	void Ragetab() noexcept;
-	void Antiaimtab() noexcept;
-	void Visualtab() noexcept;
-	void Misctab() noexcept;
-	void Skintab() noexcept;
-	void ConfigTab() noexcept;
-
-	void KeyBindList() noexcept;
-
-	void SaveWarning(bool&, bool) noexcept;
-
-	void HandleLogoDrawing() noexcept;
-
-	void HandleVisualTypeGeneration(bool&, bool&, float*, bool&, float*, bool&, float*, float*, bool&, float*, bool&, float*, bool&, float*, bool&, float*, bool*, float[5][4], bool&, float*, bool&, float*) noexcept;
 }
 
 

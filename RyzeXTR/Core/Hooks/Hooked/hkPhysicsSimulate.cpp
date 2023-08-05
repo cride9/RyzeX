@@ -48,8 +48,8 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 
 	networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
 
-	const int iTickBaseBackup = pEntity->GetTickBase( );
-	pEntity->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
+	//const int iTickBaseBackup = pEntity->GetTickBase( );
+	//pEntity->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
 
 	original(ecx, edx);
 

@@ -1,4 +1,5 @@
 #include "networking.h"
+#include "../Rage/exploits.h"
 
 inline bool IsVectorValid( Vector vecOriginal, Vector vecCurrent )
 {
@@ -147,8 +148,8 @@ int CNetworking::GetCorrectedTickbase() {
 
 	if (!g::pLocal)
 		return 0; 
-	return g::pLocal->GetTickBase();
-	//return pCompressData[iLastCommandNumber % 150].nTickbase;
+	//return g::pLocal->GetTickBase();
+	return pCompressData[iLastCommandNumber % 150].nTickbase - exploits::iShiftAmount;
 }
 
 CNetvarData* CNetworking::GetRecord() {

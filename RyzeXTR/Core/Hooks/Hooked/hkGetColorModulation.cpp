@@ -25,19 +25,19 @@ void __fastcall h::hkGetColorModulation(void* ecx, void* edx, float* r, float* g
 		return;
 	}
 
-	if (cfg::misc::nightmode) {
+	if (cfg::misc::bNightmode) {
 
 		if (strstr(szGroup, XorStr("World textures"))) {
 
-			*r *= cfg::misc::nightmodeColor[0];
-			*g *= cfg::misc::nightmodeColor[1];
-			*b *= cfg::misc::nightmodeColor[2];
+			*r *= cfg::misc::flNightmodeColor[0];
+			*g *= cfg::misc::flNightmodeColor[1];
+			*b *= cfg::misc::flNightmodeColor[2];
 		}
 		else if (strstr(szGroup, XorStr("StaticProp textures"))) {
 
-			*r *= cfg::misc::propsColor[0] * 1.2f;
-			*g *= cfg::misc::propsColor[1] * 1.2f;
-			*b *= cfg::misc::propsColor[2] * 1.2f;
+			*r *= cfg::misc::flPropColor[0] * 1.2f;
+			*g *= cfg::misc::flPropColor[1] * 1.2f;
+			*b *= cfg::misc::flPropColor[2] * 1.2f;
 		}
 	}
 }

@@ -166,7 +166,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.m_nSimulationTicks; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int GetTickBase = pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
+		int GetTickBase = networking.GetCorrectedTickbase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -325,7 +325,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.m_nSimulationTicks; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int GetTickBase = pLocal->GetTickBase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
+		int GetTickBase = networking.GetCorrectedTickbase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -601,7 +601,7 @@ void C_LocalAnimations::SetupShootPosition(CBaseEntity* pLocal)
 			bModifyEyePosition = true;
 
 		/* modify eye pos on FD */
-		if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck)
+		if (IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck)
 			bModifyEyePosition = true;
 
 		/* modify LocalPlayer's EyePosition */

@@ -4,6 +4,7 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+#include <mutex>
 #include "../DataTyes/Color.h"
 
 namespace cfg {
@@ -22,83 +23,38 @@ namespace cfg {
 
 	namespace rage {
 
-		inline bool enable;
-		inline bool autostop[ ] = { false, false, false, false ,false, false };
-		inline int	autostopAggressiveness[ ] = { false, false, false, false ,false, false };
-		inline bool m_bAutoStopInAir[ ] = { false, false, false, false ,false, false };
-		inline bool betweenshots[ ] = { false, false, false, false ,false, false };
-		inline int	aimbotTargetSelection;
-		inline bool autoscope[] = { false, false, false };
-		inline bool forceSafePoint[] = { false, false, false, false ,false, false };
-		inline int iAimbotFov = 180.f;
+		inline bool bEnable;
+		inline int iAimbotKey = 0;
+		inline float iAimbotFov = 180.f;
 		inline bool bSilentAim = false;
-		inline int ragebotbind = 0;
 
-		inline bool doubletap;
-		inline int  doubletapkey;
-		inline bool hideshot;
-		inline int  hideshotkey;
-		inline bool resolver;
-		inline int	overrideBind;
-		inline bool m_bEnableBacktrack;
+		inline bool bDoubletap;
+		inline int  iDoubletapKey;
+		inline bool bHideshot;
+		inline int  iHideShotKey;
+		inline bool bResolver;
+		inline bool bOverride;
+		inline int	iOverrideBind;
 
-		inline bool forceBaim;
-		inline int forceBaimKey = 0;
+		inline bool bForceBaim;
+		inline int iForceBaimKey = 0;
 
 		// all weapon
-		inline bool etcMultiHitboxes[] = { false, false, false, false, false ,false };
-		inline bool etcHitboxes[] = { false, false, false, false, false ,false };
-		inline bool etcSafeHitboxes[] = { false, false, false, false, false ,false };
-		inline int etcHitchance;
-		inline int etcMindmg;
-		inline int etcHeadPoints = 0;
-		inline int etcBodyPoints = 0;
-		inline int etcOverride = 0;
+		inline bool bHitboxes[6][6];
+		inline bool bMultiHitboxes[6][6];
+		inline bool bSafeHitboxes[6][6];
 
-		inline bool autoMultiHitboxes[] = { false, false, false, false, false ,false };
-		inline bool autoHitboxes[] = { false, false, false, false, false ,false };
-		inline bool autoSafeHitboxes[] = { false, false, false, false, false ,false };
-		inline int autoHitchance;
-		inline int autoMindmg;
-		inline int autoHeadPoints = 0;
-		inline int autoBodyPoints = 0;
-		inline int autoOverride = 0;
+		inline int iHitchances[6];
+		inline int iMinDamages[6];
+		inline int iHeadPoints[6];
+		inline int iBodyPoints[6];
+		inline int iOverride[6];
 
-		inline bool scoutMultiHitboxes[] = { false, false, false, false, false ,false };
-		inline bool scoutHitboxes[] = { false, false, false, false, false ,false };
-		inline bool scoutSafeHitboxes[] = { false, false, false, false, false ,false };
-		inline int scoutHitchance;
-		inline int scoutMindmg;
-		inline int scoutHeadPoints = 0;
-		inline int scoutBodyPoints = 0;
-		inline int scoutOverride = 0;
-
-		inline bool awpMultiHitboxes[] = { false, false, false, false, false ,false };
-		inline bool awpHitboxes[] = { false, false, false, false, false ,false };
-		inline bool awpSafeHitboxes[] = { false, false, false, false, false ,false };
-		inline int awpHitchance;
-		inline int awpMindmg;
-		inline int awpHeadPoints = 0;
-		inline int awpBodyPoints = 0;
-		inline int awpOverride = 0;
-
-		inline bool pistolMultiHitboxes[] = { false, false, false, false, false ,false };
-		inline bool pistolHitboxes[] = { false, false, false, false, false ,false };
-		inline bool pistolSafeHitboxes[] = { false, false, false, false, false ,false };
-		inline int pistolHitchance;
-		inline int pistolMindmg;
-		inline int pistolHeadPoints = 0;
-		inline int pistolBodyPoints = 0;
-		inline int pistolOverride = 0;
-
-		inline bool heavypistolMultiHitboxes[] = { false, false, false, false, false ,false };
-		inline bool heavypistolHitboxes[] = { false, false, false, false, false ,false };
-		inline bool heavypistolSafeHitboxes[] = { false, false, false, false, false ,false };
-		inline int heavypistolHitchance;
-		inline int heavypistolMindmg;
-		inline int heavypistolHeadPoints = 0;
-		inline int heavypistolBodyPoints = 0;
-		inline int heavypistolOverride = 0;
+		inline bool bForceSafePoint[] = { false, false, false, false ,false, false };
+		inline bool bAutostop[] = { false, false, false, false ,false, false };
+		inline int	bAutostopAggressiveness[] = { false, false, false, false ,false, false };
+		inline bool bConditions[6][2];
+		inline bool bAutoScope[] = { false, false, false };
 	}
 	namespace antiaim {
 
@@ -111,40 +67,41 @@ namespace cfg {
 		inline int iYaw[3];
 		inline bool bSlideWalk;
 		inline bool bInvertOnShoot[3];
-		inline bool bAntiJitter[3];
+		inline bool bInverter = false;
 
 		inline int iDesyncType[3];
 		inline int iInverterBind = 0;
 
-		inline float bodyLean[2][3];
+		inline float flBodyLean[2][3];
 
 		inline int iFlickOffset[3];
 		inline int flickAngleSwitch[3];
 
-		inline bool m_bSwayDesync[3];
+		inline bool bSwayDesync[3];
 
-		inline int modifier[3];
-		inline int jittervalue[3];
-		inline float invertangle[3];
+		inline int iModifier[3];
+		inline int iJitterValue[3];
+		inline float iInvertAngle[3];
+		inline bool bAntiJitter[3];
 
-		inline bool enableFakelag = false;
-		inline int fakelag = 0;
-		inline int fakelagmin = 0;
-		inline int fakelagmax = 0;
-		inline int fakelagType = 0;
+		inline bool bFakelag = false;
+		inline int iFakelag = 0;
+		inline int iFakelagMin = 0;
+		inline int iFakeLagMax = 0;
+		inline int iFakeLagType = 0;
 
-		inline bool defensive = false;
+		inline bool bDefensive = false;
 
-		inline bool fakewalkenable = false; // need config value
-		inline int fakewalkKey = 0; // need config value
-		inline float fakewalk = 0;
-		inline bool fakeduck = false;
-		inline int fakeduckbind = 0;
+		inline bool bFakeWalk = false;
+		inline int iFakeWalkKey = 0;
+		inline float iFakeWalkSpeed = 0;
+		inline bool bFakeDuck = false;
+		inline int iFakeDuckKey = 0;
 
-		inline bool idealTick = false;
-		inline int idealTickBind = 0;
+		inline bool bAutoPeek = false;
+		inline int iAutoPeek = 0;
 
-		inline int freestand[3];
+		inline int iFreestand[3];
 	}
 	namespace visual {
 
@@ -186,7 +143,6 @@ namespace cfg {
 		inline bool bFlags[3][9];
 		inline float flFlagsColor[3][9][4];
 	}
-
 	namespace model {
 
 		inline int attachmentChamsMaterial[3];
@@ -212,99 +168,37 @@ namespace cfg {
 		inline bool enemyBTXhair = false;
 		inline bool enemyBTEnable = false;
 
-		// enemy
-		inline int enemyType = 0;
-		inline bool enemy = false;
-		inline bool enemyXQZ = false;
-		inline float enemyColor[4] = { 0.f, 216.f / 255.f, 1.f ,1.f };
-		inline float enemyXQZColor[4] = { 255.f / 255.f, 192.f / 255.f, 0.f, 85.f / 255.f };
-		inline bool enemyXhair = false;
-		inline bool enemyXQZXhair = false;
-
-		inline bool enemyOverlay = false;
-		inline bool enemyOverlayXQZ = false;
-		inline float enemyOverlayColor[4] = { 94.f / 255.f, 18.f / 255.f, 0.f ,1.f };
-		inline float enemyOverlayXQZColor[4] = { 109.f / 255.f, 0.f, 0.f ,1.f };
-		inline bool enemyOverlayXhair = true;
-		inline bool enemyOverlayXQZXhair = false;
-
-		inline bool enemyThinOverlay = false;
-		inline bool enemyThinOverlayXQZ = false;
-		inline float enemyThinOverlayColor[4] = { 77.f / 255.f, 90.f / 255.f, 1.f ,1.f };
-		inline float enemyThinOverlayXQZColor[4] = { 64.f / 255.f, 75.f / 255.f, 0.f ,1.f };
-		inline bool enemyThinOverlayXhair = false;
-		inline bool enemyThinOverlayXQZXhair = false;
-
-		inline bool enemyAnimOverlay = false;
-		inline bool enemyAnimOverlayXQZ = false;
-		inline float enemyAnimOverlayColor[4] = { 109.f / 255.f, 1.f, 249.f / 255.f ,1.f };
-		inline float enemyAnimOverlayXQZColor[4] = { 116.f / 255.f, 129.f / 255.f, 1.f ,1.f };
-		inline bool enemyAnimOverlayXhair = true;
-		inline bool enemyAnimOverlayXQZXhair = false;
-
-		inline bool m_bDrawMatrix = false;
-
-		// team
-		inline int teamType = 0;
-		inline bool team = false;
-		inline bool teamXQZ = false;
-		inline float teamColor[4] = { 0.f, 216.f / 255.f, 1.f ,1.f };
-		inline float teamXQZColor[4] = { 255.f / 255.f, 192.f / 255.f, 0.f, 85.f / 255.f };
-		inline bool teamXhair = false;
-		inline bool teamXQZXhair = false;
-
-		inline bool teamOverlay = false;
-		inline bool teamOverlayXQZ = false;
-		inline float teamOverlayColor[4] = { 94.f / 255.f, 18.f / 255.f, 0.f ,1.f };
-		inline float teamOverlayXQZColor[4] = { 109.f / 255.f, 0.f, 0.f ,1.f };
-		inline bool teamOverlayXhair = true;
-		inline bool teamOverlayXQZXhair = false;
-
-		inline bool teamThinOverlay = false;
-		inline bool teamThinOverlayXQZ = false;
-		inline float teamThinOverlayColor[4] = { 77.f / 255.f, 90.f / 255.f, 1.f ,1.f };
-		inline float teamThinOverlayXQZColor[4] = { 64.f / 255.f, 75.f / 255.f, 0.f ,1.f };
-		inline bool teamThinOverlayXhair = false;
-		inline bool teamThinOverlayXQZXhair = false;
-
-		inline bool teamAnimOverlay = false;
-		inline bool teamAnimOverlayXQZ = false;
-		inline float teamAnimOverlayColor[4] = { 109.f / 255.f, 1.f, 249.f / 255.f ,1.f };
-		inline float teamAnimOverlayXQZColor[4] = { 116.f / 255.f, 129.f / 255.f, 1.f ,1.f };
-		inline bool teamAnimOverlayXhair = true;
-		inline bool teamAnimOverlayXQZXhair = false;
-
-		// local
 		inline bool bBlend;
 		inline float flBlend;
-		inline int localType = 0;
-		inline bool local = false;
-		inline bool localXQZ = false;
-		inline float localColor[4] = { 125.f / 255.f, 125.f / 255.f, 125.f / 255.f ,1.f };
-		inline float localXQZColor[4] = { 255.f / 255.f, 192.f / 255.f, 0.f, 85.f / 255.f };
-		inline bool localXhair = false;
-		inline bool localXQZXhair = false;
 
-		inline bool localOverlay = false;
-		inline bool localOverlayXQZ = false;
-		inline float localOverlayColor[4] = { 38.f / 255.f, 29.f / 255.f, 0.f ,1.f };
-		inline float localOverlayXQZColor[4] = { 109.f / 255.f, 0.f, 0.f ,1.f };
-		inline bool localOverlayXhair = false;
-		inline bool localOverlayXQZXhair = false;
+		inline int iType[3];
+		inline bool bChams[3];
+		inline bool bChamsXQZ[3];
+		inline float ChamsColor[3][4];
+		inline float ChamsColorXQZ[3][4];
+		inline bool bXhair[3];
+		inline bool bXhairXQZ[3];
 
-		inline bool localThinOverlay = false;
-		inline bool localThinOverlayXQZ = false;
-		inline float localThinOverlayColor[4] = { 32.f / 255.f, 0.f / 255.f, 49.f / 255.f ,1.f };
-		inline float localThinOverlayXQZColor[4] = { 64.f / 255.f, 75.f / 255.f, 0.f ,1.f };
-		inline bool localThinOverlayXhair = false;
-		inline bool localThinOverlayXQZXhair = false;
+		inline bool bOverlay[3];
+		inline bool bOverlayXQZ[3];
+		inline float OverlayColor[3][4];
+		inline float OverlayColorXQZ[3][4];
+		inline bool bOverlayXhair[3];
+		inline bool bOverlayXhairXQZ[3];
 
-		inline bool localAnimOverlay = false;
-		inline bool localAnimOverlayXQZ = false;
-		inline float localAnimOverlayColor[4] = { 255.f / 255.f, 0.f, 0.f ,1.f };
-		inline float localAnimOverlayXQZColor[4] = { 0.f, 24.f / 255.f, 1.f ,1.f };
-		inline bool localAnimOverlayXhair = true;
-		inline bool localAnimOverlayXQZXhair = true;
+		inline bool bThinOverlay[3];
+		inline bool bThinOverlayXQZ[3];
+		inline float ThinOverlayColor[3][4];
+		inline float ThinOverlayColorXQZ[3][4];
+		inline bool bThinOverlayXhair[3];
+		inline bool bThinOverlayXhairXQZ[3];
+
+		inline bool bAnimOverlay[3];
+		inline bool bAnimOverlayXQZ[3];
+		inline float AnimOverlayColor[3][4];
+		inline float AnimOverlayColorXQZ[3][4];
+		inline bool bAnimOverlayXhair[3];
+		inline bool bAnimOverlayXhairXQZ[3];
 
 		inline bool localIdealTick = false;
 		inline float localIdealTickColor[4] = { 255.f, 255.f, 255.f, 255.f };
@@ -355,103 +249,105 @@ namespace cfg {
 	}
 	namespace misc {
 
-		inline bool bDrawCapsule = false;
+		inline bool bDrawCapsule = false; // 
 		inline float flDrawCapsuleColor[4] = {1.f, 1.f, 1.f, 1.f};
 		inline float flDrawCapsuleColorHit[4] = { 1.f, 1.f, 1.f, 1.f };
 
-		inline bool keyBindList = false;
-		inline bool bKeyBindListOldEnable = false;
-		inline bool bKeyBindListOld[10];
+		//inline bool bKeyBindList = false;
+		inline bool bKeyBindList = false;
+		inline bool iKeyBindList[10];
 
-		inline bool bunnyhop = false;
-		inline bool autoStrafe = false;
-		inline bool faststop = false;
-		inline bool infiniteDuck = false;
-		inline bool blockbot = false;
-		inline int blockbotKey = 0;
-		inline bool clantag = false;
-		inline bool bInvertKnife = false;
+		inline bool bBunnyHop = false;//
+		inline bool bAutoStrafe = false;
+		inline bool bFastStop = false;
+		inline bool bInfiniteDuck = false;
+		inline bool bBlockbot = false;
+		inline int iBlockbotKey = 0;
+		inline bool bClantag = false;
+		inline bool bInvertKnife = false;//
 
-		inline bool m_bDrawServerHitbox = false;
-		inline bool m_bDrawServerHitboxOnAllEntities = false;
+		inline bool bDrawServerHitbox = false;
+		inline bool bDrawServerHitboxOnAllEntities = false;
 
-		inline bool nightmode = false;
-		inline float nightmodeColor[4] = { 1.f, 1.f, 1.f, 1.f };
-		inline float propsColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline bool bNightmode = false; //
+		inline float flNightmodeColor[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline float flPropColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
-		inline int iSkybox = 0;
+		inline int iSkybox = 0; // 
 		inline float flSkyboxColor[4] = { 1.f, 1.f, 1.f, 1.f };
 
-		inline bool bOverrideLampColors = false;
+		inline bool bOverrideLampColors = false; //
 		inline float flLampColors[4] = { 1.f, 1.f, 1.f, 1.f };
 		inline int iFlicker = 0;
 
-		inline bool bEnableRadio = false;
+		inline bool bEnableRadio = false; // 
 		inline int iRadioStation = 0;
 		inline float flRadioVolume = 0.f;
 		inline int iRadioMuteHotKey = 0;
 
-		inline bool bOOF = false;
+		inline bool bOOF = false; //
 		inline float flOOF[4];
 		inline int iOOFDistance;
 		inline int iOOFSize;
 
-		inline bool aspectRatio = false;
-		inline int aspectRatioValue = 0;
-		inline bool preserveKillfeed = false;
-		inline bool thirdperson = false;
-		inline int thirdpersonbind = 0;
-		inline int thirdpersonDistance = 0;
+		inline bool bAspectRatio = false; //
+		inline int iAspectRatio = 0; 
 
-		inline bool bulletImpact = false;
-		inline float impactColor[2][4];
+		inline bool bPreserveKillfeed = false;
 
-		inline bool bDroppedWeaponESP = false;
+		inline bool bThirdPerson = false; // 
+		inline int iThirdPersonKey = 0;
+		inline int iThirdPersonDistance = 0;
+
+		inline bool bBulletImpact = false; //
+		inline float flImpactColor[2][4];
+
+		inline bool bDroppedWeaponESP = false; //
 		inline float flDroppedWeaponESP[4];
 
-		inline bool bProjectileESP = false;
+		inline bool bProjectileESP = false; //
 		inline float flProjectileESP[4];
 
-		inline bool onlyCheatLogs = false;
+		inline bool bOnlyCheatlog = false; //
 
-		inline bool bWorldCrosshair = false;
+		inline bool bWorldCrosshair = false; //
 		inline float flWorldCrosshairColor[4] = { 1.f ,1.f, 1.f, 1.f };
 
-		inline int viewmodelFov = 75;
-		inline int fov = 90;
+		inline int iViewModelFov = 75; //
+		inline int iDebugFov = 90; //
 
-		inline bool removals[] = { false, false ,false ,false, false, false };
-		inline bool drawViewmodelOnScope = false;
-		inline float scopeColor[4] = { 1.f, 1.f, 1.f, 1.f };
-		inline float scopeColorEnd[4] = { 1.f, 1.f, 1.f, 1.f };
-		inline float scopeLength = 1.f;
+		inline bool bRemovals[] = { false, false ,false ,false, false, false }; //
+		inline bool bOnScopeViewmodel = false; //
+		inline float flScopeColor[4] = { 1.f, 1.f, 1.f, 1.f }; //
+		inline float flScopeColorEnd[4] = { 1.f, 1.f, 1.f, 1.f }; //
+		inline int iScopeLength = 1; //
 
-		inline bool autobuyEnabled = false;
-		inline int pistols;
-		inline int snipers;
-		inline bool equipments[] = { false, false, false };
-		inline bool grenades[] = { false, false, false, false, false };
+		inline bool bAutobuy = false; //
+		inline int iPistols;
+		inline int iSnipers;
+		inline bool bEquipments[] = { false, false, false };
+		inline bool bGrenades[] = { false, false, false, false, false };
 
-		inline bool fakePing = false;
-		inline float fakePingFactor = 0.f;
+		inline bool bFakePing = false; //
+		inline float flFakePingFactor = 0.f;
 
 		// funny times
-		inline bool m_bRussianRoulette = false;
+		inline bool bRussianRoulette = false;
 
 		// hitsounds
-		inline int m_iHitSound = 0;
-		inline float m_flHitSoundVolume = 100.f;
-		inline std::string m_szWavPath = "";
+		inline int iHitSound = 0; //
+		inline float flHitSoundVolume = 100.f; //
+		inline std::string szWavPath = ""; //
 
-		inline bool bKillsay = false;
-		inline std::string bombBuffer = "RyzeXTR";
-		inline std::string killSayBuffer = "";
+		inline bool bKillsay = false; //
+		inline std::string szBombBuffer = "RyzeXTR"; //
+		inline std::string szKillsayBuffer = ""; //
 
 		inline bool bSkinnyBoy = false;
 		inline int iSkinnyBoy = 0;
 
-		inline bool bHat = false;
-		inline float flHat[4] = { 1.f, 1.f, 1.f, 1.f };
+		inline bool bHat = false; //
+		inline float flHat[4] = { 1.f, 1.f, 1.f, 1.f }; //
 		inline bool bCustomHud = false;
 	
 	}
@@ -509,7 +405,7 @@ public:
 
 class CConfig
 {
-protected:
+public:
 	std::vector< ConfigValue< int >* > ints;
 	std::vector< ConfigValue< bool >* > bools;
 	std::vector< ConfigValue< float >* > floats;

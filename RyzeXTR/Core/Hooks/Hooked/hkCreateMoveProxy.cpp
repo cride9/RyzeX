@@ -40,7 +40,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	Vector oldViewAngle = g::vecOriginalViewAngle = pCmd->angViewPoint;
 
-	if (cfg::misc::infiniteDuck)
+	if (cfg::misc::bInfiniteDuck)
 		pCmd->iButtons |= IN_BULLRUSH;
 
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
@@ -78,7 +78,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	h::HookNetChannel(pNetChannel);
 
-	if ( cfg::misc::fakePing && pNetChannel)
+	if ( cfg::misc::bFakePing && pNetChannel)
 		lagcomp.UpdateIncomingSequences( pNetChannel );
 	else
 		lagcomp.ClearIncomingSequences( );
@@ -94,9 +94,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		bSendPacket = true;
 
 	if (exploits::bIsShiftingTicks) {
-		if (exploits::iShiftAmount == 12)
-			pCmd->iButtons &= ~IN_ATTACK;
-		if (cfg::antiaim::idealTick && IPT::HandleInput(cfg::antiaim::idealTickBind))
+		if (cfg::antiaim::bAutoPeek && IPT::HandleInput(cfg::antiaim::iAutoPeek))
 			bSendPacket = true;
 		else
 			bSendPacket = exploits::iShiftAmount == 0 ? true : false;

@@ -5,12 +5,12 @@ void __fastcall h::hkRenderView(void* ecx, void* edx, CViewSetup& view, CViewSet
 
 	static auto original = detour::renderView.GetOriginal<decltype(&h::hkRenderView)>();
 
-	if (cfg::misc::drawViewmodelOnScope)
+	if (cfg::misc::bOnScopeViewmodel)
 		whatToDraw |= 1 << 0/*RENDERVIEW_DRAWVIEWMODEL*/;
 
 	bool bBackup = i::Input->bCameraInThirdPerson;
 
-	if (cfg::misc::thirdpersonDistance == 0) {
+	if (cfg::misc::iThirdPersonDistance == 0) {
 		i::Input->bCameraInThirdPerson = false;
 		original(ecx, edx, view, hudViewSetup, nClearFlags, whatToDraw);
 		i::Input->bCameraInThirdPerson = bBackup;

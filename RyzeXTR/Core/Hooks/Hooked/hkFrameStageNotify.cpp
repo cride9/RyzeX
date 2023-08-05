@@ -6,6 +6,7 @@
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Features/Changers/wtf.h"
+#include "../../Features/Rage/exploits.h"
 
 /*
 
@@ -120,6 +121,15 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
+		if (exploits::bBackupTickbase && g::pCmd) {
+
+			if (g::pCmd->iCommandNumber == exploits::iShiftCommand)  // Tickbase Fix for Doubletap
+			{
+				g::pLocal->GetTickBase() = exploits::iRestoreTickbase;
+				i::GlobalVars->flCurrentTime = exploits::flRestoreCurtime;
+				exploits::bBackupTickbase = false;
+			}
+		}
 		lagcomp.FrameStageNotify();
 		break;
 

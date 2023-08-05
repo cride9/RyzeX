@@ -928,7 +928,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	if (pRecord->bBreakingLagcompensation || cl_lagcompensation->GetInt() == 0)
 		lagcomp.ExtrapolatePlayer(pEntity, pRecord, pPrevious);
 
-	if (cfg::rage::enable && pEntity->GetTeam() != g::pLocal->GetTeam()) {
+	if (cfg::rage::bEnable && pEntity->GetTeam() != g::pLocal->GetTeam()) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
 		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
 	}

@@ -95,7 +95,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FakeLag(bSendPacket);
 	AutoStrafe(vecViewAngle, pCmd);
 	AspectRatio();
-	Slowwalk(pCmd, cfg::antiaim::fakewalk); // need menu element && keybind
+	Slowwalk(pCmd, cfg::antiaim::iFakeWalkSpeed); // need menu element && keybind
 	FastStop(pCmd);
 	FakeDuck(pCmd);
 	SlideFix();
@@ -182,7 +182,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 		Killsay(pEvent);
 		ThirdPersonDisableOnDeath(pEvent);
 	}
-	if (szEventName.find(cachedEvents::bulletImpact) != std::string_view::npos) {
+	if (szEventName.find(cachedEvents::bBulletImpact) != std::string_view::npos) {
 		WorldCrosshairHandler(pEvent);
 		BulletImpact(pEvent);
 		BulletTracer(pEvent);
@@ -230,16 +230,16 @@ void misc::ServerHitboxes() {
 		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || !pEntity->IsPlayer( ) || !pEntity->EntIndex( ) )
 			continue;
 
-		if (!cfg::misc::m_bDrawServerHitboxOnAllEntities && !cfg::misc::m_bDrawServerHitbox)
+		if (!cfg::misc::bDrawServerHitboxOnAllEntities && !cfg::misc::bDrawServerHitbox)
 			continue;
 
-		if (!cfg::misc::m_bDrawServerHitboxOnAllEntities && pEntity != g::pLocal)
+		if (!cfg::misc::bDrawServerHitboxOnAllEntities && pEntity != g::pLocal)
 			continue;
 
-		if (!cfg::misc::m_bDrawServerHitbox && pEntity == g::pLocal)
+		if (!cfg::misc::bDrawServerHitbox && pEntity == g::pLocal)
 			continue;
 
-		pTEntity = UTIL_PlayerByIndex(cfg::misc::m_bDrawServerHitboxOnAllEntities ? pEntity->EntIndex() : g::pLocal->EntIndex() );
+		pTEntity = UTIL_PlayerByIndex(cfg::misc::bDrawServerHitboxOnAllEntities ? pEntity->EntIndex() : g::pLocal->EntIndex() );
 		
 		if (pTEntity)
 		{
@@ -260,7 +260,7 @@ void misc::RemovePostProcessing() {
 
 	static CConVar* mat_postprocess_enable = i::ConVar->FindVar(XorStr("mat_postprocess_enable"));
 
-	mat_postprocess_enable->SetValue(cfg::misc::removals[4] ? 0 : 1);
+	mat_postprocess_enable->SetValue(cfg::misc::bRemovals[4] ? 0 : 1);
 }
 
 void misc::Security() {
@@ -277,7 +277,7 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	if (!pCmd || !pLocal)
 		return;
 
-	if (!cfg::antiaim::idealTick)
+	if (!cfg::antiaim::bAutoPeek)
 		return;
 
 	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
@@ -297,7 +297,7 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 	static Vector vecOriginDelta;
 
-	if (IPT::HandleInput(cfg::antiaim::idealTickBind)) {
+	if (IPT::HandleInput(cfg::antiaim::iAutoPeek)) {
 
 		if (!bPositionSet) {
 
@@ -317,7 +317,7 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		vecRecord = vecOrigin;
 	}
 
-	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && IPT::HandleInput(cfg::antiaim::idealTickBind) && bRetreat) {
+	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && IPT::HandleInput(cfg::antiaim::iAutoPeek) && bRetreat) {
 
 		Vector vecAngle;
 		M::VectorAngles(vecOrigin - g::vecEyePosition, vecAngle);
@@ -341,7 +341,7 @@ void misc::OnlyCheatLogs() {
 	con_filter_enable = i::ConVar->FindVar(XorStr("con_filter_enable"));
 	con_filter_text = i::ConVar->FindVar(XorStr("con_filter_text"));
 
-	if (cfg::misc::onlyCheatLogs)
+	if (cfg::misc::bOnlyCheatlog)
 	{
 		if (!bSet)
 		{
@@ -383,7 +383,7 @@ void misc::BulletImpactFrameStage(CBaseEntity* pLocal) {
 		if (!&pImpactList || pImpactList.Size() == 0)
 			return;
 
-		if (!cfg::misc::bulletImpact)
+		if (!cfg::misc::bBulletImpact)
 			return;
 
 		static int iLastCount = 0;
@@ -394,10 +394,10 @@ void misc::BulletImpactFrameStage(CBaseEntity* pLocal) {
 				Vector(-2.0f, -2.0f, -2.0f),
 				Vector(2.0f, 2.0f, 2.0f),
 				Vector(0.0f, 0.0f, 0.0f),
-				cfg::misc::impactColor[1][0] * 255, // b
-				cfg::misc::impactColor[1][1] * 255, // g
-				cfg::misc::impactColor[1][2] * 255, // g
-				cfg::misc::impactColor[1][3] * 255, // a
+				cfg::misc::flImpactColor[1][0] * 255, // b
+				cfg::misc::flImpactColor[1][1] * 255, // g
+				cfg::misc::flImpactColor[1][2] * 255, // g
+				cfg::misc::flImpactColor[1][3] * 255, // a
 				4.f
 			);
 		}
@@ -417,7 +417,7 @@ void misc::BulletImpact(IGameEvent* pEvent) {
 	if (!pLocal || !pLocal->IsAlive())
 		return;
 
-	if (!cfg::misc::bulletImpact)
+	if (!cfg::misc::bBulletImpact)
 		return;
 
 	if (pEvent != nullptr) {
@@ -434,10 +434,10 @@ void misc::BulletImpact(IGameEvent* pEvent) {
 			Vector(-2.0f, -2.0f, -2.0f),
 			Vector(2.0f, 2.0f, 2.0f),
 			Vector(0.0f, 0.0f, 0.0f),
-			cfg::misc::impactColor[0][0] * 255, // b
-			cfg::misc::impactColor[0][1] * 255, // g
-			cfg::misc::impactColor[0][2] * 255, // g
-			cfg::misc::impactColor[0][3] * 255, // a
+			cfg::misc::flImpactColor[0][0] * 255, // b
+			cfg::misc::flImpactColor[0][1] * 255, // g
+			cfg::misc::flImpactColor[0][2] * 255, // g
+			cfg::misc::flImpactColor[0][3] * 255, // a
 			4.f
 		);
 	}
@@ -445,12 +445,12 @@ void misc::BulletImpact(IGameEvent* pEvent) {
 
 void misc::BuyBot(IGameEvent* event) { // need menu element
 
-	if (!cfg::misc::autobuyEnabled)
+	if (!cfg::misc::bAutobuy)
 		return;
 
 	std::string buy = "";
 
-	switch (cfg::misc::pistols) {
+	switch (cfg::misc::iPistols) {
 	case 1: buy += XorStr("buy glock;buy usp_silencer;buy hkp2000;"); break;
 	case 2: buy += XorStr("buy elite;"); break;
 	case 3: buy += XorStr("buy p250;"); break;
@@ -458,34 +458,34 @@ void misc::BuyBot(IGameEvent* event) { // need menu element
 	case 5: buy += XorStr("buy deagle;buy revolver;"); break;
 	}
 
-	switch (cfg::misc::snipers) {
+	switch (cfg::misc::iSnipers) {
 	case 1: buy += XorStr("buy ssg08;"); break;
 	case 2: buy += XorStr("buy awp;"); break;
 	case 3: buy += XorStr("buy scar20;buy g3sg1;"); break;
 	}
 
-	if (cfg::misc::equipments[0])
+	if (cfg::misc::bEquipments[0])
 		buy += XorStr("buy vesthelm;");
 
-	if (cfg::misc::equipments[1])
+	if (cfg::misc::bEquipments[1])
 		buy += XorStr("buy taser;");
 
-	if (cfg::misc::equipments[2])
+	if (cfg::misc::bEquipments[2])
 		buy += XorStr("buy defuser;");
 
-	if (cfg::misc::grenades[0])
+	if (cfg::misc::bGrenades[0])
 		buy += XorStr("buy molotov;buy incgrenade;");
 
-	if (cfg::misc::grenades[1])
+	if (cfg::misc::bGrenades[1])
 		buy += XorStr("buy decoy;");
 
-	if (cfg::misc::grenades[2])
+	if (cfg::misc::bGrenades[2])
 		buy += XorStr("buy flashbang;");
 
-	if (cfg::misc::grenades[3])
+	if (cfg::misc::bGrenades[3])
 		buy += XorStr("buy hegrenade;");
 
-	if (cfg::misc::grenades[4])
+	if (cfg::misc::bGrenades[4])
 		buy += XorStr("buy smokegrenade;");
 
 	i::EngineClient->ExecuteClientCmd(buy.c_str());
@@ -527,11 +527,11 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 	}*/
 
 	// play hit sound
-	if ( cfg::misc::m_iHitSound == 1 ) {
-		i::EngineSoundClient->EmitAmbientSound(XorStr("buttons\\arena_switch_press_02.wav"), cfg::misc::m_flHitSoundVolume / 100.f);
+	if ( cfg::misc::iHitSound == 1 ) {
+		i::EngineSoundClient->EmitAmbientSound(XorStr("buttons\\arena_switch_press_02.wav"), cfg::misc::flHitSoundVolume / 100.f);
 		// physics\\metal\\paintcan_impact_hard3.wav
 	}
-	else if ( cfg::misc::m_iHitSound == 2 && !cfg::misc::m_szWavPath.empty( ) ) {
+	else if ( cfg::misc::iHitSound == 2 && !cfg::misc::szWavPath.empty( ) ) {
 
 		static bool m_bNeedsUpdate = true;
 		static float m_flOldVolume = 0.f;
@@ -540,15 +540,15 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 		static BYTE* m_pParsedHitsound;
 
 		// read the .wav file into memory.
-		BYTE* m_pSoundBytes = util::ReadWavFileIntoMemory( cfg::misc::m_szWavPath );
+		BYTE* m_pSoundBytes = util::ReadWavFileIntoMemory( cfg::misc::szWavPath );
 
-		if ( cfg::misc::m_flHitSoundVolume != m_flOldVolume || m_szOldWavPath != cfg::misc::m_szWavPath )
+		if ( cfg::misc::flHitSoundVolume != m_flOldVolume || m_szOldWavPath != cfg::misc::szWavPath )
 			m_bNeedsUpdate = true;
 
 		if ( m_bNeedsUpdate )
 		{
-			m_szOldWavPath = cfg::misc::m_szWavPath;
-			m_flOldVolume = cfg::misc::m_flHitSoundVolume;
+			m_szOldWavPath = cfg::misc::szWavPath;
+			m_flOldVolume = cfg::misc::flHitSoundVolume;
 			m_bNeedsUpdate = false;
 
 			// adjust the hitsound volume.
@@ -556,7 +556,7 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
 			CWavParser::WavHeader_t header;
 			header.ParseWavHeader( m_pParsedHitsound );
-			wavparser.AdjustWavVolume( header, ( cfg::misc::m_flHitSoundVolume / 200.f ) );
+			wavparser.AdjustWavVolume( header, ( cfg::misc::flHitSoundVolume / 200.f ) );
 		}
 		// play the sound.
 		if ( m_pParsedHitsound ) {
@@ -610,7 +610,7 @@ void misc::PreserveKillfeed(IGameEvent* pEvent) { // need menu element
 			return;
 
 		if (_death_notice)
-			*(float*)((DWORD)_death_notice + 0x50) = cfg::misc::preserveKillfeed ? FLT_MAX : 1.5; // need menu element
+			*(float*)((DWORD)_death_notice + 0x50) = cfg::misc::bPreserveKillfeed ? FLT_MAX : 1.5; // need menu element
 	}
 	else if (szEventName.find(roundStart) != std::string_view::npos) {
 
@@ -628,7 +628,7 @@ void misc::PreserveKillfeed(IGameEvent* pEvent) { // need menu element
 
 void misc::FakeDuck(CUserCmd* pCmd) {
 
-	if (IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+	if (IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck) {
 
 		auto iChoke = i::ClientState->nChokedCommands;
 
@@ -646,7 +646,7 @@ void misc::FakeDuck(CUserCmd* pCmd) {
 
 void misc::FastStop(CUserCmd* pCmd) {
 
-	if (!cfg::misc::faststop)
+	if (!cfg::misc::bFastStop)
 		return;
 
 	if (!g::pLocal || !g::pLocal->IsAlive() || !pCmd || !pCmd->iCommandNumber)
@@ -697,7 +697,7 @@ void misc::Slowwalk(CUserCmd* pCmd, float flSpeed) {
 	if (flSpeed <= 0.f)
 		return;
 
-	if (!IPT::HandleInput(cfg::antiaim::fakewalkKey))
+	if (!IPT::HandleInput(cfg::antiaim::iFakeWalkKey))
 		return;
 
 	float flMinSpeed = (float)(sqrt((pCmd->flForwardMove * pCmd->flForwardMove) + (pCmd->flSideMove * pCmd->flSideMove) + (pCmd->flUpMove * pCmd->flUpMove)));
@@ -721,12 +721,12 @@ void misc::AspectRatio() {
 
 	static CConVar* r_aspectratio = i::ConVar->FindVar(XorStr("r_aspectratio"));
 
-	if (!cfg::misc::aspectRatio) {
+	if (!cfg::misc::bAspectRatio) {
 		r_aspectratio->SetValue(0);
 		return;
 	}
 
-	float ratio = (cfg::misc::aspectRatioValue * 0.1) / 2;
+	float ratio = (cfg::misc::iAspectRatio * 0.1) / 2;
 	if (ratio > 0.001)
 		r_aspectratio->SetValue(ratio); //ayyware hhhh
 	else
@@ -754,7 +754,7 @@ Vector VecAngle( Vector vec )
 
 void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 
-	if (!cfg::misc::autoStrafe)
+	if (!cfg::misc::bAutoStrafe)
 		return;
 
 	// check if local player is valid
@@ -880,7 +880,7 @@ void misc::BunnyHop(CUserCmd* pCmd) {
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return;
 
-	if (!cfg::misc::bunnyhop)
+	if (!cfg::misc::bBunnyHop)
 		return;
 
 	static bool bLastJumped = false, bShouldFake = false;
@@ -932,8 +932,13 @@ void misc::ThirdPerson() {
 	// check if we have a local player and it is alive.
 	bool alive = pLocal && pLocal->IsAlive();
 
+	static float flKurvaAnyad = 0.f;
+
+	if (!i::Input->bCameraInThirdPerson)
+		flKurvaAnyad = 0.f;
+
 	// camera should be in thirdperson.
-	if (IPT::HandleInput(cfg::misc::thirdpersonbind) && cfg::misc::thirdperson)
+	if (IPT::HandleInput(cfg::misc::iThirdPersonKey) && cfg::misc::bThirdPerson)
 	{
 		// if alive and not in thirdperson already switch to thirdperson.
 		if (alive && !i::Input->CameraInThirdPerson())
@@ -970,7 +975,7 @@ void misc::ThirdPerson() {
 		M::AngleVectors(offset, &forward);
 
 		// cam_idealdist convar.
-		offset.z = (float)cfg::misc::thirdpersonDistance;
+		offset.z = static_cast<float>(cfg::misc::iThirdPersonDistance);
 
 		if (offset.z == 0) {
 
@@ -1020,17 +1025,17 @@ void misc::FakeLag(bool& bSendPacket) {
 	if (i::EngineClient->IsVoiceRecording())
 		return;
 
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::fakelag || !cfg::antiaim::enableFakelag) {
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::iFakelag || !cfg::antiaim::bFakelag) {
 		bSendPacket = true;
 		return;
 	}
 
-	if ( IPT::HandleInput(cfg::antiaim::fakeduckbind) && cfg::antiaim::fakeduck) {
+	if ( IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck) {
 		bSendPacket = i::ClientState->nChokedCommands >= ((*GameRules)->m_bIsValveDS() ? 6 : 14);
 		return;
 	}
 
-	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey))
+	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey))
 		return;
 
 	static int iCurrentChoke = 0;
@@ -1040,8 +1045,8 @@ void misc::FakeLag(bool& bSendPacket) {
 	float flMaxVelocity = g::pLocal->GetWeapon() ? g::pLocal->IsScoped() ? g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[1] : g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[0] : sv_maxspeed->GetFloat();
 	static bool bChokeCycleEnded = false;
 
-	int iMin = cfg::antiaim::fakelagmin;
-	int iMax = cfg::antiaim::fakelagmax;
+	int iMin = cfg::antiaim::iFakelagMin;
+	int iMax = cfg::antiaim::iFakeLagMax;
 
 	if ((*GameRules)->m_bIsValveDS()) {
 
@@ -1049,12 +1054,12 @@ void misc::FakeLag(bool& bSendPacket) {
 		iMax = min(6, iMax);
 	}
 
-	if (cfg::antiaim::fakelag) {
+	if (cfg::antiaim::iFakelag) {
 
-		switch (cfg::antiaim::fakelagType) {
+		switch (cfg::antiaim::iFakeLagType) {
 
 		case MAXIMUM:
-			iCurrentChoke = cfg::antiaim::fakelag;
+			iCurrentChoke = cfg::antiaim::iFakelag;
 			break;
 
 		case ADAPTIVE:
@@ -1072,7 +1077,7 @@ void misc::FakeLag(bool& bSendPacket) {
 			}
 			else {
 
-				iCurrentChoke = cfg::antiaim::fakelagmax;
+				iCurrentChoke = cfg::antiaim::iFakeLagMax;
 				bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
 				
 				if (bChokeCycleEnded)
@@ -1082,10 +1087,10 @@ void misc::FakeLag(bool& bSendPacket) {
 		}
 	}
 	else
-		iCurrentChoke = cfg::antiaim::fakelag;
+		iCurrentChoke = cfg::antiaim::iFakelag;
 
 	//if (!exploits::bShouldRecharge && exploits::iTicksToStore != 0 && !exploits::bIsShiftingTicks)
-	iMax = ((cfg::rage::doubletap && IPT::HandleInput(cfg::rage::doubletapkey)) || (cfg::rage::hideshot && IPT::HandleInput(cfg::rage::hideshotkey))) ? 1 : iMax;
+	iMax = ((cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) || (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey))) ? 1 : iMax;
 	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
 	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;
 	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;
@@ -1181,7 +1186,7 @@ void misc::FixScopeSens() {
 		return;
 	}
 
-	zoom_sensitivity_ratio_mouse->SetValue(g::pLocal->IsScoped() ? cfg::misc::removals[3] ? 0 : 1 : 1);
+	zoom_sensitivity_ratio_mouse->SetValue(g::pLocal->IsScoped() ? cfg::misc::bRemovals[3] ? 0 : 1 : 1);
 }
 
 void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
@@ -1196,7 +1201,7 @@ void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		pLocal->GetWeapon()->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_REVOLVER)
 		return;
 
-	if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() >= TICKS_TO_TIME(pLocal->GetTickBase())))
+	if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() >= TICKS_TO_TIME(networking.GetCorrectedTickbase())))
 		pCmd->iButtons &= ~IN_ATTACK;
 }
 
@@ -1204,7 +1209,7 @@ void misc::RemoveSmoke() {
 
 	static int flCurrentTime = i::GlobalVars->flCurrentTime;
 
-	if (!cfg::misc::removals[0] || !g::pLocal || flCurrentTime > (i::GlobalVars->flCurrentTime - TICKS_TO_TIME(32)))
+	if (!cfg::misc::bRemovals[0] || !g::pLocal || flCurrentTime > (i::GlobalVars->flCurrentTime - TICKS_TO_TIME(32)))
 		return;
 
 	flCurrentTime = i::GlobalVars->flCurrentTime;
@@ -1508,7 +1513,7 @@ void Friction(float flFriction, Vector* vecVelocity)
 void misc::BlockBot(CUserCmd* pCmd) {
 
 	static Vector vecOriginalViewAngle = Vector(0, 0, 0);
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::blockbot || !IPT::HandleInput(cfg::misc::blockbotKey)) {
+	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::misc::bBlockbot || !IPT::HandleInput(cfg::misc::iBlockbotKey)) {
 		vecOriginalViewAngle = Vector(FP_ZERO, FP_ZERO, FP_ZERO);
 		return;
 	}
@@ -1584,7 +1589,7 @@ void misc::ClanTag() {
 	if (!pNetChannel)
 		return;
 
-	if (!bShouldPrint && !cfg::misc::clantag)
+	if (!bShouldPrint && !cfg::misc::bClantag)
 		return;
 
 	//std::vector<std::string> vecClantagString = util::AnimateText("RyzeXTR");
@@ -1595,7 +1600,7 @@ void misc::ClanTag() {
 	int iMainTime = (int)(iTicks / intervals) % 17; // 17
 	if (iMainTime != flTime)
 	{
-		if (cfg::misc::clantag) {
+		if (cfg::misc::bClantag) {
 
 			/*for (size_t i = 0; i < vecClantagString.size(); i++)
 			{
@@ -1641,7 +1646,7 @@ void misc::Killsay(IGameEvent* pEvent) {
 	int iUserID = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 	int iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));
 	if (int iLocalIndex = i::EngineClient->GetLocalPlayer(); iUserID != iLocalIndex && iAttacker == iLocalIndex) {
-		i::EngineClient->ExecuteClientCmd(std::format(XorStr("say \"{}\""), cfg::misc::killSayBuffer).c_str());
+		i::EngineClient->ExecuteClientCmd(std::format(XorStr("say \"{}\""), cfg::misc::szKillsayBuffer).c_str());
 	}
 }
 
@@ -1824,10 +1829,10 @@ void misc::RevolverRunCommand(CBaseEntity* pEntity) {
 			int nActivity = pCombatWeapon->GetActivity();
 			if (iActivity != nActivity)
 				if (nActivity == 208)
-					iTickbase = pEntity->GetTickBase() + 1;
+					iTickbase = networking.GetCorrectedTickbase() + 1;
 
 			if (nActivity == 208)
-				if (iTickbase == pEntity->GetTickBase() - 1)
+				if (iTickbase == networking.GetCorrectedTickbase() - 1)
 					pCombatWeapon->GetFireReadyTime() = TICKS_TO_TIME(iTickbase) + 0.2f;
 
 			iActivity = nActivity;
@@ -1917,7 +1922,7 @@ bool misc::CanFireWeapon(float curtime, bool bRevolverSecondary, bool bSkipExtra
 
 void misc::RevolverCreateMove() {
 
-	if (!cfg::rage::enable)
+	if (!cfg::rage::bEnable)
 		return;
 
 	if (!g::pLocal)

@@ -11,7 +11,7 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 
 	static auto original = detour::paintTraverse.GetOriginal<decltype(&h::hkPaintTraverse)>();
 
-	if (cfg::misc::removals[5] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
+	if (cfg::misc::bRemovals[5] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
@@ -38,7 +38,7 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 			visual::WelcomeUser("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
 #endif
 
-		D::ClearDrawData( );
+		//D::ClearDrawData( );
 
 		serversound.Start();
 		visual::VisualRender();
@@ -53,7 +53,7 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 #ifdef _DEBUG
 		visual::DrawList();
 #endif
-		D::SwapDrawData( );
+		//D::SwapDrawData( );
 	}
 
 	//detour::paintTraverse.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, pPanels, edx, vguiPanel, forceRepaint, allowForce);

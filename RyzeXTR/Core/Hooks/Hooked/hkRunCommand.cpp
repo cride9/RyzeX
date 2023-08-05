@@ -4,6 +4,7 @@
 #include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Misc/misc.h"
+#include "../../Features/Rage/exploits.h"
 
 void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCmd* pCmd, IMoveHelper* pMovehelper) {
 
@@ -14,7 +15,23 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	i::MoveHelper = pMovehelper;
 
+	exploits::iRestoreTickbase = pEnt->GetTickBase();
+	exploits::flRestoreCurtime = i::GlobalVars->flCurrentTime;
+
+	if (pCmd->iCommandNumber == exploits::iShiftCommand) {
+
+		pEnt->GetTickBase() = exploits::iBackupTickbase - 15 + 1;
+		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(exploits::iBackupTickbase - 15 + 1);
+	}
+	if (pCmd->iCommandNumber == exploits::iRechargeCommand) {
+
+		pEnt->GetTickBase() = exploits::iBackupTickbase - 1;
+		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(exploits::iBackupTickbase - 1);
+	}
+
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
+
+	exploits::bBackupTickbase = true;
 
 	misc::RevolverRunCommand(pEnt);
 }

@@ -6,5 +6,5 @@ float __fastcall h::hkGetViewModelFov(void* ecx, void* edx) {
 
 	static auto original = detour::getViewmodelFov.GetOriginal<decltype(&h::hkGetViewModelFov)>();
 
-	return cfg::misc::viewmodelFov;
+	return cfg::misc::iViewModelFov;
 }

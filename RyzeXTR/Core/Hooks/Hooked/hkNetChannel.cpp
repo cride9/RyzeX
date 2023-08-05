@@ -194,14 +194,14 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	INetChannelInfo* pNetChannelInfo = i::EngineClient->GetNetChannelInfo( );
 	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag"  );
 
-	if (!i::EngineClient->IsInGame() || !cfg::misc::fakePing || pDatagram != nullptr || pNetChannelInfo == nullptr || sv_maxunlag == nullptr)
+	if (!i::EngineClient->IsInGame() || !cfg::misc::bFakePing || pDatagram != nullptr || pNetChannelInfo == nullptr || sv_maxunlag == nullptr)
 		return original(thisptr, edx, pDatagram);/*detour::sendDatagram.CallOriginal<int>(ROP::EngineGadget_t::uReturnGadget, thisptr, edx, pDatagram);*/
 
 	const int iOldInReliableState = thisptr->iInReliableState;
 	const int iOldInSequenceNr = thisptr->iInSequenceNr;
 
 	// calculate max available fake latency with our real ping to keep it w/o real lags or delays
-	const float flMaxLatency = std::fmax( 0.f, std::clamp( cfg::misc::fakePingFactor / 1000.f, 0.f, 1000.f/*sv_maxunlag->GetFloat( )*/ ) - pNetChannelInfo->GetLatency( FLOW_OUTGOING ) );
+	const float flMaxLatency = std::fmax( 0.f, std::clamp( cfg::misc::flFakePingFactor / 1000.f, 0.f, 1000.f/*sv_maxunlag->GetFloat( )*/ ) - pNetChannelInfo->GetLatency( FLOW_OUTGOING ) );
 	lagcomp.AddLatencyToNetChannel( thisptr, flMaxLatency );
 
 	const int iReturn = original(thisptr, edx, pDatagram);
