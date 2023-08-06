@@ -51,6 +51,9 @@ namespace clr {
 	inline ImVec4 button_bg_active = ImColor(7, 0, 13, 125);
 	inline ImVec4 button_frame = ImColor(52, 51, 77, 0);
 	inline ImVec4 button_frame_active = ImColor(88, 86, 130, 255);
+
+	// skins
+	inline ImVec4 rarity_text[6] = { ImColor(212, 212, 212) /*1*/, ImColor(81, 141, 156) /*2*/, ImColor(35, 92, 145) /*3*/, ImColor(84, 73, 140)/*4*/, ImColor(135, 81, 156) /*5*/, ImColor(140, 53, 61) /*6*/ };
 }
 
 enum ETabs : int {

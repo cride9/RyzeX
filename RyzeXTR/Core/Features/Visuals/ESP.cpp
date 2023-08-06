@@ -1467,6 +1467,32 @@ void visual::CustomHud() {
 	i::Surface->DrawT(iScreenX * 0.87f + 15, iScreenY - 50, Color(255, 255, 255, 255), g::fonts::DebugFont, true, std::format("{}/{}", pWeapon->GetAmmo(), pWeapon->GetAmmoReserve()).c_str());
 }
 
+void visual::AutoPeekCircle() {
+
+	if (misc::vecRecord == Vector(0, 0, 0))
+		return;
+
+	float flStep = (2 * M_PI) / 64.f;
+	float flRadius = 9;
+
+	for (float rotation = 0; rotation < (M_PI * 2.0); rotation += flStep) {
+	
+		Vector pointA(flRadius * cos(rotation) + misc::vecRecord.x, flRadius * sin(rotation) + misc::vecRecord.y, misc::vecRecord.z);
+		Vector pointB(flRadius * cos(rotation + flStep) + misc::vecRecord.x, flRadius * sin(rotation + flStep) + misc::vecRecord.y, misc::vecRecord.z);
+
+		Vector vecDraw1, vecDraw2;
+		if (!i::DebugOverlay->ScreenPosition(pointA, vecDraw1)) {
+
+			if (!i::DebugOverlay->ScreenPosition(pointB, vecDraw2)) {
+
+				i::Surface->DrawSetColor(Color(cfg::model::localIdealTickColor));
+				i::Surface->DrawLine(vecDraw1.x, vecDraw1.y, vecDraw2.x, vecDraw2.y);
+			}
+		}
+
+	}
+}
+
 void visual::Hat() {
 
 	if (!cfg::misc::bHat)
@@ -1481,14 +1507,14 @@ void visual::Hat() {
 
 		for (float rotation = 0; rotation < (M_PI * 2.0); rotation += flStep) {
 
-			Vector topRim(flRadius * cos(rotation) + vecHeadPosition.x, flRadius * sin(rotation) + vecHeadPosition.y, vecHeadPosition.z + 2);
+			Vector pointA(flRadius * cos(rotation) + vecHeadPosition.x, flRadius * sin(rotation) + vecHeadPosition.y, vecHeadPosition.z + 2);
 			Vector bottomRim(flRadius / 2 * cos(rotation) + vecHeadPosition.x, flRadius / 2.f * sin(rotation) + vecHeadPosition.y, vecHeadPosition.z + 8);
 
-			Vector topRimPredict(flRadius * cos(rotation + flStep) + vecHeadPosition.x, flRadius * sin(rotation + flStep) + vecHeadPosition.y, vecHeadPosition.z + 2);
+			Vector pointB(flRadius * cos(rotation + flStep) + vecHeadPosition.x, flRadius * sin(rotation + flStep) + vecHeadPosition.y, vecHeadPosition.z + 2);
 			Vector bottomRimPredict(flRadius / 2 * cos(rotation + flStep) + vecHeadPosition.x, flRadius / 2.f * sin(rotation + flStep) + vecHeadPosition.y, vecHeadPosition.z + 8);
 
 			Vector topOnScreen, botOnScreen, topOnScreenPredict, botOnScreenPredict;
-			if (!i::DebugOverlay->ScreenPosition(topRim, topOnScreen))
+			if (!i::DebugOverlay->ScreenPosition(pointA, topOnScreen))
 			{
 				if (!i::DebugOverlay->ScreenPosition(bottomRim, botOnScreen)) {
 
@@ -1496,7 +1522,7 @@ void visual::Hat() {
 
 					i::Surface->DrawLine(topOnScreen.x, topOnScreen.y, botOnScreen.x, botOnScreen.y);
 
-					if (!i::DebugOverlay->ScreenPosition(topRimPredict, topOnScreenPredict))
+					if (!i::DebugOverlay->ScreenPosition(pointB, topOnScreenPredict))
 						i::Surface->DrawLine(topOnScreen.x, topOnScreen.y, topOnScreenPredict.x, topOnScreenPredict.y);
 
 					if (!i::DebugOverlay->ScreenPosition(bottomRimPredict, botOnScreenPredict))

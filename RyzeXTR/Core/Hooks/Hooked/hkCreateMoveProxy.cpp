@@ -15,6 +15,7 @@
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
 #include "../../SDK/InputSystem.h"
 #include <shlobj.h>
+#include "../../Features/Changers/SkinChanger.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -35,6 +36,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CBaseEntity* pLocal = g::pLocal = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	g::pCmd = pCmd;
 	g::vecEyePosition = pLocal->GetEyePosition(false);
+	skinChanger.iItemDefinitionIndex = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() : 0;
+	skinChanger.bIsKnife = pLocal->GetWeapon() ? pLocal->GetWeapon()->IsKnife() : false;
 
 	lagcomp.StartLagcompensation(pLocal);
 

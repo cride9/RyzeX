@@ -253,7 +253,7 @@ void Animations::SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw) {
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pPrevious || !pRecord)
+	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pRecord)
 		return;
 
 #ifdef NDEBUG
@@ -264,54 +264,50 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	if (!cfg::rage::bResolver)
 		return;
 
-	const int iEntityID = pEntity->EntIndex();
-	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(iEntityID);
-	if (!pLog)
-		return;
+	switch (arrMissedShots[pEntity->EntIndex()] % 3) {
 
-	static std::array<int, 65> arrMissedShotsBackup{0};
-	if (arrMissedShotsBackup[iEntityID] != arrMissedShots[iEntityID] && arrMissedShots[iEntityID] > 0) {
+	case 0: SetYaw(pRecord, RIGHT);
+		break;
 
-		switch (pLog->iLastResolve) {
+	case 1: SetYaw(pRecord, LEFT);
+		break;
 
-		case LEFT: SetYaw(pRecord, RIGHT);
-			break;
-
-		case VISUAL: SetYaw(pRecord, LEFT);
-			break;
-
-		case RIGHT: SetYaw(pRecord, VISUAL);
-			break;
-		}
-
-		arrMissedShotsBackup[iEntityID] = arrMissedShots[iEntityID];
+	case 2: SetYaw(pRecord, CENTER);
+		break;
 	}
-	else if (pPrevious->iResolveSide > 1)
-		SetYaw(pRecord, pPrevious->iResolveSide);
-	else 
-		SetYaw(pRecord, LEFT);
-	
 }
 
 void Animations::PostResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pRecord)
+	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pRecord || g::bUpdatingSkins || i::ClientState->iDeltaTick <= 0)
 		return;
 
 	const int iEntityID = pEntity->EntIndex();
 	if (arrMissedShots[iEntityID] != 0)
 		return;
 
-	int iHitLeft = autowall.GetDamage(pLocal, g::vecEyePosition, pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]), pLocal->GetWeapon());
-	int iHitRight = autowall.GetDamage(pLocal, g::vecEyePosition, pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]), pLocal->GetWeapon());
+	Ray_t rayLeft = Ray_t(g::vecEyePosition, pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT]));
+	Ray_t rayRight = Ray_t(g::vecEyePosition, pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT]));
 
-	cfg::debugSlider1 = iHitLeft;
-	cfg::debugSlider2 = iHitRight;
+	CTraceFilter filterLeft = CTraceFilter(g::pLocal);
+	CTraceFilter filterRight = CTraceFilter(g::pLocal);
+
+	Trace_t dataLeft = Trace_t();
+	Trace_t dataRight = Trace_t();
+
+	i::EngineTrace->TraceRay(rayLeft, MASK_SHOT | CONTENTS_GRATE, &filterLeft, &dataLeft);
+	i::EngineTrace->TraceRay(rayRight, MASK_SHOT | CONTENTS_GRATE, &filterRight, &dataRight);
+
+	bool bHitLeft = dataLeft.pHitEntity == pEntity;
+	bool bHitRight = dataRight.pHitEntity == pEntity;
 
 	static std::array<int, 65> iFirstHitSide{0};
 
-	if (iHitLeft < 0.f && iHitRight < 0.f) {
+	g::drawList.push_back(dataLeft.vecEnd);
+	g::drawList.push_back(dataRight.vecEnd);
+
+	if (!bHitLeft && !bHitRight) {
 		iFirstHitSide[iEntityID] = 0;
 		return;
 	}
@@ -321,10 +317,10 @@ void Animations::PostResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t
 		return;
 	}
 
-	if (iHitLeft < iHitRight)
+	if (!bHitLeft && bHitRight)
 		iFirstHitSide[iEntityID] = LEFT;
 
-	if (iHitLeft > iHitRight)
+	if (bHitLeft && !bHitRight)
 		iFirstHitSide[iEntityID] = RIGHT;
 
 	if (iFirstHitSide[iEntityID] == LEFT || iFirstHitSide[iEntityID] == RIGHT)

@@ -4,9 +4,8 @@
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
-#include "../../Features/Changers/SkinChanger.h"
-#include "../../Features/Changers/wtf.h"
 #include "../../Features/Rage/exploits.h"
+#include "../../Features/Changers/SkinChanger.h"
 
 /*
 
@@ -123,7 +122,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 	case FRAME_NET_UPDATE_END:
 		if (exploits::bBackupTickbase && g::pCmd) {
 
-			if (g::pCmd->iCommandNumber == exploits::iShiftCommand)  // Tickbase Fix for Doubletap
+			if (g::pCmd->iCommandNumber == exploits::iShiftCommand) 
 			{
 				g::pLocal->GetTickBase() = exploits::iRestoreTickbase;
 				i::GlobalVars->flCurrentTime = exploits::flRestoreCurtime;
@@ -137,7 +136,6 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START:
-		beforeIfuckUpEverything::SetSkin(pLocal);
 		break;
 
 	default:
@@ -158,7 +156,7 @@ void hkPostFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_START: // lmao
-
+		skinChanger.Run(pLocal);
 		break;
 
 	case FRAME_NET_UPDATE_POSTDATAUPDATE_END:

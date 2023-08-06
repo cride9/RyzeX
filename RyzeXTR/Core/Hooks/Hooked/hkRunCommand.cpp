@@ -20,13 +20,13 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	if (pCmd->iCommandNumber == exploits::iShiftCommand) {
 
-		pEnt->GetTickBase() = exploits::iBackupTickbase - 15 + 1;
-		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(exploits::iBackupTickbase - 15 + 1);
+		pEnt->GetTickBase() = exploits::iBackupTickbase - 15 + i::ClientState->nChokedCommands;
+		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(exploits::iBackupTickbase - 15 + i::ClientState->nChokedCommands);
 	}
 	if (pCmd->iCommandNumber == exploits::iRechargeCommand) {
 
-		pEnt->GetTickBase() = exploits::iBackupTickbase - 1;
-		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(exploits::iBackupTickbase - 1);
+		pEnt->GetTickBase() = exploits::iBackupTickbase - i::ClientState->nChokedCommands;
+		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(exploits::iBackupTickbase - i::ClientState->nChokedCommands);
 	}
 
 	original(ecx, edx, pEnt, pCmd, pMovehelper);

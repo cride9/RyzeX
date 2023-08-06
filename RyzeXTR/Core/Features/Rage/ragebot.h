@@ -34,6 +34,27 @@ struct Hitscan_t {
 	bool bHead = false;
 	bool bBaim = false;
 	bool bMiddle = false;
+
+	int GetRecordPoints() {
+
+		int iTotalPoints = 0;
+		if (bLethal && bBaim)
+			iTotalPoints++;
+
+		if (bSafe && bHead)
+			iTotalPoints++;
+
+		if (bMiddle)
+			iTotalPoints++;
+
+		if (pRecord->bDidShot)
+			iTotalPoints++;
+
+		if (!pRecord->bBreakingLagcompensation)
+			iTotalPoints++;
+
+		return iTotalPoints;
+	}
 };
 
 class CRageBot {

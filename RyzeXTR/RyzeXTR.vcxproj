@@ -131,8 +131,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\DLLMain.cpp" />
-    <ClCompile Include="Core\Features\Changers\agentchanger.cpp" />
-    <ClCompile Include="Core\Features\Changers\glovechanger.cpp" />
     <ClCompile Include="Core\Features\Changers\SkinChanger.cpp" />
     <ClCompile Include="Core\Features\Misc\enginepred.cpp" />
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
@@ -233,10 +231,7 @@
     <ClCompile Include="Dependecies\Minhook\trampoline.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Features\Changers\agentchanger.h" />
-    <ClInclude Include="Core\Features\Changers\glovechanger.h" />
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
-    <ClInclude Include="Core\Features\Changers\wtf.h" />
     <ClInclude Include="Core\Features\Misc\enginepred.h" />
     <ClInclude Include="Core\Features\Misc\misc.h" />
     <ClInclude Include="Core\Features\Misc\Playerlist.h" />

@@ -88,6 +88,8 @@ void CAutoWall::ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const fl
 void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, CTraceFilter* pFilter, Trace_t* pTrace, const float flMinRange)
 {
 	// @ida util_cliptracetoplayers: client.dll @ E8 ? ? ? ? 0F 28 84 24 68 02 00 00
+	if (i::ClientState->iDeltaTick <= 0)
+		return;
 
 	Trace_t trace = { };
 	float flSmallestFraction = pTrace->flFraction;

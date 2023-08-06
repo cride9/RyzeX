@@ -22,7 +22,7 @@ int __fastcall h::hkBaseInterpolatePart(CBaseEntity* pEntity, void* edx, float& 
 	// MoveToLastReceivedPosition -> ida: client.dll -> 55 8B EC 51 53 56 8B F1 32 DB 8B 06
 	// Disable interpolation when those conditions are met
 	if (pEntity->GetEffects() & EF_NOINTERP || 
-		//g::bSettingUpBones[pEntity->EntIndex()] || 
+		g::bSettingUpBones[pEntity->EntIndex()] || 
 		pEntity->GetSimulationTime() < pEntity->GetOldSimulationTime() || 
 		pLog->pRecord.front().flSimulationTime <= pLog->flExploitTime) {
 

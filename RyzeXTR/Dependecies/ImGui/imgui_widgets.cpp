@@ -2185,6 +2185,32 @@ bool ImGui::MultiComboBox(const char* label, const char* items[], bool* selectab
 	return true;
 }
 
+bool ImGui::MultiComboBox(const char* label, const char* items[], bool* selectableItems, float(*color)[4], int size) {
+
+    std::string preview = "";
+    for (size_t i = 0; i < size; i++) {
+        if (selectableItems[i]) {
+            preview += items[i];
+            preview += ", ";
+        }
+    }
+    if (preview.size() >= 2) {
+
+        preview.pop_back();
+        preview.pop_back();
+    }
+    if (ImGui::BeginCombo(label, preview != "" ? preview.c_str() : "None", ImGuiComboFlags_NoArrowButton)) {
+
+        for (size_t i = 0; i < size; i++) {
+
+            ImGui::Selectable(items[i], &selectableItems[i], ImGuiSelectableFlags_DontClosePopups, ImVec2(GetContentRegionAvail().x - 30, 0));
+            ImGui::ColorEdit4(std::format("##coloritem{}", items[i]).c_str(), color[i], false);
+        }
+        ImGui::EndCombo();
+    }
+    return true;
+}
+
 // Combo box helper allowing to pass an array of strings.
 bool ImGui::Combo(const char* label, int* current_item, const char* const items[], int items_count, int height_in_items)
 {
@@ -3345,9 +3371,11 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
 
         // label text
         SameLine(GetContentRegionAvail().x - label_size.x);
-
-		RenderText(GetWindowPos() + GetCursorPos(), label);
-		Spacing();
+        RenderText(ImVec2(GetWindowPos().x + GetCursorPos().x, frame_bb.Min.y + style.FramePadding.y), label);
+        Spacing();
+        //SameLine(GetContentRegionAvail().x - label_size.x);
+		//RenderText(GetWindowPos() + GetCursorPos(), label);
+		//Spacing();
     }
     PopStyleColor();
 
@@ -3423,6 +3451,7 @@ bool ImGui::SliderAngle(const char* label, float* v_rad, float v_degrees_min, fl
 
 bool ImGui::SliderInt(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
+    flags |= ImGuiSliderFlags_NoInput;
     return SliderScalar(label, ImGuiDataType_S32, v, &v_min, &v_max, format, flags);
 }
 
@@ -6982,6 +7011,19 @@ bool ImGui::ListBoxVector(const char* label, int* currIndex, std::vector<std::st
         static_cast<void*>(&values), values.size(), heightInItems);
 }
 
+bool ImGui::ListBoxVectorSkin(const char* label, int* currIndex, std::vector<std::string>& values, std::vector<int> rarity, int heightInItems) noexcept {
+
+    static auto vector_getter = [](void* vec, int idx, const char** outText) noexcept {
+        auto& vector = *static_cast<std::vector<std::string>*>(vec);
+        if (idx < 0 || idx >= static_cast<int>(vector.size())) { return false; }
+        *outText = vector.at(idx).c_str();
+        return true;
+    };
+
+    if (values.empty()) { return false; }
+    return ListBoxSkin(label, currIndex, vector_getter,
+        static_cast<void*>(&values), values.size(), rarity, heightInItems);
+}
 
 // This is merely a helper around BeginListBox(), EndListBox().
 // Considering using those directly to submit custom data or store selection differently.
@@ -7021,6 +7063,57 @@ bool ImGui::ListBox(const char* label, int* current_item, bool (*items_getter)(v
             }
 			PopStyleVar();
 			if (item_selected)
+                SetItemDefaultFocus();
+            PopID();
+        }
+    EndListBox();
+
+    if (value_changed)
+        MarkItemEdited(g.LastItemData.ID);
+
+    return value_changed;
+}
+
+bool ImGui::ListBoxSkin(const char* label, int* current_item, bool (*items_getter)(void*, int, const char**), void* data, int items_count, std::vector<int> rarity, int height_in_items)
+{
+    ImGuiContext& g = *GImGui;
+
+    // Calculate size from "height_in_items"
+    if (height_in_items < 0)
+        height_in_items = ImMin(items_count, 7);
+    float height_in_items_f = height_in_items + 0.25f;
+    ImVec2 size(0.0f, ImFloor(GetTextLineHeightWithSpacing() * height_in_items_f + g.Style.FramePadding.y * 2.0f));
+
+    if (!BeginListBox(label, size))
+        return false;
+
+    // Assume all items have even height (= 1 line of text). If you need items of different height,
+    // you can create a custom version of ListBox() in your code without using the clipper.
+    bool value_changed = false;
+    ImGuiListClipper clipper;
+    clipper.Begin(items_count, GetTextLineHeightWithSpacing()); // We know exactly our line height here so we pass it as a minor optimization, but generally you don't need to.
+    Spacing();
+    while (clipper.Step())
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+        {
+            const char* item_text;
+            if (!items_getter(data, i, &item_text))
+                item_text = "*Unknown item*";
+
+            PushID(i);
+            const bool item_selected = (i == *current_item);
+            PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0.0f));
+            ImVec4 backup[2] = { clr::text_selectable, clr::text_off };
+            clr::text_selectable = clr::text_off = clr::rarity_text[rarity.at(i) - 1];
+            if (Selectable(item_text, item_selected))
+            {
+                *current_item = i;
+                value_changed = true;
+            }
+            PopStyleVar();
+            clr::text_selectable = backup[0];
+            clr::text_off = backup[1];
+            if (item_selected)
                 SetItemDefaultFocus();
             PopID();
         }

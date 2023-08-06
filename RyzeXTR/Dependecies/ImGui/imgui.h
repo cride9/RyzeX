@@ -527,6 +527,7 @@ namespace ImGui
     IMGUI_API bool          BeginCombo(const char* label, const char* preview_value, ImGuiComboFlags flags = 0, float labelposx = 0.f);
     IMGUI_API void          EndCombo();
     IMGUI_API bool          MultiComboBox(const char* label, const char* items[], bool* selectableItems, int size);
+    IMGUI_API bool          MultiComboBox(const char* label, const char* items[], bool* selectableItems, float(*color)[4], int size);
     // only call EndCombo() if BeginCombo() returns true!
     IMGUI_API bool          Combo(const char* label, int* current_item, const char* const items[], int items_count, int popup_max_height_in_items = -1);
     IMGUI_API bool          Combo(const char* label, int* current_item, const char* items_separated_by_zeros, int popup_max_height_in_items = -1);      // Separate items with \0 within a string, end item-list with \0\0. e.g. "One\0Two\0Three\0"
@@ -642,7 +643,9 @@ namespace ImGui
     IMGUI_API void          EndListBox();                                                       // only call EndListBox() if BeginListBox() returned true!
     IMGUI_API bool          ListBox(const char* label, int* current_item, const char* const items[], int items_count, int height_in_items = -1);
     IMGUI_API bool          ListBox(const char* label, int* current_item, bool (*items_getter)(void* data, int idx, const char** out_text), void* data, int items_count, int height_in_items = -1);
+    IMGUI_API bool          ListBoxSkin(const char* label, int* current_item, bool (*items_getter)(void* data, int idx, const char** out_text), void* data, int items_count, std::vector<int> rarity, int height_in_items = -1);
     IMGUI_API bool          ListBoxVector(const char* label, int* currIndex, std::vector<std::string>& values, int heightInItems = -1) noexcept;
+    IMGUI_API bool          ListBoxVectorSkin(const char* label, int* currIndex, std::vector<std::string>& values, std::vector<int> rarity, int heightInItems = -1) noexcept;
     // Widgets: Data Plotting
     // - Consider using ImPlot (https://github.com/epezent/implot) which is much better!
     IMGUI_API void          PlotLines(const char* label, const float* values, int values_count, int values_offset = 0, const char* overlay_text = NULL, float scale_min = FLT_MAX, float scale_max = FLT_MAX, ImVec2 graph_size = ImVec2(0, 0), int stride = sizeof(float));

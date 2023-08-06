@@ -122,7 +122,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 
 #if NDEBUG || ALPHA
 
-	while (true)
+	while (true && !cfg::bDoUnload)
 		Sleep(5000);
 #endif
 

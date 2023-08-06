@@ -52,11 +52,12 @@ void misc::SetupRadio( )
 	while (!bShouldDisable)
 	{
 #ifdef NDEBUG
-
+		if (cfg::bDoUnload)
+			bShouldDisable = true;
 #endif
 
 #ifdef _DEBUG
-		if (GetAsyncKeyState(VK_DELETE))
+		if (GetAsyncKeyState(VK_DELETE) || cfg::bDoUnload)
 			bShouldDisable = true;
 #endif
 		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
@@ -78,7 +79,7 @@ void misc::SetupRadio( )
 			BASS_SET_VOLUME( BASS::stream_handle,
 				IPT::HandleInput( cfg::misc::iRadioMuteHotKey ) || !cfg::misc::bEnableRadio
 				? 0.f
-				: cfg::misc::flRadioVolume / 100.f );
+				: cfg::misc::flRadioVolume / 200.f );
 			BASS_PLAY_STREAM( );
 		}
 		else if ( BASS::bass_init )
@@ -304,7 +305,6 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 			bPositionSet = true;
 			vecOrigin = pLocal->GetVecOrigin();
 			vecRecord = vecOrigin;
-			pLocal->SetupBones(matrixRecord, 128, 0, i::GlobalVars->flCurrentTime);
 		}
 
 		if (pCmd->iButtons & IN_ATTACK && antiaim::ShouldDisableAntiaim(pCmd, *g::bSendPacket) || bTeleportBack)
@@ -314,7 +314,7 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 		bPositionSet = false;
 		vecOrigin = Vector(0, 0, 0);
-		vecRecord = vecOrigin;
+		vecRecord = Vector(0, 0, 0);
 	}
 
 	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && IPT::HandleInput(cfg::antiaim::iAutoPeek) && bRetreat) {
@@ -528,7 +528,7 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
 	// play hit sound
 	if ( cfg::misc::iHitSound == 1 ) {
-		i::EngineSoundClient->EmitAmbientSound(XorStr("buttons\\arena_switch_press_02.wav"), cfg::misc::flHitSoundVolume / 100.f);
+		i::EngineSoundClient->EmitAmbientSound("buttons\\arena_switch_press_02.wav", cfg::misc::flHitSoundVolume / 100.f);
 		// physics\\metal\\paintcan_impact_hard3.wav
 	}
 	else if ( cfg::misc::iHitSound == 2 && !cfg::misc::szWavPath.empty( ) ) {
@@ -556,7 +556,7 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
 			CWavParser::WavHeader_t header;
 			header.ParseWavHeader( m_pParsedHitsound );
-			wavparser.AdjustWavVolume( header, ( cfg::misc::flHitSoundVolume / 200.f ) );
+			wavparser.AdjustWavVolume( header, ( cfg::misc::flHitSoundVolume / 100.f ) );
 		}
 		// play the sound.
 		if ( m_pParsedHitsound ) {

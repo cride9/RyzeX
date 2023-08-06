@@ -34,6 +34,7 @@ namespace visual {
 	void WorldLightning(Color);
 	void CustomHud();
 	void Hat();
+	void AutoPeekCircle();
 
     void CrossHair();
 

@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "../../Features/Rage/antiaim.h"
+#include "../../Features/Changers/SkinChanger.h"
 
 void menu::HandleMenuElements() noexcept {
 
@@ -50,10 +51,22 @@ void menu::HandleMenuElements() noexcept {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.f, 10.f));
 
         ImGui::Spacing();
-        ImGui::SetCursorPos(ImVec2(savedCursorPosition.x - ImGui::GetStyle().WindowPadding.x, savedCursorPosition.y + ImGui::GetWindowHeight() - 25));
+        ImGui::SetCursorPos(ImVec2(savedCursorPosition.x - ImGui::GetStyle().WindowPadding.x + 1, savedCursorPosition.y + ImGui::GetWindowHeight() - 25));
         menu::DrawCustomChildRounding(("##BotmBar"), ImVec2(ImGui::GetContentRegionAvail().x, 25), true, 0, ImDrawCornerFlags_BotRight);
         {
-            menu::Text(("2023 - RyzeX"), 1.05f);
+            ImGui::PushStyleColor(ImGuiCol_Text, clr::text_off);
+#ifdef _DEBUG
+            ImGui::Text("Developer");
+#endif
+#ifdef ALPHA
+            ImGui::Text("Alpha");
+#endif
+#ifdef RELEASE
+            ImGui::Text("User");
+#endif
+            ImGui::SameLine();
+            menu::Text(("2023 - RyzeX"), 1.0f);
+            ImGui::PopStyleColor();
         }
         ImGui::EndChild();
 
@@ -108,12 +121,12 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         {
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.f);
             ImVec2 size = ImVec2((ImGui::GetContentRegionAvail().x - 5 * 9) / 7.f, ImGui::GetContentRegionAvail().y + ImGui::GetStyle().WindowPadding.y);
-            if (ImGui::Button(("A##2"), size, iSelect == PISTOL))
-                iSelect = PISTOL;
+            if (ImGui::Button(("A##2"), size, iSelect == HEAVY_PISTOL))
+                iSelect = HEAVY_PISTOL;
             ImGui::SameLine();
 
-            if (ImGui::Button(("B##2"), size, iSelect == HEAVY_PISTOL))
-                iSelect = HEAVY_PISTOL;
+            if (ImGui::Button(("B##2"), size, iSelect == PISTOL))
+                iSelect = PISTOL;
             ImGui::SameLine();
 
             if (ImGui::Button(("F##2"), size, iSelect == SCOUT))
@@ -128,8 +141,8 @@ void menu::Rage(ImVec2 savedCursorPosition) {
                 iSelect = AUTO;
             ImGui::SameLine();
 
-            if (ImGui::Button(("G##2"), size, iSelect == ZEUS))
-                iSelect = ZEUS;
+            if (ImGui::Button(("E##2"), size, iSelect == OTHER))
+                iSelect = OTHER;
             ImGui::PopFont();
 
             ImGui::SameLine();
@@ -196,8 +209,10 @@ void menu::Rage(ImVec2 savedCursorPosition) {
 
         ImGui::Checkbox(("Auto stop"), &bAutostop[iSelect]);
         if (bAutostop[iSelect]) {
-            bool bConditionsarray[] = { bConditions[iSelect][0], bConditions[iSelect][1] };
-            ImGui::MultiComboBox(("Condition"), arrConditionNames, bConditionsarray, IM_ARRAYSIZE(arrConditionNames));
+            bool* bConditionsarray[] = { &bConditions[iSelect][0], &bConditions[iSelect][1] };
+            ImGui::MultiComboBox(("Condition"), arrConditionNames, *bConditionsarray, IM_ARRAYSIZE(arrConditionNames));
+            static const char* autoStopPhases[] = { "Disabled", "Slight", "Normal", "Aggressive" };
+            ImGui::Combo("Predict", &bAutostopAggressiveness[iSelect], autoStopPhases, IM_ARRAYSIZE(autoStopPhases));
         }
         if (iSelect < 3) {
 
@@ -289,6 +304,10 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
                 ImGui::SameLine();
                 if (ImGui::Button(("Remove way##1"), ImVec2(ImGui::GetContentRegionAvail().x, 20)) && iEnabledJitters[STANDING] > 0)
                     iEnabledJitters[STANDING]--;
+
+                for (size_t i = 0; i < iEnabledJitters[STANDING]; i++)
+                    ImGui::SliderInt(std::format("{} way", i).c_str(), &vecJitterWays[STANDING].at(i), -180, 180);
+
             }
             ImGui::Checkbox(("Invert on shot"), &bInvertOnShoot[iSelect]);
             ImGui::Combo(("Freestand"), &iFreestand[iSelect], arrFreestands, IM_ARRAYSIZE(arrFreestands));
@@ -330,11 +349,17 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
         ImGui::SliderFloat(("Speed"), &iFakeWalkSpeed, 0, 100, ("%.f"));
         ImGui::Checkbox(("Fakeduck"), &bFakeDuck);
         ImGui::Keybind(("##iFakeDuckKey"), &iFakeDuckKey);
+
+        ImGui::Checkbox("Auto peek", &bAutoPeek);
+        ImGui::ColorEdit4("##localIdealTickColor", cfg::model::localIdealTickColor, true);
+        ImGui::Keybind("##iAutoPeek", &iAutoPeek);
     }
     ImGui::EndChild();
 }
 
 void menu::Visual(ImVec2 savedCursorPosition) {
+
+    using namespace cfg::visual;
 
     static int iSelect = 0;
     static const char* arrFlagNames[] = {("Name"), ("Health"), ("Armor"), ("Ammo"), ("Money"), ("Weapon"), ("Resolver"), ("Fakeduck"), ("Aimbot")};
@@ -384,7 +409,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
     {
         using namespace cfg::visual;
         ImGui::Checkbox(("Enable##0"), &bEnable[iSelect]);
-        ImGui::Checkbox(("Bounding bBox"), &bBox[iSelect]);
+        ImGui::Checkbox(("Bounding box"), &bBox[iSelect]);
         ImGui::ColorEdit4(("##flBoxColor"), flBoxColor[iSelect]);
 
         ImGui::Checkbox(("Health bar"), &bHealth[iSelect]);
@@ -418,7 +443,8 @@ void menu::Visual(ImVec2 savedCursorPosition) {
                 ImGui::SliderInt(("Size"), &cfg::misc::iOOFSize, 1, 30);
             }
         }
-        ImGui::MultiComboBox(("Flags"), arrFlagNames, bFlags[iSelect], IM_ARRAYSIZE(arrFlagNames));
+
+        ImGui::MultiComboBox(("Flags"), arrFlagNames, bFlags[iSelect], flFlagsColor[iSelect], IM_ARRAYSIZE(arrFlagNames));
     }
     ImGui::EndChild();
 
@@ -427,23 +453,23 @@ void menu::Visual(ImVec2 savedCursorPosition) {
     {
         using namespace cfg::model;
         // normal
+        ImGui::Combo(("Material"), &iType[iSelect], arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
         ImGui::Checkbox(("Player"), &bChams[iSelect]);
-        ImGui::SameLine();
-        ImGui::Checkbox(("Wireframe##1"), &bXhair[iSelect]);
+        //ImGui::SameLine();
+        //ImGui::Checkbox(("Wireframe##1"), &bXhair[iSelect]);
         ImGui::ColorEdit4(("##ChamsColor"), ChamsColor[iSelect]);
 
         ImGui::Checkbox(("Player behind wall"), &bChamsXQZ[iSelect]);
-        ImGui::SameLine();
-        ImGui::Checkbox(("Wireframe##2"), &bXhairXQZ[iSelect]);
+        //ImGui::SameLine();
+        ////ImGui::Checkbox(("Wireframe##2"), &bXhairXQZ[iSelect]);
         ImGui::ColorEdit4(("##ChamsColorXQZ"), ChamsColorXQZ[iSelect]);
-        ImGui::Combo(("Material"), &iType[iSelect], arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
 
         if (iSelect == ENEMY) {
 
             ImGui::Checkbox(("Backtrack"), &enemyBTEnable);
             if (enemyBTEnable) {
-                ImGui::SameLine();
-                ImGui::Checkbox(("WireFrame##9"), &enemyBTXhair);
+                //ImGui::SameLine();
+                //ImGui::Checkbox(("WireFrame##9"), &enemyBTXhair);
                 ImGui::ColorEdit4(("##enemyBTColor"), enemyBTColor);
                 ImGui::Combo(("Material##5"), &enemyBTType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
             }
@@ -451,9 +477,9 @@ void menu::Visual(ImVec2 savedCursorPosition) {
         else if (iSelect == LOCAL) {
 
             ImGui::Checkbox(("Desync"), &localDesync);
-            if (enemyBTEnable) {
-                ImGui::SameLine();
-                ImGui::Checkbox(("WireFrame##9"), &localDesyncXhair);
+            if (localDesync) {
+                //ImGui::SameLine();
+                //ImGui::Checkbox(("WireFrame##9"), &localDesyncXhair);
                 ImGui::ColorEdit4(("##localDesyncColor"), localDesyncColor);
                 ImGui::Combo(("Material##4"), &localDesyncType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
             }
@@ -466,43 +492,47 @@ void menu::Visual(ImVec2 savedCursorPosition) {
         case 0:
             // overlay
             ImGui::Checkbox(("Overlay##1"), &bOverlay[iSelect]);
-            ImGui::SameLine();
-            ImGui::Checkbox(("Wireframe##7"), &bOverlayXhair[iSelect]);
+            //ImGui::SameLine();
+            //ImGui::Checkbox(("Wireframe##7"), &bOverlayXhair[iSelect]);
             ImGui::ColorEdit4(("##OverlayColor"), OverlayColor[iSelect]);
 
             ImGui::Checkbox(("Overlay behind wall##1"), &bOverlayXQZ[iSelect]);
-            ImGui::SameLine();
-            ImGui::Checkbox(("Wireframe##8"), &bOverlayXhairXQZ[iSelect]);
+            //ImGui::SameLine();
+            //ImGui::Checkbox(("Wireframe##8"), &bOverlayXhairXQZ[iSelect]);
             ImGui::ColorEdit4(("##OverlayColorXQZ"), OverlayColorXQZ[iSelect]);
             break;
 
         case 1:
             // thin
             ImGui::Checkbox(("Overlay##2"), &bThinOverlay[iSelect]);
-            ImGui::SameLine();
-            ImGui::Checkbox(("Wireframe##3"), &bThinOverlayXhair[iSelect]);
+            //ImGui::SameLine();
+            //ImGui::Checkbox(("Wireframe##3"), &bThinOverlayXhair[iSelect]);
             ImGui::ColorEdit4(("##ThinOverlayColor"), ThinOverlayColor[iSelect]);
 
             ImGui::Checkbox(("Overlay behind wall##2"), &bThinOverlayXQZ[iSelect]);
-            ImGui::SameLine();
-            ImGui::Checkbox(("Wireframe##4"), &bThinOverlayXhairXQZ[iSelect]);
+            //ImGui::SameLine();
+            //ImGui::Checkbox(("Wireframe##4"), &bThinOverlayXhairXQZ[iSelect]);
             ImGui::ColorEdit4(("##ThinOverlayColorXQZ"), ThinOverlayColorXQZ[iSelect]);
             break;
 
         case 2:
             // animated
             ImGui::Checkbox(("Overlay##3"), &bAnimOverlay[iSelect]);
-            ImGui::SameLine();
-            ImGui::Checkbox(("Wireframe##5"), &bAnimOverlayXhair[iSelect]);
+            //ImGui::SameLine();
+            //ImGui::Checkbox(("Wireframe##5"), &bAnimOverlayXhair[iSelect]);
             ImGui::ColorEdit4(("##AnimOverlayColor"), AnimOverlayColor[iSelect]);
 
             ImGui::Checkbox(("Overlay behind wall##3"), &bAnimOverlayXQZ[iSelect]);
-            ImGui::SameLine();
-            ImGui::Checkbox(("Wireframe##6"), &bAnimOverlayXhairXQZ[iSelect]);
+            //ImGui::SameLine();
+            //ImGui::Checkbox(("Wireframe##6"), &bAnimOverlayXhairXQZ[iSelect]);
             ImGui::ColorEdit4(("##AnimOverlayColorXQZ"), AnimOverlayColorXQZ[iSelect]);
             break;
         }
 
+        static const char* arrNames[] = { "Normal", "Behind wall", "Overlay", "Overlay behind wall", "Thin", "Thin behind wall", "Animated", "Animated behind wall" };
+        bool* bWireFrames[] = { &bXhair[iSelect], &bXhair[iSelect], &bOverlayXhair[iSelect], &bOverlayXhairXQZ[iSelect], &bThinOverlayXhair[iSelect], &bThinOverlayXhairXQZ[iSelect], &bAnimOverlayXhair[iSelect], &bAnimOverlayXhairXQZ[iSelect] };
+        
+        ImGui::MultiComboBox("Wireframe##selectables", arrNames, *bWireFrames, IM_ARRAYSIZE(bWireFrames));
     }
     ImGui::EndChild();
 
@@ -516,19 +546,19 @@ void menu::Visual(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Always draw viewmodel"), &bOnScopeViewmodel);
 
         ImGui::Checkbox(("Dropped weapons"), &bDroppedWeaponESP);
-        ImGui::ColorEdit4(("##flProjectileESP"), flProjectileESP);
-
-        ImGui::Checkbox(("Projectile"), &bProjectileESP);
         ImGui::ColorEdit4(("##flDroppedWeaponESP"), flDroppedWeaponESP);
 
-        ImGui::Checkbox(("Bullet Impact"), &bDrawCapsule);
+        ImGui::Checkbox(("Projectile"), &bProjectileESP);
+        ImGui::ColorEdit4(("##flProjectileESP"), flProjectileESP);
+
+        ImGui::Checkbox(("Bullet Impact"), &bBulletImpact);
         ImGui::ColorEdit4(("##flImpactColor1"), flImpactColor[0], true);
         ImGui::ColorEdit4(("##flImpactColor2"), flImpactColor[1]);
 
         ImGui::Checkbox(("World crosshair"), &bWorldCrosshair);
         ImGui::ColorEdit4(("##flWorldCrosshairColor"), flWorldCrosshairColor);
 
-        ImGui::Checkbox(("Capsule on hit"), &bProjectileESP);
+        ImGui::Checkbox(("Capsule on hit"), &bDrawCapsule);
         ImGui::ColorEdit4(("##flDrawCapsuleColor"), flDrawCapsuleColor, true);
         ImGui::ColorEdit4(("##flDrawCapsuleColorHit"), flDrawCapsuleColorHit);
 
@@ -644,32 +674,6 @@ void menu::Misc(ImVec2 savedCursorPosition) {
 
         ImGui::Checkbox(("Filter logs"), &bOnlyCheatlog);
 
-        static const char* arrHitSoundOptions[] = { ("None"), ("Default"), ("Custom") };
-        ImGui::Combo(("Hitsound"), &iHitSound, arrHitSoundOptions, IM_ARRAYSIZE(arrHitSoundOptions));
-        if (iHitSound == 2) {
-
-            static int soundItemCurrent1 = -1;
-            static std::string soundItem;
-            if (ImGui::ListBoxVector(("##soundFiles"), &soundItemCurrent1, Config2->vecSoundFileNames, 5)) {
-
-                soundItem = Config2->vecSoundFileNames[soundItemCurrent1];
-                cfg::misc::szWavPath = std::filesystem::path(Config2->SoundPath.c_str() + soundItem).string();
-            }
-
-            if (ImGui::Button(("Refresh"), ImVec2(ImGui::GetContentRegionAvail().x, -1), true, true))
-                Config2->RefreshSounds();
-        }
-
-        ImGui::Checkbox(("Radio"), &bEnableRadio);
-        ImGui::Keybind(("##iRadioMuteHotKey"), &iRadioMuteHotKey);
-
-        if (bEnableRadio) {
-            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::SliderFloat(("Volume"), &flRadioVolume, 0.f, 100.f, ("%.1f%%"));
-            ImGui::ListBox(("##Radio"), &iRadioStation, arrRadios, IM_ARRAYSIZE(arrRadios));
-            ImGui::PopItemWidth();
-        }
-
         for (size_t i = 0; i < 65; i++) {
             if (playerList::arrPlayers[i].bLocalPlayer) {
                 if (playerList::arrPlayers[i].teamID == TEAM_TT) {
@@ -713,12 +717,48 @@ void menu::Misc(ImVec2 savedCursorPosition) {
     ImGui::SetCursorPos(NextWindowCursor);
     ImGui::BeginChild("##BotRight", ImVec2(ImGui::GetContentRegionAvail().x - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
+        if (bKeyBindList) {
+            static const char* options[] = { "Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping" };
+            ImGui::MultiComboBox("Keybinds", options, cfg::misc::iKeyBindList, IM_ARRAYSIZE(options));
+        }
 
+        static const char* arrHitSoundOptions[] = { ("None"), ("Default"), ("Custom") };
+        ImGui::Combo(("Hitsound##combo"), &iHitSound, arrHitSoundOptions, IM_ARRAYSIZE(arrHitSoundOptions));
+        if (iHitSound == 2) {
+
+            ImGui::SliderFloat("Volume##123", &flHitSoundVolume, 0.f, 100.f, "%.2f");
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            static int soundItemCurrent1 = -1;
+            static std::string soundItem;
+            if (ImGui::ListBoxVector(("##soundFiles"), &soundItemCurrent1, Config2->vecSoundFileNames, 5)) {
+
+                soundItem = Config2->vecSoundFileNames[soundItemCurrent1];
+                cfg::misc::szWavPath = std::filesystem::path(Config2->SoundPath.c_str() + soundItem).string();
+            }
+
+            if (ImGui::Button(("Refresh"), ImVec2(ImGui::GetContentRegionAvail().x, 20), true, true))
+                Config2->RefreshSounds();
+            ImGui::PopItemWidth();
+        }
+
+        ImGui::Checkbox(("Radio"), &bEnableRadio);
+        ImGui::Keybind(("##iRadioMuteHotKey"), &iRadioMuteHotKey);
+
+        if (bEnableRadio) {
+            ImGui::SliderFloat(("Volume"), &flRadioVolume, 0.f, 100.f, ("%.1f%%"));
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::ListBox(("##Radio"), &iRadioStation, arrRadios, IM_ARRAYSIZE(arrRadios));
+            ImGui::PopItemWidth();
+        }
     }
     ImGui::EndChild();
 }
 
 void menu::Skins(ImVec2 savedCursorPosition) {
+
+    using namespace cfg::skin;
+    static const char* arrKnifeModels[] = { "Default", "Bayonet", "M9-Bayonet", "Karambit", "Bowie", "Butterfly", "Falchion", "Flip", "Gut", "Huntsman", "Shadow daggers", "Navaja", "Stiletto", "Talon", "Ursus", "Paracord", "Survival", "Nomad", "Skeleton", "Classic" };
+    static const char* arrGloveModels[] = { "Default", "Bloodhound", "Sport", "Slick", "Handwraps", "Motorcycle", "Specialist", "Hydra", "Broken Fang" };
 
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x + 1);
     menu::DrawCustomChildRounding(("##TopBar"), ImVec2(ImGui::GetContentRegionAvail().x, 80), true, 0, ImDrawCornerFlags_TopRight);
@@ -740,7 +780,78 @@ void menu::Skins(ImVec2 savedCursorPosition) {
     ImVec2 TopLeftSize = ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f);
     ImGui::BeginChild("##LeftWhole", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
+        static short iBackupItemDefinitionIndex = 0;
+        static std::vector<std::string> vecSkinNames;
+        static std::vector<int> vecSkinRarity;
+        static std::vector<int> vecPaintKit;
 
+        static std::string_view szSearchWord = "";
+        static char buf[255]{};
+        ImGui::InputText(("Search"), buf, sizeof(buf));
+
+        szSearchWord = std::string_view(buf);
+
+        static std::string_view szBackup = szSearchWord;
+        if (iBackupItemDefinitionIndex != skinChanger.iItemDefinitionIndex || szBackup != szSearchWord) {
+
+            szBackup = szSearchWord;
+            vecSkinNames.clear(); vecSkinRarity.clear(); vecPaintKit.clear();
+            vecSkinNames.push_back("None");
+            vecSkinRarity.push_back(1);
+            vecPaintKit.push_back(0);
+            for (SkinKit_t& it : skinChanger.SkinKits) {
+                
+                if (std::string_view cur = it.m_szName; szSearchWord != "") {
+
+                    auto it = std::search(cur.begin(), cur.end(),
+                        szSearchWord.begin(), szSearchWord.end(), [](char a, char b) {
+                            return std::tolower(a) == std::tolower(b);
+                        });
+
+                    if (it == cur.end())
+                        continue;
+                }
+
+                if (bFilterByWeapon) {
+
+                    if (it.m_iWeaponID != skinChanger.iItemDefinitionIndex && !skinChanger.bIsKnife)
+                        continue;
+
+                    if (skinChanger.bIsKnife && it.m_iWeaponID != 0)
+                        continue;
+                }
+
+                vecSkinNames.push_back(it.m_szName);
+                vecSkinRarity.push_back(it.m_nRarity);
+                vecPaintKit.push_back(it.m_nID);
+            }
+            iBackupItemDefinitionIndex = skinChanger.iItemDefinitionIndex;
+        }
+        int iMenuID = skinChanger.GetMenuFromId(skinChanger.iItemDefinitionIndex);
+
+        if (!vecSkinNames.empty()) {
+
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            static int iCurrentIndex[37]{ 0 };
+            for (size_t i = 0; i < 37; i++) {
+                auto it = std::find(vecPaintKit.begin(), vecPaintKit.end(), iSkinId[i]);
+                if (it != vecPaintKit.end())
+                    iCurrentIndex[i] = std::distance(vecPaintKit.begin(), it);
+            }
+            ImGui::ListBoxVectorSkin("##skins", &iCurrentIndex[iMenuID], vecSkinNames, vecSkinRarity, 20);
+            if (ImGui::Button("Force Update", ImVec2(ImGui::GetContentRegionAvail().x, 25), true, true))
+                skinChanger.bshouldFullUpdate = true;
+
+            ImGui::PopItemWidth();
+
+            if (vecPaintKit.size() > iCurrentIndex[iMenuID])
+            {
+                if (iSkinId[iMenuID] != vecPaintKit.at(iCurrentIndex[iMenuID]) && iMenuID != 35) {
+                    skinChanger.bshouldFullUpdate = true;
+                    iSkinId[iMenuID] = vecPaintKit.at(iCurrentIndex[iMenuID]);
+                }
+            }
+        }
     }
     ImGui::EndChild();
 
@@ -748,14 +859,77 @@ void menu::Skins(ImVec2 savedCursorPosition) {
     ImVec2 NextWindowCursor = ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPosY() + ImGui::GetContentRegionAvail().y * 0.7f - 25.f);
     ImGui::BeginChild("##TopRight", ImVec2(ImGui::GetContentRegionAvail().x - Padding.x, ImGui::GetContentRegionAvail().y * 0.7f - Padding.y - 25.f), true);
     {
+        int iMenuID = skinChanger.GetMenuFromId(skinChanger.iItemDefinitionIndex);
 
+        ImGui::Checkbox("Enable##2", &bEnableSkinChanger);
+        ImGui::Checkbox("Filter by weapon##2", &bFilterByWeapon);
+
+        ImGui::SliderFloat("Wear", &flSkinWear[iMenuID], 0.f, 100.f, "%.4f");
+        ImGui::SliderInt("Stattrak", &iSkinStattrak[iMenuID], 0, 2500);
+        ImGui::SliderInt("Seed", &iSeed[iMenuID], 0, 1000);
+
+        static char nameTagBuffer[37][255]{};
+        ImGui::InputText(("Name tag"), nameTagBuffer[iMenuID], sizeof(nameTagBuffer));
+        szSkinNametag[iMenuID] = nameTagBuffer[iMenuID];
+
+        //ImGui::Checkbox("Skin color", &bModifySkinColors[iMenuID]);
+        //if (bModifySkinColors[iMenuID]) {
+
+        //    ImGui::Text("Color 1:");
+        //    ImGui::ColorEdit4("##color1", colSkins1[iMenuID]);
+
+        //    ImGui::Text("Color 2:");
+        //    ImGui::ColorEdit4("##color2", colSkins2[iMenuID]);
+
+        //    ImGui::Text("Color 3:");
+        //    ImGui::ColorEdit4("##color3", colSkins3[iMenuID]);
+
+        //    ImGui::Text("Color 4:");
+        //    ImGui::ColorEdit4("##color4", colSkins4[iMenuID]);
+        //}
     }
     ImGui::EndChild();
 
     ImGui::SetCursorPos(NextWindowCursor);
     ImGui::BeginChild("##BotRight", ImVec2(ImGui::GetContentRegionAvail().x - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
+        int iMenuID = skinChanger.GetMenuFromId(skinChanger.iItemDefinitionIndex);
 
+        int iSelectedKnifeModel = iKnifeModel;
+        ImGui::Combo("Knife", &iKnifeModel, arrKnifeModels, IM_ARRAYSIZE(arrKnifeModels));
+        skinChanger.bshouldFullUpdate = iSelectedKnifeModel != iKnifeModel ? true : skinChanger.bshouldFullUpdate;
+
+        int iSelectedGloveModel = iGloveModel;
+        ImGui::Combo("Glove", &iGloveModel, arrGloveModels, IM_ARRAYSIZE(arrGloveModels));
+        skinChanger.bshouldFullUpdate = iSelectedGloveModel != iGloveModel ? true : skinChanger.bshouldFullUpdate;
+
+        static std::vector<const char*> vecGloveNames;
+        static std::vector<int> vecPaintKit;
+
+        static const char* arrGloveModelSearch[] = { "Default", "Bloodhound", "Sport", "Driver", "Wrap", "Moto", "Specialist", "Bloodhound", "Broken Fang" };
+        
+        std::string_view otherString = arrGloveModelSearch[iGloveModel];
+        vecGloveNames.clear(); vecPaintKit.clear();
+        for (SkinKit_t& it : skinChanger.GloveKits) {
+
+            std::string_view searchString = it.m_szName;
+            if (searchString.find(otherString) != std::string_view::npos) {
+
+                vecGloveNames.push_back(it.m_szName.c_str());
+                vecPaintKit.push_back(it.m_nID);
+            }
+        }
+        
+        if (!vecGloveNames.empty()) {
+
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+            static int iSelectedGlove;
+            ImGui::Combo("##yes", &iSelectedGlove, vecGloveNames.data(), vecGloveNames.size());
+            skinChanger.bshouldFullUpdate = vecPaintKit.at(iSelectedGlove) != iSkinId[35] ? true : skinChanger.bshouldFullUpdate;
+            iSkinId[35] = vecPaintKit.at(iSelectedGlove);
+
+            ImGui::PopItemWidth();
+        }
     }
     ImGui::EndChild();
 }
@@ -819,11 +993,20 @@ void menu::Config(ImVec2 savedCursorPosition) {
             Config2->DeleteConfig(selectedConfig);
             Config2->RefreshConfigs();
         }
+        ImGui::Spacing();
+        if (ImGui::Button(("Reset"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
 
+            Config2->Setup();
+        }
         ImGui::Spacing();
         if (ImGui::Button(("Open config location"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
 
             ShellExecuteA(NULL, ("open"), Config2->ConfigPath.c_str(), NULL, NULL, SW_SHOWNORMAL);;
+        }
+        ImGui::Spacing();
+        if (ImGui::Button(("Unload"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
+
+            cfg::bDoUnload = true;
         }
         ImGui::PopItemWidth();
     }

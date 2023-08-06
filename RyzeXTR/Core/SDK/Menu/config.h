@@ -9,6 +9,8 @@
 
 namespace cfg {
 
+	inline bool bDoUnload = false;
+
 	inline int configID = -1;
 
 	inline bool debugSwitch = false;
@@ -40,15 +42,15 @@ namespace cfg {
 		inline int iForceBaimKey = 0;
 
 		// all weapon
-		inline bool bHitboxes[6][6];
-		inline bool bMultiHitboxes[6][6];
-		inline bool bSafeHitboxes[6][6];
+		inline bool bHitboxes[7][6];
+		inline bool bMultiHitboxes[7][6];
+		inline bool bSafeHitboxes[7][6];
 
-		inline int iHitchances[6];
-		inline int iMinDamages[6];
-		inline int iHeadPoints[6];
-		inline int iBodyPoints[6];
-		inline int iOverride[6];
+		inline int iHitchances[7];
+		inline int iMinDamages[7];
+		inline int iHeadPoints[7];
+		inline int iBodyPoints[7];
+		inline int iOverride[7];
 
 		inline bool bForceSafePoint[] = { false, false, false, false ,false, false };
 		inline bool bAutostop[] = { false, false, false, false ,false, false };
@@ -353,24 +355,23 @@ namespace cfg {
 	}
 	namespace skin {
 
-		inline bool bEnableSkinChagner;
-		inline bool bFilterByWeapon;
+		inline bool bEnableSkinChanger = false;
+		inline bool bFilterByWeapon = true;
+		inline bool bModifySkinColors[37];
 
-		inline bool bModifySkinColors[92];
-		inline int iSkinId[92];
-		inline float flSkinWear[92];
-		inline int iSkinStattrak[92];
-		inline int iFallbackSeed[92];
-		inline std::string szSkinNametag[92];
+		inline int  iSkinId[37];
+		inline int  iSeed[37];
+		inline int  iGloveModel;
+		inline int  iKnifeModel;
+		inline int  iSkinStattrak[37];
 
-		inline Color colSkins1[92];
-		inline Color colSkins2[92];
-		inline Color colSkins3[92];
-		inline Color colSkins4[92];
+		inline float flSkinWear[37];
+		inline float colSkins1[37][4];
+		inline float colSkins2[37][4];
+		inline float colSkins3[37][4];
+		inline float colSkins4[37][4];
 
-		inline int iGloveModel;
-		inline int iKnifeModel;
-		inline const char* szAgentModel;
+		inline std::string szSkinNametag[37];
 	}
 }
 

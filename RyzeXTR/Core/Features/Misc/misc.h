@@ -22,7 +22,6 @@ namespace misc {
 	inline bool exploitInitialized = false;
 	inline Vector vecRecord = Vector(0.f, 0.f, 0.f);
 	inline Vector vecEyePosition = Vector(0.f, 0.f, 0.f);
-	inline matrix3x4_t matrixRecord[128];
 	inline int iRestChoke = 0;
 	inline CConVar* con_filter_text = nullptr;
 	inline CConVar* con_filter_enable = nullptr;

@@ -19,6 +19,11 @@
 
 void CConfig::Setup() {
 
+	ints.clear();
+	bools.clear();
+	floats.clear();
+	strings.clear();
+
 	CreateMainDirectory();
 	RefreshSounds();
 	RefreshConfigs();
@@ -44,7 +49,7 @@ void CConfig::Setup() {
 		SetupValue( bAutostop[ 5 ], false, "rage", "autostop6" );
 
 		for (size_t i = 0; i < 6; i++)
-			SetupValue(bConditions[i], 2, false, "rage", std::format("condition{}", i));
+			SetupValue(bConditions[i], false, 2, "rage", std::format("condition{}", i));
 
 		SetupValue( bAutostopAggressiveness[ 0 ], false, "rage", "autostopAggressiveness1" );
 		SetupValue( bAutostopAggressiveness[ 1 ], false, "rage", "autostopAggressiveness2" );
@@ -537,39 +542,39 @@ void CConfig::Setup() {
 
 		SetupValue(iType, 3, 0, "model", "iType");
 
-		SetupValue(bChams, 3, 0, "model", "bChams");
-		SetupValue(bChamsXQZ, 3, 0, "model", "bChamsXQZ");
-		SetupValue(bXhair, 3, 0, "model", "bXhair");
-		SetupValue(bXhairXQZ, 3, 0, "model", "bXhairXQZ");
+		SetupValue(bChams, 0, 3, "model", "bChams");
+		SetupValue(bChamsXQZ, 0, 3, "model", "bChamsXQZ");
+		SetupValue(bXhair, 0, 3, "model", "bXhair");
+		SetupValue(bXhairXQZ, 0, 3, "model", "bXhairXQZ");
 
-		SetupValue(bOverlay, 3, 0, "model", "bOverlay");
-		SetupValue(bOverlayXQZ, 3, 0, "model", "bOverlayXQZ");
-		SetupValue(bOverlayXhair, 3, 0, "model", "bOverlayXhair");
-		SetupValue(bOverlayXhairXQZ, 3, 0, "model", "bOverlayXhairXQZ");
+		SetupValue(bOverlay, 0, 3,  "model", "bOverlay");
+		SetupValue(bOverlayXQZ, 0, 3,  "model", "bOverlayXQZ");
+		SetupValue(bOverlayXhair, 0, 3,  "model", "bOverlayXhair");
+		SetupValue(bOverlayXhairXQZ, 0, 3,  "model", "bOverlayXhairXQZ");
 
-		SetupValue(bThinOverlay, 3, 0, "model", "bThinOverlay");
-		SetupValue(bThinOverlayXQZ, 3, 0, "model", "bThinOverlayXQZ");
-		SetupValue(bThinOverlayXhair, 3, 0, "model", "bThinOverlayXhair");
-		SetupValue(bThinOverlayXhairXQZ, 3, 0, "model", "bThinOverlayXhairXQZ");
+		SetupValue(bThinOverlay, 0, 3,  "model", "bThinOverlay");
+		SetupValue(bThinOverlayXQZ, 0, 3,  "model", "bThinOverlayXQZ");
+		SetupValue(bThinOverlayXhair, 0, 3,  "model", "bThinOverlayXhair");
+		SetupValue(bThinOverlayXhairXQZ, 0, 3,  "model", "bThinOverlayXhairXQZ");
 
-		SetupValue(bAnimOverlay, 3, 0, "model", "bAnimOverlay");
-		SetupValue(bAnimOverlayXQZ, 3, 0, "model", "bAnimOverlayXQZ");
-		SetupValue(bAnimOverlayXhair, 3, 0, "model", "bAnimOverlayXhair");
-		SetupValue(bAnimOverlayXhairXQZ, 3, 0, "model", "bAnimOverlayXhairXQZ");
+		SetupValue(bAnimOverlay, 0, 3,  "model", "bAnimOverlay");
+		SetupValue(bAnimOverlayXQZ, 0, 3,  "model", "bAnimOverlayXQZ");
+		SetupValue(bAnimOverlayXhair, 0, 3,  "model", "bAnimOverlayXhair");
+		SetupValue(bAnimOverlayXhairXQZ, 0, 3,  "model", "bAnimOverlayXhairXQZ");
 
 		for (size_t i = 0; i < 3; i++)
 		{
-			SetupValue(ChamsColor[i], 4, 0.f, "model", std::format("ChamsColor{}", i));
-			SetupValue(ChamsColorXQZ[i], 4, 0.f, "model", std::format("ChamsColorXQZ{}", i));
+			SetupValue(ChamsColor[i], 4, 1.f, "model", std::format("ChamsColor{}", i));
+			SetupValue(ChamsColorXQZ[i], 4, 1.f, "model", std::format("ChamsColorXQZ{}", i));
 
-			SetupValue(OverlayColor[i], 4, 0.f, "model", std::format("OverlayColor{}", i));
-			SetupValue(OverlayColorXQZ[i], 4, 0.f, "model", std::format("OverlayColorXQZ{}", i));
+			SetupValue(OverlayColor[i], 4, 1.f, "model", std::format("OverlayColor{}", i));
+			SetupValue(OverlayColorXQZ[i], 4, 1.f, "model", std::format("OverlayColorXQZ{}", i));
 
-			SetupValue(ThinOverlayColor[i], 4, 0.f, "model", std::format("ThinOverlayColor{}", i));
-			SetupValue(ThinOverlayColorXQZ[i], 4, 0.f, "model", std::format("ThinOverlayColorXQZ{}", i));
+			SetupValue(ThinOverlayColor[i], 4, 1.f, "model", std::format("ThinOverlayColor{}", i));
+			SetupValue(ThinOverlayColorXQZ[i], 4, 1.f, "model", std::format("ThinOverlayColorXQZ{}", i));
 
-			SetupValue(AnimOverlayColor[i], 4, 0.f, "model", std::format("AnimOverlayColor{}", i));
-			SetupValue(AnimOverlayColorXQZ[i], 4, 0.f, "model", std::format("AnimOverlayColorXQZ{}", i));
+			SetupValue(AnimOverlayColor[i], 4, 1.f, "model", std::format("AnimOverlayColor{}", i));
+			SetupValue(AnimOverlayColorXQZ[i], 4, 1.f, "model", std::format("AnimOverlayColorXQZ{}", i));
 		}
 
 		// chams
@@ -733,7 +738,7 @@ void CConfig::Setup() {
 		SetupValue(iThirdPersonKey, 0, "misc", "thirdpersonbind");
 		SetupValue(iThirdPersonDistance, 160, "misc", "thirdpersonDistance");
 
-		SetupValue(iViewModelFov, 66, "misc", "viewmodelFov");
+		SetupValue(iViewModelFov, 60, "misc", "viewmodelFov");
 		SetupValue(iDebugFov, 90, "misc", "fov");
 
 		SetupValue(szBombBuffer, "RyzeXTR", "misc", "bombText");
@@ -778,16 +783,26 @@ void CConfig::Setup() {
 	// skin
 	{
 		using namespace cfg::skin;
-		SetupValue(bEnableSkinChagner, false, "skin", "bEnableSkinChagner");
-		SetupValue(bFilterByWeapon, false, "skin", "bFilterByWeapon");
+		SetupValue(bEnableSkinChanger, false, "skins", "bEnableSkinChanger");
+		SetupValue(bFilterByWeapon, false, "skins", "bFilterByWeapon");
+		SetupValue(bModifySkinColors, false, 37, "skins", "bModifySkinColors");
 
-		SetupValue(iSkinId, 92, 0, "skin", "iSkinId");
-		SetupValue(flSkinWear, 92.f, 0.f, "skin", "flSkinWear");
-		SetupValue(iSkinStattrak, 92, 0, "skin", "iSkinStattrak");
-		SetupValue(iFallbackSeed, 92, 0, "skin", "iFallbackSeed");
+		SetupValue(iSkinId, 37, 0, "skins", "iSkinId");
+		SetupValue(iSeed, 37, 0, "skins", "iSeed");
+		SetupValue(iSkinStattrak, 37, 0, "skins", "iSkinStattrak");
+		SetupValue(iGloveModel, 0, "skins", "iGloveModel");
+		SetupValue(iKnifeModel, 0, "skins", "iKnifeModel");
 
-		SetupValue(iGloveModel, 0, "skin", "iGloveModel");
-		SetupValue(iKnifeModel, 0, "skin", "iKnifeModel");
+		SetupValue(flSkinWear, 37, 0.f, "skins", "flSkinWear");
+		for (size_t i = 0; i < 37; i++)
+		{
+			SetupValue(colSkins1[i], 4, 1.f, "skins", std::format("colSkins1{}", i));
+			SetupValue(colSkins2[i], 4, 1.f, "skins", std::format("colSkins2{}", i));
+			SetupValue(colSkins3[i], 4, 1.f, "skins", std::format("colSkins3{}", i));
+			SetupValue(colSkins4[i], 4, 1.f, "skins", std::format("colSkins4{}", i));
+			SetupValue(szSkinNametag[i], "", "skins", std::format("szSkinNametag{}", i));
+		}
+
 	}
 }
 

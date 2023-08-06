@@ -1,7 +1,7 @@
 #include "ProxyHooks.h"
+#include "../../Features/Changers/SkinChanger.h"
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
-#include "../../Features/Changers/wtf.h"
 
 bool p::Setup()
 {
@@ -49,7 +49,7 @@ void p::BaseViewModelSequence(const CRecvProxyData* pData, void* pStruct, void* 
 			const Model_t* KnifeModel = i::ModelInfo->GetModel(ViewModel->GetModelIndex());
 			const char* ModelName = i::ModelInfo->GetModelName(KnifeModel);
 			// set proxy data
-			ProxyData->Value.Int = beforeIfuckUpEverything::GetNewAnimation( FNV1A::hash_runtime( ModelName ), ProxyData->Value.Int);
+			ProxyData->Value.Int = skinChanger.GetNewAnimation( fnv::Hash( ModelName ), ProxyData->Value.Int);
 		}
 	}
 

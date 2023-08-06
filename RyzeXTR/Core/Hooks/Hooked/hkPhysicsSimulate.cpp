@@ -43,16 +43,10 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
 		
-	//if ( pCommandContext->pCmd.iCommandNumber == ( i::ClientState->iCommandAck + 1 ) )
-	//	pEntity->GetVelocityModifier( ) = localanim.localdata.flVelocityModifier;
-
 	networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
 
-	//const int iTickBaseBackup = pEntity->GetTickBase( );
-	//pEntity->GetTickBase() = exploits::GetNetworkTickbase( pCommandContext->pCmd.iCommandNumber );
-
 	original(ecx, edx);
-
+	
 	prediction.SaveViewmodelData(pEntity);
 	return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 }

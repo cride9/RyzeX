@@ -139,13 +139,14 @@ static void BeginChams( IMaterial* pMaterial, float const* flColor, bool bIgnore
 	i::StudioRender->ForcedMaterialOverride( pMaterial );
 }
 
-static void EndChams( ) {
+static void EndChams(bool shouldNullptr = true) {
 
 	static float reset[ 3 ] = { 1, 1, 1 };
 
 	i::StudioRender->SetColorModulation( reset );
 	i::StudioRender->SetAlphaModulation( 1.f );
-	i::StudioRender->ForcedMaterialOverride( nullptr );
+	if (shouldNullptr)
+		i::StudioRender->ForcedMaterialOverride( nullptr );
 }
 
 static void BeginChamsMDL(IMaterial* pMaterial, float const* flColor, bool bIgnoreZ, bool bWireFrame) {
@@ -260,17 +261,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					//detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, g_LocalAnimations->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-			}
-			if (cfg::antiaim::bAutoPeek && IPT::HandleInput(cfg::antiaim::iAutoPeek)) {
-
-				if (!bChams[2]) {
-					EndChams();
-					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-				}
-
-				BeginChams(materials[ANIMATED], localIdealTickColor, false, true);
-				original(i::StudioRender, 0, pResults, info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-				//detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, misc::matrixRecord, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 			}
 			if (bChams[2]) {
 
@@ -444,27 +434,33 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 	//}
 	else if (szModelName.find("arms") != std::string_view::npos) {
 
+		bool ret = false;
 		if (viewmodel) {
 			BeginChams(materials[viewmodelType], viewmodelColor, false, viewmodelXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
 		}
 		else {
-			EndChams();
+			EndChams(false);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = false;
 		}
 		if (viewmodelOverlay) {
 			BeginChams(materials[GLOW], viewmodelOverlayColor, false, viewmodelOverlayXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
 		}
 		if (viewmodelThinOverlay) {
 			BeginChams(materials[THINGLOW], viewmodelThinOverlayColor, false, viewmodelThinOverlayXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
 		}
 		if (viewmodelAnimOverlay) {
 			BeginChams(materials[ANIMATED], viewmodelAnimOverlayColor, false, viewmodelAnimOverlayXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
 		}
-		return true;
+		return ret;
 	}
 	else if ((szModelName.find("weapons\\v_") != std::string_view::npos)) {
 
@@ -473,32 +469,39 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		if (pViewModelMaterial == nullptr)
 			return false;
 
+		bool ret = false;
 		if (weapon) {
 			BeginChams(materials[weaponType], weaponColor, false, weaponXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
 		}
 		else {
 			if (i::StudioRender->IsForcedMaterialOverride()) {
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				ret = false;
 			}
 			else {
 				EndChams();
 				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				ret = false;
 			}
 		}
 		if (weaponOverlay) {
 			BeginChams(materials[GLOW], weaponOverlayColor, false, weaponOverlayXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
 		}
 		if (weaponThinOverlay) {
 			BeginChams(materials[THINGLOW], weaponThinOverlayColor, false, weaponThinOverlayXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
 		}
 		if (weaponAnimOverlay) {
 			BeginChams(materials[ANIMATED], weaponAnimOverlayColor, false, weaponAnimOverlayXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
 		}
-		return true;
+		return ret;
 	}
 	else if ((szModelName.find("weapons\\w_") != std::string_view::npos)) {
 
