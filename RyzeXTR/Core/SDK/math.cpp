@@ -127,6 +127,32 @@ void M::VectorAngles(const Vector& vecForward, Vector& angView)
 	angView.z = 0.f;
 }
 
+Vector M::VectorAngles(const Vector& vecForward)
+{
+	float flPitch, flYaw;
+
+	if (vecForward.x == 0.f && vecForward.y == 0.f)
+	{
+		flPitch = (vecForward.z > 0.f) ? 270.f : 90.f;
+		flYaw = 0.f;
+	}
+	else
+	{
+		flPitch = std::atan2f(-vecForward.z, vecForward.Length2D()) * 180.f / M_PI;
+
+		if (flPitch < 0.f)
+			flPitch += 360.f;
+
+		flYaw = std::atan2f(vecForward.y, vecForward.x) * 180.f / M_PI;
+
+		if (flYaw < 0.f)
+			flYaw += 360.f;
+	}
+
+	return Vector(flPitch, flYaw, 0.f);
+}
+
+
 void M::AngleVectors(const Vector& angView, Vector* pForward, Vector* pRight, Vector* pUp)
 {
 	float sp, sy, sr, cp, cy, cr;

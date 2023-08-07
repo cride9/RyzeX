@@ -16,22 +16,12 @@ int __fastcall h::hkBaseInterpolatePart(CBaseEntity* pEntity, void* edx, float& 
 		return original(pEntity, edx, currentTime, oldOrigin, oldAngles, bNoMoreChanges);
 
 	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEntity->EntIndex());
-	if (!pLog || pLog->pRecord.empty())
+	if (!pLog || pLog->pRecord.size() < 2)
 		return original(pEntity, edx, currentTime, oldOrigin, oldAngles, bNoMoreChanges);
-
+	
 	// MoveToLastReceivedPosition -> ida: client.dll -> 55 8B EC 51 53 56 8B F1 32 DB 8B 06
 	// Disable interpolation when those conditions are met
-	if (pEntity->GetEffects() & EF_NOINTERP || 
-		g::bSettingUpBones[pEntity->EntIndex()] || 
-		pEntity->GetSimulationTime() < pEntity->GetOldSimulationTime() || 
-		pLog->pRecord.front().flSimulationTime <= pLog->flExploitTime) {
-
-		using MoveToLastReceivedPositionFn = int(__thiscall*)(CBaseEntity*, char);
-		static auto oMoveToLastReceivedPosition = reinterpret_cast<MoveToLastReceivedPositionFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 51 53 56 8B F1 32 DB 8B 06")));
-		oMoveToLastReceivedPosition(pEntity, 0);
-
-		return INTERPOLATE_STOP;
-	}
+	// using fn = int(__thiscall*)(CBaseEntity*, bool)
 
 	return original(pEntity, edx, pLog->pRecord.front().flSimulationTime, oldOrigin, oldAngles, bNoMoreChanges);
 }

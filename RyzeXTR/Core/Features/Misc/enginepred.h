@@ -37,7 +37,7 @@ class Prediction {
 public:
 	Prediction() {
 		uPredictionRandomSeed = *reinterpret_cast<int**>(MEM::FindPattern(CLIENT_DLL, XorStr("8B 0D ? ? ? ? BA ? ? ? ? E8 ? ? ? ? 83 C4 04")) + 2);
-		pPredictionPlayer = *reinterpret_cast<int**>(MEM::FindPattern(CLIENT_DLL, XorStr("89 35 ? ? ? ? F3 0F 10 46")) + 2);
+		pPredictionPlayer = *reinterpret_cast<CBaseEntity***>(MEM::FindPattern(CLIENT_DLL, XorStr("89 35 ? ? ? ? F3 0F 10 48 20")) + 0x2);
 	}
 
 	void Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber );
@@ -57,7 +57,7 @@ private:
 
 	int* uPredictionRandomSeed = nullptr;
 
-	int* pPredictionPlayer = nullptr;
+	CBaseEntity** pPredictionPlayer = nullptr;
 
 	CMoveData moveData = { };
 

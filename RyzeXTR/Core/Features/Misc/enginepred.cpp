@@ -18,7 +18,7 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	// random seed was already generated in CInput::CreateMove
 	*uPredictionRandomSeed = pCmd->iRandomSeed;
 	// set ourselves as a predictable entity
-	*pPredictionPlayer = uintptr_t(pLocal);
+	*pPredictionPlayer = pLocal;
 
 	// backup globals
 	flOldCurrentTime = i::GlobalVars->flCurrentTime;

@@ -11,12 +11,11 @@ void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool hea
 
 	if (!i::ClientState->pNetChannel)
 		return original(ecx, edx, packet, header);
-		//return detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
 
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
 		return original(ecx, edx, packet, header);
 
-	original(ecx, edx, packet, header);//detour::processPacket.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, packet, header);
+	original(ecx, edx, packet, header);
 
 	// get this from CL_FireEvents string "Failed to execute event for classId" in engine.dll
 	for ( CEventInfo* it{ i::ClientState->pEvents }; it != nullptr; it = it->pNext )
@@ -63,8 +62,7 @@ bool __fastcall h::hkSVCMsg_VoiceData( void* thistr, void* edx, C_SVCMsg_VoiceDa
 	//	BSOD( );
 	//}
 
-	return detour::voiceData.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, thistr, edx, Message);
-	//return original( thistr, edx, Message );
+	return original( thistr, edx, Message );
 }
 
 bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMessage, bool bForceReliable, bool bVoice )
@@ -130,8 +128,7 @@ bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMe
 	//	}
 	//}
 	
-	return detour::sendNetMsg.CallOriginal<bool>(ROP::EngineGadget_t::uReturnGadget, thisptr, edx, pMessage, bForceReliable, bVoice);
-	//return original( thisptr, edx, pMessage, bForceReliable, bVoice );
+	return original( thisptr, edx, pMessage, bForceReliable, bVoice );
 }
 
 
@@ -164,7 +161,6 @@ void __fastcall h::hkSetChoked( void* ecx, void* edx )
 		pNetChannel->iChokedPackets = nChokedCommands;
 	}
 
-	return detour::setChoked.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx);
 	/*
 	void CNetChan::SetChoked( void )
 	{
@@ -184,7 +180,7 @@ void __fastcall h::hkSetChoked( void* ecx, void* edx )
 	//--pNetChannelInfo->iOutSequenceNr;
 	//pNetChannelInfo->iChokedPackets = iChockedPackets;
 
-	//return original(ecx, edx);
+	return original(ecx, edx);
 }
 
 int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pDatagram )
@@ -195,7 +191,7 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag"  );
 
 	if (!i::EngineClient->IsInGame() || !cfg::misc::bFakePing || pDatagram != nullptr || pNetChannelInfo == nullptr || sv_maxunlag == nullptr)
-		return original(thisptr, edx, pDatagram);/*detour::sendDatagram.CallOriginal<int>(ROP::EngineGadget_t::uReturnGadget, thisptr, edx, pDatagram);*/
+		return original(thisptr, edx, pDatagram);
 
 	const int iOldInReliableState = thisptr->iInReliableState;
 	const int iOldInSequenceNr = thisptr->iInSequenceNr;

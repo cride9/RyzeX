@@ -181,6 +181,5 @@ void __fastcall h::hkFrameStageNotify(void* ecx, void* edx, EStage curStage) {
 
 	hkPreFrameStageNotify(curStage);
 	original(ecx, edx, curStage);
-	//detour::frameStageNotify.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx, curStage);
 	hkPostFrameStageNotify(curStage);
 }

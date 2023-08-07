@@ -33,7 +33,7 @@ void h::SetupHooks() {
 	HookTable(detour::getViewmodelFov, i::ClientMode, table::getViewmodelFov, &hkGetViewModelFov);
 	//HookTable(detour::isPaused, i::EngineClient, table::isPaused, &hkIsPaused);
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
-	//HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
+	HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
 	//HookTable(detour::drawModelMdl, i::ModelRender, table::drawModelMdl, &hkDrawModelMDL);
 	//HookTable(detour::emitSound, i::EngineSoundClient, table::emitSound, &hkEmitSound);
@@ -46,7 +46,7 @@ void h::SetupHooks() {
 	HookSignature(detour::calculateView, CLIENT_DLL, "55 8B EC 83 EC 14 53 56 57 FF 75 18", &hkCalculateView);
 	HookSignature(detour::sequenceChange, CLIENT_DLL, "55 8B EC 51 53 8B 5D 08 56 8B F1 57 85", &hkCheckForSequenceChange);
 	HookSignature(detour::procedrualFoot, CLIENT_DLL, "55 8B EC 83 E4 F0 83 EC 78 56 8B F1 57 8B", &hkDoProceduralFootPlant);
-	//HookSignature(detour::isHltv, ENGINE_DLL, "A1 ? ? ? ? 80 ? ? ? ? ? ? 75 0C", &hkIsHltv);
+	HookSignature(detour::isHltv, ENGINE_DLL, "A1 ? ? ? ? 80 ? ? ? ? ? ? 75 0C", &hkIsHltv);
 	HookSignature(detour::modifyEyePosition, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 14", &hkModifyEyePosition);
 	HookSignature(detour::skipAnimation, CLIENT_DLL, "57 8B F9 8B 07 8B 80 ? ? ? ? FF D0 84 C0 75 02", &hkShouldSkipAnimationFrame);
 	HookSignature(detour::blendingRules, CLIENT_DLL, "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 8B 75 08 57 8B F9 85 F6", &hkStandardBlendingRules);

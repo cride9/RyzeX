@@ -39,7 +39,6 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 #endif
 
 		//D::ClearDrawData( );
-
 		serversound.Start();
 		visual::VisualRender();
 		serversound.Finish();
@@ -57,6 +56,5 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		//D::SwapDrawData( );
 	}
 
-	//detour::paintTraverse.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, pPanels, edx, vguiPanel, forceRepaint, allowForce);
 	original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
 }

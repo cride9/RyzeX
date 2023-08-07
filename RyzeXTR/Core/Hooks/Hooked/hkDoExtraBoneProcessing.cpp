@@ -16,7 +16,6 @@ void __fastcall h::hkDoExtraBoneProcessing(void* ecx, void* edx, CStudioHdr* hdr
 		pEnt->AnimState()->bOnGround = false;
 
 		original(ecx, edx, hdr, pos, q, matrix, boneComputed, context);
-		//invokeFastcall<void>(adr(ecx), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, hdr, pos, q, matrix, boneComputed, context);
 
 		pEnt->AnimState()->bOnGround = bOnGround;
 	}

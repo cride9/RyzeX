@@ -5318,9 +5318,11 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
         LogSetNextTextDecoration("{", "}");
         LogRenderedText(&draw_pos, buf_display, buf_display_end);
     }
-
-    if (label_size.x > 0)
-        RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
+    SameLine(GetContentRegionAvail().x - label_size.x);
+    RenderText(ImVec2(GetWindowPos().x + GetCursorPos().x, frame_bb.Min.y + style.FramePadding.y), label);
+    Spacing();
+    //if (label_size.x > 0)
+    //    RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
 
     if (value_changed && !(flags & ImGuiInputTextFlags_NoMarkEdited))
         MarkItemEdited(id);
@@ -6970,10 +6972,11 @@ bool ImGui::BeginListBox(const char* label, const ImVec2& size_arg)
     BeginGroup();
     if (label_size.x > 0.0f)
     {
-		SetCursorPosX(GetContentRegionAvail().x - label_size.x);
-		RenderText(GetWindowPos() + GetCursorPos(), label);
-		window->DC.CursorMaxPos = ImMax(window->DC.CursorMaxPos, GetWindowPos() + GetCursorPos() + label_size);
-		Spacing();
+        SameLine(GetContentRegionAvail().x - label_size.x);
+        RenderText(ImVec2(GetWindowPos().x + GetCursorPos().x, bb.Min.y + style.FramePadding.y), label);
+        Spacing();
+		//window->DC.CursorMaxPos = ImMax(window->DC.CursorMaxPos, GetWindowPos() + GetCursorPos() + label_size);
+		//Spacing();
     }
 
     BeginChildFrame(id, frame_bb.GetSize());

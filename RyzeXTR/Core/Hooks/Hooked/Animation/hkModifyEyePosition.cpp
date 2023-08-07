@@ -9,7 +9,6 @@ void __fastcall h::hkModifyEyePosition(void* animstatePointer, void* edx, Vector
 
 	const auto pAnimstate = reinterpret_cast<CAnimState*>(animstatePointer);
 	if (!pAnimstate || !pAnimstate->pEntity || !pAnimstate->pEntity->IsAlive())
-		//return invokeFastcall<void>(adr(animstatePointer), adr(edx), adr(original), ROP::ClientGadget_t::uReturnGadget, &unused1);
 		return original(animstatePointer, edx, unused1);
 
 	pAnimstate->bSmoothHeightValid = false;

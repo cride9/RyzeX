@@ -10,14 +10,12 @@ namespace g {
 
 	inline CUserCmd* pCmd;
 	inline CBaseEntity* pLocal;
-	//inline CEntityListener entityListener;
 	inline Vector vecOriginalViewAngle;
 	inline Vector vecEyePosition;
 
 	inline bool bAllowAnimations[65];
 	inline bool bUpdatingSkins = false;
 	inline bool bStartWelcome = false;
-	inline bool bWasShootingInChokeCycle = false;
 	inline bool* bSendPacket = nullptr;
 
 	inline bool bSettingUpBones[65];

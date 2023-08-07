@@ -39,7 +39,6 @@ void Animations::ResolverLogic() {
 		if (data.enterTrace.iHitGroup != iHitHitbox)
 			anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
 
-		pLog->iHitSide[refCurrentData.pRecord->iResolveSide]++;
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
 			("Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}] | [yaw] {}"),
@@ -48,7 +47,7 @@ void Animations::ResolverLogic() {
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 			misc::GetHitgroupName(iHitHitbox), misc::GetHitgroupName(refCurrentData.iHitGroup),
 			iHitDmg, refCurrentData.flDamage,
-			refCurrentData.pRecord->flDesyncDelta
+			refCurrentData.pRecord->flResolveDelta
 		));
 		refCurrentData.ClearTarget();
 		return;
@@ -60,7 +59,6 @@ void Animations::ResolverLogic() {
 		if (data.enterTrace.iHitGroup != iHitHitbox)
 			anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++; 
 
-		pLog->iHitSide[refCurrentData.pRecord->iResolveSide]++;
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
 		misc::Print(std::format(
 			("Hit {} | [hc] {} | [bt] {} | [hg] {} [aimed: {}] | [dmg] {} [aimed: {}] | [yaw] {}"),
@@ -69,7 +67,7 @@ void Animations::ResolverLogic() {
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 			misc::GetHitgroupName(iHitHitbox), misc::GetHitgroupName(refCurrentData.iHitGroup),
 			iHitDmg, refCurrentData.flDamage,
-			refCurrentData.pRecord->flDesyncDelta
+			refCurrentData.pRecord->flResolveDelta
 		));
 		refCurrentData.ClearTarget();
 		return;
@@ -91,7 +89,7 @@ void Animations::ResolverLogic() {
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flDamage,
-				refCurrentData.pRecord->flDesyncDelta
+				refCurrentData.pRecord->flResolveDelta
 			));
 			refCurrentData.ClearTarget();
 			return;
@@ -105,7 +103,7 @@ void Animations::ResolverLogic() {
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flDamage,
-			refCurrentData.pRecord->flDesyncDelta
+			refCurrentData.pRecord->flResolveDelta
 		));
 		refCurrentData.ClearTarget();
 	}
@@ -121,7 +119,7 @@ void Animations::ResolverLogic() {
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flDamage,
-				refCurrentData.pRecord->flDesyncDelta
+				refCurrentData.pRecord->flResolveDelta
 			));
 			refCurrentData.ClearTarget();
 			return;
@@ -143,7 +141,7 @@ void Animations::ResolverLogic() {
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flDamage,
-				refCurrentData.pRecord->flDesyncDelta
+				refCurrentData.pRecord->flResolveDelta
 			));
 			refCurrentData.ClearTarget();
 			return;
@@ -157,7 +155,7 @@ void Animations::ResolverLogic() {
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flDamage,
-			refCurrentData.pRecord->flDesyncDelta
+			refCurrentData.pRecord->flResolveDelta
 		));
 		refCurrentData.ClearTarget();
 	}
@@ -210,6 +208,11 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 			bResolverHandler[PLAYERDEATH] = true;
 		}
 	}
+	if (szEventName.find(cachedEvents::roundStart) != std::string_view::npos) {
+
+		for (size_t i = 0; i < 65; i++)
+			lagcomp.GetLog(i).ClearData();
+	}
 }
 
 void SetResolveMatrix(Lagcompensation::LagRecord_t* pRecord, int iType) {
@@ -227,7 +230,7 @@ float GetVelocityLengthXY(CBaseEntity* pEntity)
 	float flSequenceCycleRate = pEntity->GetSequenceCycleRate(pEntity->GetModelPtr(), pEntity->GetAnimationOverlays()[6].nSequence);
 	float flSequenceGroundSpeed = fmax(pEntity->GetSequenceMoveDist(pEntity->GetModelPtr(), pEntity->GetAnimationOverlays()[6].nSequence) / (1.0f / flSequenceCycleRate), 0.001f);
 
-	return (pEntity->GetAnimationOverlays()[6].flPlaybackRate / flSequenceCycleRate) / (1.0f - (pRecord->flWalkToRunTransition * 0.15f)) * (flSequenceGroundSpeed) / pEntity->AnimState()->flLastUpdateIncrement;
+	return (pEntity->GetAnimationOverlays()[6].flPlaybackRate / flSequenceCycleRate) / (1.0f - (pEntity->AnimState()->flWalkToRunTransition * 0.15f)) * (flSequenceGroundSpeed) / pEntity->AnimState()->flLastUpdateIncrement;
 }
 
 void Animations::SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw) {
@@ -238,14 +241,17 @@ void Animations::SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw) {
 
 	case LEFT:
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta);
+		pRecord->flResolveDelta = -pRecord->flDesyncDelta;
 		break;
 
 	case CENTER:
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y);
+		pRecord->flResolveDelta = 0.f;
 		break;
 
 	case RIGHT:
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta);
+		pRecord->flResolveDelta = pRecord->flDesyncDelta;
 		break;
 	}
 }
@@ -264,17 +270,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	if (!cfg::rage::bResolver)
 		return;
 
-	switch (arrMissedShots[pEntity->EntIndex()] % 3) {
-
-	case 0: SetYaw(pRecord, RIGHT);
-		break;
-
-	case 1: SetYaw(pRecord, LEFT);
-		break;
-
-	case 2: SetYaw(pRecord, CENTER);
-		break;
-	}
+	SetYaw(pRecord, 2 + (arrMissedShots[pEntity->EntIndex()] % 3));
 }
 
 void Animations::PostResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {

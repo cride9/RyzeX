@@ -33,7 +33,6 @@ void __fastcall h::hkPacketEnd( void* ecx, void* edx )
 
 	networking.OnPacketEnd(static_cast<CClientState*>(ecx));
 	return original(ecx, edx);
-	//return detour::packetEnd.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, ecx, edx);
 }
 
 bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )

@@ -336,9 +336,14 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 	if (bFlags[RESOLVER]) {
 
 		auto* pLog = &lagcomp.GetLog(pEnt->EntIndex());
-		if (pLog && !pLog->pRecord.empty()) {
-			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, misc::GetMatrixName(pLog->pRecord.front().iResolveSide).c_str());
-			spacing += 10;
+		if (pLog && !pLog->pRecord.empty() && pLog->iLastValid <= pLog->pRecord.size()) {
+			//i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, misc::GetMatrixName(pLog->pRecord.front().iResolveSide).c_str());
+			//spacing += 10;
+
+			if (pLog->pRecord.front().bBreakingLagcompensation) {
+				i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, "LC");
+				spacing += 10;
+			}
 		}
 	}
 
@@ -405,7 +410,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		//const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
 		//const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
 
-		something(right, top, spacing, std::format("Choke: {}", pRecord->iChoked).c_str());
+		//something(right, top, spacing, std::format("Choke: {}", pRecord->iChoked).c_str());
 
 		//something(right, top, spacing, "[Layer 6]");
 		//something(right, top, spacing, std::format("Left: {}", fLeftPlaybackrate).c_str());

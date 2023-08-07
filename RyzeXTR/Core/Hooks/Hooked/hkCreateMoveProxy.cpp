@@ -26,7 +26,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
 
 	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
-	//detour::createMove.CallOriginal<void>(ROP::EngineGadget_t::uReturnGadget, i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
 
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
@@ -38,7 +37,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	g::vecEyePosition = pLocal->GetEyePosition(false);
 	skinChanger.iItemDefinitionIndex = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() : 0;
 	skinChanger.bIsKnife = pLocal->GetWeapon() ? pLocal->GetWeapon()->IsKnife() : false;
-
 	lagcomp.StartLagcompensation(pLocal);
 
 	Vector oldViewAngle = g::vecOriginalViewAngle = pCmd->angViewPoint;

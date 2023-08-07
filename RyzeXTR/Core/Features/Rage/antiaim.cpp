@@ -219,8 +219,10 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	
 	// shooting checks
 	if (antiaim::ShouldDisableAntiaim(pCmd, bSendPacket)) {
+
 		if (!(cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey)))
-			bSendPacket = (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey)) ? bSendPacket : (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) ? false : true;
+			bSendPacket = (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey)) ? bSendPacket : (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) || (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey)) ? false : true;
+		
 		return;
 	}
 
@@ -228,8 +230,8 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (pCmd->iButtons & IN_USE || g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP || g::pLocal->GetFlags() & FL_FROZEN) 
 		return;
 
-	// Update lower body yaw
-	Update( pCmd );
+	//// Update lower body yaw
+	//Update( pCmd );
 
 	if (!(g::pLocal->GetFlags() & FL_ONGROUND) && cfg::antiaim::bEnabled[INAIR])
 		DoAntiaim(pCmd, bSendPacket, INAIR);

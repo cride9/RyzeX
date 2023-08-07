@@ -12,5 +12,4 @@ void __fastcall h::hkLockCursor(ISurface* thisptr, int edx) {
 	}
 
 	original(thisptr, edx);
-	//detour::lockCursor.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)thisptr, edx);
 }

@@ -204,8 +204,10 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         ImGui::SliderInt(("HeadScale"), &iHeadPoints[iSelect], 0, 100);
         ImGui::SliderInt(("BodyScale"), &iBodyPoints[iSelect], 0, 100);
 
-        ImGui::MultiComboBox(("SafeHitbox"), arrHitboxNames, bSafeHitboxes[iSelect], IM_ARRAYSIZE(arrHitboxNames));
-        ImGui::Checkbox(("Force overlap"), &bForceSafePoint[iSelect]);
+        ImGui::Checkbox("Safepoint", &bSafePoint[iSelect]);
+        if (bSafePoint[iSelect]) {
+            ImGui::MultiComboBox(("Force safe"), arrHitboxNames, bSafeHitboxes[iSelect], IM_ARRAYSIZE(arrHitboxNames));
+        }
 
         ImGui::Checkbox(("Auto stop"), &bAutostop[iSelect]);
         if (bAutostop[iSelect]) {
@@ -404,8 +406,8 @@ void menu::Visual(ImVec2 savedCursorPosition) {
     ImVec2 Padding = ImVec2(ImGui::GetStyle().WindowPadding.x, ImGui::GetStyle().WindowPadding.y);
     ImGui::SetCursorPos(ImVec2(savedCursorPosition.x, savedCursorPosition.y + 80 + ImGui::GetStyle().WindowPadding.y));
 
-    ImVec2 TopLeftSize = ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y * 0.7f - Padding.y - 25.f);
-    ImGui::BeginChild(("##LeftTop"), ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y * 0.7f - Padding.y - 25.f), true);
+    ImVec2 TopLeftSize = ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y * 0.65f - Padding.y - 25.f);
+    ImGui::BeginChild(("##LeftTop"), ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y * 0.65f - Padding.y - 25.f), true);
     {
         using namespace cfg::visual;
         ImGui::Checkbox(("Enable##0"), &bEnable[iSelect]);
@@ -452,87 +454,183 @@ void menu::Visual(ImVec2 savedCursorPosition) {
     ImGui::BeginChild(("##LeftBot"), ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
         using namespace cfg::model;
-        // normal
-        ImGui::Combo(("Material"), &iType[iSelect], arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
-        ImGui::Checkbox(("Player"), &bChams[iSelect]);
-        //ImGui::SameLine();
-        //ImGui::Checkbox(("Wireframe##1"), &bXhair[iSelect]);
-        ImGui::ColorEdit4(("##ChamsColor"), ChamsColor[iSelect]);
-
-        ImGui::Checkbox(("Player behind wall"), &bChamsXQZ[iSelect]);
-        //ImGui::SameLine();
-        ////ImGui::Checkbox(("Wireframe##2"), &bXhairXQZ[iSelect]);
-        ImGui::ColorEdit4(("##ChamsColorXQZ"), ChamsColorXQZ[iSelect]);
-
-        if (iSelect == ENEMY) {
-
-            ImGui::Checkbox(("Backtrack"), &enemyBTEnable);
-            if (enemyBTEnable) {
-                //ImGui::SameLine();
-                //ImGui::Checkbox(("WireFrame##9"), &enemyBTXhair);
-                ImGui::ColorEdit4(("##enemyBTColor"), enemyBTColor);
-                ImGui::Combo(("Material##5"), &enemyBTType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
-            }
-        }
-        else if (iSelect == LOCAL) {
-
-            ImGui::Checkbox(("Desync"), &localDesync);
-            if (localDesync) {
-                //ImGui::SameLine();
-                //ImGui::Checkbox(("WireFrame##9"), &localDesyncXhair);
-                ImGui::ColorEdit4(("##localDesyncColor"), localDesyncColor);
-                ImGui::Combo(("Material##4"), &localDesyncType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
-            }
-        }
+        static const char* arrChamsConfig[] = { "Player", "Overlays", "Attachment", "Viewmodel", "Weapon"};
+        static int iSelectedConfig = 0;
 
         static const char* iOverlayTypes[] = { ("Glow"), ("Thin"), ("Animated") };
         static int iSelectedOverlay = 0;
-        ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
-        switch (iSelectedOverlay) {
-        case 0:
-            // overlay
-            ImGui::Checkbox(("Overlay##1"), &bOverlay[iSelect]);
-            //ImGui::SameLine();
-            //ImGui::Checkbox(("Wireframe##7"), &bOverlayXhair[iSelect]);
-            ImGui::ColorEdit4(("##OverlayColor"), OverlayColor[iSelect]);
 
-            ImGui::Checkbox(("Overlay behind wall##1"), &bOverlayXQZ[iSelect]);
-            //ImGui::SameLine();
-            //ImGui::Checkbox(("Wireframe##8"), &bOverlayXhairXQZ[iSelect]);
-            ImGui::ColorEdit4(("##OverlayColorXQZ"), OverlayColorXQZ[iSelect]);
+        if (iSelect == LOCAL)
+            ImGui::Combo(("Chams##2"), &iSelectedConfig, arrChamsConfig, IM_ARRAYSIZE(arrChamsConfig));
+        else {
+            iSelectedConfig = iSelectedConfig > 2 ? 2 : iSelectedConfig;
+            ImGui::Combo(("Chams##2"), &iSelectedConfig, arrChamsConfig, IM_ARRAYSIZE(arrChamsConfig) - 2);
+        }
+        switch (iSelectedConfig) {
+
+        case 0:
+            // normal
+            ImGui::Combo(("Material"), &iType[iSelect], arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
+            ImGui::Checkbox(("Player"), &bChams[iSelect]);
+            ImGui::ColorEdit4(("##ChamsColor"), ChamsColor[iSelect]);
+
+            ImGui::Checkbox(("Player behind wall"), &bChamsXQZ[iSelect]);
+            ImGui::ColorEdit4(("##ChamsColorXQZ"), ChamsColorXQZ[iSelect]);
+
+
+            if (iSelect == ENEMY) {
+
+                ImGui::Checkbox(("Backtrack"), &enemyBTEnable);
+                if (enemyBTEnable) {
+                    ImGui::ColorEdit4(("##enemyBTColor"), enemyBTColor);
+                    ImGui::Combo(("Material##5"), &enemyBTType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
+                }
+            }
+            else if (iSelect == LOCAL) {
+
+                ImGui::Checkbox(("Desync"), &localDesync);
+                if (localDesync) {
+                    ImGui::ColorEdit4(("##localDesyncColor"), localDesyncColor);
+                    ImGui::Combo(("Material##4"), &localDesyncType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
+                }
+            }
+
             break;
 
         case 1:
-            // thin
-            ImGui::Checkbox(("Overlay##2"), &bThinOverlay[iSelect]);
-            //ImGui::SameLine();
-            //ImGui::Checkbox(("Wireframe##3"), &bThinOverlayXhair[iSelect]);
-            ImGui::ColorEdit4(("##ThinOverlayColor"), ThinOverlayColor[iSelect]);
+            ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
+            switch (iSelectedOverlay) {
+            case 0:
+                // overlay
+                ImGui::Checkbox(("Overlay##1"), &bOverlay[iSelect]);
+                ImGui::ColorEdit4(("##OverlayColor"), OverlayColor[iSelect]);
 
-            ImGui::Checkbox(("Overlay behind wall##2"), &bThinOverlayXQZ[iSelect]);
-            //ImGui::SameLine();
-            //ImGui::Checkbox(("Wireframe##4"), &bThinOverlayXhairXQZ[iSelect]);
-            ImGui::ColorEdit4(("##ThinOverlayColorXQZ"), ThinOverlayColorXQZ[iSelect]);
+                ImGui::Checkbox(("Overlay behind wall##1"), &bOverlayXQZ[iSelect]);
+                ImGui::ColorEdit4(("##OverlayColorXQZ"), OverlayColorXQZ[iSelect]);
+                break;
+
+            case 1:
+                // thin
+                ImGui::Checkbox(("Overlay##2"), &bThinOverlay[iSelect]);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), ThinOverlayColor[iSelect]);
+
+                ImGui::Checkbox(("Overlay behind wall##2"), &bThinOverlayXQZ[iSelect]);
+                ImGui::ColorEdit4(("##ThinOverlayColorXQZ"), ThinOverlayColorXQZ[iSelect]);
+                break;
+
+            case 2:
+                // animated
+                ImGui::Checkbox(("Overlay##3"), &bAnimOverlay[iSelect]);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), AnimOverlayColor[iSelect]);
+
+                ImGui::Checkbox(("Overlay behind wall##3"), &bAnimOverlayXQZ[iSelect]);
+                ImGui::ColorEdit4(("##AnimOverlayColorXQZ"), AnimOverlayColorXQZ[iSelect]);
+                break;
+            }
+
+
             break;
 
         case 2:
-            // animated
-            ImGui::Checkbox(("Overlay##3"), &bAnimOverlay[iSelect]);
-            //ImGui::SameLine();
-            //ImGui::Checkbox(("Wireframe##5"), &bAnimOverlayXhair[iSelect]);
-            ImGui::ColorEdit4(("##AnimOverlayColor"), AnimOverlayColor[iSelect]);
 
-            ImGui::Checkbox(("Overlay behind wall##3"), &bAnimOverlayXQZ[iSelect]);
-            //ImGui::SameLine();
-            //ImGui::Checkbox(("Wireframe##6"), &bAnimOverlayXhairXQZ[iSelect]);
-            ImGui::ColorEdit4(("##AnimOverlayColorXQZ"), AnimOverlayColorXQZ[iSelect]);
+            ImGui::Checkbox("Attachment", &attachmentChams[iSelect]);
+            ImGui::ColorEdit4("##attachmentpicker", attachmentChamsColor[iSelect]);
+            ImGui::Checkbox("Wireframe", &attachmentChamsXhair[iSelect]);
+
+            ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
+            switch (iSelectedOverlay) {
+            case 0:
+                // overlay
+                ImGui::Checkbox(("Overlay##1"), &attachmentOverlay[iSelect]);
+                ImGui::ColorEdit4(("##OverlayColor"), attachmentOverlayColor[iSelect]);
+                ImGui::Checkbox(("Wireframe##3"), &attachmentOverlayXhair[iSelect]);
+                break;
+
+            case 1:
+                // thin
+                ImGui::Checkbox(("Overlay##2"), &attachmentThinOverlay[iSelect]);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), attachmentThinOverlayColor[iSelect]);
+                ImGui::Checkbox(("Wireframe##3"), &attachmentThinOverlayXhair[iSelect]);
+                break;
+
+            case 2:
+                // animated
+                ImGui::Checkbox(("Overlay##3"), &attachmentAnimatedOverlay[iSelect]);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), attachmentAnimatedOverlayColor[iSelect]);
+                ImGui::Checkbox(("Wireframe##3"), &attachmentAnimatedOverlayXhair[iSelect]);
+                break;
+            }
+            break;
+
+        case 3:
+
+            ImGui::Combo(("Material"), &viewmodelType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
+
+            ImGui::Checkbox("Hands", &viewmodel);
+            ImGui::ColorEdit4("##viewmodelColor", viewmodelColor);
+            ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
+            switch (iSelectedOverlay) {
+            case 0:
+                // overlay
+                ImGui::Checkbox(("Overlay##1"), &viewmodelOverlay);
+                ImGui::ColorEdit4(("##OverlayColor"), viewmodelOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &viewmodelOverlayXhair);
+                break;
+
+            case 1:
+                // thin
+                ImGui::Checkbox(("Overlay##2"), &viewmodelThinOverlay);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), viewmodelThinOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &viewmodelThinOverlayXhair);
+                break;
+
+            case 2:
+                // animated
+                ImGui::Checkbox(("Overlay##3"), &viewmodelAnimOverlay);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), viewmodelAnimOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &viewmodelAnimOverlayXhair);
+                break;
+            }
+
+            break;
+
+        case 4:
+
+            ImGui::Combo(("Material"), &weaponType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
+
+            ImGui::Checkbox("Weapon", &weapon);
+            ImGui::ColorEdit4("##viewmodelColor", viewmodelColor);
+            ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
+            switch (iSelectedOverlay) {
+            case 0:
+                // overlay
+                ImGui::Checkbox(("Overlay##1"), &weaponOverlay);
+                ImGui::ColorEdit4(("##OverlayColor"), weaponOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &weaponOverlayXhair);
+                break;
+
+            case 1:
+                // thin
+                ImGui::Checkbox(("Overlay##2"), &weaponThinOverlay);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), weaponThinOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &weaponThinOverlayXhair);
+                break;
+
+            case 2:
+                // animated
+                ImGui::Checkbox(("Overlay##3"), &weaponAnimOverlay);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), weaponAnimOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &weaponAnimOverlayXhair);
+                break;
+            }
+
             break;
         }
 
-        static const char* arrNames[] = { "Normal", "Behind wall", "Overlay", "Overlay behind wall", "Thin", "Thin behind wall", "Animated", "Animated behind wall" };
-        bool* bWireFrames[] = { &bXhair[iSelect], &bXhair[iSelect], &bOverlayXhair[iSelect], &bOverlayXhairXQZ[iSelect], &bThinOverlayXhair[iSelect], &bThinOverlayXhairXQZ[iSelect], &bAnimOverlayXhair[iSelect], &bAnimOverlayXhairXQZ[iSelect] };
+        //static const char* arrNames[] = { "Normal", "Behind wall", "Overlay", "Overlay behind wall", "Thin", "Thin behind wall", "Animated", "Animated behind wall" };
+        //bool bWireFrames[] = { &bXhair[iSelect], &bXhair[iSelect], &bOverlayXhair[iSelect], &bOverlayXhairXQZ[iSelect], &bThinOverlayXhair[iSelect], &bThinOverlayXhairXQZ[iSelect], &bAnimOverlayXhair[iSelect], &bAnimOverlayXhairXQZ[iSelect] };
         
-        ImGui::MultiComboBox("Wireframe##selectables", arrNames, *bWireFrames, IM_ARRAYSIZE(bWireFrames));
+        //ImGui::MultiComboBox("Wireframe##selectables", arrNames, *bWireFrames, IM_ARRAYSIZE(bWireFrames));
     }
     ImGui::EndChild();
 
@@ -589,6 +687,13 @@ void menu::Visual(ImVec2 savedCursorPosition) {
         ImGui::ColorEdit4(("##flLampColors"), flLampColors);
         if (bOverrideLampColors)
             ImGui::SliderInt(("Flicker"), &iFlicker, 0, 255);
+
+        ImGui::Checkbox("Override fog", &bOverrideFog);
+        if (bOverrideFog) {
+            ImGui::ColorEdit4("##fog color", flFogColor);
+            ImGui::SliderInt("Fog start", &iFogStart, -100, 2000);
+            ImGui::SliderInt("Fog end", &iFogEnd, -100, 5000);
+        }
 
         ImGui::Checkbox(("Aspect ratio"), &bAspectRatio);
         if (bAspectRatio)
@@ -724,9 +829,9 @@ void menu::Misc(ImVec2 savedCursorPosition) {
 
         static const char* arrHitSoundOptions[] = { ("None"), ("Default"), ("Custom") };
         ImGui::Combo(("Hitsound##combo"), &iHitSound, arrHitSoundOptions, IM_ARRAYSIZE(arrHitSoundOptions));
+        ImGui::SliderFloat("Volume##123", &flHitSoundVolume, 0.f, 100.f, "%.2f");
         if (iHitSound == 2) {
 
-            ImGui::SliderFloat("Volume##123", &flHitSoundVolume, 0.f, 100.f, "%.2f");
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
             static int soundItemCurrent1 = -1;
             static std::string soundItem;
@@ -792,7 +897,7 @@ void menu::Skins(ImVec2 savedCursorPosition) {
         szSearchWord = std::string_view(buf);
 
         static std::string_view szBackup = szSearchWord;
-        if (iBackupItemDefinitionIndex != skinChanger.iItemDefinitionIndex || szBackup != szSearchWord) {
+        if (iBackupItemDefinitionIndex != skinChanger.iItemDefinitionIndex || szBackup != szSearchWord || (bFilterByWeapon && vecSkinNames.size() >= skinChanger.SkinKits.size()) || (!bFilterByWeapon && vecSkinNames.size() < skinChanger.SkinKits.size())) {
 
             szBackup = szSearchWord;
             vecSkinNames.clear(); vecSkinRarity.clear(); vecPaintKit.clear();
@@ -867,26 +972,38 @@ void menu::Skins(ImVec2 savedCursorPosition) {
         ImGui::SliderFloat("Wear", &flSkinWear[iMenuID], 0.f, 100.f, "%.4f");
         ImGui::SliderInt("Stattrak", &iSkinStattrak[iMenuID], 0, 2500);
         ImGui::SliderInt("Seed", &iSeed[iMenuID], 0, 1000);
+        
 
         static char nameTagBuffer[37][255]{};
         ImGui::InputText(("Name tag"), nameTagBuffer[iMenuID], sizeof(nameTagBuffer));
         szSkinNametag[iMenuID] = nameTagBuffer[iMenuID];
 
-        //ImGui::Checkbox("Skin color", &bModifySkinColors[iMenuID]);
-        //if (bModifySkinColors[iMenuID]) {
+        static const char* arrQualities[] = { "Normal", "Genuine", "Vintage", "Unusual", "Community",  "Developer", "Self-Made", "Customized", "Strange", "Completed", "Tournament" };
+        static int iBackupQualities[37];
+        for (size_t i = 0; i < 38; i++) 
+            iBackupQualities[i] = iQuality[iMenuID];
+        
+        ImGui::ListBox("Quality", &iQuality[iMenuID], arrQualities, IM_ARRAYSIZE(arrQualities));
+        if (iBackupQualities[iMenuID] != iQuality[iMenuID]) {
+            iBackupQualities[iMenuID] = iQuality[iMenuID];
+            skinChanger.bshouldFullUpdate = true;
+        }
 
-        //    ImGui::Text("Color 1:");
-        //    ImGui::ColorEdit4("##color1", colSkins1[iMenuID]);
+        ImGui::Checkbox("Skin color", &bModifySkinColors[iMenuID]);
+        if (bModifySkinColors[iMenuID]) {
 
-        //    ImGui::Text("Color 2:");
-        //    ImGui::ColorEdit4("##color2", colSkins2[iMenuID]);
+            ImGui::Text("Color 1:");
+            ImGui::ColorEdit4("##color1", colSkins1[iMenuID]);
 
-        //    ImGui::Text("Color 3:");
-        //    ImGui::ColorEdit4("##color3", colSkins3[iMenuID]);
+            ImGui::Text("Color 2:");
+            ImGui::ColorEdit4("##color2", colSkins2[iMenuID]);
 
-        //    ImGui::Text("Color 4:");
-        //    ImGui::ColorEdit4("##color4", colSkins4[iMenuID]);
-        //}
+            ImGui::Text("Color 3:");
+            ImGui::ColorEdit4("##color3", colSkins3[iMenuID]);
+
+            ImGui::Text("Color 4:");
+            ImGui::ColorEdit4("##color4", colSkins4[iMenuID]);
+        }
     }
     ImGui::EndChild();
 
@@ -903,30 +1020,39 @@ void menu::Skins(ImVec2 savedCursorPosition) {
         ImGui::Combo("Glove", &iGloveModel, arrGloveModels, IM_ARRAYSIZE(arrGloveModels));
         skinChanger.bshouldFullUpdate = iSelectedGloveModel != iGloveModel ? true : skinChanger.bshouldFullUpdate;
 
-        static std::vector<const char*> vecGloveNames;
-        static std::vector<int> vecPaintKit;
+        static std::vector<const char*> vecGloveNames[9];
+        static  std::vector<int> vecPaintKit[9];
 
         static const char* arrGloveModelSearch[] = { "Default", "Bloodhound", "Sport", "Driver", "Wrap", "Moto", "Specialist", "Bloodhound", "Broken Fang" };
-        
-        std::string_view otherString = arrGloveModelSearch[iGloveModel];
-        vecGloveNames.clear(); vecPaintKit.clear();
-        for (SkinKit_t& it : skinChanger.GloveKits) {
+        static bool bOnce = true;
+        if (bOnce)
+            for (size_t j = 0; j < 9; j++)
+            {
+                std::string_view otherString = arrGloveModelSearch[j];
+                for (SkinKit_t& it : skinChanger.GloveKits) {
 
-            std::string_view searchString = it.m_szName;
-            if (searchString.find(otherString) != std::string_view::npos) {
+                    std::string_view searchString = it.m_szName;
+                    if (searchString.find(otherString) != std::string_view::npos) {
 
-                vecGloveNames.push_back(it.m_szName.c_str());
-                vecPaintKit.push_back(it.m_nID);
+                        vecGloveNames[j].push_back(it.m_szName.c_str());
+                        vecPaintKit[j].push_back(it.m_nID);
+                    }
+                }
             }
-        }
-        
-        if (!vecGloveNames.empty()) {
+        bOnce = false;
+        if (!vecGloveNames[iGloveModel].empty()) {
 
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-            static int iSelectedGlove;
-            ImGui::Combo("##yes", &iSelectedGlove, vecGloveNames.data(), vecGloveNames.size());
-            skinChanger.bshouldFullUpdate = vecPaintKit.at(iSelectedGlove) != iSkinId[35] ? true : skinChanger.bshouldFullUpdate;
-            iSkinId[35] = vecPaintKit.at(iSelectedGlove);
+            static int iSelectedGlove[9];
+            for (size_t i = 0; i < 9; i++) {
+                auto it = std::find(vecPaintKit[i].begin(), vecPaintKit[i].end(), iSkinId[35]);
+                if (it != vecPaintKit[i].end())
+                    iSelectedGlove[i] = std::distance(vecPaintKit[i].begin(), it);
+            }
+
+            ImGui::Combo("##yes", &iSelectedGlove[iGloveModel], vecGloveNames[iGloveModel].data(), vecGloveNames[iGloveModel].size());
+            skinChanger.bshouldFullUpdate = vecPaintKit[iGloveModel].at(iSelectedGlove[iGloveModel]) != iSkinId[35] ? true : skinChanger.bshouldFullUpdate;
+            iSkinId[35] = vecPaintKit[iGloveModel].at(iSelectedGlove[iGloveModel]);
 
             ImGui::PopItemWidth();
         }

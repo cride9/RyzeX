@@ -9,8 +9,6 @@ void __fastcall h::hkInterpolateServerEntites(void* ecx, void* edx) {
 	if (!g::pLocal || i::ClientState->iSignonState != SIGNONSTATE_FULL || g::bUpdatingSkins)
 		return original(ecx, edx);
 
-	lagcomp.SetInterpolationFlags();
-
 	original( ecx, edx);
 
 	anims.InterpolateMatricies();

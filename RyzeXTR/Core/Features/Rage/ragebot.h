@@ -1,59 +1,76 @@
 #pragma once
-#include "../../SDK/Menu/config.h"
-#include "../../SDK/Entity.h"
 #include "Animations/Lagcompensation.h"
+#include "Animations/EnemyAnimations.h"
+#include "../Networking/networking.h"
+#include "../../SDK/InputSystem.h"
+#include "../../SDK/Menu/config.h"
+#include "../Misc/Playerlist.h"
+#include "../../SDK/Entity.h"
+#include "../../SDK/math.h"
+#include "../Visuals/ESP.h"
+#include "../../globals.h"
+#include "../Misc/misc.h"
+#include "autowall.h"
+#include "exploits.h"
+
 #define HITBOX_ARRAY std::array<bool, HITBOX_MAX>
 
 struct Hitscan_t {
 
-	Hitscan_t() {
+	Hitscan_t(){}
+	Hitscan_t(Lagcompensation::LagRecord_t* _record, Vector& _point, FireBulletData_t& data, bool _baimlethal, bool _safe) {
 
+		pRecord = _record;
+		vecPoint = _point;
+
+		bBaimLethal = _baimlethal;
+		bSafe = _safe;
+		bBacktrack = &lagcomp.GetLog(_record->iEntIndex).pRecord.front() != _record;
+
+		flAnimationVelocity = _record->flAnimationVelocity;
+		flDesyncDelta = _record->flDesyncDelta;
+		flDamage = data.flCurrentDamage;
+
+		iHitbox = data.enterTrace.iHitbox;
+		iHitgroup = data.enterTrace.iHitGroup;
 	}
-	Hitscan_t(Lagcompensation::LagRecord_t* recordPointer, Vector hitboxVector, float damageFloat, int hitboxInt, int hitgroupInt, bool safeBool, bool lethalBool, bool backtrackBool, bool headBool, bool baimBool, bool middleBool) {
-		pRecord = recordPointer;
-		vecPoint = hitboxVector;
-		flDamage = damageFloat;
-		iHitbox = hitboxInt;
-		iHitgroup = hitgroupInt;
-		bSafe = safeBool;
-		bLethal = lethalBool;
-		bBacktrack = backtrackBool;
-		bHead = headBool;
-		bBaim = baimBool;
-		bMiddle = middleBool;
-	}
 
-	Lagcompensation::LagRecord_t* pRecord = nullptr;
-	Vector vecPoint = Vector();
-	float flDamage = 0;
-	int iHitbox = 0;
-	int iHitgroup = 0;
-	bool bSafe = false;
-	bool bLethal = false;
-	bool bBacktrack = false;
-	bool bHead = false;
-	bool bBaim = false;
-	bool bMiddle = false;
+	Lagcompensation::LagRecord_t* pRecord{};
 
-	int GetRecordPoints() {
+	Vector vecPoint{};
 
-		int iTotalPoints = 0;
-		if (bLethal && bBaim)
-			iTotalPoints++;
+	bool bBaimLethal{};
+	bool bSafe{};
+	bool bBacktrack{};
 
-		if (bSafe && bHead)
-			iTotalPoints++;
+	float flAnimationVelocity{};
+	float flDesyncDelta{};
+	float flDamage{};
 
-		if (bMiddle)
-			iTotalPoints++;
+	int iHitbox{};
+	int iHitgroup{};
 
-		if (pRecord->bDidShot)
-			iTotalPoints++;
+	bool operator<(const Hitscan_t& other) const {
+		// Sort by baimlethal (true first, false second)
+		if (bBaimLethal && !other.bBaimLethal)
+			return true;
+		if (!bBaimLethal && other.bBaimLethal)
+			return false;
 
-		if (!pRecord->bBreakingLagcompensation)
-			iTotalPoints++;
+		// Sort by bSafe (true first, false second)
+		if (bSafe && !other.bSafe)
+			return true;
+		if (!bSafe && other.bSafe)
+			return false;
 
-		return iTotalPoints;
+		// Sort by flDesyncDelta (smaller values first)
+		if (flDesyncDelta < other.flDesyncDelta)
+			return true;
+		if (flDesyncDelta > other.flDesyncDelta)
+			return false;
+
+		// Sort by flAnimationVelocity (larger values first)
+		return flAnimationVelocity > other.flAnimationVelocity;
 	}
 };
 
@@ -118,13 +135,14 @@ public:
 	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE);
 	std::array<Vector, 6> HitboxPoints(Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, Vector&, int);
 	bool bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);
-	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector, int iHitbox, int iMustIntersect = 0);
+	int	SafePoint(Vector&, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, Vector, int iHitbox, bool* bRollCheck = nullptr);
 
 private:
 
 	std::vector<CBaseEntity*> vecTargets{nullptr};
 
 	void				SelectTargets(CBaseEntity*);
+	std::vector<Lagcompensation::LagRecord_t*> ChooseTargetRecord(Lagcompensation::AnimationInfo_t* pLog, CBaseCombatWeapon* pWeapon, Vector& vecEyePosition);
 	Vector				Hitscan(CBaseEntity*, CBaseCombatWeapon*, Vector&);
 	bool				Hitchance(CBaseEntity*, CBaseCombatWeapon*, Vector, int, Vector);
 	void				AutoStop(CBaseEntity*, CBaseCombatWeapon*, CBaseEntity*, CUserCmd*, Vector);

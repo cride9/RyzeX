@@ -52,7 +52,7 @@ namespace cfg {
 		inline int iBodyPoints[7];
 		inline int iOverride[7];
 
-		inline bool bForceSafePoint[] = { false, false, false, false ,false, false };
+		inline bool bSafePoint[] = { false, false, false, false ,false, false };
 		inline bool bAutostop[] = { false, false, false, false ,false, false };
 		inline int	bAutostopAggressiveness[] = { false, false, false, false ,false, false };
 		inline bool bConditions[6][2];
@@ -361,6 +361,7 @@ namespace cfg {
 
 		inline int  iSkinId[37];
 		inline int  iSeed[37];
+		inline int  iQuality[37];
 		inline int  iGloveModel;
 		inline int  iKnifeModel;
 		inline int  iSkinStattrak[37];

@@ -330,10 +330,10 @@ void HandleGloves()
 	if (glove)
 	{
 		ApplyGlove(glove, skinChanger.GetGloveIdFromMenu(iGloveModel), iSkinId[35], i::ModelInfo->GetModelIndex(mapGloveList.at(skinChanger.GetGloveIdFromMenu(iGloveModel))), 0, flSkinWear[35]);
-
+		
 		glove->GetItemIDHigh() = -1;
+		glove->GetFallbackSeed() = 0;
 		glove->GetFallbackStatTrak() = -1;
-
 		glove->GetClientNetworkable()->PreDataUpdate(DATA_UPDATE_CREATED);
 	}
 }
@@ -369,6 +369,18 @@ bool CSkinChanger::ApplyKnifeSkin(CBaseCombatWeapon* pWeapon, const char* szMode
 	pWeapon->GetEntityQuality() = 3;
 	pWeapon->GetModelIndex() = i::ModelInfo->GetModelIndex(szModel);
 
+	EconItemDefinition* def = m_pItemSchematic->getItemDefinitionInterface(iItemDefIndex);
+	if (!def)
+		return false;
+
+	CBaseEntity* pViewModel = static_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetViewModel()));
+	if (!pViewModel)
+		return false;
+
+	const char* szViewmodel = def->getPlayerDisplayModel();
+	if (!szViewmodel)
+		return false;
+
 	CBaseHandle pWorldModelHandle = pWeapon->GetWorldModelHandle();
 	if (!pWorldModelHandle)
 		return false;
@@ -377,7 +389,11 @@ bool CSkinChanger::ApplyKnifeSkin(CBaseCombatWeapon* pWeapon, const char* szMode
 	if (!pWorldModel)
 		return false;
 
-	pWorldModel->GetModelIndex() = i::ModelInfo->GetModelIndex(szModel) + 1;
+	const char* szWorldModel = def->getWorldDisplayModel();
+	if (!szWorldModel)
+		return false;
+
+	pWorldModel->GetModelIndex() = i::ModelInfo->GetModelIndex(szWorldModel);
 
 	return true;
 }
@@ -529,6 +545,7 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 			pCurrentWeapon->GetAccountID() = XUID;
 			pCurrentWeapon->GetFallbackSeed() = iSeed[menuId];
 			pCurrentWeapon->GetItemIDHigh() = -1;
+			pCurrentWeapon->GetEntityQuality() = arrItemQuality[iQuality[menuId]].first;
 
 			//ApplyStickers(pCurrentWeapon);
 

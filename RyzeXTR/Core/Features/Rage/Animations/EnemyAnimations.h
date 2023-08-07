@@ -81,7 +81,7 @@ public:
 
 	/* PASTED FUNTIONS */
 	void RebuiltLayer6(CAnimState*, CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity);
-	void GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
+	void GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious = nullptr);
 	float BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	void RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog);
 	void SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* pMatrix, int nFlags);

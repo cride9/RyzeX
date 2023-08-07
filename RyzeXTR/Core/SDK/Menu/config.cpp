@@ -62,12 +62,12 @@ void CConfig::Setup() {
 		SetupValue( bAutoScope[ 1 ], false, "rage", "autoscope2" );
 		SetupValue( bAutoScope[ 2 ], false, "rage", "autoscope3" );
 
-		SetupValue(bForceSafePoint[0], false, "rage", "forceSafePoint1");
-		SetupValue(bForceSafePoint[1], false, "rage", "forceSafePoint2");
-		SetupValue(bForceSafePoint[2], false, "rage", "forceSafePoint3");
-		SetupValue(bForceSafePoint[3], false, "rage", "forceSafePoint4");
-		SetupValue(bForceSafePoint[4], false, "rage", "forceSafePoint5");
-		SetupValue(bForceSafePoint[5], false, "rage", "forceSafePoint6");
+		SetupValue(bSafePoint[0], false, "rage", "forceSafePoint1");
+		SetupValue(bSafePoint[1], false, "rage", "forceSafePoint2");
+		SetupValue(bSafePoint[2], false, "rage", "forceSafePoint3");
+		SetupValue(bSafePoint[3], false, "rage", "forceSafePoint4");
+		SetupValue(bSafePoint[4], false, "rage", "forceSafePoint5");
+		SetupValue(bSafePoint[5], false, "rage", "forceSafePoint6");
 
 		SetupValue(bDoubletap, false, "rage", "Ragedoubletap");
 		SetupValue(iDoubletapKey, 0, "rage", "Ragedoubletapkey");
@@ -789,6 +789,7 @@ void CConfig::Setup() {
 
 		SetupValue(iSkinId, 37, 0, "skins", "iSkinId");
 		SetupValue(iSeed, 37, 0, "skins", "iSeed");
+		SetupValue(iQuality, 37, 0, "skins", "iQuality");
 		SetupValue(iSkinStattrak, 37, 0, "skins", "iSkinStattrak");
 		SetupValue(iGloveModel, 0, "skins", "iGloveModel");
 		SetupValue(iKnifeModel, 0, "skins", "iKnifeModel");

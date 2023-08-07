@@ -417,7 +417,7 @@ bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSou
 	M::AngleVectors(vecAngles, &data.vecDirection);
 	data.vecDirection.Normalize();
 
-	if (!g::pLocal->GetWeapon() || (int)g::pLocal->GetWeapon() == 0xFFFF)
+	if (!g::pLocal->GetWeapon())
 		return false;
 
 	data.iPenetrateCount = 1;
@@ -440,8 +440,9 @@ bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSou
 	if (data.enterTrace.flFraction == 1.f)
 		return true;
 
-	if (HandleBulletPenetration(g::pLocal, pWeaponData, pEnterSurfaceData, data))
+	if (HandleBulletPenetration(g::pLocal, pWeaponData, pEnterSurfaceData, data)) {
 		return true;
+	}
 
 	return false;
 }

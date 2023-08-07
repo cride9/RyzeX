@@ -109,22 +109,15 @@ public:
 
 		// 0 - Visual, 1 - Resolve, 2 - Left, 3 - Right, 4 - Center
 		matrix3x4_t pMatricies[MAX][128];
-		CAnimationLayer pSideLayers[MAX][13];
 		LayerData_t LayerData[MAX];
 
 		bool bBreakingLagcompensation{};
 		bool bFakewalking{};
 		bool bValid = true;
 		bool bDormant{};
-		bool bBackwards{};
-		bool bSideways{};
-		bool bForwards{};
 		bool bDidShot{};
-		bool bResolved{};
 		bool bRestoreData{};
 		bool bFirstAfterDormant{};
-		bool bSafeRecord{};
-		bool bImmune{};
 
 		Vector vecVelocity{};
 		Vector vecAbsVelocity{};
@@ -133,35 +126,26 @@ public:
 		Vector vecMins{};
 		Vector vecMaxs{};
 
-		Vector vecLastReliableAngle{};
 		Vector vecEyeAngles{};
 		Vector vecAbsAngles{};
-
-		float pResolverPlaybackrate[3];
 
 		CAnimationLayer pLayers[13];
 		float flPoses[24];
 
-		float flServerTick{};
-		float flAnimationTime{};
 		float flSimulationTime{};
 		float flOldSimulationTime{};
 		float flInterpTime{};
 		float flDuck{};
 		float flLowerBodyYawTarget{};
 		float flLastShotTime{};
-		float flSpawnTime{};
-		float flDeltaAngle{};
-		float flEyeYaw{};
 		float flMaxSpeed{};
 		float flAnimationVelocity{};
 		float flDurationInAir{};
 		float flActivityPlayback{};
 		float flThirdPersonRecoil{};
 		float flDesyncDelta{};
+		float flResolveDelta{};
 
-		int iCachedCount{};
-		int iWritableBones{};
 		int nVelocityMode{};
 		int iActivityTick{};
 		int iActivityType{};
@@ -219,40 +203,27 @@ public:
 		CBaseEntity* pEntity;
 
 		bool bLeftDormancy{};
-		bool bJitterAntiAim{};
 
-		int iLastUpdateTick;
 		int iLastValid = 0;
-		int iFirstValid = 32;
-		int iShots;
-		int iWalkToRunTransitionState;
-		int iDesyncSide;
-		int iPostResolveSide = 0;
+		int iLastResolve{};
 
-		float flTimeSinceLegit;
-		float flTimeSinceNoDesync;
-		float flTimeSinceBreakingLBY;
-		float flTimeSinceBodySwaying;
-		float flTimeSinceBodySwayLeft;
-		float flTimeSinceBodySwayRight;
-		float flSpawntime;
-		float flWalkToRunTransition;
 		float flExploitTime;
 
-		int iLastResolve{};
-		EMatrixType iFreestandMatrix{};
-		std::array<int, MAX> iHitSide;
-
-		Lagcompensation::EResolverMode iAntiAimType;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
 		std::array<matrix3x4_t, 128> pCachedMatrix{matrix3x4_t()};
 
 		void ClearData() {
 
 			pEntity = nullptr;
-			iLastUpdateTick = 0;
 			pCachedMatrix = std::array<matrix3x4_t, 128>();
 			pRecord.clear();
+		}
+
+		void ClearRecords() {
+
+			pRecord.clear();
+			iLastValid = 0;
+			pRecord.emplace_front(Lagcompensation::LagRecord_t(pEntity));
 		}
 	};
 
@@ -262,6 +233,7 @@ public:
 	/* Those functions will run in createmove */
 	void StartLagcompensation(CBaseEntity*);
 	void FinishLagcompensation(CBaseEntity*);
+	bool DataChanged(CBaseEntity*, Lagcompensation::LagRecord_t*);
 
 	// get animation info
 	AnimationInfo_t& GetLog(const int iEntIndex);
@@ -279,9 +251,10 @@ public:
 
 	// fuck interpolation
 	void SetInterpolationFlags();
+	void DisableInterpolation();
 
 	// check if record is valid
-	static bool IsValidRecord(float m_flSimulationTime, float m_flRange = 0.199f);
+	static bool IsValidRecord(float m_flSimulationTime, float m_flRange = 0.2f);
 
 	// extrapolate players breaking lagcomp
 	void ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation::LagRecord_t* m_pCurrentRecord, Lagcompensation::LagRecord_t* m_pPrevious) const;

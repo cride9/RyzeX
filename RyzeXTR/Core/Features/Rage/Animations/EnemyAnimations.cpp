@@ -43,7 +43,7 @@ void Animations::UpdateClientSideAnimations(CBaseEntity* pEntity, Lagcompensatio
 	pEntity->InvalidatePhysicsRecursive(ANIMATION_CHANGED | ANGLES_CHANGED | POSITION_CHANGED);
 }
 
-void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
+void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	auto GetYawRotation = [&](int nRotationSide) -> float
 	{
@@ -85,9 +85,9 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 
 		switch (nRotationSide)
 		{
-		case -1: pEntity->AnimState()->flGoalFeetYaw = pRecord->vecEyeAngles.y - pRecord->flDesyncDelta; break;
-		case 0: pEntity->AnimState()->flGoalFeetYaw = pRecord->vecEyeAngles.y; break;
-		case 1: pEntity->AnimState()->flGoalFeetYaw = pRecord->vecEyeAngles.y + pRecord->flDesyncDelta; break;
+		case -1: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta); break;
+		case 0: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y); break;
+		case 1: pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta); break;
 		}
 
 		UpdateClientSideAnimations(pEntity, pRecord);

@@ -21,7 +21,6 @@ int __fastcall h::hkListLeavesInBox(void* thisptr, int edx, const Vector& vecMin
 
 					constexpr Vector vecMapMin(MIN_COORD_FLOAT, MIN_COORD_FLOAT, MIN_COORD_FLOAT);
 					constexpr Vector vecMapMax(MAX_COORD_FLOAT, MAX_COORD_FLOAT, MAX_COORD_FLOAT);
-					//return invokeFastcall<int>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, &vecMins, &vecMaxs, puList, nListMax);
 					return original(thisptr, edx, vecMapMin, vecMapMax, puList, nListMax);
 				}
 			}
@@ -29,5 +28,4 @@ int __fastcall h::hkListLeavesInBox(void* thisptr, int edx, const Vector& vecMin
 	}
 	return original(thisptr, edx, vecMins, vecMaxs, puList, nListMax);
 
-	//return invokeFastcall<int>(adr(thisptr), adr(edx), adr(original), ROP::EngineGadget_t::uReturnGadget, &vecMins, &vecMaxs, puList, nListMax);
 }

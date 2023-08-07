@@ -258,7 +258,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 				if (desyncMatrix && !desyncMatrix->GetOrigin().IsZero()) {
 					BeginChams(materials[localDesyncType], localDesyncColor, false, localDesyncXhair);
-					//detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, g_LocalAnimations->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 			}
@@ -366,17 +365,8 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					flBacktrackColor[3] *= min(pLog->pRecord.at(pLog->iLastValid).vecOrigin.DistTo(pEnt->GetVecOrigin()) / 10.f, 1.f);
 
 					BeginChams(materials[enemyBTType], flBacktrackColor.data(), true, enemyBTXhair);
-					//detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, pLog->pRecord.at(pLog->iLastValid).pMatricies[VISUAL], flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 					original(i::StudioRender, 0U, pResults, info, pLog->pRecord.at(pLog->iLastValid).pMatricies[VISUAL], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
-				//if (matrix3x4_t pMatrix[128]; GenerateLerpedMatrix(pEnt, pMatrix)) {
-
-				//	if (!pMatrix->GetOrigin().IsZero()) {
-				//		BeginChams(materials[enemyBTType], enemyBTColor, true, enemyBTXhair);
-				//		detour::drawModel.CallOriginal<void>(ROP::ClientGadget_t::uReturnGadget, (void*)i::StudioRender, 0, pResults, &info, pMatrix, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-				//		//original(i::StudioRender, 0, pResults, &info, pMatrix, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
-				//	}
-				//}
 			}
 			if (bChams[0]) {
 

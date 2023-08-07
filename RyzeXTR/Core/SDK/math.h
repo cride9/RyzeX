@@ -38,6 +38,7 @@ namespace M
 	void VectorITransform(const Vector& in1, const matrix3x4_t& in2, Vector& out);
 	/* convert vector to angles */
 	void	VectorAngles(const Vector& vecForward, Vector& angView);
+	Vector	VectorAngles(const Vector& vecForward);
 	/* convert angles to x, y, z vectors */
 	void	AngleVectors(const Vector& angView, Vector* pForward, Vector* pRight = nullptr, Vector* pUp = nullptr);
 	/* convert angles to matrix */
