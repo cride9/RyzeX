@@ -132,7 +132,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 		i::GlobalVars->iTickCount
 	);
 
-	this->m_LocalData.m_nSimulationTicks = i::ClientState->nChokedCommands + 1;
+	this->m_LocalData.iSimulationTick = i::ClientState->nChokedCommands + 1;
 	std::tuple < Vector, Vector, float, float, Vector, Vector, Vector, Vector, int, int, int, float, float > m_Data = std::make_tuple
 	(
 		pLocal->m_angVisualAngles(),
@@ -163,10 +163,10 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 	g_LocalAnimations->CopyPlayerAnimationData(false, pLocal);
 
 	/* UpdatePlayerAnimations */
-	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.m_nSimulationTicks; nSimulationTick++)
+	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.iSimulationTick; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int GetTickBase = networking.GetCorrectedTickbase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
+		int GetTickBase = networking.GetCorrectedTickbase() - m_LocalData.iSimulationTick + nSimulationTick;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -174,7 +174,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 		i::GlobalVars->iFrameCount = GetTickBase;
 		i::GlobalVars->iTickCount = GetTickBase;
 
-		AnimationRecord_t* m_Record = &m_LocalData.m_AnimRecords[(g::pCmd->iCommandNumber - m_LocalData.m_nSimulationTicks + nSimulationTick) % 150];
+		AnimationRecord_t* m_Record = &m_LocalData.m_AnimRecords[(g::pCmd->iCommandNumber - m_LocalData.iSimulationTick + nSimulationTick) % 150];
 		if (m_Record)
 		{
 			/* set player data from the animation record */ 
@@ -193,7 +193,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 			g_LocalAnimations->DoAnimationEvent(m_Record->m_nButtons, pLocal);
 
 			/* set shot angle */
-			if (nSimulationTick == m_LocalData.m_nSimulationTicks)
+			if (nSimulationTick == m_LocalData.iSimulationTick)
 			{
 				if (std::get < 1 >(m_ShotData))
 				{
@@ -322,10 +322,10 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 	std::tuple < Vector, bool > m_ShotData = std::make_tuple < Vector, bool >(Vector(0, 0, 0), false);
 
 	/* UpdatePlayerAnimations */
-	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.m_nSimulationTicks; nSimulationTick++)
+	for (int nSimulationTick = 1; nSimulationTick <= m_LocalData.iSimulationTick; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int GetTickBase = networking.GetCorrectedTickbase() - m_LocalData.m_nSimulationTicks + nSimulationTick;
+		int GetTickBase = networking.GetCorrectedTickbase() - m_LocalData.iSimulationTick + nSimulationTick;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -333,7 +333,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 		i::GlobalVars->iFrameCount = GetTickBase;
 		i::GlobalVars->iTickCount = GetTickBase;
 
-		AnimationRecord_t* m_Record = &m_LocalData.m_AnimRecords[(g::pCmd->iCommandNumber - m_LocalData.m_nSimulationTicks + nSimulationTick) % 150];
+		AnimationRecord_t* m_Record = &m_LocalData.m_AnimRecords[(g::pCmd->iCommandNumber - m_LocalData.iSimulationTick + nSimulationTick) % 150];
 		if (m_Record)
 		{
 			/* set player data from the animation record */
@@ -352,7 +352,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 			g_LocalAnimations->DoAnimationEvent(m_Record->m_nButtons, pLocal, true);
 
 			/* set shot angle */
-			if (nSimulationTick == m_LocalData.m_nSimulationTicks)
+			if (nSimulationTick == m_LocalData.iSimulationTick)
 			{
 				if (std::get < 1 >(m_ShotData))
 				{
@@ -856,7 +856,7 @@ void C_LocalAnimations::CleanSnapshots()
 void C_LocalAnimations::ResetData()
 {
 	m_LocalData.m_nFlags = 0;
-	m_LocalData.m_nSimulationTicks = 0;
+	m_LocalData.iSimulationTick = 0;
 	m_LocalData.m_flSpawnTime = 0.0f;
 	m_LocalData.m_flYawDelta = 0.0f;
 	m_LocalData.m_AnimRecords = { };

@@ -36,10 +36,10 @@ public:
 	int LagcompensatedTicks;
 
 	void ResetNetwork();
+	networkData_t data;
 
 private:
 	std::array < CNetvarData, 150 > pCompressData = { };
-	networkData_t data;
 	int iLastCommandNumber;
 };
 inline CNetworking networking;

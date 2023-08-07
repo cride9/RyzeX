@@ -483,7 +483,7 @@ int antiaim::ClosesToCrosshair() {
 	{
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || !pEntity->IsAlive() || pEntity->GetTeam() == pLocal->GetTeam() || pEntity->IsDormant() || pEntity == pLocal)
+		if (!pEntity || !pEntity->IsAlive() || !pEntity->IsEnemy(pLocal) || pEntity->IsDormant() || pEntity == pLocal)
 			continue;
 
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
@@ -525,7 +525,7 @@ int antiaim::ClosestToLocal() {
 	{
 		CBaseEntity* entity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!entity || !entity->IsAlive() || entity->GetTeam() == local_player->GetTeam() || entity->IsDormant() || entity == local_player)
+		if (!entity || !entity->IsAlive() || !entity->IsEnemy(local_player) || entity->IsDormant() || entity == local_player)
 			continue;
 
 		Vector2D point1 = Vector2D(local_player->GetVecOrigin().x, local_player->GetVecOrigin().y);
@@ -554,7 +554,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 	{
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || pEnt->GetTeam() == g::pLocal->GetTeam() || pEnt->IsDormant() || pEnt == g::pLocal)
+		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || !pEnt->IsEnemy(g::pLocal) || pEnt->IsDormant() || pEnt == g::pLocal)
 			continue;
 
 		if (playerList::arrPlayers[i].iPriority == FRIEND)
@@ -596,7 +596,7 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 			|| !pPlayerEntity->IsAlive()
 			|| pPlayerEntity->IsDormant()
 			|| pPlayerEntity == g::pLocal
-			|| pPlayerEntity->GetTeam() == g::pLocal->GetTeam())
+			|| !pPlayerEntity->IsEnemy(g::pLocal))
 			continue;
 
 		float flAngToLocal = M::CalcAngle(g::pLocal->GetVecOrigin(), pPlayerEntity->GetVecOrigin()).y;

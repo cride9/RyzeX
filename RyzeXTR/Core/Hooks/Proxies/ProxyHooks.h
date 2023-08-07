@@ -56,7 +56,9 @@ namespace p {
 
 	/* @section: handlers */
 	void BaseViewModelSequence(const CRecvProxyData* pData, void* pStruct, void* pOut);
+    void TickbaseProxy(const CRecvProxyData* pData, void* pStruct, void* pOut);
 
 	/* @section: managers */
     inline std::shared_ptr<CRecvPropHook> hkBaseViewModelSequence;
+    inline std::shared_ptr<CRecvPropHook> hkTickbaseProxy;
 }

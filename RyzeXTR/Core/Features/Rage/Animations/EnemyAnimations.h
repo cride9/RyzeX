@@ -69,18 +69,20 @@ public:
 
 	bool NewDataRecievedFromServer(CBaseEntity* pPlayer);
 	void UpdateClientSideAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
+	float GetYawRotation(Lagcompensation::LagRecord_t* pRecord, int nRotationSide);
 	std::array<int, 65> arrMissedShots{0};
 	bool didHurt = false, didFire = false, didImpact = false, didDie = false;
 	Vector bBulletImpact = Vector( 0, 0, 0 );
 
 	void ResolverHandler(IGameEvent*);
 	void ResolverLogic();
+	float GetVelocityLengthXY(CBaseEntity* pEntity);
 	void SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw);
 	void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
 	void PostResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 
 	/* PASTED FUNTIONS */
-	void RebuiltLayer6(CAnimState*, CBaseEntity* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity);
+	void RebuiltLayer6(CAnimState*, Lagcompensation::LagRecord_t* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity);
 	void GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious = nullptr);
 	float BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	void RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog);
@@ -91,6 +93,7 @@ public:
 	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);
 	bool CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount);
 	void TransformateMatrix(CBaseEntity* pPlayer);
+	void SetUpMovement(Lagcompensation::LagRecord_t* pRecord, CAnimState* pState, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
 	void InterpolateMatricies(CBaseEntity* pEntity = nullptr);
 
 private:

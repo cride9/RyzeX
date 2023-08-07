@@ -1089,7 +1089,7 @@ void menu::Config(ImVec2 savedCursorPosition) {
         }
 
         static char buf[255]{};
-        ImGui::InputText(("Config name"), buf, sizeof(buf));
+        ImGui::InputText(("##Config name"), buf, sizeof(buf));
 
         if (ImGui::Button(("Refresh"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
             Config2->RefreshConfigs();

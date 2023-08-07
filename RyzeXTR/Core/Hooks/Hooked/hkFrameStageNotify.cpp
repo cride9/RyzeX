@@ -120,15 +120,6 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
-		if (exploits::bBackupTickbase && g::pCmd) {
-
-			if (g::pCmd->iCommandNumber == exploits::iShiftCommand) 
-			{
-				g::pLocal->GetTickBase() = exploits::iRestoreTickbase;
-				i::GlobalVars->flCurrentTime = exploits::flRestoreCurtime;
-				exploits::bBackupTickbase = false;
-			}
-		}
 		lagcomp.FrameStageNotify();
 		break;
 
@@ -164,6 +155,7 @@ void hkPostFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
+		prediction.OnFrameStage(pLocal);
 		break;
 
 	case FRAME_RENDER_START:

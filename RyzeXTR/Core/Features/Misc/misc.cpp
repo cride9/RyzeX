@@ -1144,10 +1144,10 @@ void misc::BulletTracer(IGameEvent* pEvent) {
 	if (pEntity == g::pLocal && cfg::visual::bBulletTracer[LOCAL])
 		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[LOCAL]);
 	
-	else if (pEntity->GetTeam() == g::pLocal->GetTeam() && cfg::visual::bBulletTracer[TEAM] && !pEntity->IsDormant())
+	else if (!pEntity->IsEnemy(g::pLocal) && cfg::visual::bBulletTracer[TEAM] && !pEntity->IsDormant())
 		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[TEAM]);
 	
-	else if (pEntity->GetTeam() != g::pLocal->GetTeam() && cfg::visual::bBulletTracer[ENEMY] && !pEntity->IsDormant())
+	else if (pEntity->IsEnemy(g::pLocal) && cfg::visual::bBulletTracer[ENEMY] && !pEntity->IsDormant())
 		DrawBream(pEntity->GetEyePosition(), vecImpact, cfg::visual::flBulletTracerColor[ENEMY]);
 	
 }

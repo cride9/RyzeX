@@ -145,10 +145,14 @@ public:
 		float flThirdPersonRecoil{};
 		float flDesyncDelta{};
 		float flResolveDelta{};
+		float flLastUpdateIncrement{};
+		float flLayerDifferences[MAX]{};
 
 		int nVelocityMode{};
 		int iActivityTick{};
 		int iActivityType{};
+		int iAntiFreestand{};
+		int iLayerResolve = 0;
 
 		int iFlags{};
 		int iEFlags{};
@@ -215,15 +219,19 @@ public:
 		void ClearData() {
 
 			pEntity = nullptr;
-			pCachedMatrix = std::array<matrix3x4_t, 128>();
+			bLeftDormancy = true;
+
+			flExploitTime = 0.f;
+			iLastValid = 0;
 			pRecord.clear();
+			pCachedMatrix = std::array<matrix3x4_t, 128>();
 		}
 
-		void ClearRecords() {
+		void InvalidateRecords() {
+			for (auto& it : pRecord)
+				it.bValid = false;
 
-			pRecord.clear();
 			iLastValid = 0;
-			pRecord.emplace_front(Lagcompensation::LagRecord_t(pEntity));
 		}
 	};
 

@@ -42,7 +42,7 @@ void CRageBot::CreateMove( CUserCmd* pCmd, CBaseEntity* pLocal, bool& bSendPacke
 		RESET;
 
 	misc::RevolverCreateMove();
-	Vector vecEyePosition = pLocal->GetEyePosition(false);
+	Vector vecEyePosition = /*pLocal->GetEyePosition(false)*/InterpolateLocalEyePosition(pLocal->GetEyePosition(false), 2);
 	if (Vector vecHitscan = Hitscan(pLocal, pWeapon, vecEyePosition); vecHitscan != Vector(0, 0, 0)) {
 
 		if (!rageBotData.pAimbotTarget)
@@ -87,10 +87,12 @@ void CRageBot::SelectTargets( CBaseEntity* pLocal )
 	{
 		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
 
-		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || pEntity->GetTeam( ) == pLocal->GetTeam( ) || pEntity->HasImmunity( ) )
+		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || !pEntity->IsEnemy(pLocal) || pEntity->HasImmunity())
 			continue;
 
 		vecTargets.emplace_back( pEntity );
+		if (auto* it = &lagcomp.GetLog(i); it && !it->pRecord.empty())
+			anims.PostResolver(pEntity, &it->pRecord.front());
 	}
 	
 	if ( !vecTargets.empty( ) )
@@ -121,13 +123,12 @@ std::vector<Lagcompensation::LagRecord_t*> CRageBot::ChooseTargetRecord(Lagcompe
 
 		bool bHitableRoll = false;
 		
-
 		int iSafePoint = ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecHitboxPosition, HITBOX_HEAD);
 		if (iSafePoint < 3)
 			continue;
 
 		pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
-		if (autowall.GetDamage(g::pLocal, vecEyePosition, vecHitboxPosition, pWeapon) > 1.f)
+		if (autowall.GetDamage(g::pLocal, vecEyePosition, vecHitboxPosition, pWeapon) > 10.f)
 			pRecords.push_back(pRecord);
 	}
 	if (pRecords.empty())
@@ -153,8 +154,32 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	float flDamage = 0.f;
 
 	std::vector<Hitscan_t> vecRecordSave{}; 
+	std::vector<Hitscan_t> vecFoundPrediction{};
+	for (auto& it : vecPredictedScanning) {
+
+		auto foundElement = std::find_if(it.begin(), it.end(),
+			[&](const Hitscan_t& element) {
+				return element.compareByTickcount(i::GlobalVars->iTickCount);
+			});
+
+		auto foundElement2 = std::find_if(it.begin(), it.end(),
+			[&](const Hitscan_t& element) {
+				return element.compareByTickcount(i::GlobalVars->iTickCount + 1);
+			});
+
+		if (foundElement2 != it.end())
+			AutoStop(pLocal, pWeapon, nullptr, g::pCmd, Vector(0, 0, 0));
+
+		if (foundElement != it.end()) {
+			vecFoundPrediction = it;
+			break;
+		}
+	}
 
 	for (CBaseEntity* pEntity : vecTargets) {
+
+		if (!vecFoundPrediction.empty())
+			break;
 
 		if (!pEntity)
 			continue;
@@ -221,20 +246,26 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 						if (iHitbox == HITBOX_HEAD) 
 							bHead = bCollidePoint(vecEyePosition, vecPoint, pEntity->StudioHitbox(HITBOX_HEAD), pCurrentApplied->pMatricies[RESOLVE]);
 						
-						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, data, (iHitbox != HITBOX_HEAD && flDamage > pEntity->GetHealth()), iSafePoint == 3));
+						vecRecordSave.emplace_back(Hitscan_t(pCurrentApplied, vecPoint, data, (iHitbox != HITBOX_HEAD && flDamage - 15 > pEntity->GetHealth()), iSafePoint == 3));
+						vecRecordSave.back().iTickcount = i::GlobalVars->iTickCount + 2;
 					}
 				}
 			}
 		}
 	}
 
-	if (vecRecordSave.empty())
+	if (vecRecordSave.empty() && vecFoundPrediction.empty())
 		return Vector(0, 0, 0);
 
 	if (vecRecordSave.size() > 1)
 		std::sort(vecRecordSave.begin(), vecRecordSave.end());
 
-	for (auto& refRecord : vecRecordSave) {
+	if (!vecRecordSave.empty())
+		vecPredictedScanning.emplace_front(vecRecordSave);
+	while (vecPredictedScanning.size() > 5)
+		vecPredictedScanning.pop_back();
+
+	for (auto& refRecord : vecFoundPrediction) {
 
 		float flTransformedDamage = iMinimumDamage;
 		if (iMinimumDamage > 100)
@@ -243,7 +274,6 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		if (refRecord.flDamage < flTransformedDamage)
 			continue;
 
-		AutoStop(pLocal, pWeapon, refRecord.pRecord->pEntity, g::pCmd, refRecord.vecPoint);
 
 		rageBotData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
 		rageBotData.flDamage = refRecord.flDamage;
@@ -946,31 +976,14 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 	if (iHitbox == HITBOX_HEAD) {
 		refVecPoints.push_back(vecCenter + vecTop * flHitboxDistance);
 		refVecPoints.push_back(vecCenter - vecTop * flHitboxDistance);
+		refVecPoints.push_back(vecCenter + vecRight * (flHitboxDistance * 0.5f));
+		refVecPoints.push_back(vecCenter + vecLeft * (flHitboxDistance * 0.5f));
 
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
-		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) - (vecLeft * (flHitboxDistance * 0.5f)));
-		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) - (vecRight * (flHitboxDistance * 0.5f)));
-
-		/*if (bGenerateMore) {
-
-			refVecPoints.push_back(vecCenter + vecTop * (flHitboxDistance * 0.5f));
-			refVecPoints.push_back(vecCenter - vecTop * (flHitboxDistance * 0.5f));
-
-			refVecPoints.push_back(vecCenter + (vecTop * (flHitboxDistance * 0.5f)) + (vecLeft * ((flHitboxDistance * 0.25f))));
-			refVecPoints.push_back(vecCenter + (vecTop * (flHitboxDistance * 0.5f)) + (vecRight * ((flHitboxDistance * 0.25f))));
-			refVecPoints.push_back(vecCenter + (vecTop * (flHitboxDistance * 0.5f)) - (vecLeft * ((flHitboxDistance * 0.25f))));
-			refVecPoints.push_back(vecCenter + (vecTop * (flHitboxDistance * 0.5f)) - (vecRight * ((flHitboxDistance * 0.25f))));
-		}*/
 	}
 	refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
 	refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);
-
-	/*if (bGenerateMore) {
-
-		refVecPoints.push_back(vecCenter + vecLeft * (flHitboxDistance * 0.5f));
-		refVecPoints.push_back(vecCenter + vecRight * (flHitboxDistance * 0.5f));
-	}*/
 
 	//for (auto& something : refVecPoints)
 	//	g::drawList.push_back(something);

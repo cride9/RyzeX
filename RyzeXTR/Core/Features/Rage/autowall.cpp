@@ -293,7 +293,7 @@ bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInf
 		flDamageLostModifier = 0.16f;
 		flPenetrationModifier = 1.0f;
 	}
-	else if ( hEnterMaterial == CHAR_TEX_FLESH && flReductionDamage == 0.0f && data.enterTrace.pHitEntity != nullptr && data.enterTrace.pHitEntity->IsPlayer( ) && ( pLocal->GetTeam( ) == data.enterTrace.pHitEntity->GetTeam( ) ) )
+	else if ( hEnterMaterial == CHAR_TEX_FLESH && flReductionDamage == 0.0f && data.enterTrace.pHitEntity != nullptr && data.enterTrace.pHitEntity->IsPlayer( ) && ( !pLocal->IsEnemy(data.enterTrace.pHitEntity) ) )
 	{
 		if ( flPenetrateDamage == 0.0f )
 			return false;

@@ -2,6 +2,47 @@
 #include "../../globals.h"
 #include "../Networking/networking.h"
 
+void Prediction::OnFrameStage(CBaseEntity* pLocal) {
+
+	// local must be alive and we also must receive an update
+	if (!pLocal->IsAlive())
+		return;
+
+	// define const
+	const int nSimulationTick = TIME_TO_TICKS(pLocal->GetSimulationTime());
+	const int nOldSimulationTick = TIME_TO_TICKS(pLocal->GetOldSimulationTime());
+	const int nCorrectionTicks = TIME_TO_TICKS(0.03f);
+	const int nServerTick = i::ClientState->clockDriftMgr.nServerTick;
+
+	// check time
+	if (nSimulationTick <= nOldSimulationTick || abs(nSimulationTick - nServerTick) > nCorrectionTicks)
+		return;
+
+	// save last simulation ticks amount
+	Tickbase_t.iSimulationTick = nSimulationTick - nServerTick;
+}  
+
+int Prediction::AdjustPlayerTimeBase(int iSimulationTick) {
+
+	// get tickbase
+	int nTickBase = g::pLocal->GetTickBase() + 1;
+
+	// define const
+	const int nCorrectionTicks = TIME_TO_TICKS(0.03f);
+	const int nChokedCmds = i::ClientState->nChokedCommands;
+
+	// if client gets ahead or behind of this, we'll need to correct.
+	const int nTooFastLimit = nTickBase + nCorrectionTicks + nChokedCmds - Tickbase_t.iSimulationTick + 1;
+	const int nTooSlowLimit = nTickBase - nCorrectionTicks + nChokedCmds - Tickbase_t.iSimulationTick + 1;
+
+	// correct tick 
+	if (nTickBase + 1 > nTooFastLimit || nTickBase + 1 < nTooSlowLimit)
+		nTickBase += nCorrectionTicks + nChokedCmds - Tickbase_t.iSimulationTick;
+
+	// save predicted tickbase
+	return nTickBase + iSimulationTick;
+}
+
 void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 {
 	// @xref: "CPrediction::ProcessMovement"

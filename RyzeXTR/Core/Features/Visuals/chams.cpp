@@ -310,7 +310,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			}
 			return true;
 		}
-		else if (pEnt->GetTeam() == g::pLocal->GetTeam()) {
+		else if (!pEnt->IsEnemy(g::pLocal)) {
 
 			if (bChams[1]) {
 
@@ -518,7 +518,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			return false;
 
 		// enemy
-		if (pEntity->GetTeam() != g::pLocal->GetTeam()) {
+		if (pEntity->IsEnemy(g::pLocal)) {
 
 			if (attachmentChams[ENEMY]) {
 				BeginChams(chams::materials[attachmentChamsMaterial[ENEMY]], attachmentChamsColor[ENEMY], true, attachmentChamsXhair[ENEMY]);
@@ -601,7 +601,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			return true;
 		}
 		// teammate
-		else if (pEntity->GetTeam() == g::pLocal->GetTeam() && g::pLocal != pEntity) {
+		else if (!pEntity->IsEnemy(g::pLocal) && g::pLocal != pEntity) {
 
 			if (attachmentChams[TEAM]) {
 				BeginChams(chams::materials[attachmentChamsMaterial[TEAM]], attachmentChamsColor[TEAM], true, attachmentChamsXhair[TEAM]);
@@ -677,7 +677,7 @@ bool chams::DrawChamsMDL(IMatRenderContext* ctx, const DrawModelState_t& state, 
 			return false;
 
 		// enemy
-		if (pEntity->GetTeam() != g::pLocal->GetTeam()) {
+		if (pEntity->IsEnemy(g::pLocal)) {
 
 			if (attachmentChams[ENEMY]) {
 				BeginChamsMDL(chams::materials[attachmentChamsMaterial[ENEMY]], attachmentChamsColor[ENEMY], false, attachmentChamsXhair[ENEMY]);
@@ -730,7 +730,7 @@ bool chams::DrawChamsMDL(IMatRenderContext* ctx, const DrawModelState_t& state, 
 
 
 		// teammate
-		else if (pEntity->GetTeam() == g::pLocal->GetTeam() && cfg::model::attachmentChams[TEAM]) {
+		else if (!pEntity->IsEnemy(g::pLocal) && cfg::model::attachmentChams[TEAM]) {
 
 			if (attachmentChams[TEAM]) {
 				BeginChamsMDL(chams::materials[attachmentChamsMaterial[TEAM]], attachmentChamsColor[TEAM], false, attachmentChamsXhair[TEAM]);

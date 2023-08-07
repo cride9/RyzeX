@@ -7,13 +7,7 @@ bool __fastcall h::hkIsFollowingEntity(void* ecx, void* edx)
 {
 	static auto IsFollowingEntity = detour::isFollowingEntity.GetOriginal<decltype(&hkIsFollowingEntity)>();
 
-	CBaseEntity* pPlayer = (CBaseEntity*)(ecx);
-
-	if (!pPlayer || !g::pLocal)
-		return IsFollowingEntity( ecx, edx);
-
-	if (!pPlayer->IsAlive() || pPlayer->EntIndex() >= 65)
-		return IsFollowingEntity(ecx, edx);
+	CBaseEntity* pPlayer = reinterpret_cast<CBaseEntity*>(ecx);
 
 	static auto retToInterpolation = reinterpret_cast<void*>(MEM::FindPattern(CLIENT_DLL, XorStr("84 C0 0F 85 ? ? ? ? 38 05 ? ? ? ? 0F 84 ? ? ? ? 53")));
 

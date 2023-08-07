@@ -2,6 +2,7 @@
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
+#include "../../Features/Rage/exploits.h"
 
 bool p::Setup()
 {
@@ -11,6 +12,12 @@ bool p::Setup()
 		return false;
 
 	hkBaseViewModelSequence = std::make_shared<CRecvPropHook>( pViewModelSequence, BaseViewModelSequence );
+
+	RecvProp_t* pTickbaseProp = n::netvars[fnv::Hash("CBasePlayer->m_nTickBase")].pRecvProp;
+	if (pTickbaseProp == nullptr)
+		return false;
+
+	hkTickbaseProxy = std::make_shared<CRecvPropHook>(pTickbaseProp, TickbaseProxy);
 
 	return true;
 }
@@ -54,4 +61,12 @@ void p::BaseViewModelSequence(const CRecvProxyData* pData, void* pStruct, void* 
 	}
 
 	oSequence( ProxyData, pStruct, pOut );
+}
+
+void p::TickbaseProxy(const CRecvProxyData* pData, void* pStruct, void* pOut) {
+
+	const auto oTickbaseProxy = hkTickbaseProxy->GetOriginal();
+	oTickbaseProxy(pData, pStruct, pOut);
+
+	return exploits::OnTickBaseProxy(pData->Value.Int);
 }

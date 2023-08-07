@@ -49,6 +49,7 @@ struct Hitscan_t {
 
 	int iHitbox{};
 	int iHitgroup{};
+	int iTickcount{};
 
 	bool operator<(const Hitscan_t& other) const {
 		// Sort by baimlethal (true first, false second)
@@ -72,6 +73,11 @@ struct Hitscan_t {
 		// Sort by flAnimationVelocity (larger values first)
 		return flAnimationVelocity > other.flAnimationVelocity;
 	}
+
+	// Comparator function to use with std::find
+	bool compareByTickcount(int value) const {
+		return iTickcount == value;
+	}
 };
 
 class CRageBot {
@@ -84,6 +90,7 @@ public:
 	bool bStartPing = false;
 	int iTickCount = 0;
 	std::vector<std::pair<Vector, Lagcompensation::LagRecord_t*>> vecSafePoints{};
+	std::deque<std::vector<Hitscan_t>> vecPredictedScanning{};
 
 	struct rageBotData_t
 	{

@@ -34,6 +34,7 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 	flInterpTime = 0.f;
 	flMaxSpeed = pWeapon ? pEntity->IsScoped() ? pWeapon->GetCSWpnData()->flMaxSpeed[0] : pWeapon->GetCSWpnData()->flMaxSpeed[1] : 260.f;
 	flThirdPersonRecoil = pEntity->GetThirdpersonRecoil();
+	flLastUpdateIncrement = pEntity->AnimState()->flLastUpdateIncrement;
 
 	vecEyeAngles = pEntity->GetEyeAngles();
 	vecAbsAngles = pEntity->GetAbsAngles();
@@ -107,6 +108,10 @@ void Lagcompensation::FrameStageNotify() noexcept {
 			continue;
 		}
 		pLog->pEntity = pEntity;
+		if (!pEntity->IsEnemy(g::pLocal)) {
+			g::bSettingUpBones[i] = g::bAllowAnimations[i] = true;
+			continue;
+		}
 
 		if (pEntity->GetSimulationTime() == pEntity->GetOldSimulationTime())
 			continue;
@@ -139,12 +144,12 @@ void Lagcompensation::FrameStageNotify() noexcept {
 				flOldSimulationTime = pPrevious.flSimulationTime;
 
 			pLog->flExploitTime = pEntity->GetSimulationTime();
-			pLog->ClearRecords();
+			pLog->InvalidateRecords();
 		}
 
 		if (pLog->bLeftDormancy)
 		{
-			pLog->ClearRecords();
+			pLog->InvalidateRecords();
 		}
 		
 		if (pRecord.flSimulationTime <= pLog->flExploitTime) 
@@ -158,7 +163,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 			if ((pRecord.vecOrigin - pPrevious.vecOrigin).Length2DSqr() > 4096.f) 
 			{
 				pRecord.bBreakingLagcompensation = true;
-				pLog->ClearRecords();
+				pLog->InvalidateRecords();
 			}
 		}
 
@@ -193,6 +198,8 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
 			auto& pCurrentRecord = pLog->pRecord.at(j);
+			if (!pCurrentRecord.bValid)
+				continue;
 
 			if (pCurrentRecord.bValid = lagcomp.IsValidRecord(pCurrentRecord.flSimulationTime))
 				pPlayerLogs[i].iLastValid = j;
@@ -520,7 +527,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	if (TIME_TO_TICKS(mflSimulationTime + flLerpTime) < nDeadTime)
 		return false;
 
-	return (i::GlobalVars->flCurrentTime - mflSimulationTime + flLerpTime) < flRange;
+	return (g::pLocal->GetTickBase() - mflSimulationTime + flLerpTime) < flRange;
 
 	//auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
 
@@ -625,7 +632,7 @@ void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || !pEntity->IsAlive() || !pEntity->GetModel() || pEntity->IsDormant() || pEntity == g::pLocal)
+		if (!pEntity || !pEntity->IsAlive() || !pEntity->GetModel() || pEntity->IsDormant() || pEntity == g::pLocal || !pEntity->IsEnemy(g::pLocal))
 			continue;
 
 		arrBackupData[i].first = Lagcompensation::LagRecord_t(pEntity);

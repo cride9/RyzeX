@@ -106,7 +106,7 @@ private:
 	{
 		Vector m_vecAbsOrigin = Vector(0, 0, 0);
 		int m_nFlags = 0;
-		int m_nSimulationTicks = 0;
+		int iSimulationTick = 0;
 
 		float m_flSpawnTime = 0.0f;
 		float m_flYawDelta = 0.0f;

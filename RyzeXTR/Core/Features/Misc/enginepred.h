@@ -3,6 +3,23 @@
 #include "../../Interface/interfaces.h"
 #include "../../SDK/Entity.h"
 
+struct TickbaseRecord_t
+{
+	TickbaseRecord_t()
+	{
+		iTickbase = 0;
+		bIsValid = false;
+	}
+	TickbaseRecord_t(int nTick)
+	{
+		iTickbase = nTick;
+		bIsValid = true;
+	}
+
+	int iTickbase = 0;
+	bool bIsValid = false;
+};
+
 struct CNetvarData
 {
 	float flRecoilIndex = 0.f;
@@ -49,9 +66,35 @@ public:
 	void RestoreNetvars( int iCommand, CBaseEntity* pLocal);
 	void SaveViewmodelData(CBaseEntity* pLocal);
 	void AdjustViewmodelData(CBaseEntity* pLocal);
+	int AdjustPlayerTimeBase(int iSimulationTick);
 
 	std::array < CNetvarData, 150 > pNetvarData = { };
 	CUserCmd* pLastCmd = nullptr;
+
+	struct
+	{
+		int iSimulationTick = 0;
+
+		std::array < TickbaseRecord_t, 150 > arrTickbase;
+		std::array < int, 150 > arrGameTickbase;
+	} Tickbase_t;
+
+	inline void ResetData()
+	{
+		Tickbase_t.iSimulationTick = 0;
+		Tickbase_t.arrTickbase = { };
+		Tickbase_t.arrGameTickbase = { };
+	}
+	inline int GetEngineTickbase(int nCommand) { return Tickbase_t.arrGameTickbase[nCommand % 150]; };
+	inline void SetTickbase(int nCommand, int nTickBase)
+	{
+		Tickbase_t.arrTickbase[nCommand % 150] = TickbaseRecord_t(nTickBase);
+	};
+	inline TickbaseRecord_t* GetTickbaseRecord(int nCommand)
+	{
+		return &Tickbase_t.arrTickbase[nCommand % 150];
+	}
+	void OnFrameStage(CBaseEntity* pLocal);
 
 private:
 

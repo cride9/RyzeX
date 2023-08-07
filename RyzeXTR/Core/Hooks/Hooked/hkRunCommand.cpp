@@ -15,23 +15,24 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	i::MoveHelper = pMovehelper;
 
-	exploits::iRestoreTickbase = pEnt->GetTickBase();
-	exploits::flRestoreCurtime = i::GlobalVars->flCurrentTime;
+	if (pCmd->iTickCount > i::GlobalVars->iTickCount + (int)(1.0f / i::GlobalVars->flIntervalPerTick)) {
 
-	if (pCmd->iCommandNumber == exploits::iShiftCommand) {
-
-		pEnt->GetTickBase() = exploits::iBackupTickbase - 15 + i::ClientState->nChokedCommands;
-		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(exploits::iBackupTickbase - 15 + i::ClientState->nChokedCommands);
+		pCmd->bHasBeenPredicted = true;
+		return;
 	}
-	if (pCmd->iCommandNumber == exploits::iRechargeCommand) {
 
-		pEnt->GetTickBase() = exploits::iBackupTickbase - i::ClientState->nChokedCommands;
-		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(exploits::iBackupTickbase - i::ClientState->nChokedCommands);
+	TickbaseRecord_t* Record = prediction.GetTickbaseRecord(pCmd->iCommandNumber);
+	if (Record->bIsValid)
+	{
+		/* set tickbase */
+		pEnt->GetTickBase() = Record->iTickbase - 1;
+
+		/* reset record */
+		Record->iTickbase = -1;
+		Record->bIsValid = false;
 	}
 
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
-
-	exploits::bBackupTickbase = true;
 
 	misc::RevolverRunCommand(pEnt);
 }

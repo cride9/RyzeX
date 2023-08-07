@@ -194,7 +194,7 @@ namespace h {
 	void __fastcall		hkModifyEyePosition(void*, void*, Vector&);
 	void __fastcall		hkUpdateClientSideAnimations(void*, void*);
 	void __vectorcall	hkUpdateAnimationState(CAnimState*, void* edx, float z, float y, float x, void*);
-	bool __fastcall		hkSetupBones(void*, void*, matrix3x4_t*, int, int, float);
+	bool __fastcall		hkSetupBones(IClientRenderable*, void*, matrix3x4_t*, int, int, float);
 	void __fastcall		hkDoExtraBoneProcessing(void*, void*, CStudioHdr*, Vector*, Quaternion*, const matrix3x4_t&, byte*, void*);
 	bool __stdcall		hkIsPaused();
 	void __fastcall		hkPhysicsSimulate(CBaseEntity*, void*);
