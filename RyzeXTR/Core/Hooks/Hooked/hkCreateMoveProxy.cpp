@@ -106,6 +106,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();
+	pCmd->angViewPoint.z = 0.f; // temporary change, we don't currently use roll anyway.
 
 	pVerifiedCmd->userCmd = *pCmd;
 	pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
