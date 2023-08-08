@@ -1474,11 +1474,52 @@ void visual::CustomHud() {
 }
 
 void visual::AutoPeekCircle() {
+	bool bShow = false;
+	static Vector vecLastPositon = Vector(0, 0, 0);
 
-	if (misc::vecRecord == Vector(0, 0, 0))
+	if (cfg::antiaim::bAutoPeek && IPT::HandleInput(cfg::antiaim::iAutoPeek) && misc::vecRecord != Vector(0, 0, 0)) {
+		bShow = true;
+		vecLastPositon = misc::vecRecord;
+	}
+
+	static float flAlpha = 0.f;
+	flAlpha = std::lerp(flAlpha, bShow ? 1.f : 0.f, i::GlobalVars->flFrameTime * 10);
+	flAlpha = std::clamp(flAlpha, 0.f, 10.f);
+
+	if (flAlpha <= 0.01)
 		return;
 
-	float flStep = (2 * M_PI) / 64.f;
+	int iOuterRadius = 25;
+	const int iSegemnts = 32;
+	const int iInnerRadius = 30;
+	const float flStep = 0.02f;
+
+	for (int i = 1; i <= iInnerRadius; ++i) {
+		const float flDistanceFromCenter = static_cast<float>(iOuterRadius * flAlpha - i * flStep);
+		const int a = static_cast<int>(255 * (1 - static_cast<float>(i) / iInnerRadius));
+
+		std::vector<int> vecPointsX;
+		std::vector<int> vecPointsY;
+		for (int j = 0; j < iSegemnts; ++j) {
+			const float flAngle = static_cast<float>(j) / iSegemnts * 2.0f * M_PI;
+			const float flPointX = cos(flAngle) * flDistanceFromCenter;
+			const float flPointY = sin(flAngle) * flDistanceFromCenter;
+
+			Vector screen_pos;
+			if (!i::DebugOverlay->ScreenPosition(Vector(vecLastPositon.x + flPointX, vecLastPositon.y + flPointY, vecLastPositon.z), screen_pos)) {
+				vecPointsX.push_back(static_cast<int>(screen_pos.x));
+				vecPointsY.push_back(static_cast<int>(screen_pos.y));
+			}
+		}
+
+		Color colCircle = cfg::model::localIdealTickColor;
+		colCircle = colCircle.Set<COLOR_A>(a);
+
+		i::Surface->DrawSetColor(colCircle);
+		i::Surface->DrawPolyLine(vecPointsX.data(), vecPointsY.data(), static_cast<int>(vecPointsX.size()));
+	}
+
+	/*float flStep = (2 * M_PI) / 64.f;
 	float flRadius = 9;
 
 	for (float rotation = 0; rotation < (M_PI * 2.0); rotation += flStep) {
@@ -1495,8 +1536,7 @@ void visual::AutoPeekCircle() {
 				i::Surface->DrawLine(vecDraw1.x, vecDraw1.y, vecDraw2.x, vecDraw2.y);
 			}
 		}
-
-	}
+	}*/
 }
 
 void visual::Hat() {
