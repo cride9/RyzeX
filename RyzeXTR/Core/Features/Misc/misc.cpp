@@ -310,13 +310,13 @@ void misc::IdealTick(CUserCmd* pCmd, CBaseEntity* pLocal) {
 			bRetreat = true;
 	}
 	else {
-
 		bPositionSet = false;
 		vecOrigin = Vector(0, 0, 0);
 		vecRecord = Vector(0, 0, 0);
+		return;
 	}
 
-	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && IPT::HandleInput(cfg::antiaim::iAutoPeek) && bRetreat) {
+	if (bPositionSet && vecOrigin != Vector(0, 0, 0) && bRetreat) {
 
 		Vector vecAngle;
 		M::VectorAngles(vecOrigin - g::vecEyePosition, vecAngle);
