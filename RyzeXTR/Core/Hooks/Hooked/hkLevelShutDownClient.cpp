@@ -1,13 +1,13 @@
 #include "../hooks.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Misc/enginepred.h"
-#include "../../Features/Rage/ragebot.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
 #include "../../Features/Visuals/chams.h"
 #include "../../Features/Visuals/ESP.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/Playerlist.h"
+#include "../../Features/Rage/aimbot.h"
 
 void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
@@ -39,8 +39,8 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
 	/* Reset prediction and ragebot data */
 	prediction.pLastCmd = nullptr;
-	ragebot.rageBotData.pAimbotTarget = nullptr;
-	ragebot.rageBotData.pTargetMatrix = nullptr;
+	aimbot.GetAimbotData().pAimbotTarget = nullptr;
+	aimbot.GetAimbotData().pTargetMatrix = nullptr;
 	anims.bResolverHandler = std::array<bool, Animations::EResolverHandler::HANDLERCOUNT>();
 	misc::exploitInitialized = false;
 

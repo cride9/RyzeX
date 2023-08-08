@@ -10,12 +10,12 @@
 #include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Rage/exploits.h"
 #include "../../Features/Networking/networking.h"
-#include "../../Features/Rage/ragebot.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
 #include "../../SDK/InputSystem.h"
 #include <shlobj.h>
 #include "../../Features/Changers/SkinChanger.h"
+#include "../../Features/Rage/aimbot.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -63,7 +63,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 		antiaim::AntiAim(pCmd, bSendPacket);
 
-		ragebot.CreateMove(pCmd, pLocal, bSendPacket);
+		//ragebot.CreateMove(pCmd, pLocal, bSendPacket);
+		aimbot.CreateMove(pCmd, pLocal);
 
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
 		exploits::HandleHideShots(bSendPacket, pCmd);
@@ -73,6 +74,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	}
 	prediction.End(pCmd, pLocal);
 
+	aimbot.PostPrediction(pCmd, bSendPacket);
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
 	misc::AutoPistol(pCmd, pLocal);
@@ -88,11 +90,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		lagcomp.ClearIncomingSequences( );
 
 	h::HookClientState();
-
-	if (ragebot.bSendPacketThisTick) {
-		bSendPacket = true;
-		ragebot.bSendPacketThisTick = false;
-	}
 
 	if (exploits::bIsShiftingTicks) {
 		if (cfg::antiaim::bAutoPeek && IPT::HandleInput(cfg::antiaim::iAutoPeek))

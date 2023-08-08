@@ -195,18 +195,18 @@ void menu::Rage(ImVec2 savedCursorPosition) {
 
     ImGui::BeginChild(("##RightWhole"), ImVec2(ImGui::GetContentRegionAvail().x - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
-        ImGui::MultiComboBox(("Hitbox"), arrHitboxNames, bHitboxes[iSelect], IM_ARRAYSIZE(arrHitboxNames));
+        ImGui::MultiComboBox(("Hitbox"), arrHitboxNames, bHitboxes[0][iSelect], IM_ARRAYSIZE(arrHitboxNames));
         ImGui::SliderInt(("Hitchance"), &iHitchances[iSelect], 0, 100);
         ImGui::SliderInt(("Damage"), &iMinDamages[iSelect], 0, 110);
         ImGui::SliderInt(("Override##2"), &iOverride[iSelect], 0, 110);
 
-        ImGui::MultiComboBox(("Pointscale"), arrHitboxNames, bMultiHitboxes[iSelect], IM_ARRAYSIZE(arrHitboxNames));
+        ImGui::MultiComboBox(("Pointscale"), arrHitboxNames, bHitboxes[1][iSelect], IM_ARRAYSIZE(arrHitboxNames));
         ImGui::SliderInt(("HeadScale"), &iHeadPoints[iSelect], 0, 100);
         ImGui::SliderInt(("BodyScale"), &iBodyPoints[iSelect], 0, 100);
 
         ImGui::Checkbox("Safepoint", &bSafePoint[iSelect]);
         if (bSafePoint[iSelect]) {
-            ImGui::MultiComboBox(("Force safe"), arrHitboxNames, bSafeHitboxes[iSelect], IM_ARRAYSIZE(arrHitboxNames));
+            ImGui::MultiComboBox(("Force safe"), arrHitboxNames, bHitboxes[2][iSelect], IM_ARRAYSIZE(arrHitboxNames));
         }
 
         ImGui::Checkbox(("Auto stop"), &bAutostop[iSelect]);
@@ -1161,8 +1161,8 @@ void menu::PlayerList(ImVec2 savedCursorPosition) {
     ImVec2 TopLeftSize = ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f);
     ImGui::BeginChild("##LeftWhole", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
-        ImGui::Checkbox("Disable interpolation", &cfg::debugSwitch);
-        ImGui::SliderInt("Amount", &cfg::debugSlider1, 0, 64);
+        //ImGui::Checkbox("Disable interpolation", &cfg::debugSwitch);
+        //ImGui::SliderInt("Amount", &cfg::debugSlider1, 0, 64);
     }
     ImGui::EndChild();
 }

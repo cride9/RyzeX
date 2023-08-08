@@ -2,7 +2,7 @@
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../Misc/misc.h"
 #include "../Rage/Animations/EnemyAnimations.h"
-#include "../Rage/ragebot.h"
+#include "../Rage/aimbot.h"
 #include "../Rage/exploits.h"
 #include "../../SDK/Menu/gui.h"
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
@@ -12,8 +12,8 @@
 
 void SafepointDebug(CBaseEntity* pEnt) {
 
-	Vector vecMins, vecMaxs;
-	float flRadius;
+	Vector vecMins{}, vecMaxs{};
+	float flRadius{};
 
 	if (!g::pLocal)
 		return;
@@ -359,7 +359,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 		auto* pLog = &lagcomp.GetLog(pEnt->EntIndex());
 		if (pLog) {
-			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[AIMBOT], g::fonts::FlagESP, false, misc::GetHitgroupName(ragebot.rageBotData.iHitGroup).c_str());
+			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[AIMBOT], g::fonts::FlagESP, false, misc::GetHitgroupName(aimbot.GetAimbotData().iHitGroup).c_str());
 			spacing += 10;
 		}
 	}

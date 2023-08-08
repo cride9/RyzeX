@@ -3,7 +3,6 @@
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 #include "../../Features/Rage/antiaim.h"
-#include "../../Features/Rage/ragebot.h"
 
 static void WriteUsercmd(void* buf, CUserCmd* Cin, CUserCmd* Cout)
 {

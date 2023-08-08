@@ -136,6 +136,7 @@
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
     <ClCompile Include="Core\Features\Misc\serversounds.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
+    <ClCompile Include="Core\Features\Rage\aimbot.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\AntiAimCorrection.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\EnemyAnimations.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
@@ -143,7 +144,6 @@
     <ClCompile Include="Core\Features\Rage\antiaim.cpp" />
     <ClCompile Include="Core\Features\Rage\autowall.cpp" />
     <ClCompile Include="Core\Features\Rage\exploits.cpp" />
-    <ClCompile Include="Core\Features\Rage\ragebot.cpp" />
     <ClCompile Include="Core\Features\Visuals\chams.cpp" />
     <ClCompile Include="Core\Features\Visuals\ESP.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkBuildTransformation.cpp" />
@@ -228,6 +228,7 @@
     <ClInclude Include="Core\Features\Misc\Playerlist.h" />
     <ClInclude Include="Core\Features\Misc\serversounds.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
+    <ClInclude Include="Core\Features\Rage\aimbot.h" />
     <ClInclude Include="Core\Features\Rage\Animations\BoneSetup.h" />
     <ClInclude Include="Core\Features\Rage\Animations\EnemyAnimations.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
@@ -235,7 +236,6 @@
     <ClInclude Include="Core\Features\Rage\antiaim.h" />
     <ClInclude Include="Core\Features\Rage\autowall.h" />
     <ClInclude Include="Core\Features\Rage\exploits.h" />
-    <ClInclude Include="Core\Features\Rage\ragebot.h" />
     <ClInclude Include="Core\Features\Visuals\chams.h" />
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
     <ClInclude Include="Core\globals.h" />

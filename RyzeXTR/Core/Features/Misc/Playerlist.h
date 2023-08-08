@@ -60,7 +60,7 @@ struct playerSettings_t {
 	Vector vecOrigin;
 	Vector vecAngles;
 
-	bool bForceSafe = false;
+	bool bSafePoint = false;
 	bool bOverrideResolver;
 	int flOverrideYaw;
 	int teamID;

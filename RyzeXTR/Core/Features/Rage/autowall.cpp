@@ -446,3 +446,55 @@ bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSou
 
 	return false;
 }
+
+#pragma runtime_checks( "", off )
+bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4_t* aMatrix) {
+
+	if (!pHitbox)
+		return false;
+
+	Ray_t Ray(vecStart, vecEnd);
+
+	Trace_t Trace;
+	Trace.flFraction = 1.0f;
+	Trace.bStartSolid = false;
+	// original: 55 8B EC 83 E4 F8 F3 0F 10 42
+	// kittenpopo: 55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F
+	typedef int(__fastcall* ClipRayToHitbox_t)(const Ray_t&, mstudiobbox_t*, matrix3x4_t&, Trace_t&);
+	static auto sig = (void*)((DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F"))));
+	int iHit = ((ClipRayToHitbox_t)(sig))(Ray, pHitbox, aMatrix[pHitbox->iBone], Trace);
+	return iHit >= 0;
+}
+#pragma runtime_checks( "", restore )
+
+int CAutoWall::SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox, bool* bRollCheck) {
+
+	if (pRecord->pMatricies[EMatrixType::RIGHT]->GetOrigin() == Vector(0, 0, 0) ||
+		pRecord->pMatricies[EMatrixType::LEFT]->GetOrigin() == Vector(0, 0, 0) ||
+		pRecord->pMatricies[EMatrixType::CENTER]->GetOrigin() == Vector(0, 0, 0))
+	{
+		return 0;
+	}
+
+	if (!pRecord)
+		return 0;
+
+	int iSafePoint = 0;
+	Vector vecStart = vecEyePosition;
+	Vector vecEnd = vecShootposition;
+
+	mstudiobbox_t* studioBox = pRecord->pEntity->StudioHitbox(iHitbox);
+	if (!studioBox)
+		return 0;
+
+	if (autowall.bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[RIGHT]))
+		iSafePoint++;
+
+	if (autowall.bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[LEFT]))
+		iSafePoint++;
+
+	if (autowall.bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[CENTER]))
+		iSafePoint++;
+
+	return iSafePoint;
+}

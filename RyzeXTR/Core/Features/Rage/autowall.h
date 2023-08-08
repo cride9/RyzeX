@@ -5,6 +5,8 @@
 #include "../../Interface/interfaces.h"
 // used: baseentity, cliententity, baseweapon, weapondata classes
 #include "../../SDK/Entity.h"
+// used: lagcompensation::lagrecord*
+#include "../../Features/Rage/Animations/Lagcompensation.h"
 
 struct FireBulletData_t
 {
@@ -28,6 +30,10 @@ public:
 	static bool SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data);
 	/* I need this exlo trust me this will be fun*/
 	static bool CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSource);
+	/* BBOX can be shot or not */
+	static bool bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4_t* aMatrix);
+	/* Checks if matrixes collide, aka can we shoot every matrix at once */
+	static int SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox, bool* bRollCheck = nullptr);
 
 private:
 	// Main

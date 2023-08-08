@@ -405,7 +405,7 @@ bool CBaseEntity::IsTargetingLocal(CBaseEntity* pLocal)
 	return false;
 }
 
-bool CBaseEntity::CanShoot(CWeaponCSBase* pBaseWeapon, int iTickbase)
+bool CBaseEntity::CanShoot(CBaseCombatWeapon* pBaseWeapon, int iTickbase)
 {
 	if (iTickbase == -1)
 		iTickbase = this == g::pLocal ? networking.GetCorrectedTickbase() : this->GetTickBase();

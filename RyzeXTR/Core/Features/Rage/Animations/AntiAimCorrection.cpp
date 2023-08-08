@@ -1,5 +1,5 @@
 #include "EnemyAnimations.h"
-#include "../ragebot.h"
+#include "../aimbot.h"
 #include "../autowall.h"
 #include "../../Misc/Playerlist.h"
 #include "../../../SDK/Menu/config.h"
@@ -8,11 +8,11 @@
 
 void Animations::ResolverLogic() {
 
-	if (!ragebot.hitlogData.pAimbotTarget || !g::pLocal || bBulletImpact == Vector(0, 0, 0) || !ragebot.hitlogData.pTargetMatrix)
+	if (!aimbot.GetHitLogData().pAimbotTarget || !g::pLocal || bBulletImpact == Vector(0, 0, 0) || !aimbot.GetHitLogData().pTargetMatrix)
 		return;
 
 	// make pointers and references for easier handling
-	auto& refCurrentData = ragebot.hitlogData;
+	auto& refCurrentData = aimbot.GetHitLogData();
 	CBaseEntity* pTarget = refCurrentData.pAimbotTarget;
 	auto* pLog = &lagcomp.GetLog(refCurrentData.pAimbotTarget->EntIndex());
 	if (!pLog)
@@ -163,7 +163,7 @@ void Animations::ResolverLogic() {
 
 void Animations::ResolverHandler(IGameEvent* pEvent) {
 
-	if (!ragebot.hitlogData.pAimbotTarget || !g::pLocal)
+	if (!aimbot.GetHitLogData().pAimbotTarget || !g::pLocal)
 		return;
 
 	std::string_view szEventName = pEvent->GetName();
@@ -180,7 +180,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));
-		auto targetIndex = ragebot.hitlogData.pAimbotTarget->EntIndex();
+		auto targetIndex = aimbot.GetHitLogData().pAimbotTarget->EntIndex();
 
 		if (iAttacker == i::EngineClient->GetLocalPlayer() && iUser == targetIndex) {
 			bResolverHandler[PLAYERHURT] = true;
@@ -202,7 +202,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 
 		auto iUser = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("userid")));
 		auto iAttacker = i::EngineClient->GetPlayerForUserID(pEvent->GetInt(XorStr("attacker")));
-		auto targetIndex = ragebot.hitlogData.pAimbotTarget->EntIndex();
+		auto targetIndex = aimbot.GetHitLogData().pAimbotTarget->EntIndex();
 
 		if (iAttacker == i::EngineClient->GetLocalPlayer() && iUser == targetIndex) {
 			bResolverHandler[PLAYERDEATH] = true;

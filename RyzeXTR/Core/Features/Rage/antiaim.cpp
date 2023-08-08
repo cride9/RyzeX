@@ -3,7 +3,6 @@
 #include "../../SDK/math.h"
 #include "../../Features/Misc/enginepred.h"
 #include "Animations/LocalAnimation.h"
-#include "ragebot.h"
 #include "autowall.h"
 #include "../../Interface/Classes/CCSGameRulesProxy.h"
 
@@ -372,13 +371,6 @@ bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 			}
 		}
 
-		if (g::pLocal->GetNextAttack() >= time || pWeapon->GetNextPrimaryAttack() >= time || pWeapon->GetNextSecondaryAttack() >= time)
-			return false;
-
-		if (pCmd->iButtons & IN_ATTACK && info->nWeaponType != WEAPONTYPE_GRENADE) {
-			return true;
-		}
-
 		if (info->nWeaponType == WEAPONTYPE_KNIFE) {
 
 			if ((pCmd->iButtons & IN_ATTACK && pWeapon->GetNextPrimaryAttack() <= time) ||
@@ -386,6 +378,9 @@ bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 				return true;
 			}
 		}
+
+		if (g::pLocal->CanShoot(pWeapon) && pCmd->iButtons & IN_ATTACK)
+			return true;
 	}
 
 	return false;

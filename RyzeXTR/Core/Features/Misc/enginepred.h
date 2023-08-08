@@ -68,6 +68,9 @@ public:
 	void AdjustViewmodelData(CBaseEntity* pLocal);
 	int AdjustPlayerTimeBase(int iSimulationTick);
 
+	float flSpread = 0.f;
+	float flInaccuracy = 0.f;
+
 	std::array < CNetvarData, 150 > pNetvarData = { };
 	CUserCmd* pLastCmd = nullptr;
 

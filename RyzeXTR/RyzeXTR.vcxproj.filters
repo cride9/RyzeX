@@ -13,7 +13,6 @@
     <ClCompile Include="Core\Features\Rage\antiaim.cpp" />
     <ClCompile Include="Core\Features\Rage\autowall.cpp" />
     <ClCompile Include="Core\Features\Rage\exploits.cpp" />
-    <ClCompile Include="Core\Features\Rage\ragebot.cpp" />
     <ClCompile Include="Core\Features\Visuals\chams.cpp" />
     <ClCompile Include="Core\Features\Visuals\ESP.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkBuildTransformation.cpp" />
@@ -91,6 +90,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\VerifyReturnAddress.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkUpdateAnimationState.cpp" />
+    <ClCompile Include="Core\Features\Rage\aimbot.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
@@ -106,7 +106,6 @@
     <ClInclude Include="Core\Features\Rage\antiaim.h" />
     <ClInclude Include="Core\Features\Rage\autowall.h" />
     <ClInclude Include="Core\Features\Rage\exploits.h" />
-    <ClInclude Include="Core\Features\Rage\ragebot.h" />
     <ClInclude Include="Core\Features\Visuals\chams.h" />
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
     <ClInclude Include="Core\globals.h" />
@@ -302,6 +301,7 @@
     <ClInclude Include="Dependecies\freetype\include\ft2build.h" />
     <ClInclude Include="Core\Interface\Interfaces\IVEngineEffects.h" />
     <ClInclude Include="Core\Interface\Interfaces\CNetworkStringTableContainer.h" />
+    <ClInclude Include="Core\Features\Rage\aimbot.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependecies\freetype\win32\freetype.lib" />

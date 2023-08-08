@@ -719,6 +719,12 @@ public:
 		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count() || !IsBoneCacheValid())
 			return;
 
+		if (!matrix || !matrix->Base())
+			return;
+
+		if (!matrix->GetOrigin().IsValid())
+			return;
+
 		memcpy(this->GetCachedBoneData().Base(), matrix, this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
 	}
 
@@ -1081,7 +1087,7 @@ public:
 	void					PostThink();
 	bool					IsEnemy(CBaseEntity* pEntity);
 	bool					IsTargetingLocal(CBaseEntity* pLocal);
-	bool					CanShoot(CWeaponCSBase* pBaseWeapon, int iTickbase = -1);
+	bool					CanShoot(CBaseCombatWeapon* pBaseWeapon, int iTickbase = -1);
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecEnd, bool bSmokeCheck = false);
 	bool					IsBreakable();
 	mstudiobbox_t*			StudioHitbox(int iHitbox);
@@ -1236,6 +1242,13 @@ class CBaseCombatWeapon : public IClientEntity
 {
 public:
 
+	ADD_NETVAR(GetZoomLevel, int, "CWeaponCSBaseGun->m_zoomLevel");
+	ADD_NETVAR(GetBurstShotsRemaining, int, "CWeaponCSBaseGun->m_iBurstShotsRemaining");
+
+	ADD_NETVAR(IsBurstMode, bool, "CWeaponCSBase->m_bBurstMode");
+	ADD_NETVAR(GetAccuracyPenalty, float, "CWeaponCSBase->m_fAccuracyPenalty");
+	ADD_NETVAR(GetRecoilIndex, float, "CWeaponCSBase->m_flRecoilIndex");
+
 	ADD_NETVAR(GetNextPrimaryAttack, float, "CBaseCombatWeapon->m_flNextPrimaryAttack");
 	ADD_NETVAR(GetNextSecondaryAttack, float, "CBaseCombatWeapon->m_flNextSecondaryAttack");
 	ADD_NETVAR(GetAmmo, int, "CBaseCombatWeapon->m_iClip1");
@@ -1310,6 +1323,10 @@ public:
 		return util::CallVFunc<float>(this, 483);
 	}
 
+	[[nodiscard]] void UpdateAccuracyPenalty() {
+		return util::CallVFunc<void>(this, 484);
+	}
+
 	CCSWeaponInfo* GetCSWpnData() {
 		return i::WeaponSystem->GetWpnData(this->GetItemDefinitionIndex());
 		// i::WeaponSystem->GetWpnData(pWeapon->GetItemDefinitionIndex());
@@ -1349,12 +1366,6 @@ class CBaseViewModel;
 class CWeaponCSBase : public CBaseCombatWeapon {
 public:
 
-	ADD_NETVAR(GetZoomLevel, int, "CWeaponCSBaseGun->m_zoomLevel");
-	ADD_NETVAR(GetBurstShotsRemaining, int, "CWeaponCSBaseGun->m_iBurstShotsRemaining");
-
-	ADD_NETVAR(IsBurstMode, bool, "CWeaponCSBase->m_bBurstMode");
-	ADD_NETVAR(GetAccuracyPenalty, float, "CWeaponCSBase->m_fAccuracyPenalty");
-	ADD_NETVAR(GetRecoilIndex, float, "CWeaponCSBase->m_flRecoilIndex" );
 
 	void OnFireEvent(CBaseViewModel* pViewModel, const Vector& vecOrigin, const Vector& vecAngles, int iEvent, const char* szOptions) {
 		util::CallVFunc<bool>(this, 59, pViewModel, vecOrigin, vecAngles, iEvent, szOptions);

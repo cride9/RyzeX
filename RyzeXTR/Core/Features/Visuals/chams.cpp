@@ -4,7 +4,6 @@
 #include "../../SDK/math.h"
 #include "../Misc/misc.h"
 #include "../Rage/Animations/Lagcompensation.h"
-#include "../Rage/ragebot.h"
 #include "../../SDK/InputSystem.h"
 #include "../../SDK/Menu/gui.h"
 #include "../Misc/Playerlist.h"

@@ -1,7 +1,6 @@
 #include "../hooks.h"
 #include "../../Features/Visuals/ESP.h"
 #include "../../Features/Rage/Animations/LocalAnimation.h"
-#include "../../Features/Rage/ragebot.h"
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/serversounds.h"

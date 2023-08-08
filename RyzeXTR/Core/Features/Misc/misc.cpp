@@ -4,7 +4,6 @@
 #include "../../SDK/math.h"
 #include "../Rage/exploits.h"
 #include "../Rage/antiaim.h"
-#include "../Rage/ragebot.h"
 #include "../../SDK/WavParser.h"
 #include "../Rage/autowall.h"
 #include "../Visuals/ESP.h"

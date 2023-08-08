@@ -273,8 +273,8 @@ void Lagcompensation::SetInterpolationFlags()
 		void* m_VarMap = *(void**)((DWORD)(pEntity)+0x24);
 		if (m_VarMap)
 		{
-			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = TICKS_TO_TIME(cfg::debugSlider1)/*i::GlobalVars->flIntervalPerTick*/;
-			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = TICKS_TO_TIME(cfg::debugSlider1)/*i::GlobalVars->flIntervalPerTick*/;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = TICKS_TO_TIME(0)/*i::GlobalVars->flIntervalPerTick*/;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = TICKS_TO_TIME(0)/*i::GlobalVars->flIntervalPerTick*/;
 		}
 	}
 }
@@ -525,7 +525,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	if (TIME_TO_TICKS(mflSimulationTime + flLerpTime) < nDeadTime)
 		return false;
 
-	return (g::pLocal->GetTickBase() - mflSimulationTime + flLerpTime) < flRange;
+	return (TICKS_TO_TIME(g::pLocal->GetTickBase()) - mflSimulationTime + flLerpTime) < flRange;
 
 	//auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
 
@@ -600,7 +600,7 @@ void Lagcompensation::AddLatencyToNetChannel(INetChannel* pNetChannel, float flL
 
 void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType iType) {
 
-	if (!pMatricies[iType]->GetOrigin().IsValid())
+	if (!pMatricies || !pMatricies[iType] || pMatricies[iType]->Base() == nullptr)
 		return;
 	
 	/*pEntity->GetFlags() = iFlags;

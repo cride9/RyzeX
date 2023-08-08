@@ -42,9 +42,7 @@ namespace cfg {
 		inline int iForceBaimKey = 0;
 
 		// all weapon
-		inline bool bHitboxes[7][6];
-		inline bool bMultiHitboxes[7][6];
-		inline bool bSafeHitboxes[7][6];
+		inline bool bHitboxes[3][7][6];
 
 		inline int iHitchances[7];
 		inline int iMinDamages[7];
@@ -52,9 +50,9 @@ namespace cfg {
 		inline int iBodyPoints[7];
 		inline int iOverride[7];
 
-		inline bool bSafePoint[] = { false, false, false, false ,false, false };
-		inline bool bAutostop[] = { false, false, false, false ,false, false };
-		inline int	bAutostopAggressiveness[] = { false, false, false, false ,false, false };
+		inline bool bSafePoint[7];
+		inline bool bAutostop[7];
+		inline int	bAutostopAggressiveness[7];
 		inline bool bConditions[6][2];
 		inline bool bAutoScope[] = { false, false, false };
 	}

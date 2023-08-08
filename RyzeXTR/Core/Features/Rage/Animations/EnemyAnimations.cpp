@@ -1,5 +1,4 @@
 #include "EnemyAnimations.h"
-#include "../ragebot.h"
 #include "../../../SDK/Menu/config.h"
 #include "../autowall.h"
 #include "../../Misc/Playerlist.h"

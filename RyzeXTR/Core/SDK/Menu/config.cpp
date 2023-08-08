@@ -78,9 +78,9 @@ void CConfig::Setup() {
 		SetupValue(bResolver, false, "rage", "Rageresolver");
 
 		for (size_t i = 0; i < 6; i++) {
-			SetupValue(bMultiHitboxes[i], false, 6, "rage", std::format("multihitbox{}", i));
-			SetupValue(bHitboxes[i], false, 6, "rage", std::format("hitbox{}", i));
-			SetupValue(bSafeHitboxes[i], false, 6, "rage", std::format("safehitbox{}", i));
+			SetupValue(bHitboxes[1][i], false, 6, "rage", std::format("multihitbox{}", i));
+			SetupValue(bHitboxes[0][i], false, 6, "rage", std::format("hitbox{}", i));
+			SetupValue(bHitboxes[2][i], false, 6, "rage", std::format("safehitbox{}", i));
 			SetupValue(iHitchances[i], 0, "rage", std::format("hitchance{}", i));
 			SetupValue(iMinDamages[i], 0, "rage", std::format("mindmg{}", i));
 			SetupValue(iHeadPoints[i], 0, "rage", std::format("headpoints{}", i));

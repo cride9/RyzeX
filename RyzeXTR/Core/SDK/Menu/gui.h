@@ -105,7 +105,8 @@ enum EWEAPON : int {
 	PISTOL,
 	HEAVY_PISTOL,
 	OTHER,
-	ZEUS
+	ZEUS,
+	WEAPON_MAX
 };
 
 namespace menu {

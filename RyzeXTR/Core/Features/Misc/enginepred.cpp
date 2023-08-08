@@ -51,6 +51,13 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 		return;
 
 	g_LocalAnimations->BeforePrediction(pLocal);
+	if (CBaseCombatWeapon* pWeapon = pLocal->GetWeapon(); pWeapon) {
+
+		pWeapon->UpdateAccuracyPenalty();
+
+		flSpread = pWeapon->GetSpread();
+		flInaccuracy = pWeapon->GetInaccuracy();
+	}
 
 	// start command
 	*pLocal->GetCurrentCommand() = pCmd;
