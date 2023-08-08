@@ -75,8 +75,8 @@ public:
 	{
 		int iSimulationTick = 0;
 
-		std::array < TickbaseRecord_t, 150 > arrTickbase;
-		std::array < int, 150 > arrGameTickbase;
+		std::array < TickbaseRecord_t, 150 > arrTickbase{};
+		std::array < int, 150 > arrGameTickbase{};
 	} Tickbase_t;
 
 	inline void ResetData()

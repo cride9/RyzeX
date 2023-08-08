@@ -980,7 +980,7 @@ void menu::Skins(ImVec2 savedCursorPosition) {
 
         static const char* arrQualities[] = { "Normal", "Genuine", "Vintage", "Unusual", "Community",  "Developer", "Self-Made", "Customized", "Strange", "Completed", "Tournament" };
         static int iBackupQualities[37];
-        for (size_t i = 0; i < 38; i++) 
+        for (size_t i = 0; i < 37; i++) 
             iBackupQualities[i] = iQuality[iMenuID];
         
         ImGui::ListBox("Quality", &iQuality[iMenuID], arrQualities, IM_ARRAYSIZE(arrQualities));
@@ -1161,7 +1161,8 @@ void menu::PlayerList(ImVec2 savedCursorPosition) {
     ImVec2 TopLeftSize = ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f);
     ImGui::BeginChild("##LeftWhole", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
-
+        ImGui::Checkbox("Disable interpolation", &cfg::debugSwitch);
+        ImGui::SliderInt("Amount", &cfg::debugSlider1, 0, 64);
     }
     ImGui::EndChild();
 }

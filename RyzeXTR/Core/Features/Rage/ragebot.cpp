@@ -91,8 +91,8 @@ void CRageBot::SelectTargets( CBaseEntity* pLocal )
 			continue;
 
 		vecTargets.emplace_back( pEntity );
-		if (auto* it = &lagcomp.GetLog(i); it && !it->pRecord.empty())
-			anims.PostResolver(pEntity, &it->pRecord.front());
+		//if (auto* it = &lagcomp.GetLog(i); it && !it->pRecord.empty())
+		//	anims.PostResolver(pEntity, &it->pRecord.front());
 	}
 	
 	if ( !vecTargets.empty( ) )
@@ -119,17 +119,24 @@ std::vector<Lagcompensation::LagRecord_t*> CRageBot::ChooseTargetRecord(Lagcompe
 			continue;
 		}
 
-		Vector vecHitboxPosition = pRecord->pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RESOLVE]);
+		//Vector vecHitboxPosition = pRecord->pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RESOLVE]);
 
-		bool bHitableRoll = false;
-		
-		int iSafePoint = ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, vecHitboxPosition, HITBOX_HEAD);
-		if (iSafePoint < 3)
-			continue;
+		auto vecMultiPointed = CreatePoints(vecEyePosition, pWeapon, pRecord, HITBOX_HEAD, RESOLVE);
 
-		pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
-		if (autowall.GetDamage(g::pLocal, vecEyePosition, vecHitboxPosition, pWeapon) > 10.f)
-			pRecords.push_back(pRecord);
+		for (Vector& it : vecMultiPointed) {
+
+			int iSafePoint = ragebot.SafePoint(vecEyePosition, pWeapon, pRecord, it, HITBOX_HEAD);
+			if (iSafePoint < 3)
+				continue;
+
+			pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
+			if (autowall.GetDamage(g::pLocal, vecEyePosition, it, pWeapon) != -1.0f) {
+
+				pRecord->vecRageSafePoint = it;
+				pRecords.push_back(pRecord);
+				break;
+			}
+		}
 	}
 	if (pRecords.empty())
 		pRecords.push_back(&pLog->pRecord.front());
@@ -990,68 +997,6 @@ std::vector<Vector> CRageBot::CreatePoints(Vector vecEyePosition, CBaseCombatWea
 
 	return refVecPoints;
 }
-
-std::vector<Vector> CRageBot::CreatePoints( CBaseEntity * pTarget, Lagcompensation::LagRecord_t* pRecord, CBaseCombatWeapon * pWeapon, int iHitbox, bool bBuildSideOnly) {
-
-	static int iMultiOptimization[HITBOX_MAX];
-	static std::vector<Vector> output{};
-	output.clear();
-
-	std::pair<int, int> multiPoints = ConfigMultipoint(pWeapon);
-
-	float flRadius = 0.f;
-	Vector vecAngle = pRecord->pEntity->GetHitboxPosition(iHitbox, pRecord->pMatricies[RESOLVE], flRadius);
-	if (flRadius <= 0) {
-		output.push_back(vecAngle);
-		return output;
-	}
-
-	int* pHeadPoints = &multiPoints.first;
-	int* pBodyPoints = &multiPoints.second;
-	float flHitboxDistance = flRadius * ( (iHitbox == HITBOX_HEAD ? *pHeadPoints : *pBodyPoints ) * 0.01f );
-
-	if (!(pTarget->GetFlags() & FL_ONGROUND) && iHitbox == HITBOX_HEAD)
-		flHitboxDistance = 0.7f;
-
-	bool bGenerateMore = (iHitbox == HITBOX_HEAD ? *pHeadPoints > 50.f ? true : false : *pBodyPoints > 50.f ? true : false);
-
-	if (bBuildSideOnly) {
-		if (iHitbox == HITBOX_HEAD) {
-			output.push_back(vecAngle + Vector(0.f, 0.f, flHitboxDistance));
-			output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
-			output.push_back(vecAngle - Vector(flHitboxDistance, 0.f, 0.f));
-			output.push_back(vecAngle + Vector(0.f, flHitboxDistance, 0.f));
-			output.push_back(vecAngle - Vector(0.f, flHitboxDistance, 0.f));
-			//output.push_back(vecAngle - Vector(0.f, 0.f, flHitboxDistance));
-		}
-		else {
-			output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
-			output.push_back(vecAngle - Vector(flHitboxDistance, 0.f, 0.f));
-			output.push_back(vecAngle + Vector(0.f, flHitboxDistance, 0.f));
-			output.push_back(vecAngle - Vector(0.f, flHitboxDistance, 0.f));
-		}
-	}
-	else {
-		if (iHitbox == HITBOX_HEAD) {
-			output.push_back(vecAngle);
-			output.push_back(vecAngle + Vector(0.f, 0.f, flHitboxDistance));
-			output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
-			output.push_back(vecAngle - Vector(flHitboxDistance, 0.f, 0.f));
-			output.push_back(vecAngle + Vector(0.f, flHitboxDistance, 0.f));
-			output.push_back(vecAngle - Vector(0.f, flHitboxDistance, 0.f));
-		}
-		else {
-			output.push_back(vecAngle);
-			output.push_back(vecAngle + Vector(flHitboxDistance, 0.f, 0.f));
-			output.push_back(vecAngle - Vector(flHitboxDistance, 0.f, 0.f));
-			output.push_back(vecAngle + Vector(0.f, flHitboxDistance, 0.f));
-			output.push_back(vecAngle - Vector(0.f, flHitboxDistance, 0.f));
-		}
-	}
-
-	return output;
-}
-
 #pragma runtime_checks( "", off )
 bool CRageBot::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4_t* aMatrix) {
 

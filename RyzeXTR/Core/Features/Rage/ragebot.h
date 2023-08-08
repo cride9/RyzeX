@@ -94,22 +94,22 @@ public:
 
 	struct rageBotData_t
 	{
-		Lagcompensation::LagRecord_t*	pRecord;
-		CBaseEntity*					pAimbotTarget;
-		matrix3x4_t*					pTargetMatrix;
-		Vector							vecLocalShootPosition;
+		Lagcompensation::LagRecord_t*	pRecord{};
+		CBaseEntity*					pAimbotTarget{};
+		matrix3x4_t*					pTargetMatrix{};
+		Vector							vecLocalShootPosition{};
 
-		int								iHealth;
-		int								iTickcount;
-		int								iHitbox;
-		int								iHitGroup;
+		int								iHealth{};
+		int								iTickcount{};
+		int								iHitbox{};
+		int								iHitGroup{};
 
-		bool							bBacktrack;
-		bool							bCanShoot;
+		bool							bBacktrack{};
+		bool							bCanShoot{};
 
-		float							flTargetSimulation;
-		float							flDamage;
-		float							flHitchance;
+		float							flTargetSimulation{};
+		float							flDamage{};
+		float							flHitchance{};
 
 		void SetTarget(Lagcompensation::LagRecord_t* _pRecord, Vector vecEyePosition, bool _bBacktrack) {
 
@@ -138,7 +138,6 @@ public:
 	rageBotData_t rageBotData;
 	rageBotData_t hitlogData;
 
-	std::vector<Vector> CreatePoints(CBaseEntity*, Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, int, bool = false);
 	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE);
 	std::array<Vector, 6> HitboxPoints(Lagcompensation::LagRecord_t*, CBaseCombatWeapon*, Vector&, int);
 	bool bCollidePoint(const Vector&, const Vector&, mstudiobbox_t*, matrix3x4_t*);

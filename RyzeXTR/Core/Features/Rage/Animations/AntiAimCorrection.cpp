@@ -272,7 +272,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 
 	static std::array<int, 65> iMissTracker{0};
 	const int iEntityID = pEntity->EntIndex();
-	//return SetYaw(pRecord, LEFT + (arrMissedShots[iEntityID] % 3));
+	return SetYaw(pRecord, LEFT + (arrMissedShots[iEntityID] % 3));
 
 	if (pPrevious->iAntiFreestand != 0 && arrMissedShots[iEntityID] == 0)
 		return SetYaw(pRecord, pPrevious->iAntiFreestand);

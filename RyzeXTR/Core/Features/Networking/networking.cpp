@@ -112,6 +112,7 @@ void CNetworking::OnPacketEnd( CClientState* ClientState )
 		return; 
 	
 	prediction.AdjustViewmodelData( g::pLocal );
+	g::flVelocityModifier = g::pLocal->GetVelocityModifier();
 	return this->RestoreNetvarData( i::ClientState->iLastCommandAck );
 }
 

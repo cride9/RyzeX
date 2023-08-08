@@ -195,6 +195,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 		pLog->bLeftDormancy = false;
 
+		pPlayerLogs[i].bContainsInvalid = false;
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
 			auto& pCurrentRecord = pLog->pRecord.at(j);
@@ -206,6 +207,9 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 			if (pRecord.bBreakingLagcompensation)
 				pCurrentRecord.bBreakingLagcompensation = true;
+
+			if (pCurrentRecord.bBreakingLagcompensation)
+				pPlayerLogs[i].bContainsInvalid = true;
 		}
 	}
 }
@@ -261,9 +265,6 @@ void Lagcompensation::SetInterpolationFlags()
 
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++) {
 
-		if (playerList::arrPlayers[i].iIndex != i)
-			continue;
-
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
 		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity())
@@ -272,8 +273,8 @@ void Lagcompensation::SetInterpolationFlags()
 		void* m_VarMap = *(void**)((DWORD)(pEntity)+0x24);
 		if (m_VarMap)
 		{
-			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = i::GlobalVars->flIntervalPerTick;
-			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = i::GlobalVars->flIntervalPerTick;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = TICKS_TO_TIME(cfg::debugSlider1)/*i::GlobalVars->flIntervalPerTick*/;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = TICKS_TO_TIME(cfg::debugSlider1)/*i::GlobalVars->flIntervalPerTick*/;
 		}
 	}
 }
@@ -281,9 +282,6 @@ void Lagcompensation::SetInterpolationFlags()
 void Lagcompensation::DisableInterpolation() {
 
 	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++) {
-
-		if (playerList::arrPlayers[i].iIndex != i)
-			continue;
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 

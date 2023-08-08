@@ -49,7 +49,7 @@ struct Vertex_t
 };
 
 typedef unsigned long HScheme, HPanel, HTexture, HCursor, HFont;
-class ISurface : ROP::VirtualCallable_t<ROP::ClientGadget_t> {
+class ISurface {
 
 public:
 
@@ -86,126 +86,126 @@ public:
 
 	void DrawSetColor(Color colDraw)
 	{
-		CallVFunc<void, 14U>(this, colDraw);
+		util::CallVFunc<void>(this, 14U, colDraw);
 	}
 
 	void DrawSetColor(int r, int g, int b, int a)
 	{
-		CallVFunc<void, 15U>(this, r, g, b, a);
+		util::CallVFunc<void>(this, 15U, r, g, b, a);
 	}
 
 	void DrawFilledRect(int x0, int y0, int x1, int y1)
 	{
-		CallVFunc<void, 16U>(this, x0, y0, x1, y1);
+		util::CallVFunc<void>(this, 16U, x0, y0, x1, y1);
 	}
 
 	void DrawOutlinedRect(int x0, int y0, int x1, int y1)
 	{
-		CallVFunc<void, 18U>(this, x0, y0, x1, y1);
+		util::CallVFunc<void>(this, 18U, x0, y0, x1, y1);
 	}
 
 	void DrawLine(int x0, int y0, int x1, int y1)
 	{
-		CallVFunc<void, 19U>(this, x0, y0, x1, y1);
+		util::CallVFunc<void>(this, 19U, x0, y0, x1, y1);
 	}
 
 	void DrawPolyLine(int* x, int* y, int nPoints)
 	{
-		CallVFunc<void, 20U>(this, x, y, nPoints);
+		util::CallVFunc<void>(this, 20U, x, y, nPoints);
 	}
 
 	void DrawSetTextFont(HFont hFont)
 	{
-		CallVFunc<void, 23U>(this, hFont);
+		util::CallVFunc<void>(this, 23U, hFont);
 	}
 
 	void DrawSetTextColor(Color color)
 	{
-		CallVFunc<void, 24U>(this, color);
+		util::CallVFunc<void>(this, 24U, color);
 	}
 
 	void DrawSetTextColor(int r, int g, int b, int a)
 	{
-		CallVFunc<void, 25U>(this, r, g, b, a);
+		util::CallVFunc<void>(this, 25U, r, g, b, a);
 	}
 
 	void DrawSetTextPos(int x, int y)
 	{
-		CallVFunc<void, 26U>(this, x, y);
+		util::CallVFunc<void>(this, 26U, x, y);
 	}
 
 	void DrawPrintText(const wchar_t* wszText, int nTextLength, EFontDrawType drawType = FONT_DRAW_DEFAULT)
 	{
-		CallVFunc<void, 28U>(this, wszText, nTextLength, drawType);
+		util::CallVFunc<void>(this, 28U, wszText, nTextLength, drawType);
 	}
 
 	void DrawSetTextureRGBA(int nIndex, const unsigned char* arrRGBA, int iWide, int iTall)
 	{
-		CallVFunc<void, 37U>(this, nIndex, arrRGBA, iWide, iTall);
+		util::CallVFunc<void>(this, 37U, nIndex, arrRGBA, iWide, iTall);
 	}
 
 	void DrawSetTexture(int nIndex)
 	{
-		CallVFunc<void, 38U>(this, nIndex);
+		util::CallVFunc<void>(this, 38U, nIndex);
 	}
 
 	int CreateNewTextureID(bool bProcedural = false)
 	{
-		return CallVFunc<int, 43U>(this, bProcedural);
+		return util::CallVFunc<int>(this, 43U, bProcedural);
 	}
 
 	void UnLockCursor()
 	{
-		CallVFunc<void, 66U>(this);
+		util::CallVFunc<void>(this, 66U);
 	}
 
 	void LockCursor()
 	{
-		CallVFunc<void, 67U>(this);
+		util::CallVFunc<void>(this, 67U);
 	}
 
 	HFont CreateFontGame()
 	{
-		return CallVFunc<HFont, 71U>(this);
+		return util::CallVFunc<HFont>(this, 71U);
 	}
 
 	bool SetFontGlyphSet(HFont hFont, const char* szWindowsFontName, int iTall, int iWeight, int iBlur, int nScanLines, int iFlags, int nRangeMin = 0, int nRangeMax = 0)
 	{
-		return CallVFunc<bool, 72U>(this, hFont, szWindowsFontName, iTall, iWeight, iBlur, nScanLines, iFlags, nRangeMin, nRangeMax);
+		return util::CallVFunc<bool>(this, 72U, hFont, szWindowsFontName, iTall, iWeight, iBlur, nScanLines, iFlags, nRangeMin, nRangeMax);
 	}
 
 	void GetTextSize(HFont hFont, const wchar_t* wszText, int& iWide, int& iTall)
 	{
-		CallVFunc<void, 79U>(this, hFont, wszText, &iWide, &iTall);
+		util::CallVFunc<void>(this, 79U, hFont, wszText, &iWide, &iTall);
 	}
 
-	void PlaySound(const char* szFileName)
+	void PlaySoundSurface(const char* szFileName)
 	{
-		CallVFunc<void, 82U>(this, szFileName);
+		util::CallVFunc<void>(this, 82U, szFileName);
 	}
 
 	void DrawOutlinedCircle(int x, int y, int iRadius, int nSegments)
 	{
-		CallVFunc<void, 103U>(this, x, y, iRadius, nSegments);
+		util::CallVFunc<void>(this, 103U, x, y, iRadius, nSegments);
 	}
 
 	void DrawTexturedPolygon(int nCount, Vertex_t* pVertices, bool bClipVertices = true)
 	{
-		CallVFunc<void, 106U>(this, nCount, pVertices, bClipVertices);
+		util::CallVFunc<void>(this, 106U, nCount, pVertices, bClipVertices);
 	}
 
 	void DrawFilledRectFade(int x0, int y0, int x1, int y1, std::uint32_t uAlpha0, std::uint32_t uAlpha1, bool bHorizontal)
 	{
-		CallVFunc<void, 123U>(this, x0, y0, x1, y1, uAlpha0, uAlpha1, bHorizontal);
+		util::CallVFunc<void>(this, 123U, x0, y0, x1, y1, uAlpha0, uAlpha1, bHorizontal);
 	}
 
 	void GetClipRect(int& x0, int& y0, int& x1, int& y1)
 	{
-		CallVFunc<void, 146U>(this, &x0, &y0, &x1, &y1);
+		util::CallVFunc<void>(this, 146U, &x0, &y0, &x1, &y1);
 	}
 
 	void SetClipRect(int x0, int y0, int x1, int y1)
 	{
-		CallVFunc<void, 147U>(this, x0, y0, x1, y1);
+		util::CallVFunc<void>(this, 147U, x0, y0, x1, y1);
 	}
 };

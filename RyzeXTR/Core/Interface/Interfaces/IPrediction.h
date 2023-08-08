@@ -40,19 +40,11 @@ class CBaseEntity;
 class IPhysicsSurfaceProps;
 class CGameTrace;
 enum ESoundLevel;
-class IMoveHelper : ROP::VirtualCallable_t<ROP::EngineGadget_t>
+class IMoveHelper
 {
 public:
-	void SetHost(CBaseEntity* pHost)
-	{
-		CallVFunc<void, 1U>(this, pHost);
-	}
 
-	void ProcessImpacts()
-	{
-		CallVFunc<void, 4U>(this);
-	}
-	/*virtual	const char* GetName(void* hEntity) const = 0;
+	virtual	const char* GetName(void* hEntity) const = 0;
 	virtual void				SetHost(CBaseEntity* pHost) = 0;
 	virtual void				ResetTouchList() = 0;
 	virtual bool				AddToTouched(const CGameTrace& trace, const Vector& vecImpactVelocity) = 0;
@@ -64,10 +56,10 @@ public:
 	virtual bool				PlayerFallingDamage() = 0;
 	virtual void				PlayerSetAnimation(int playerAnimation) = 0;
 	virtual IPhysicsSurfaceProps* GetSurfaceProps() = 0;
-	virtual bool				IsWorldEntity(const unsigned long& hEntity) = 0;*/
+	virtual bool				IsWorldEntity(const unsigned long& hEntity) = 0;
 };
 
-class IGameMovement : ROP::VirtualCallable_t<ROP::EngineGadget_t>
+class IGameMovement
 {
 public:
 
@@ -95,44 +87,7 @@ public:
 		return *(bool*)((DWORD)(this) + 0xC40);
 	}
 
-	//virtual						~IGameMovement() { }
-	void ProcessMovement(CBaseEntity* pPlayer, CMoveData* pMoveData)
-	{
-		CallVFunc<void, 1U>(this, pPlayer, pMoveData);
-	}
-
-	// reset current predictable player
-	void Reset()
-	{
-		CallVFunc<void, 2U>(this);
-	}
-
-	// set the current predictable player
-	void StartTrackPredictionErrors(CBaseEntity* pPlayer)
-	{
-		CallVFunc<void, 3U>(this, pPlayer);
-	}
-
-	void FinishTrackPredictionErrors(CBaseEntity* pPlayer)
-	{
-		CallVFunc<void, 4U>(this, pPlayer);
-	}
-
-	const Vector& GetPlayerMins(bool bDucked)
-	{
-		return CallVFunc<const Vector&, 6U>(this, bDucked);
-	}
-
-	const Vector& GetPlayerMaxs(bool bDucked)
-	{
-		return CallVFunc<const Vector&, 7U>(this, bDucked);
-	}
-
-	const Vector& GetPlayerViewOffset(bool bDucked)
-	{
-		return CallVFunc<const Vector&, 8U>(this, bDucked);
-	}
-	/*virtual void				ProcessMovement(CBaseEntity* pEntity, CMoveData* pMove) = 0;
+	virtual void				ProcessMovement(CBaseEntity* pEntity, CMoveData* pMove) = 0;
 	virtual void				Reset() = 0;
 	virtual void				StartTrackPredictionErrors(CBaseEntity* pEntity) = 0;
 	virtual void				FinishTrackPredictionErrors(CBaseEntity* pEntity) = 0;
@@ -143,11 +98,11 @@ public:
 	virtual bool				IsMovingPlayerStuck() const = 0;
 	virtual CBaseEntity*		GetMovingPlayer() const = 0;
 	virtual void				UnblockPusher(CBaseEntity* pEntity, CBaseEntity* pPusher) = 0;
-	virtual void				SetupMovementBounds(CMoveData* pMove) = 0;*/
+	virtual void				SetupMovementBounds(CMoveData* pMove) = 0;
 };
 
 using CBaseHandle = std::uintptr_t;
-class IPrediction : ROP::VirtualCallable_t<ROP::EngineGadget_t>
+class IPrediction
 {
 
 public:
@@ -182,26 +137,26 @@ public:
 
 	void Update(int iStartFrame, bool bValidFrame, int nIncomingAcknowledged, int nOutgoingCommand) {
 
-		CallVFunc<void, 3U>(this, iStartFrame, bValidFrame, nIncomingAcknowledged, nOutgoingCommand);
+		util::CallVFunc<void>(this, 3U, iStartFrame, bValidFrame, nIncomingAcknowledged, nOutgoingCommand);
 	}
 
 	void GetLocalViewAngles(Vector& angView) {
-		CallVFunc<void, 12>(this, std::ref(angView));
+		util::CallVFunc<void>(this, 12, std::ref(angView));
 	}
 
 	void SetLocalViewAngles(Vector& angView) {
-		CallVFunc<void, 13>(this, std::ref(angView));
+		util::CallVFunc<void>(this, 13, std::ref(angView));
 	}
 
 	void CheckMovingGround(CBaseEntity* pEntity, double dbFrametime) {
-		CallVFunc<void, 18>(this, pEntity, dbFrametime);
+		util::CallVFunc<void>(this, 18, pEntity, dbFrametime);
 	}
 
 	void SetupMove(CBaseEntity* pEntity, CUserCmd* pCmd, IMoveHelper* pHelper, CMoveData* pMoveData) {
-		CallVFunc<void, 20>(this, pEntity, pCmd, pHelper, pMoveData);
+		util::CallVFunc<void>(this, 20, pEntity, pCmd, pHelper, pMoveData);
 	}
 
 	void FinishMove(CBaseEntity* pEntity, CUserCmd* pCmd, CMoveData* pMoveData) {
-		CallVFunc<void, 21>(this, pEntity, pCmd, pMoveData);
+		util::CallVFunc<void>(this, 21, pEntity, pCmd, pMoveData);
 	}
 };

@@ -13,6 +13,8 @@ namespace g {
 	inline Vector vecOriginalViewAngle;
 	inline Vector vecEyePosition;
 
+	inline float flVelocityModifier;
+
 	inline bool bAllowAnimations[65];
 	inline bool bUpdatingSkins = false;
 	inline bool bStartWelcome = false;

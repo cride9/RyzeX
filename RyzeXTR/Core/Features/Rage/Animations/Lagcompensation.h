@@ -75,16 +75,16 @@ public:
 
 		struct LayerData_t
 		{
-			int nSequence;
-			float flPlaybackRate;
-			float flCycle;
-			float flWeight;
-			float flWeightWithAirSmooth;
-			float flFeetWeight;
+			int nSequence{};
+			float flPlaybackRate{};
+			float flCycle{};
+			float flWeight{};
+			float flWeightWithAirSmooth{};
+			float flFeetWeight{};
 
-			float flMovementSide;
-			Vector angMoveYaw;
-			Vector vecDirection;
+			float flMovementSide{};
+			Vector angMoveYaw{};
+			Vector vecDirection{};
 
 			LayerData_t(const CAnimationLayer& pLayer) {
 
@@ -125,6 +125,8 @@ public:
 		Vector vecAbsOrigin{};
 		Vector vecMins{};
 		Vector vecMaxs{};
+
+		Vector vecRageSafePoint{};
 
 		Vector vecEyeAngles{};
 		Vector vecAbsAngles{};
@@ -207,6 +209,7 @@ public:
 		CBaseEntity* pEntity;
 
 		bool bLeftDormancy{};
+		bool bContainsInvalid{};
 
 		int iLastValid = 0;
 		int iLastResolve{};

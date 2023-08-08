@@ -142,19 +142,6 @@ public:
 	//studiohdr_t* m_pStudioHdr;
 	//void* m_pVModel;
 	//char pad[ 120 ];
-
-	int& m_nPerfAnimatedBones() {
-
-		return *reinterpret_cast<int*>(uintptr_t(this + sizeof(pVirtualModel) + sizeof(pSoftbody)) + 0x78); // or 0x78
-	}
-	int& m_nPerfUsedBones() {
-
-		return *reinterpret_cast<int*>(uintptr_t(this + sizeof(pVirtualModel) + sizeof(pSoftbody)) + 0x7C); // or 0x7C
-	}
-	int& m_nPerfAnimationLayers() {
-
-		return *reinterpret_cast<int*>(uintptr_t(this + sizeof(pVirtualModel) + sizeof(pSoftbody)) + 0x80); // or 0x80 (0x84)
-	}
 	//int m_nPerfAnimatedBones;
 	//int m_nPerfUsedBones;
 	//int m_nPerfAnimationLayers;

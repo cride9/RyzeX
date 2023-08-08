@@ -246,7 +246,7 @@ void CSkinChanger::Dump()
 	{
 		PaintKit_t* m_pPaintKit = m_pItemSchematic->m_pPaintKits.memory[m].value;
 
-		SkinColors_t inf;
+		SkinColors_t inf = SkinColors_t();
 		inf.m_colColor[0] = m_pPaintKit->m_rgbaColor[0];
 		inf.m_colColor[1] = m_pPaintKit->m_rgbaColor[1];
 		inf.m_colColor[2] = m_pPaintKit->m_rgbaColor[2];

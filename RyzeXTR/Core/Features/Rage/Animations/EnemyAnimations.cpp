@@ -153,6 +153,7 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 
 void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 
+	g_LocalAnimations->InterpolateMatricies();
 	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++)
 	{
 		CBaseEntity* pPlayer = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));
@@ -914,7 +915,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	if (cfg::rage::bEnable) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
 		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
-		GetSideLayersForResolver(pEntity, pRecord);
+		//GetSideLayersForResolver(pEntity, pRecord);
 	}
 
 	pEntity->GetVelocity() = vecBackupVelocity;

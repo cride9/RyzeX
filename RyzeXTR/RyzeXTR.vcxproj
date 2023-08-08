@@ -153,13 +153,9 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkDoProceduralFootPlant.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkEstimateAbsVelocity.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkInterpolateServerEntites.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\Animation\hkInterpolationList.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsFollowingEntity.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsHltv.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsPaused.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkModifyEyePosition.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessInterpolatedList.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessMovement.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupAliveLoop.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupBones.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkShouldSkipAnimationFrame.cpp" />
@@ -169,11 +165,8 @@
     <ClCompile Include="Core\Hooks\Hooked\hkAllocKeyValuesMemory.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkClMove.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkCreateMoveProxy.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkDoExtraBoneProcessing.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDoPostScreenEffects.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkDrawModel.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkDrawModelMDL.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkEmitSound.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFireGameEvent.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkFrameStageNotify.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetAlphaModulation.cpp" />
@@ -188,10 +181,8 @@
     <ClCompile Include="Core\Hooks\Hooked\hkOverrideView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkPaintTraverse.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkPhysicsSimulate.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkPlayerMove.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRunCommand.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkSetText.cpp" />
-    <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkWriteUserCmdDeltaToBuffer.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\ImGui\ImGuiHooks.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\VerifyReturnAddress.cpp" />

@@ -10,7 +10,7 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	static auto original = detour::runCommand.GetOriginal<decltype(&h::hkRunCommand)>();
 
-	if (!g::pCmd)
+	if (!g::pCmd || pEnt != g::pLocal)
 		return original( ecx, edx, pEnt, pCmd, pMovehelper);
 
 	i::MoveHelper = pMovehelper;
@@ -33,6 +33,5 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 	}
 
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
-
 	misc::RevolverRunCommand(pEnt);
 }

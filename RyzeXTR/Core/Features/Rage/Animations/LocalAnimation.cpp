@@ -844,7 +844,6 @@ void C_LocalAnimations::TransformateMatricies()
 }
 bool C_LocalAnimations::CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount)
 {
-	TransformateMatricies();
 	std::memcpy(aInMatrix, m_LocalData.m_Real.m_Matrix.data(), sizeof(matrix3x4_t) * nBoneCount);
 	return true;
 }

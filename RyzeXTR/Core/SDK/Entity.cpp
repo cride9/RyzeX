@@ -519,8 +519,8 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 		return false;
 
 	const auto oldBones = target->GetBoneAccessor().matBones;
-	const auto o_abs = target->GetAbsAngles();
-	const auto o_origin = target->GetAbsOrigin();
+	const auto& o_abs = target->GetAbsAngles();
+	const auto& o_origin = target->GetAbsOrigin();
 
 	CAnimationLayer layers[13];
 

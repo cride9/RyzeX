@@ -32,13 +32,13 @@ public:
 		iPacked = 0;
 	}
 
-	short				iClassID;
-	short				pad;
-	float				flFireDelay;
-	const void*			pSendTable;
-	const CBaseClient*  pClientClass;
-	int					iPacked;
-	int					nFlags;
-	int					aFilters[ 8 ];
-	CEventInfo*			pNext;
+	short				iClassID{};
+	short				pad{};
+	float				flFireDelay{};
+	const void*			pSendTable{};
+	const CBaseClient*  pClientClass{};
+	int					iPacked{};
+	int					nFlags{};
+	int					aFilters[ 8 ]{};
+	CEventInfo*			pNext{};
 };

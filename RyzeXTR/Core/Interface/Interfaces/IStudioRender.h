@@ -55,36 +55,36 @@ struct DrawModelInfo_t
 };
 
 
-class IStudioRender : ROP::VirtualCallable_t<ROP::EngineGadget_t> {
+class IStudioRender {
 
 public:
 
 	void SetColorModulation(const float* arrColor)
 	{
-		CallVFunc<void, 27U>(this, arrColor);
+		util::CallVFunc<void>(this, 27U, arrColor);
 	}
 
 	void SetAlphaModulation(float flAlpha)
 	{
-		CallVFunc<void, 28U>(this, flAlpha);
+		util::CallVFunc<void>(this, 28U, flAlpha);
 	}
 
 	void DrawModel(DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags)
 	{
-		CallVFunc<void, 29U>(this, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
+		util::CallVFunc<void>(this, 29U, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 	}
 
 	void ForcedMaterialOverride(IMaterial* pMaterial, EOverrideType nOverrideType = OVERRIDE_NORMAL, int nOverrides = 0)
 	{
-		CallVFunc<void, 33U>(this, pMaterial, nOverrideType, nOverrides);
+		util::CallVFunc<void>(this, 33U, pMaterial, nOverrideType, nOverrides);
 	}
 
 	bool IsForcedMaterialOverride() {
-		return CallVFunc<bool, 34U>(this);
+		return util::CallVFunc<bool>(this, 34U);
 	}
 
 	//void SetColorModulation(float const* arrColor) {
-	//	util::CallVFunc<void>(this, 27, arrColor);
+	//	util::util::CallVFunc<void>(this, 27, arrColor);
 	//}
 
 	void SetColorModulation(float const* arrColor, IMaterial* material) {
@@ -103,14 +103,14 @@ public:
 	}
 
 	//void SetAlphaModulation(float flAlpha) {
-	//	util::CallVFunc<void>(this, 28, flAlpha);
+	//	util::util::CallVFunc<void>(this, 28, flAlpha);
 	//}
 
 	//void ForcedMaterialOverride(IMaterial* pMaterial, EOverrideType nOverrideType = OVERRIDE_NORMAL, int nOverrides = 0) {
-	//	util::CallVFunc<void>(this, 33, pMaterial, nOverrideType, nOverrides);
+	//	util::util::CallVFunc<void>(this, 33, pMaterial, nOverrideType, nOverrides);
 	//}
 
 	//bool IsForcedMaterialOverride() {
-	//	return util::CallVFunc<bool>(this, 34);
+	//	return util::util::CallVFunc<bool>(this, 34);
 	//}
 };

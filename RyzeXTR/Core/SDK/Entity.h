@@ -197,25 +197,43 @@ public:
 	virtual void SetDebugName(const char* pName) = 0;
 };
 
+class VarMapEntry_t
+{
 
-class VarMapEntry_t {
+
 public:
-	unsigned short type;
-	unsigned short m_bNeedsToInterpolate; // Set to false when this var doesn't
-										  // need Interpolate() called on it anymore.
+	unsigned short		type;
+	unsigned short		m_bNeedsToInterpolate;	// Set to false when this var doesn't
+	// need Interpolate() called on it anymore.
 	void* data;
 	IInterpolatedVar* watcher;
 };
 
-struct VarMapping_t {
-	VarMapping_t() {
-		m_nInterpolatedEntries = 0;
-	}
-
-	VarMapEntry_t* m_Entries;
-	int m_nInterpolatedEntries;
-	float m_lastInterpolationTime;
+struct VarMapping_t
+{
+	CUtlVector< VarMapEntry_t >	m_Entries;
+	int							m_nInterpolatedEntries;
+	float						m_lastInterpolationTime;
 };
+
+//class VarMapEntry_t {
+//public:
+//	unsigned short type;
+//	unsigned short m_bNeedsToInterpolate; // Set to false when this var doesn't
+//										  // need Interpolate() called on it anymore.
+//	void* data;
+//	IInterpolatedVar* watcher;
+//};
+//
+//struct VarMapping_t {
+//	VarMapping_t() {
+//		m_nInterpolatedEntries = 0;
+//	}
+//
+//	VarMapEntry_t* m_Entries;
+//	int m_nInterpolatedEntries;
+//	float m_lastInterpolationTime;
+//};
 
 class CBaseCombatWeapon;
 using CBaseHandle = std::uintptr_t;

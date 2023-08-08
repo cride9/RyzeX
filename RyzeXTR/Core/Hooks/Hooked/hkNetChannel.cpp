@@ -42,9 +42,9 @@ void BSOD( )
 	( ( NTSTATUS( NTAPI* )( NTSTATUS, ULONG, ULONG, PULONG_PTR*, ULONG, PULONG ) )GetProcAddress( m_pNTDLL, "NtRaiseHardError" ) )( 0xDEADDEAD, 0, 0, 0, 6, &r );
 }
 
-bool __fastcall h::hkSVCMsg_VoiceData( void* thistr, void* edx, C_SVCMsg_VoiceData* Message )
-{
-	static auto original = detour::voiceData.GetOriginal<decltype( &hkSVCMsg_VoiceData )>( );
+//bool __fastcall h::hkSVCMsg_VoiceData( void* thistr, void* edx, C_SVCMsg_VoiceData* Message )
+//{
+	//static auto original = detour::voiceData.GetOriginal<decltype( &hkSVCMsg_VoiceData )>( );
 
 	//if ( !g::pLocal || g::pLocal->EntIndex( ) == Message->m_iClient + 1 )
 	//	return original( thistr, edx, Message );
@@ -62,8 +62,8 @@ bool __fastcall h::hkSVCMsg_VoiceData( void* thistr, void* edx, C_SVCMsg_VoiceDa
 	//	BSOD( );
 	//}
 
-	return original( thistr, edx, Message );
-}
+	//return original( thistr, edx, Message );
+//}
 
 bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMessage, bool bForceReliable, bool bVoice )
 {

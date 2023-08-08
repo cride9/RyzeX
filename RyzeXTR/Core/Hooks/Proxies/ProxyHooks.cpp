@@ -26,6 +26,7 @@ void p::Destroy()
 {
 	// @note: as example
 	hkBaseViewModelSequence->Restore();
+	hkTickbaseProxy->Restore();
 }
 
 void p::BaseViewModelSequence(const CRecvProxyData* pData, void* pStruct, void* pOut)

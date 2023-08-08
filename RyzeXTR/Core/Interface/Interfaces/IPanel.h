@@ -1,24 +1,24 @@
 #pragma once
 
-class IPanel : ROP::VirtualCallable_t<ROP::ClientGadget_t> {
+class IPanel {
 public:
 	void SetKeyBoardInputEnabled(unsigned int nVGUIPanel, bool bState)
 	{
-		CallVFunc<void, 31U>(this, nVGUIPanel, bState);
+		util::CallVFunc<void>(this, 31U, nVGUIPanel, bState);
 	}
 
 	void SetMouseInputEnabled(unsigned int nVGUIPanel, bool bState)
 	{
-		CallVFunc<void, 32U>(this, nVGUIPanel, bState);
+		util::CallVFunc<void>(this, 32U, nVGUIPanel, bState);
 	}
 
 	const char* GetName(unsigned int nVGUIPanel)
 	{
-		return CallVFunc<const char*, 36U>(this, nVGUIPanel);
+		return util::CallVFunc<const char*>(this, 36U, nVGUIPanel);
 	}
 
 	const char* GetNameClass(unsigned int nVGUIPanel)
 	{
-		return CallVFunc<const char*, 37U>(this, nVGUIPanel);
+		return util::CallVFunc<const char*>(this, 37U, nVGUIPanel);
 	}
 };

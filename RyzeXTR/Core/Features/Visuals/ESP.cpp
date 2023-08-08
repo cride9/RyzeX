@@ -397,28 +397,31 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 		auto pRecord = &pLog->pRecord.front();
 
-		// from the server.
-		auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
+		//something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x8) + 0x24)).c_str());
+		//something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x44) + 0x24)).c_str());
 
-		// resolver calculations.
-		const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
-		const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
-		const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
+		//// from the server.
+		//auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
 
-		// differences.
-		const float fDifferenceCenterPlaybackrate = fabs(flFromServerPlaybackrate - fCenterPlaybackrate);
-		const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
-		const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
+		//// resolver calculations.
+		//const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
+		//const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate;
+		//const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate;
 
-		something(right, top, spacing, "[Layer 6]");
-		something(right, top, spacing, std::format("Left: {}", fLeftPlaybackrate).c_str());
-		something(right, top, spacing, std::format("Right: {}", fRightPlaybackrate).c_str());
-		something(right, top, spacing, std::format("Center: {}", fCenterPlaybackrate).c_str());
-		something(right, top, spacing, std::format("Server: {}", flFromServerPlaybackrate).c_str());
+		//// differences.
+		//const float fDifferenceCenterPlaybackrate = fabs(flFromServerPlaybackrate - fCenterPlaybackrate);
+		//const float fDifferenceRightPlaybackrate = fabs(flFromServerPlaybackrate - fRightPlaybackrate);
+		//const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
 
-		something(right, top, spacing, std::format("RightDiff: {}", fDifferenceRightPlaybackrate).c_str());
-		something(right, top, spacing, std::format("LeftDiff: {}", fDifferenceLeftPlaybackrate).c_str());
-		something(right, top, spacing, std::format("CenterDiff: {}", fDifferenceCenterPlaybackrate).c_str());
+		//something(right, top, spacing, "[Layer 6]");
+		//something(right, top, spacing, std::format("Left: {}", fLeftPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("Right: {}", fRightPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("Center: {}", fCenterPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("Server: {}", flFromServerPlaybackrate).c_str());
+
+		//something(right, top, spacing, std::format("RightDiff: {}", fDifferenceRightPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("LeftDiff: {}", fDifferenceLeftPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("CenterDiff: {}", fDifferenceCenterPlaybackrate).c_str());
 	}
 #endif
 }
@@ -963,7 +966,7 @@ void visual::WelcomeUser(std::string szText) {
 		else if (abs(iStartTick - i::GlobalVars->iTickCount) >= TIME_TO_TICKS(0.5f) && abs(iStartTick - i::GlobalVars->iTickCount) >= TIME_TO_TICKS(0.8f))
 			iAlpha = std::clamp(iAlpha + 255 / TIME_TO_TICKS(0.3f), 0, 255);
 
-		std::clamp(iAlpha, 0, 255);
+		iAlpha = std::clamp(iAlpha, 0, 255);
 
 		i::Surface->DrawT(iAnimation / 2, 125 / 2 + 17, Color(255, 255, 255, iAlpha), g::fonts::DebugFont, true, szText.c_str());
 	}

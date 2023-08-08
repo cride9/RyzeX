@@ -21,12 +21,12 @@ public:
 	EClassIndex				nClassID;
 };
 
-class IBaseClientDLL : ROP::VirtualCallable_t<ROP::ClientGadget_t> {
+class IBaseClientDLL {
 
 public:
 
 	CBaseClient* GetAllClasses() {
 
-		return CallVFunc<CBaseClient*, 8U>(this);
+		return util::CallVFunc<CBaseClient*>(this, 8U);
 	}
 };

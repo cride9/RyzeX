@@ -8,7 +8,7 @@ public:
 	uint32_t m_nXuidHigh{ };
 	int32_t m_nSequenceBytes{ };
 	uint32_t m_nSectionNumber{ };
-	uint32_t m_nUnCompressedSampleOffset;
+	uint32_t m_nUnCompressedSampleOffset{};
 
 	__forceinline uint8_t* GetRawData()
 	{
