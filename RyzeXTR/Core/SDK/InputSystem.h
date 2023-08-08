@@ -72,10 +72,10 @@ namespace IPT
 		}
 		else if ( cfg::m_iKeyStates[ uButtonCode ] == TOGGLE ) {
 
-			//if ( GetKeyState( uButtonCode ) )
-			//	arrKeyBooleans[ uButtonCode ] = !arrKeyBooleans[ uButtonCode ];
+			if ( GetAsyncKeyState( uButtonCode ) & 1 )
+				arrKeyBooleans[ uButtonCode ] = !arrKeyBooleans[ uButtonCode ];
 
-			return GetKeyState(uButtonCode)/*arrKeyBooleans[ uButtonCode ]*/;
+			return arrKeyBooleans[ uButtonCode ]; //GetKeyState(uButtonCode);
 		}
 		else if ( cfg::m_iKeyStates[ uButtonCode ] == ALWAYS_ON ) {
 			return true;
