@@ -87,18 +87,56 @@ public:
 		return *(bool*)((DWORD)(this) + 0xC40);
 	}
 
-	virtual void				ProcessMovement(CBaseEntity* pEntity, CMoveData* pMove) = 0;
-	virtual void				Reset() = 0;
-	virtual void				StartTrackPredictionErrors(CBaseEntity* pEntity) = 0;
-	virtual void				FinishTrackPredictionErrors(CBaseEntity* pEntity) = 0;
-	virtual void				DiffPrint(char const* fmt, ...) = 0;
-	virtual Vector const&		GetPlayerMins(bool IsDucked) const = 0;
-	virtual Vector const&		GetPlayerMaxs(bool IsDucked) const = 0;
-	virtual Vector const&		GetPlayerViewOffset(bool IsDucked) const = 0;
-	virtual bool				IsMovingPlayerStuck() const = 0;
-	virtual CBaseEntity*		GetMovingPlayer() const = 0;
-	virtual void				UnblockPusher(CBaseEntity* pEntity, CBaseEntity* pPusher) = 0;
-	virtual void				SetupMovementBounds(CMoveData* pMove) = 0;
+	//virtual						~IGameMovement() { }
+	void ProcessMovement(CBaseEntity* pPlayer, CMoveData* pMoveData)
+	{
+		util::CallVFunc<void>(this, 1U, pPlayer, pMoveData);
+	}
+
+	// reset current predictable player
+	void Reset()
+	{
+		util::CallVFunc<void>(this, 2U);
+	}
+
+	// set the current predictable player
+	void StartTrackPredictionErrors(CBaseEntity* pPlayer)
+	{
+		util::CallVFunc<void>(this, 3U, pPlayer);
+	}
+
+	void FinishTrackPredictionErrors(CBaseEntity* pPlayer)
+	{
+		util::CallVFunc<void>(this, 4U, pPlayer);
+	}
+
+	const Vector& GetPlayerMins(bool bDucked)
+	{
+		return util::CallVFunc<const Vector&>(this, 6U, bDucked);
+	}
+
+	const Vector& GetPlayerMaxs(bool bDucked)
+	{
+		return util::CallVFunc<const Vector&>(this, 7U, bDucked);
+	}
+
+	const Vector& GetPlayerViewOffset(bool bDucked)
+	{
+		return util::CallVFunc<const Vector&>(this, 8U, bDucked);
+	}
+
+	//virtual void				ProcessMovement(CBaseEntity* pEntity, CMoveData* pMove) = 0;
+	//virtual void				Reset() = 0;
+	//virtual void				StartTrackPredictionErrors(CBaseEntity* pEntity) = 0;
+	//virtual void				FinishTrackPredictionErrors(CBaseEntity* pEntity) = 0;
+	//virtual void				DiffPrint(char const* fmt, ...) = 0;
+	//virtual Vector const&		GetPlayerMins(bool IsDucked) const = 0;
+	//virtual Vector const&		GetPlayerMaxs(bool IsDucked) const = 0;
+	//virtual Vector const&		GetPlayerViewOffset(bool IsDucked) const = 0;
+	//virtual bool				IsMovingPlayerStuck() const = 0;
+	//virtual CBaseEntity*		GetMovingPlayer() const = 0;
+	//virtual void				UnblockPusher(CBaseEntity* pEntity, CBaseEntity* pPusher) = 0;
+	//virtual void				SetupMovementBounds(CMoveData* pMove) = 0;
 };
 
 using CBaseHandle = std::uintptr_t;

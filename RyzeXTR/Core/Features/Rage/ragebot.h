@@ -90,7 +90,6 @@ public:
 	bool bStartPing = false;
 	int iTickCount = 0;
 	std::vector<std::pair<Vector, Lagcompensation::LagRecord_t*>> vecSafePoints{};
-	std::deque<std::vector<Hitscan_t>> vecPredictedScanning{};
 
 	struct rageBotData_t
 	{

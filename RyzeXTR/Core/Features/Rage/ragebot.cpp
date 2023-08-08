@@ -161,32 +161,7 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 	float flDamage = 0.f;
 
 	std::vector<Hitscan_t> vecRecordSave{}; 
-	std::vector<Hitscan_t> vecFoundPrediction{};
-	for (auto& it : vecPredictedScanning) {
-
-		auto foundElement = std::find_if(it.begin(), it.end(),
-			[&](const Hitscan_t& element) {
-				return element.compareByTickcount(i::GlobalVars->iTickCount);
-			});
-
-		auto foundElement2 = std::find_if(it.begin(), it.end(),
-			[&](const Hitscan_t& element) {
-				return element.compareByTickcount(i::GlobalVars->iTickCount + 1);
-			});
-
-		if (foundElement2 != it.end())
-			AutoStop(pLocal, pWeapon, nullptr, g::pCmd, Vector(0, 0, 0));
-
-		if (foundElement != it.end()) {
-			vecFoundPrediction = it;
-			break;
-		}
-	}
-
 	for (CBaseEntity* pEntity : vecTargets) {
-
-		if (!vecFoundPrediction.empty())
-			break;
 
 		if (!pEntity)
 			continue;
@@ -261,18 +236,13 @@ Vector CRageBot::Hitscan( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, Vecto
 		}
 	}
 
-	if (vecRecordSave.empty() && vecFoundPrediction.empty())
+	if (vecRecordSave.empty())
 		return Vector(0, 0, 0);
 
 	if (vecRecordSave.size() > 1)
 		std::sort(vecRecordSave.begin(), vecRecordSave.end());
 
-	if (!vecRecordSave.empty())
-		vecPredictedScanning.emplace_front(vecRecordSave);
-	while (vecPredictedScanning.size() > 5)
-		vecPredictedScanning.pop_back();
-
-	for (auto& refRecord : vecFoundPrediction) {
+	for (auto& refRecord : vecRecordSave) {
 
 		float flTransformedDamage = iMinimumDamage;
 		if (iMinimumDamage > 100)

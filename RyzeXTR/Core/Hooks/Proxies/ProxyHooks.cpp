@@ -68,6 +68,4 @@ void p::TickbaseProxy(const CRecvProxyData* pData, void* pStruct, void* pOut) {
 
 	const auto oTickbaseProxy = hkTickbaseProxy->GetOriginal();
 	oTickbaseProxy(pData, pStruct, pOut);
-
-	return exploits::OnTickBaseProxy(pData->Value.Int);
 }

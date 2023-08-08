@@ -47,6 +47,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 	playerList::InitializePlayerList(pLocal);
 
+	if (i::ClientState->nChokedCommands >= 14 || exploits::bIsCurrentlyCharging)
+		bSendPacket = true;
+
 	/*if (i::ClientState->iDeltaTick > 0)
 		i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);*/
 
@@ -90,9 +93,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		bSendPacket = true;
 		ragebot.bSendPacketThisTick = false;
 	}
-
-	if (i::ClientState->nChokedCommands >= 14)
-		bSendPacket = true;
 
 	if (exploits::bIsShiftingTicks) {
 		if (cfg::antiaim::bAutoPeek && IPT::HandleInput(cfg::antiaim::iAutoPeek))
