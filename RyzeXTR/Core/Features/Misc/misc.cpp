@@ -916,10 +916,10 @@ void misc::ThirdPerson() {
 	if (!pLocal)
 		return;
 
-	Vector offset;
-	Vector vecEyePosition, forward;
+	Vector vecOffset;
+	Vector vecEyePosition, vecForward;
 	static CTraceFilter filter(pLocal, TRACE_WORLD_ONLY);
-	Trace_t tr;
+	Trace_t trace;
 
 	// for whatever reason override_view also gets called from the main menu.
 	if (!i::EngineClient->IsInGame() || i::ClientState->iSignonState != SIGNONSTATE_FULL || !pLocal)
@@ -972,15 +972,15 @@ void misc::ThirdPerson() {
 	if (i::Input->CameraInThirdPerson())
 	{
 		// get camera angles.
-		i::EngineClient->GetViewAngles(offset);
+		i::EngineClient->GetViewAngles(vecOffset);
 
-		// get our viewangle's forward directional vector.
-		M::AngleVectors(offset, &forward);
+		// get our viewangle's vecForward directional vector.
+		M::AngleVectors(vecOffset, &vecForward);
 
 		// cam_idealdist convar.
-		offset.z = static_cast<float>(cfg::misc::iThirdPersonDistance);
+		vecOffset.z = static_cast<float>(cfg::misc::iThirdPersonDistance);
 
-		if (offset.z == 0) {
+		if (vecOffset.z == 0) {
 
 			vecEyePosition = pLocal->GetEyePosition(false);
 			Vector vecHeadPosition = pLocal->GetHitboxPosition(HITBOX_HEAD).value();
@@ -989,12 +989,12 @@ void misc::ThirdPerson() {
 			Vector vecViewPunch = g::pLocal->GetViewPunch();
 			Vector vecAimPunch = g::pLocal->GetAimPunch();
 
-			offset.x += (vecViewPunch[0] + (vecAimPunch[0] * 2 * 0.4499999f));
-			offset.y += (vecViewPunch[1] + (vecAimPunch[1] * 2 * 0.4499999f));
+			vecOffset.x += (vecViewPunch[0] + (vecAimPunch[0] * 2 * 0.4499999f));
+			vecOffset.y += (vecViewPunch[1] + (vecAimPunch[1] * 2 * 0.4499999f));
 			//pSetup->angView[2] -= (vecViewPunch[2] + (vecAimPunch[2] * 2 * 0.4499999f));
 
-			i::Input->vecCameraOffset = { offset.x + flDifference, offset.y + flDifference, vecEyePosition.z - vecHeadPosition.z };
-			//i::Input->vecCameraOffset = { offset.x + (vecEyePosition - vecHeadPosition).x + cfg::debugSlider, offset.y + (vecEyePosition - vecHeadPosition).y, vecEyePosition.z - vecHeadPosition.z};
+			i::Input->vecCameraOffset = { vecOffset.x + flDifference, vecOffset.y + flDifference, vecEyePosition.z - vecHeadPosition.z };
+			//i::Input->vecCameraOffset = { vecOffset.x + (vecEyePosition - vecHeadPosition).x + cfg::debugSlider, vecOffset.y + (vecEyePosition - vecHeadPosition).y, vecEyePosition.z - vecHeadPosition.z};
 			return;
 		}
 
@@ -1002,14 +1002,14 @@ void misc::ThirdPerson() {
 		vecEyePosition = pLocal->GetEyePosition(false);
 
 		// setup trace filter and trace.
-		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecEyePosition - (forward * offset.z), { -16.f, -16.f, -16.f }, { 16.f, 16.f, 16.f }), MASK_SOLID, &filter, &tr);
+		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecEyePosition - (vecForward * vecOffset.z), { -16.f, -16.f, -16.f }, { 16.f, 16.f, 16.f }), MASK_SOLID, &filter, &trace);
 
 		// adapt distance to travel time.
-		tr.flFraction = max(0.f, min(tr.flFraction, 1.f));
-		offset.z *= tr.flFraction;
+		trace.flFraction = max(0.f, min(trace.flFraction, 1.f));
+		vecOffset.z *= trace.flFraction;
 
 		// override camera angles.
-		i::Input->vecCameraOffset = { offset.x, offset.y, offset.z };
+		i::Input->vecCameraOffset = { vecOffset.x, vecOffset.y, vecOffset.z };
 	}
 }
 
