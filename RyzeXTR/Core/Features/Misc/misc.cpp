@@ -929,7 +929,7 @@ void misc::ThirdPerson() {
 		return;
 
 	// check if we have a local player and it is alive.
-	bool alive = pLocal && pLocal->IsAlive();
+	bool bAlive = pLocal && pLocal->IsAlive();
 
 	static float flKurvaAnyad = 0.f;
 
@@ -939,8 +939,8 @@ void misc::ThirdPerson() {
 	// camera should be in thirdperson.
 	if (IPT::HandleInput(cfg::misc::iThirdPersonKey) && cfg::misc::bThirdPerson)
 	{
-		// if alive and not in thirdperson already switch to thirdperson.
-		if (alive && !i::Input->CameraInThirdPerson())
+		// if bAlive and not in thirdperson already switch to thirdperson.
+		if (bAlive && !i::Input->CameraInThirdPerson())
 			i::Input->ToThirdPerson();
 
 		// if dead and spectating in firstperson switch to thirdperson.
@@ -957,7 +957,7 @@ void misc::ThirdPerson() {
 			pLocal->GetObserverMode() = 5;
 		}
 	}
-	else if (cfg::misc::bThirdPerson && !alive) {
+	else if (cfg::misc::bThirdPerson && !bAlive) {
 		if (pLocal->GetObserverMode() == 5)
 			pLocal->GetObserverMode() = 4;
 	}
