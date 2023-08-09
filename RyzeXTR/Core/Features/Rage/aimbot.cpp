@@ -124,6 +124,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		aimData.flDamage = refRecord.flDamage;
 		aimData.iHitbox = refRecord.iHitbox;
 		aimData.iHitGroup = refRecord.iHitgroup;
+		aimData.vecTargetShootPosition = refRecord.vecPoint;
 
 		return refRecord.vecPoint;
 	}

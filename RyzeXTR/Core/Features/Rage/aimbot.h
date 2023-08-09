@@ -85,19 +85,20 @@ struct rageBotData_t
 	Lagcompensation::LagRecord_t* pRecord{};
 	CBaseEntity* pAimbotTarget{};
 	matrix3x4_t* pTargetMatrix{};
-	Vector							vecLocalShootPosition{};
+	Vector vecLocalShootPosition{};
+	Vector vecTargetShootPosition{};
 
-	int								iHealth{};
-	int								iTickcount{};
-	int								iHitbox{};
-	int								iHitGroup{};
+	int	iHealth{};
+	int	iTickcount{};
+	int	iHitbox{};
+	int	iHitGroup{};
 
-	bool							bBacktrack{};
-	bool							bCanShoot{};
+	bool bBacktrack{};
+	bool bCanShoot{};
 
-	float							flTargetSimulation{};
-	float							flDamage{};
-	float							flHitchance{};
+	float flTargetSimulation{};
+	float flDamage{};
+	float flHitchance{};
 
 	void SetTarget(Lagcompensation::LagRecord_t* _pRecord, Vector vecEyePosition, bool _bBacktrack) {
 
