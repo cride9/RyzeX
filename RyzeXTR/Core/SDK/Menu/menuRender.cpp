@@ -945,14 +945,14 @@ void menu::Skins(ImVec2 savedCursorPosition) {
             }
             ImGui::ListBoxVectorSkin("##skins", &iCurrentIndex[iMenuID], vecSkinNames, vecSkinRarity, 20);
             if (ImGui::Button("Force Update", ImVec2(ImGui::GetContentRegionAvail().x, 25), true, true))
-                skinChanger.bshouldFullUpdate = true;
+                skinChanger.bShouldFullUpdate = true;
 
             ImGui::PopItemWidth();
 
             if (vecPaintKit.size() > iCurrentIndex[iMenuID])
             {
                 if (iSkinId[iMenuID] != vecPaintKit.at(iCurrentIndex[iMenuID]) && iMenuID != 35) {
-                    skinChanger.bshouldFullUpdate = true;
+                    skinChanger.bShouldFullUpdate = true;
                     iSkinId[iMenuID] = vecPaintKit.at(iCurrentIndex[iMenuID]);
                 }
             }
@@ -986,10 +986,12 @@ void menu::Skins(ImVec2 savedCursorPosition) {
         ImGui::ListBox("Quality", &iQuality[iMenuID], arrQualities, IM_ARRAYSIZE(arrQualities));
         if (iBackupQualities[iMenuID] != iQuality[iMenuID]) {
             iBackupQualities[iMenuID] = iQuality[iMenuID];
-            skinChanger.bshouldFullUpdate = true;
+            skinChanger.bShouldFullUpdate = true;
         }
 
-        ImGui::Checkbox("Skin color", &bModifySkinColors[iMenuID]);
+        if (ImGui::Checkbox("Skin color", &bModifySkinColors[iMenuID]));
+            skinChanger.bShouldFullUpdate = true;
+
         if (bModifySkinColors[iMenuID]) {
 
             ImGui::Text("Color 1:");
@@ -1014,11 +1016,11 @@ void menu::Skins(ImVec2 savedCursorPosition) {
 
         int iSelectedKnifeModel = iKnifeModel;
         ImGui::Combo("Knife", &iKnifeModel, arrKnifeModels, IM_ARRAYSIZE(arrKnifeModels));
-        skinChanger.bshouldFullUpdate = iSelectedKnifeModel != iKnifeModel ? true : skinChanger.bshouldFullUpdate;
+        skinChanger.bShouldFullUpdate = iSelectedKnifeModel != iKnifeModel ? true : skinChanger.bShouldFullUpdate;
 
         int iSelectedGloveModel = iGloveModel;
         ImGui::Combo("Glove", &iGloveModel, arrGloveModels, IM_ARRAYSIZE(arrGloveModels));
-        skinChanger.bshouldFullUpdate = iSelectedGloveModel != iGloveModel ? true : skinChanger.bshouldFullUpdate;
+        skinChanger.bShouldFullUpdate = iSelectedGloveModel != iGloveModel ? true : skinChanger.bShouldFullUpdate;
 
         static std::vector<const char*> vecGloveNames[9];
         static  std::vector<int> vecPaintKit[9];
@@ -1051,7 +1053,7 @@ void menu::Skins(ImVec2 savedCursorPosition) {
             }
 
             ImGui::Combo("##yes", &iSelectedGlove[iGloveModel], vecGloveNames[iGloveModel].data(), vecGloveNames[iGloveModel].size());
-            skinChanger.bshouldFullUpdate = vecPaintKit[iGloveModel].at(iSelectedGlove[iGloveModel]) != iSkinId[35] ? true : skinChanger.bshouldFullUpdate;
+            skinChanger.bShouldFullUpdate = vecPaintKit[iGloveModel].at(iSelectedGlove[iGloveModel]) != iSkinId[35] ? true : skinChanger.bShouldFullUpdate;
             iSkinId[35] = vecPaintKit[iGloveModel].at(iSelectedGlove[iGloveModel]);
 
             ImGui::PopItemWidth();

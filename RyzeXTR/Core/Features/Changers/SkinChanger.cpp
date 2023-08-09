@@ -194,9 +194,7 @@ void CSkinChanger::Dump()
 
 				char nameStr[256];
 				V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
-
 				SkinKits.push_back({ paintKit->m_nID, nameStr, paintKit->m_szName.data() ,std::clamp(itemDef->getRarity() + paintKit->m_nRarity - 1, 0, (paintKit->m_nRarity == 7) ? 7 : 6),(int)it->second });
-
 			}
 		}
 	}
@@ -540,7 +538,7 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 	//--------------------------------------------weapon-changer-------------------------------------------- 
 
 	// we only want to force update every second rather than spam constant which can cause crash
-	if (bshouldFullUpdate && i::GlobalVars->flCurrentTime >= flUpdateTime)
+	if (bShouldFullUpdate && i::GlobalVars->flCurrentTime >= flUpdateTime)
 	{
 		g::bUpdatingSkins = true;
 		//for (auto& w : pWeapons)
@@ -575,7 +573,7 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 		if (g::pLocal != nullptr && g::pLocal->GetWeapon() != nullptr)
 			ForceItemUpdate(g::pLocal->GetWeapon());
 
-		bshouldFullUpdate = false;
+		bShouldFullUpdate = false;
 		flUpdateTime = i::GlobalVars->flCurrentTime + 1.f;
 
 		g::bUpdatingSkins = false;

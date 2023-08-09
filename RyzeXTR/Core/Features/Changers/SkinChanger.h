@@ -437,7 +437,7 @@ public:
 	short iItemDefinitionIndex = 0;
 	bool bIsKnife = false;
 
-	bool bshouldFullUpdate = false;
+	bool bShouldFullUpdate = false;
 	float flUpdateTime = 0.0f;
 	// Get
 	void Run(CBaseEntity* pLocal);
