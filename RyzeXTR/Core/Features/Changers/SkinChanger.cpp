@@ -132,7 +132,6 @@ void CSkinChanger::Dump()
 		if (weaponNames.contains(kitWeapon.second))
 			continue;
 
-
 		if (const auto itemDef = m_pItemSchematic->getItemDefinitionInterface(kitWeapon.second)) {
 			weaponNames.emplace(kitWeapon.second, i::Localize->Find(itemDef->getItemBaseName()));
 		}
@@ -191,31 +190,14 @@ void CSkinChanger::Dump()
 				std::wstring name = i::Localize->Find(itemDef->getItemBaseName());
 				name += L" | ";
 				name += i::Localize->Find(paintKit->m_szDescriptionTag.data() + 1);
-
-				std::wstring weaponName = weaponNames[it->second];
+				//std::wstring szWeaponName = weaponNames[it->second]; // in case we want to use weapon names separately in the future...
 
 				char nameStr[256];
 				V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
 
 				SkinKits.push_back({ paintKit->m_nID, nameStr, paintKit->m_szName.data() ,std::clamp(itemDef->getRarity() + paintKit->m_nRarity - 1, 0, (paintKit->m_nRarity == 7) ? 7 : 6),(int)it->second });
 
-				//weapons.insert(it->second);
 			}
-
-			/*for (short weapon : weapons)
-			{
-	
-			}
-
-			if (weapons.empty() || weapons.size() > 1) // this paint kit fits more than one weapon
-			{
-				std::wstring name = i::Localize->Find(paintKit->m_szDescriptionTag.data() + 1);
-
-				char nameStr[256];
-				V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
-
-				SkinKits.push_back({ paintKit->m_nID, nameStr,paintKit->m_szName.data(), paintKit->m_nRarity, 0 });
-			}*/
 		}
 	}
 
