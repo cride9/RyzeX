@@ -103,6 +103,7 @@ namespace detour {
 	inline CDetourHook estimateAbsVelocity;
 	inline CDetourHook setupAliveLoop;
 	inline CDetourHook animationState;
+	inline CDetourHook baseInterpolatePart1;
 }
 
 namespace h {
@@ -149,6 +150,7 @@ namespace h {
 	void __fastcall     hkRenderView(void* ecx, void* edx, CViewSetup& view, CViewSetup& hudViewSetup, int nClearFlags, int whatToDraw);
 	bool __fastcall     hkVerifyReturnAddress(void* edx, void* ecx, const char* moduleName);
 	void __vectorcall	hkUpdateAnimationState(CAnimState* pAnimstate, void* edx, float z, float y, float x, void* unknown1);
+	int __fastcall		hkBaseInterpolatePart1(CBaseEntity* pEntity, void* edx, float& currentTime, Vector& oldOrigin, Vector& oldAngles, int& bNoMoreChanges);
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );

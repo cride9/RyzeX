@@ -147,8 +147,10 @@ public:
 		float flThirdPersonRecoil{};
 		float flDesyncDelta{};
 		float flResolveDelta{};
-		float flLastUpdateIncrement{};
 		float flLayerDifferences[MAX]{};
+		float flGuessedYaw = 0.f;
+		float flCollisionChangeTime = 0.f;
+		float flCollisionChangeOrigin = 0.f;
 
 		int nVelocityMode{};
 		int iActivityTick{};

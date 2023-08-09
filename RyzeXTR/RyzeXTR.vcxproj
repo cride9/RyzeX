@@ -146,6 +146,7 @@
     <ClCompile Include="Core\Features\Rage\exploits.cpp" />
     <ClCompile Include="Core\Features\Visuals\chams.cpp" />
     <ClCompile Include="Core\Features\Visuals\ESP.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkBaseInterpolatePart1.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkBuildTransformation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkCalculateView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkCheckForSequenceChange.cpp" />

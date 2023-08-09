@@ -60,6 +60,7 @@ void h::SetupHooks() {
 	HookSignature(detour::setupAliveLoop, CLIENT_DLL, "55 8B EC 51 56 8B 71 60 83 BE 9C 29 ? ? ? 0F 84 93 ? ? ? 8B", &hkSetupAliveLoop);
 	HookSignature(detour::verifyReturnAddress, CLIENT_DLL, "55 8B EC 56 8B F1 33 C0 57 8B 7D 08 8B 8E", &hkVerifyReturnAddress);
 	HookSignature(detour::animationState, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3", &hkUpdateAnimationState);
+	HookSignature(detour::baseInterpolatePart1, CLIENT_DLL, "55 8B EC 51 8B 45 14 56", &hkBaseInterpolatePart1);
 
 	menu::DestroyDirectX();
 

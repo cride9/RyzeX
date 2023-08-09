@@ -42,7 +42,7 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	aimData.bCanShoot = HitChance(pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord);
 	AutoStop(pLocal, pCmd);
 
-	if (!aimData.bCanShoot) 
+	if (!aimData.bCanShoot || !pLocal->CanShoot(pWeapon)) 
 		return;
 	
 	pCmd->angViewPoint = vecAimAngle;
@@ -50,8 +50,8 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 	pCmd->iButtons |= IN_ATTACK;
 	aimData.iTickcount = pCmd->iTickCount;
+	pCmd->iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
 
-	iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
 	bShouldSendPacket = true;
 	hitlogData = aimData;
 }
@@ -61,7 +61,6 @@ void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 	if (bShouldSendPacket) {
 
 		bSendPacket = true;
-		pCmd->iTickCount = iTickCount;
 		bShouldSendPacket = false;
 	}
 }
@@ -74,13 +73,19 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
 
-		for (size_t i = 0; i < it->iLastValid; i++) {
+		for (int i = 0; i <= it->iLastValid; i++) {
 
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at(i);
+			if (i != 0 && (!pRecord->bValid || pRecord->bBreakingLagcompensation))
+				continue;
+			
+			pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
 			for (auto& iHitbox : curConfig.vecHitboxes[NORMAL]) {
+
 				bool bShouldMultiPoint = std::find(curConfig.vecHitboxes[MULTIPOINT].begin(), curConfig.vecHitboxes[MULTIPOINT].end(), iHitbox) != curConfig.vecHitboxes[MULTIPOINT].end();
 				bool bShouldForceSafePoint = std::find(curConfig.vecHitboxes[SAFE].begin(), curConfig.vecHitboxes[SAFE].end(), iHitbox) != curConfig.vecHitboxes[SAFE].end();
 				bool bShouldSafe = curConfig.bSafePoint;
+				mstudiobbox_t* pStudioHitbox = it->pEntity->StudioHitbox(iHitbox);
 
 				if (cfg::rage::iAimbotFov < 180) { // we don't wanna multipoint if they are outside of our fov
 					float flRadius = 0.f;
@@ -94,19 +99,31 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 						continue;
 				}
 
-				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint);
+				// OPTIMIZATION: don't create points on body when we're forcing safe point
+				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, i == 0 ? bShouldMultiPoint : bShouldMultiPoint ? iHitbox == HITBOX_HEAD ? true : false : false);
+				// OPTIMIZATION: first element in the vector is always the hitbox center
+				bool bFirstElement = true;
+
 				for (Vector& vecHitboxPoint : vecWorldPoints) {
 
 					if (bShouldSafe) {
 
-						int iCollidePoints = autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox);
-						if (iCollidePoints < 2)
-							continue;
+						// OPTIMIZATION: skip baim hitbox center, they're most likely safe
+						if (!bFirstElement || iHitbox == HITBOX_HEAD) {
 
-						if (bShouldForceSafePoint && iCollidePoints < 3)
-							continue;
+							int iCollidePoints = autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox);
+							if (iCollidePoints < 2) {
+								bFirstElement = false;
+								continue;
+							}
+
+							if (bShouldForceSafePoint && iCollidePoints < 3) {
+								bFirstElement = false;
+								continue;
+							}
+						}
 					}
-
+					bFirstElement = false;
 					FireBulletData_t pData;
 					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, &pData);
 					if (flDamage != -1.f) {
@@ -128,7 +145,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 		float flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)
-			flTransformedDamage = refRecord.pRecord->pEntity->GetHealth() + (curConfig.iMinimumDamage - 100);
+			flTransformedDamage = max(refRecord.pRecord->pEntity->GetHealth(), 20) + (curConfig.iMinimumDamage - 100);
 
 		if (refRecord.flDamage < flTransformedDamage)
 			continue;
@@ -412,6 +429,11 @@ void CAimBot::GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon) {
 std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CBaseEntity* pLocal) {
 
 	std::vector<Lagcompensation::AnimationInfo_t*> ret{};
+
+	CCSWeaponInfo* pWeaponData = curConfig.pWeapon->GetCSWpnData();
+	if (!pWeaponData)
+		return ret;
+
 	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
@@ -420,8 +442,38 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 			continue;
 
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
-		if (!pLog || pLog->pRecord.empty())
+		if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity)
 			continue;
+
+		// OPTIMIZATION: skip entities that are further than our weapons range
+		if (pLog->pEntity->GetVecOrigin().DistTo(pLocal->GetVecOrigin()) > pWeaponData->flRange)
+			continue;
+
+		// OPTIMIZATION: autowall can only penetrate 4 wall check if he's behind 4wall or not
+		// traceray is a lot more fps friendly than simulate fire bullet, but cannot calculate damage.
+		// TODO: only registering players behind wall, but not registering players in the open
+		//Trace_t traceData = Trace_t();
+		//traceData.vecEnd = Vector(0, 0, 0);
+		//CTraceFilter traceFilter(pLocal);
+		//Vector vecEnd = pEntity->GetHitboxPosition(HITBOX_STOMACH, pLog->pRecord.front().pMatricies[RESOLVE]);
+		//bool bPenetradable = false;
+		//for (size_t i = 0; i < 4; i++) {
+
+		//	if (bPenetradable)
+		//		break;
+
+		//	if (traceData.vecEnd == Vector(0, 0, 0))
+		//		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecEnd), CONTENTS_SOLID | CONTENTS_HITBOX, &traceFilter, &traceData);
+		//	else if (traceData.pHitEntity != pEntity)
+		//		i::EngineTrace->TraceRay(Ray_t(traceData.vecEnd + (traceData.vecEnd - traceData.vecStart) / 10.f, vecEnd), CONTENTS_SOLID | CONTENTS_HITBOX, &traceFilter, &traceData);
+
+		//	Trace_t traceDataCheck = Trace_t();
+		//	i::EngineTrace->TraceRay(Ray_t(traceData.vecEnd, vecEnd), MASK_SHOT, &traceFilter, &traceDataCheck);
+		//	if (traceDataCheck.pHitEntity == pEntity)
+		//		bPenetradable = true;
+		//}
+		//if (!bPenetradable)
+		//	continue;
 
 		ret.push_back(pLog);
 	}
@@ -464,9 +516,6 @@ std::vector<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeap
 	refVecPoints.push_back(vecCenter);
 	if (iHitbox == HITBOX_HEAD) {
 		refVecPoints.push_back(vecCenter + vecTop * flHitboxDistance);
-		refVecPoints.push_back(vecCenter - vecTop * flHitboxDistance);
-		refVecPoints.push_back(vecCenter + vecRight * (flHitboxDistance * 0.5f));
-		refVecPoints.push_back(vecCenter + vecLeft * (flHitboxDistance * 0.5f));
 
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));

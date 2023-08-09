@@ -599,7 +599,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
             ImGui::Combo(("Material"), &weaponType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
 
             ImGui::Checkbox("Weapon", &weapon);
-            ImGui::ColorEdit4("##viewmodelColor", viewmodelColor);
+            ImGui::ColorEdit4("##weaponColor", weaponColor);
             ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
             switch (iSelectedOverlay) {
             case 0:
@@ -1164,7 +1164,7 @@ void menu::PlayerList(ImVec2 savedCursorPosition) {
     ImGui::BeginChild("##LeftWhole", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
         //ImGui::Checkbox("Disable interpolation", &cfg::debugSwitch);
-        //ImGui::SliderInt("Amount", &cfg::debugSlider1, 0, 64);
+        //ImGui::SliderInt("Amount", &cfg::debugSlider1, 0, 30);
     }
     ImGui::EndChild();
 }

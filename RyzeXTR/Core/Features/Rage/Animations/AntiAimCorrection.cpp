@@ -245,17 +245,17 @@ void Animations::SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw) {
 	switch (flYaw) {
 
 	case LEFT:
-		pState->flGoalFeetYaw = GetYawRotation(pRecord, LEFT)/*M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta)*/;
+		pState->flGoalFeetYaw = GetYawRotation(pRecord, LEFT);
 		pRecord->flResolveDelta = -pRecord->flDesyncDelta;
 		break;
 
 	case CENTER:
-		pState->flGoalFeetYaw = GetYawRotation(pRecord, CENTER)/*M::NormalizeYaw(pRecord->vecEyeAngles.y)*/;
+		pState->flGoalFeetYaw = GetYawRotation(pRecord, CENTER);
 		pRecord->flResolveDelta = 0.f;
 		break;
 
 	case RIGHT:
-		pState->flGoalFeetYaw = GetYawRotation(pRecord, RIGHT)/*M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta)*/;
+		pState->flGoalFeetYaw = GetYawRotation(pRecord, RIGHT);
 		pRecord->flResolveDelta = pRecord->flDesyncDelta;
 		break;
 	}
@@ -277,6 +277,12 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 
 	static std::array<int, 65> iMissTracker{0};
 	const int iEntityID = pEntity->EntIndex();
+
+	if (pRecord->flGuessedYaw != 0.f && arrMissedShots[iEntityID] == 0) {
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flGuessedYaw);
+		return;
+	}
+
 	return SetYaw(pRecord, LEFT + (arrMissedShots[iEntityID] % 3));
 
 	if (pPrevious->iAntiFreestand != 0 && arrMissedShots[iEntityID] == 0)

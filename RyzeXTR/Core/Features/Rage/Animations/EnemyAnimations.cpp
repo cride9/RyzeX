@@ -3,6 +3,7 @@
 #include "../autowall.h"
 #include "../../Misc/Playerlist.h"
 #include "../../Networking/networking.h"
+#include "../aimbot.h"
 
 float flOldLowerbodyYaw[65];
 float flOldPlaybackrateYaw[65];
@@ -101,7 +102,6 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 	BuildSafePoint(LEFT);
 	BuildSafePoint(CENTER);
 	BuildSafePoint(RIGHT);
-	//UpdateOnFeetYaw(pEntity, pRecord);
 }
 
 float Animations::BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
@@ -281,7 +281,7 @@ void Animations::SetUpMovement(Lagcompensation::LagRecord_t* pRecord, CAnimState
 	pLayer->flCycle = pState->flFeetCycle;
 }
 
-void Animations::RebuiltLayer6(CAnimState* m_pState, Lagcompensation::LagRecord_t* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity) {
+void Animations::RebuiltLayer6(CAnimState* m_pState, Lagcompensation::LagRecord_t* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer) {
 
 	// rebuilt layer 6 calculations from csgo
 	// links:
@@ -290,7 +290,7 @@ void Animations::RebuiltLayer6(CAnimState* m_pState, Lagcompensation::LagRecord_
 	// TODO: make code look good
 
 	// TODO: Find these members in the actual animstate struct
-	float m_flLastUpdateIncrement = pEntity->flLastUpdateIncrement;
+	float m_flLastUpdateIncrement = m_pState->flLastUpdateIncrement;
 	float m_flFootYaw = m_pState->flGoalFeetYaw;
 	float m_flMoveYaw = m_pState->flMoveYaw;
 	Vector m_vecVelocityNormalizedNonZero = m_pState->vecVelocityNormalizedNonZero;
@@ -313,7 +313,7 @@ void Animations::RebuiltLayer6(CAnimState* m_pState, Lagcompensation::LagRecord_
 
 	m_AnimationData.iMoveState = pEntity->pEntity->GetMoveState();
 
-	float m_flMovementTimeDelta = pEntity->flLastUpdateIncrement * 40.0f;
+	float m_flMovementTimeDelta = m_pState->flLastUpdateIncrement * 40.0f;
 
 	if (-m_AnimationData.flMovePlaybackRate <= m_flMovementTimeDelta)
 	{
@@ -337,7 +337,7 @@ void Animations::RebuiltLayer6(CAnimState* m_pState, Lagcompensation::LagRecord_
 	if (m_flSpeedWeight < pLayer->flFeetWeight)
 	{
 		float v34 = std::clamp(m_AnimationData.flMovePlaybackRate * 0.01f, 0.0f, 1.0f);
-		float m_flFeetWeightElapsed = ((v34 * 18.0f) + 2.0f) * pEntity->flLastUpdateIncrement;
+		float m_flFeetWeightElapsed = ((v34 * 18.0f) + 2.0f) * m_pState->flLastUpdateIncrement;
 		if (m_flSpeedWeight - pLayer->flFeetWeight <= m_flFeetWeightElapsed)
 			pLayer->flFeetWeight = -m_flFeetWeightElapsed <= (m_flSpeedWeight - pLayer->flFeetWeight) ? m_flSpeedWeight : pLayer->flFeetWeight - m_flFeetWeightElapsed;
 		else
@@ -371,7 +371,7 @@ void Animations::RebuiltLayer6(CAnimState* m_pState, Lagcompensation::LagRecord_
 	float m_flNewFeetWeightLayerWeight = m_flNewWeight * m_flNewFeetWeightWithAirSmooth;
 	float m_flFeetCycleRate = 0.0f;
 
-	float m_flSpeed = std::fmin(vecVelocity.Length(), 260.0f);
+	float m_flSpeed = std::fmin(GetVelocityLengthXY(pEntity->pEntity), 260.0f);
 	if (m_flSpeed > 0.00f)
 	{
 		float m_flSequenceCycleRate = pEntity->pEntity->GetSequenceCycleRate(pEntity->pEntity->GetModelPtr(), m_nMoveSequence);
@@ -390,7 +390,7 @@ void Animations::RebuiltLayer6(CAnimState* m_pState, Lagcompensation::LagRecord_
 		m_flFeetCycleRate = (1.0f - (m_pState->flWalkToRunTransition * 0.15f)) * (m_flSpeedMultiplier * m_flSequenceCycleRate);
 	}
 
-	float m_flFeetCyclePlaybackRate = pEntity->flLastUpdateIncrement * m_flFeetCycleRate;
+	float m_flFeetCyclePlaybackRate = m_pState->flLastUpdateIncrement * m_flFeetCycleRate;
 	m_AnimationData.flPrimaryCycle = m_flFeetCyclePlaybackRate + m_AnimationData.flPrimaryCycle;
 
 	// store possible information for resolving.
@@ -896,25 +896,26 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 	pRecord->flDesyncDelta = flAimMatrixWidthRange * pEntity->AnimState()->flMaxBodyYaw;
 
+	pEntity->GetPoseParameters(pRecord->flPoses);
+
+	FindDesyncSide(pRecord); // meme but sorta worksXD
 	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
 	if (playerListData.bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
 	else
 		Resolver(pEntity, pRecord, pPrevious);
-	
-	pEntity->GetPoseParameters(pRecord->flPoses);
 
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
 	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
 
 	static CConVar* cl_lagcompensation = i::ConVar->FindVar(XorStr("cl_lagcompensation"));
-	if (pRecord->bBreakingLagcompensation || cl_lagcompensation->GetInt() == 0)
+	if (cl_lagcompensation->GetInt() == 0)
 		lagcomp.ExtrapolatePlayer(pEntity, pRecord, pPrevious);
 
 	if (cfg::rage::bEnable) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
 		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
-		//GetSideLayersForResolver(pEntity, pRecord);
+		GetSideLayersForResolver(pEntity, pRecord);
 	}
 
 	pEntity->GetVelocity() = vecBackupVelocity;
@@ -1042,6 +1043,61 @@ void UpdateLmao(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
 	pEntity->InvalidatePhysicsRecursive(ANIMATION_CHANGED);
 }
 
+float Animations::FindMatchingPlaybackRate(float flTarget, std::array<float, 120>& arrPlaybackRates) {
+
+	int closestIndex = 0; // Initialize with the index of the first element
+	float minDifference = std::fabsf(arrPlaybackRates[0] - flTarget); // Initialize with the difference to the first element
+
+	for (int i = 1; i < sizeof(arrPlaybackRates) / sizeof(arrPlaybackRates[0]); ++i) {
+		float difference = std::fabsf(arrPlaybackRates[i] - flTarget);
+		if (difference < minDifference) {
+			minDifference = difference;
+			closestIndex = i;
+		}
+	}
+	if (closestIndex < 1 || closestIndex > 119)
+		return 0.f;
+
+	return closestIndex - 60;
+}
+
+void Animations::FindDesyncSide(Lagcompensation::LagRecord_t* pRecord) {
+
+	// backup variables
+	CAnimState pBackupState;
+	std::array<float, 24> arrBackupPoses;
+	std::array<CAnimationLayer, 13> arrBackupLayers;
+
+	// backup crucial information
+	pRecord->pEntity->GetPoseParameters(arrBackupPoses.data());
+	pRecord->pEntity->GetAnimationLayers(arrBackupLayers.data());
+	memcpy(&pBackupState, pRecord->pEntity->AnimState(), sizeof(CAnimState));
+
+	std::array<float, 120> arrPlaybackRates{};
+	for (float i = -60; i < 60; i++)
+	{
+		pRecord->pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + i);
+		UpdateClientSideAnimations(pRecord->pEntity, pRecord);
+		memcpy(pRecord->pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+		pRecord->pEntity->SetUpMovement();
+
+		arrPlaybackRates[i + 60] = pRecord->pEntity->GetAnimationOverlays()[6].flPlaybackRate;
+	}
+
+	// restore animations
+	pRecord->pEntity->SetAnimationLayers(arrBackupLayers.data());
+	pRecord->pEntity->SetPoseParameters(arrBackupPoses.data());
+	memcpy(pRecord->pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+
+	// update restored anims
+	UpdateClientSideAnimations(pRecord->pEntity, pRecord);
+
+	// restore animstate to its original phase so it will update everything normally
+	memcpy(pRecord->pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
+
+	pRecord->flGuessedYaw = FindMatchingPlaybackRate(pRecord->pLayers[6].flPlaybackRate, arrPlaybackRates);
+}
+
 void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
 
 	// rebuilding server function for layer 6 is not really important
@@ -1069,11 +1125,10 @@ void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation:
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 
 		// call the client function to rebuild the layer with fixed values
-		RebuiltLayer6(pEntity->AnimState(), pRecord, &pRecord->LayerData[CENTER], pRecord->vecVelocity);
-		//pEntity->SetUpMovement();
+		pEntity->SetUpMovement();
 
 		// Save the layerdata
-		//pRecord->LayerData[CENTER] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE]);
+		pRecord->LayerData[CENTER] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE]);
 
 		// Restore the values to not mess with our client animations by calling layer6 too many times
 		pRecord->Restore(pEntity);
@@ -1090,7 +1145,7 @@ void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation:
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 
 		//pEntity->SetUpMovement();
-		RebuiltLayer6(pEntity->AnimState(), pRecord, &pRecord->LayerData[RIGHT], pRecord->vecVelocity);
+		RebuiltLayer6(pEntity->AnimState(), pRecord, &pRecord->LayerData[RIGHT]);
 
 		//pRecord->LayerData[RIGHT] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[6]);
 
@@ -1108,7 +1163,7 @@ void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation:
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 
 		//pEntity->SetUpMovement();
-		RebuiltLayer6(pEntity->AnimState(), pRecord, &pRecord->LayerData[LEFT], pRecord->vecVelocity);
+		RebuiltLayer6(pEntity->AnimState(), pRecord, &pRecord->LayerData[LEFT]);
 
 		//pRecord->LayerData[LEFT] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[6]);
 

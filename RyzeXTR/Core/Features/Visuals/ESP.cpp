@@ -385,9 +385,9 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
 		
-		static auto something = [](int right, int top, int& spacing, const char* print) {
+		static auto something = [](int right, int top, int& spacing, std::string print) {
 
-			i::Surface->DrawT(right + 2, (top + spacing) - 80, RYZEXCOLOR, g::fonts::DebugFont, false, print);
+			i::Surface->DrawT(right + 2, (top + spacing) - 80, RYZEXCOLOR, g::fonts::DebugFont, false, print.c_str());
 			spacing += 10;
 		};
 
@@ -396,10 +396,10 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 			return;
 
 		auto pRecord = &pLog->pRecord.front();
-
 		//something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x8) + 0x24)).c_str());
 		//something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x44) + 0x24)).c_str());
 
+		//something(right, top, spacing, std::format("Guess: {}", pRecord->flGuessedYaw).c_str());
 		//// from the server.
 		//auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
 

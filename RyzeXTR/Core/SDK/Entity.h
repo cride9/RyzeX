@@ -917,6 +917,14 @@ public:
 	{
 		return *(Vector*)((DWORD)(this) + 0x31E8);
 	}
+	float& GetCollisionChangeTime()
+	{
+		return *(float*)((DWORD)(this) + 0x9924);
+	}
+	float& GetCollisionChangeOrigin()
+	{
+		return *(float*)((DWORD)(this) + 0x9920);
+	}
 
 	std::array<float, 24>& GetPoseParameter() {
 

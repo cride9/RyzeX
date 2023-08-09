@@ -9,6 +9,7 @@
 #include "../../SDK/InputSystem.h"
 #include "../Networking/networking.h"
 #include "../Misc/Playerlist.h"
+#include "../Visuals/ESP.h"
 
 bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
 
@@ -16,12 +17,13 @@ static bool jitter = false;
 
 void HandleJitter(AATYPE type) {
 
-	int tickbase = networking.GetCorrectedTickbase();
-	static int last_tick = 0;
+	static int iLastTickbase = 0;
 	static float flCurtime = i::GlobalVars->flCurrentTime;
-	if (last_tick + (i::ClientState->nChokedCommands + 1) < tickbase || last_tick > tickbase)
+
+	int iTickbase = g::pLocal->GetTickBase();
+	if (iLastTickbase + (i::ClientState->nChokedCommands /*+ 1*/) < iTickbase || iLastTickbase > iTickbase)
 	{
-		last_tick = tickbase;
+		iLastTickbase = iTickbase;
 
 		if (cfg::antiaim::bAntiJitter[type]) {
 			if (flCurtime + 0.7f < i::GlobalVars->flCurrentTime) {
@@ -549,16 +551,16 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 	{
 		CBaseEntity* pEnt = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || !pEnt->IsEnemy(g::pLocal) || pEnt->IsDormant() || pEnt == g::pLocal)
+		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || !pEnt->IsEnemy(g::pLocal) || pEnt == g::pLocal)
 			continue;
 
 		if (playerList::arrPlayers[i].iPriority == FRIEND)
 			continue;
 
 		Vector vecCalcAngle;
-		auto vecHitboxPosition = pEnt->GetHitboxPosition(HITBOX_UPPER_CHEST, pEnt->GetCachedBoneData().Base());
+		auto vecPosition = pEnt->IsDormant() ? visual::vecDormatPosition[i] : pEnt->GetVecOrigin();
 
-		M::VectorAngles(vecHitboxPosition - g::pLocal->GetEyePosition(false), vecCalcAngle);
+		M::VectorAngles(vecPosition - g::pLocal->GetEyePosition(false), vecCalcAngle);
 		Vector vecDistanceBetween = (g::vecOriginalViewAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
 
 		if (abs(vecDistanceBetween.Length2D()) < flBestFov) {

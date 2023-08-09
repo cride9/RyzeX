@@ -458,8 +458,8 @@ bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstu
 	Trace_t Trace;
 	Trace.flFraction = 1.0f;
 	Trace.bStartSolid = false;
-	// original: 55 8B EC 83 E4 F8 F3 0F 10 42
-	// kittenpopo: 55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F
+	// original:	55 8B EC 83 E4 F8 F3 0F 10 42
+	// kittenpopo:	55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F
 	typedef int(__fastcall* ClipRayToHitbox_t)(const Ray_t&, mstudiobbox_t*, matrix3x4_t&, Trace_t&);
 	static auto sig = (void*)((DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F"))));
 	int iHit = ((ClipRayToHitbox_t)(sig))(Ray, pHitbox, aMatrix[pHitbox->iBone], Trace);

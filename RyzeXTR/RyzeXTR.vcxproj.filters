@@ -91,6 +91,7 @@
     <ClCompile Include="Core\Hooks\Hooked\VerifyReturnAddress.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkUpdateAnimationState.cpp" />
     <ClCompile Include="Core\Features\Rage\aimbot.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkBaseInterpolatePart1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />

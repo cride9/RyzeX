@@ -152,6 +152,7 @@ public:
 
 	rageBotData_t& GetHitLogData() { return hitlogData; }
 	rageBotData_t& GetAimbotData() { return aimData; }
+	weaponConfig_t& GetCurrentConfig() { return curConfig; }
 
 private:
 

@@ -34,7 +34,6 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 	flInterpTime = 0.f;
 	flMaxSpeed = pWeapon ? pEntity->IsScoped() ? pWeapon->GetCSWpnData()->flMaxSpeed[0] : pWeapon->GetCSWpnData()->flMaxSpeed[1] : 260.f;
 	flThirdPersonRecoil = pEntity->GetThirdpersonRecoil();
-	flLastUpdateIncrement = pEntity->AnimState()->flLastUpdateIncrement;
 
 	vecEyeAngles = pEntity->GetEyeAngles();
 	vecAbsAngles = pEntity->GetAbsAngles();
@@ -267,14 +266,19 @@ void Lagcompensation::SetInterpolationFlags()
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity())
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity() || pEntity == g::pLocal)
 			continue;
 
+		VarMapping_t* pVarMap = pEntity->GetVarMap();
+		if (pVarMap) 
+			for (size_t i = 0; i < pVarMap->m_nInterpolatedEntries; i++) 
+				pVarMap->m_Entries[i].m_bNeedsToInterpolate = false;
+		
 		void* m_VarMap = *(void**)((DWORD)(pEntity)+0x24);
 		if (m_VarMap)
 		{
-			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = TICKS_TO_TIME(0)/*i::GlobalVars->flIntervalPerTick*/;
-			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = TICKS_TO_TIME(0)/*i::GlobalVars->flIntervalPerTick*/;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = i::GlobalVars->flIntervalPerTick;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = i::GlobalVars->flIntervalPerTick;
 		}
 	}
 }
@@ -508,45 +512,42 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	if (!i::EngineClient->GetNetChannelInfo())
 		return false;
 
-	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
-
-	constexpr float flMagicNumber = 0.00075f;
-
-	const float flLerpTime = GetClientInterpAmount(); 
-	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
-
-	float flIncoming = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) * 1000.f;
-	flRange += (min(flIncoming, 200.f) * flMagicNumber) - (i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_OUTGOING));
-
-	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore)
-		flRange += TICKS_TO_TIME(14);
-
-	int nDeadTime = static_cast<int>(static_cast<float>(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - flRange);
-	if (TIME_TO_TICKS(mflSimulationTime + flLerpTime) < nDeadTime)
-		return false;
-
-	return (TICKS_TO_TIME(g::pLocal->GetTickBase()) - mflSimulationTime + flLerpTime) < flRange;
-
 	//auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
 
-	//static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
+	//constexpr float flMagicNumber = 0.00075f;
 
-	//int iTickBase = networking.GetCorrectedTickbase();
-	//const float flLerpTime = GetClientInterpAmount();
+	//const float flLerpTime = GetClientInterpAmount(); 
 	//float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
-	////if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
-	////	iTickBase -= TICKS_TO_TIME(14);
-
-	//float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - TICKS_TO_TIME(i::GlobalVars->iTickCount - TIME_TO_TICKS(mflSimulationTime));
-	//if (fabsf(flDeltaTime) >= flRange)
-	//	return false;
+	//float flIncoming = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) * 1000.f;
+	//flRange += (min(flIncoming, 200.f) * flMagicNumber) - (i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_OUTGOING));
 
 	//int nDeadTime = static_cast<int>(static_cast<float>(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - flRange);
 	//if (TIME_TO_TICKS(mflSimulationTime + flLerpTime) < nDeadTime)
 	//	return false;
 
-	//return true;
+	//return (i::GlobalVars->flCurrentTime - mflSimulationTime + flLerpTime) < flRange;
+
+	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
+
+	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
+
+	int iTickBase = g::pLocal->GetTickBase();
+	const float flLerpTime = GetClientInterpAmount();
+	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
+
+	//if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
+	//	iTickBase -= TICKS_TO_TIME(14);
+
+	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - TICKS_TO_TIME(iTickBase - TIME_TO_TICKS(mflSimulationTime));
+	if (fabsf(flDeltaTime) >= flRange)
+		return false;
+
+	int nDeadTime = static_cast<int>(static_cast<float>(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - flRange);
+	if (TIME_TO_TICKS(mflSimulationTime + flLerpTime) < nDeadTime)
+		return false;
+
+	return true;
 }
 
 int Lagcompensation::FixTickCount(float flSimulationTime)
@@ -633,10 +634,24 @@ void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
 		if (!pEntity || !pEntity->IsAlive() || !pEntity->GetModel() || pEntity->IsDormant() || pEntity == g::pLocal || !pEntity->IsEnemy(g::pLocal))
 			continue;
 
-		arrBackupData[i].first = Lagcompensation::LagRecord_t(pEntity);
-		pEntity->GetAnimationLayers(arrBackupData[i].first.pLayers);
-		pEntity->GetPoseParameters(arrBackupData[i].first.flPoses);
-		pEntity->GetBoneCache(arrBackupData[i].first.pMatricies[VISUAL]);
+		Lagcompensation::LagRecord_t data = Lagcompensation::LagRecord_t();
+
+		data.vecAbsAngles = pEntity->GetAbsAngles();
+		data.vecAbsOrigin = pEntity->GetAbsOrigin();
+		data.vecEyeAngles = pEntity->GetEyeAngles();
+		data.vecOrigin = pEntity->GetVecOrigin();
+		data.flSimulationTime = pEntity->GetSimulationTime();
+		data.iFlags = pEntity->GetFlags();
+		data.vecMins = pEntity->GetCollideable()->OBBMins();
+		data.vecMaxs = pEntity->GetCollideable()->OBBMaxs();
+		data.flCollisionChangeTime = pEntity->GetCollisionChangeTime();
+		data.flCollisionChangeOrigin = pEntity->GetCollisionChangeOrigin();
+
+		pEntity->GetAnimationLayers(data.pLayers);
+		pEntity->GetPoseParameters(data.flPoses);
+		pEntity->GetBoneCache(data.pMatricies[VISUAL]);
+
+		arrBackupData[i].first = data;
 		arrBackupData[i].second = true;
 	}
 }
@@ -653,9 +668,23 @@ void Lagcompensation::FinishLagcompensation(CBaseEntity* pLocal) {
 		if (!arrBackupData[i].second)
 			continue;
 
-		pEntity->SetAnimationLayers(arrBackupData[i].first.pLayers);
-		pEntity->SetPoseParameters(arrBackupData[i].first.flPoses);
-		arrBackupData[i].first.ApplyMatrix(pEntity, VISUAL);
+		auto& data = arrBackupData[i].first;
+
+		pEntity->SetAnimationLayers(data.pLayers);
+		pEntity->SetPoseParameters(data.flPoses);
+		pEntity->SetBoneCache(data.pMatricies[VISUAL]);
+
+		pEntity->SetAbsAngles(data.vecAbsAngles);
+		pEntity->SetAbsOrigin(data.vecAbsOrigin);
+		pEntity->GetEyeAngles() = data.vecEyeAngles;
+		pEntity->GetVecOrigin() = data.vecOrigin;
+		pEntity->GetSimulationTime() = data.flSimulationTime;
+		pEntity->GetFlags() = data.iFlags;
+		pEntity->GetCollideable()->OBBMins() = data.vecMins;
+		pEntity->GetCollideable()->OBBMaxs() = data.vecMaxs;
+		pEntity->GetCollisionChangeTime() = data.flCollisionChangeTime;
+		pEntity->GetCollisionChangeOrigin() = data.flCollisionChangeOrigin;
+
 		arrBackupData[i].second = false;
 	}
 }

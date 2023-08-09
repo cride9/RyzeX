@@ -783,7 +783,7 @@ void C_LocalAnimations::TransformateMatricies()
 	if (!pLocal)
 		return;
 
-	Vector vecOriginDelta = pLocal->GetAbsOrigin() - m_LocalData.m_Real.m_vecMatriigin;
+	Vector vecOriginDelta = pLocal->GetVecOrigin() - m_LocalData.m_Real.m_vecMatriigin;
 	for (auto& Matrix : m_LocalData.m_Real.m_Matrix)
 	{
 		Matrix[0][3] += vecOriginDelta.x;

@@ -82,11 +82,13 @@ public:
 	void PostResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 
 	/* PASTED FUNTIONS */
-	void RebuiltLayer6(CAnimState*, Lagcompensation::LagRecord_t* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer, Vector vecVelocity);
+	void RebuiltLayer6(CAnimState*, Lagcompensation::LagRecord_t* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
 	void GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious = nullptr);
 	float BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	void RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog);
 	void SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* pMatrix, int nFlags);
+	float FindMatchingPlaybackRate(float flTarget, std::array<float, 120>& arrPlaybackRates);
+	void FindDesyncSide(Lagcompensation::LagRecord_t* pRecord);
 	void GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 
 	/* resolver */
