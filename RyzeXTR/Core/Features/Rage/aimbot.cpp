@@ -46,6 +46,8 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		return;
 	
 	pCmd->angViewPoint = vecAimAngle;
+	if (!cfg::rage::bSilentAim) i::EngineClient->SetViewAngles(vecAimAngle);
+
 	pCmd->iButtons |= IN_ATTACK;
 	aimData.iTickcount = pCmd->iTickCount;
 
@@ -76,10 +78,21 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at(i);
 			for (auto& iHitbox : curConfig.vecHitboxes[NORMAL]) {
-
 				bool bShouldMultiPoint = std::find(curConfig.vecHitboxes[MULTIPOINT].begin(), curConfig.vecHitboxes[MULTIPOINT].end(), iHitbox) != curConfig.vecHitboxes[MULTIPOINT].end();
 				bool bShouldForceSafePoint = std::find(curConfig.vecHitboxes[SAFE].begin(), curConfig.vecHitboxes[SAFE].end(), iHitbox) != curConfig.vecHitboxes[SAFE].end();
 				bool bShouldSafe = curConfig.bSafePoint;
+
+				if (cfg::rage::iAimbotFov < 180) { // we don't wanna multipoint if they are outside of our fov
+					float flRadius = 0.f;
+					Vector vecCenter = pRecord->pEntity->GetHitboxPosition(iHitbox, pRecord->pMatricies[RESOLVE], flRadius);
+
+					Vector output;
+					M::VectorAngles(vecCenter - vecEyePosition, output);
+					Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.NormalizeAngle());
+
+					if (abs((vecDistanceBetween).NormalizeAngle().Length2D()) > cfg::rage::iAimbotFov)
+						continue;
+				}
 
 				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint);
 				for (Vector& vecHitboxPoint : vecWorldPoints) {
