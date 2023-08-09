@@ -957,6 +957,10 @@ void misc::ThirdPerson() {
 			pLocal->GetObserverMode() = 5;
 		}
 	}
+	else if (cfg::misc::bThirdPerson && !alive) {
+		if (pLocal->GetObserverMode() == 5)
+			pLocal->GetObserverMode() = 4;
+	}
 
 	// camera should be in firstperson.
 	else if (i::Input->CameraInThirdPerson())
