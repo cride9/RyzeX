@@ -309,112 +309,37 @@ bool CAimBot::HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy) {
 weaponConfig_t CAimBot::GetWeaponConfiguration(short iItemDefinitionIndex) {
 
 	using namespace cfg::rage;
+
+	int iWeapon = OTHER;
+	
+	if (iItemDefinitionIndex == WEAPON_USP_SILENCER || iItemDefinitionIndex == WEAPON_HKP2000 || iItemDefinitionIndex == WEAPON_ELITE || iItemDefinitionIndex == WEAPON_P250 || iItemDefinitionIndex == WEAPON_FIVESEVEN || iItemDefinitionIndex == WEAPON_CZ75A || iItemDefinitionIndex == WEAPON_GLOCK || iItemDefinitionIndex == WEAPON_TEC9)
+		iWeapon = PISTOL;
+	else if (iItemDefinitionIndex == WEAPON_REVOLVER || iItemDefinitionIndex == WEAPON_DEAGLE)
+		iWeapon = HEAVY_PISTOL;
+	else if (iItemDefinitionIndex == WEAPON_SSG08)
+		iWeapon = SCOUT;
+	else if (iItemDefinitionIndex == WEAPON_AWP)
+		iWeapon = AWP;
+	else if (iItemDefinitionIndex == WEAPON_SCAR20 || iItemDefinitionIndex == WEAPON_G3SG1)
+		iWeapon = AUTO;
+	else if (iItemDefinitionIndex == WEAPON_TASER)
+		iWeapon = ZEUS;
+
 	weaponConfig_t ret{};
-	if (iItemDefinitionIndex == WEAPON_SCAR20 || iItemDefinitionIndex == WEAPON_G3SG1) {
-		ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[AUTO] : iMinDamages[AUTO];
-		ret.iHitchance = iHitchances[AUTO];
-		ret.iHeadScale = iHeadPoints[AUTO];
-		ret.iBodyScale = iBodyPoints[AUTO];
-		ret.bSafePoint = bSafePoint[AUTO];
-		ret.bAutostop = bAutostop[AUTO];
-		ret.iAutostopValue = bAutostopAggressiveness[AUTO];
-		ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[AUTO][CONDITION_BETWEEN_SHOTS];
-		ret.bConditions[CONDITION_INAIR] = bConditions[AUTO][CONDITION_INAIR];
-		ret.bAutoScope = bAutoScope[AUTO];
-		GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], AUTO);
-		GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], AUTO);
-		GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], AUTO);
-	}
-	else if (iItemDefinitionIndex == WEAPON_SSG08) {
-		ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[SCOUT] : iMinDamages[SCOUT];
-		ret.iHitchance = iHitchances[SCOUT];
-		ret.iHeadScale = iHeadPoints[SCOUT];
-		ret.iBodyScale = iBodyPoints[SCOUT];
-		ret.bSafePoint = bSafePoint[SCOUT];
-		ret.bAutostop = bAutostop[SCOUT];
-		ret.iAutostopValue = bAutostopAggressiveness[SCOUT];
-		ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[SCOUT][CONDITION_BETWEEN_SHOTS];
-		ret.bConditions[CONDITION_INAIR] = bConditions[SCOUT][CONDITION_INAIR];
-		ret.bAutoScope = bAutoScope[SCOUT];
-		GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], SCOUT);
-		GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], SCOUT);
-		GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], SCOUT);
-	}
-	else if (iItemDefinitionIndex == WEAPON_AWP) {
-		ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[AWP] : iMinDamages[AWP];
-		ret.iHitchance = iHitchances[AWP];
-		ret.iHeadScale = iHeadPoints[AWP];
-		ret.iBodyScale = iBodyPoints[AWP];
-		ret.bSafePoint = bSafePoint[AWP];
-		ret.bAutostop = bAutostop[AWP];
-		ret.iAutostopValue = bAutostopAggressiveness[AWP];
-		ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[AWP][CONDITION_BETWEEN_SHOTS];
-		ret.bConditions[CONDITION_INAIR] = bConditions[AWP][CONDITION_INAIR];
-		ret.bAutoScope = bAutoScope[AWP];
-		GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], AWP);
-		GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], AWP);
-		GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], AWP);
-	}
-	else if (iItemDefinitionIndex == WEAPON_REVOLVER || iItemDefinitionIndex == WEAPON_DEAGLE) {
-		ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[HEAVY_PISTOL] : iMinDamages[HEAVY_PISTOL];
-		ret.iHitchance = iHitchances[HEAVY_PISTOL];
-		ret.iHeadScale = iHeadPoints[HEAVY_PISTOL];
-		ret.iBodyScale = iBodyPoints[HEAVY_PISTOL];
-		ret.bSafePoint = bSafePoint[HEAVY_PISTOL];
-		ret.bAutostop = bAutostop[HEAVY_PISTOL];
-		ret.iAutostopValue = bAutostopAggressiveness[HEAVY_PISTOL];
-		ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[HEAVY_PISTOL][CONDITION_BETWEEN_SHOTS];
-		ret.bConditions[CONDITION_INAIR] = bConditions[HEAVY_PISTOL][CONDITION_INAIR];
-		ret.bAutoScope = false;
-		GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], HEAVY_PISTOL);
-		GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], HEAVY_PISTOL);
-		GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], HEAVY_PISTOL);
-	}
-	else if (iItemDefinitionIndex == WEAPON_USP_SILENCER || iItemDefinitionIndex == WEAPON_HKP2000 || iItemDefinitionIndex == WEAPON_ELITE || iItemDefinitionIndex == WEAPON_P250 || iItemDefinitionIndex == WEAPON_FIVESEVEN || iItemDefinitionIndex == WEAPON_CZ75A || iItemDefinitionIndex == WEAPON_GLOCK || iItemDefinitionIndex == WEAPON_TEC9) {
-		ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[PISTOL] : iMinDamages[PISTOL];
-		ret.iHitchance = iHitchances[PISTOL];
-		ret.iHeadScale = iHeadPoints[PISTOL];
-		ret.iBodyScale = iBodyPoints[PISTOL];
-		ret.bSafePoint = bSafePoint[PISTOL];
-		ret.bAutostop = bAutostop[PISTOL];
-		ret.iAutostopValue = bAutostopAggressiveness[PISTOL];
-		ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[PISTOL][CONDITION_BETWEEN_SHOTS];
-		ret.bConditions[CONDITION_INAIR] = bConditions[PISTOL][CONDITION_INAIR];
-		ret.bAutoScope = false;
-		GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], PISTOL);
-		GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], PISTOL);
-		GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], PISTOL);
-	}
-	else if (iItemDefinitionIndex == WEAPON_TASER) {
-		ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[ZEUS] : iMinDamages[ZEUS];
-		ret.iHitchance = iHitchances[ZEUS];
-		ret.iHeadScale = iHeadPoints[ZEUS];
-		ret.iBodyScale = iBodyPoints[ZEUS];
-		ret.bSafePoint = bSafePoint[ZEUS];
-		ret.bAutostop = bAutostop[ZEUS];
-		ret.iAutostopValue = bAutostopAggressiveness[ZEUS];
-		ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[ZEUS][CONDITION_BETWEEN_SHOTS];
-		ret.bConditions[CONDITION_INAIR] = bConditions[ZEUS][CONDITION_INAIR];
-		ret.bAutoScope = false;
-		GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], ZEUS);
-		GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], ZEUS);
-		GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], ZEUS);
-	}
-	else {
-		ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[OTHER] : iMinDamages[OTHER];
-		ret.iHitchance = iHitchances[OTHER];
-		ret.iHeadScale = iHeadPoints[OTHER];
-		ret.iBodyScale = iBodyPoints[OTHER];
-		ret.bSafePoint = bSafePoint[OTHER];
-		ret.bAutostop = bAutostop[OTHER];
-		ret.iAutostopValue = bAutostopAggressiveness[OTHER];
-		ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[OTHER][CONDITION_BETWEEN_SHOTS];
-		ret.bConditions[CONDITION_INAIR] = bConditions[OTHER][CONDITION_INAIR];
-		ret.bAutoScope = false;
-		GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], OTHER);
-		GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], OTHER);
-		GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], OTHER);
-	}
+
+	ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[iWeapon] : iMinDamages[iWeapon];
+	ret.iHitchance = iHitchances[iWeapon];
+	ret.iHeadScale = iHeadPoints[iWeapon];
+	ret.iBodyScale = iBodyPoints[iWeapon];
+	ret.bSafePoint = bSafePoint[iWeapon];
+	ret.bAutostop = bAutostop[iWeapon];
+	ret.iAutostopValue = bAutostopAggressiveness[iWeapon];
+	ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[iWeapon][CONDITION_BETWEEN_SHOTS];
+	ret.bConditions[CONDITION_INAIR] = bConditions[iWeapon][CONDITION_INAIR];
+	ret.bAutoScope = (iWeapon == SCOUT || iWeapon == AWP || iWeapon == AUTO) ? bAutoScope[iWeapon] : false;
+	GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], iWeapon);
+	GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], iWeapon);
+	GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], iWeapon);
 
 	return ret;
 }
