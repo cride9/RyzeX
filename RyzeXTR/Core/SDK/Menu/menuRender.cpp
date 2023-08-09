@@ -1175,7 +1175,7 @@ void menu::SaveWarning(bool& saved, bool type) noexcept {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(180, 101)); 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.f);
 
-    ImGui::SetNextWindowPos(ImVec2((ImGui::GetIO().DisplaySize.x * 0.5f) - (180 * 0.5f), ImGui::GetIO().DisplaySize.y * 0.5f + (101 * 0.5f)));
+    ImGui::SetNextWindowPos(ImVec2((ImGui::GetIO().DisplaySize.x * 0.5f) - (180 * 0.5f), ImGui::GetIO().DisplaySize.y * 0.5f - (101 * 0.5f)));
     ImGui::Begin(("##savestuff"), NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
     {
         ImGui::BeginChild(("##yes"), ImGui::GetContentRegionAvail(), true);
