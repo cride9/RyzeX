@@ -121,12 +121,12 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         {
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.f);
             ImVec2 size = ImVec2((ImGui::GetContentRegionAvail().x - 5 * 9) / 7.f, ImGui::GetContentRegionAvail().y + ImGui::GetStyle().WindowPadding.y);
-            if (ImGui::Button(("A##2"), size, iSelect == HEAVY_PISTOL))
-                iSelect = HEAVY_PISTOL;
+            if (ImGui::Button(("A##2"), size, iSelect == PISTOL))
+                iSelect = PISTOL;
             ImGui::SameLine();
 
-            if (ImGui::Button(("B##2"), size, iSelect == PISTOL))
-                iSelect = PISTOL;
+            if (ImGui::Button(("B##2"), size, iSelect == HEAVY_PISTOL))
+                iSelect = HEAVY_PISTOL;
             ImGui::SameLine();
 
             if (ImGui::Button(("F##2"), size, iSelect == SCOUT))
