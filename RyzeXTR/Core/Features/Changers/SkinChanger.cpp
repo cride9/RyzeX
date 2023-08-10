@@ -116,30 +116,26 @@ void CSkinChanger::Dump()
 	m_pItemSchematic = reinterpret_cast<ItemSchema_t*>(uintptr_t(item_system_fn()) + sizeof(void*));
 
 	std::vector<std::pair<short, short>> kitsWeapons;
-	kitsWeapons.reserve(2000);
+	kitsWeapons.reserve(m_pItemSchematic->alternateIcons.numElements);
 
-	for (int i = 0; i < m_pItemSchematic->getLootListCount(); ++i)
+	for (const auto& node : m_pItemSchematic->alternateIcons) // https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/game/shared/econ/econ_item_schema.cpp#L325-L329
 	{
-		const auto& contents = m_pItemSchematic->getLootList(i)->getLootListContents();
-
-		for (int j = 0; j < contents.size; ++j) {
-			if (contents[j].paintKit != 0)
-				kitsWeapons.emplace_back(contents[j].paintKit, contents[j].weaponId());
-		}
-	}
-
-	for (int i = 0; i < m_pItemSchematic->getItemSetCount(); ++i)
-	{
-		const auto set = m_pItemSchematic->getItemSet(i);
-
-		for (int j = 0; j < set->getItemCount(); ++j) {
-			const auto paintKit = set->getItemPaintKit(j);
-			if (paintKit != 0)
-				kitsWeapons.emplace_back(paintKit, set->getItemDef(j));
-		}
+		if (const auto encoded = node.key; (encoded & 3) == 0)
+			kitsWeapons.emplace_back(int((encoded & 0xFFFF) >> 2), encoded >> 16); // , node.value.simpleName.data()
 	}
 
 	std::sort(kitsWeapons.begin(), kitsWeapons.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+
+	std::unordered_map<short, std::wstring> weaponNames;
+	for (const auto& kitWeapon : kitsWeapons)
+	{
+		if (weaponNames.contains(kitWeapon.second))
+			continue;
+
+		if (const auto itemDef = m_pItemSchematic->getItemDefinitionInterface(kitWeapon.second)) {
+			weaponNames.emplace(kitWeapon.second, i::Localize->Find(itemDef->getItemBaseName()));
+		}
+	}
 
 	SkinKits.reserve(m_pItemSchematic->m_pPaintKits.lastAlloc);
 	GloveKits.reserve(m_pItemSchematic->m_pPaintKits.lastAlloc);
@@ -187,33 +183,18 @@ void CSkinChanger::Dump()
 
 			for (auto it = std::lower_bound(kitsWeapons.begin(), kitsWeapons.end(), paintKit->m_nID, [](const auto& p, auto id) { return p.first < id; }); it != kitsWeapons.end() && it->first == paintKit->m_nID; ++it)
 			{
-				weapons.insert(it->second);
-			}
-
-			for (short weapon : weapons)
-			{
-				const auto itemDef = m_pItemSchematic->getItemDefinitionInterface(weapon);
+				const auto itemDef = m_pItemSchematic->getItemDefinitionInterface(it->second);
 				if (!itemDef)
 					continue;
 
 				std::wstring name = i::Localize->Find(itemDef->getItemBaseName());
 				name += L" | ";
 				name += i::Localize->Find(paintKit->m_szDescriptionTag.data() + 1);
+				//std::wstring szWeaponName = weaponNames[it->second]; // in case we want to use weapon names separately in the future...
 
 				char nameStr[256];
 				V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
-
-				SkinKits.push_back({ paintKit->m_nID, nameStr, paintKit->m_szName.data() ,std::clamp(itemDef->getRarity() + paintKit->m_nRarity - 1, 0, (paintKit->m_nRarity == 7) ? 7 : 6),(int)weapon });
-			}
-
-			if (weapons.empty() || weapons.size() > 1) // this paint kit fits more than one weapon
-			{
-				std::wstring name = i::Localize->Find(paintKit->m_szDescriptionTag.data() + 1);
-
-				char nameStr[256];
-				V_UCS2ToUTF8(name.c_str(), nameStr, sizeof(nameStr));
-
-				SkinKits.push_back({ paintKit->m_nID, nameStr,paintKit->m_szName.data(), paintKit->m_nRarity, 0 });
+				SkinKits.push_back({ paintKit->m_nID, nameStr, paintKit->m_szName.data() ,std::clamp(itemDef->getRarity() + paintKit->m_nRarity - 1, 0, (paintKit->m_nRarity == 7) ? 7 : 6),(int)it->second });
 			}
 		}
 	}

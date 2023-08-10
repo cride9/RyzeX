@@ -888,6 +888,8 @@ void CConfig::CreateMainDirectory( )
 		printf( "Succesfully created directory" );
 	else
 		throw std::runtime_error( "Failed to create config directory" );
+
+
 }
 
 std::string cfgName = "";

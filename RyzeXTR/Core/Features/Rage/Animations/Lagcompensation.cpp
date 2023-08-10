@@ -269,10 +269,10 @@ void Lagcompensation::SetInterpolationFlags()
 		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity() || pEntity == g::pLocal)
 			continue;
 
-		VarMapping_t* pVarMap = pEntity->GetVarMap();
+		/*VarMapping_t* pVarMap = pEntity->GetVarMap();
 		if (pVarMap) 
 			for (size_t i = 0; i < pVarMap->m_nInterpolatedEntries; i++) 
-				pVarMap->m_Entries[i].m_bNeedsToInterpolate = false;
+				pVarMap->m_Entries[i].m_bNeedsToInterpolate = false;*/
 		
 		void* m_VarMap = *(void**)((DWORD)(pEntity)+0x24);
 		if (m_VarMap)

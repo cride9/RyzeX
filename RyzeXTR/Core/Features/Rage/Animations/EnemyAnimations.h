@@ -79,7 +79,6 @@ public:
 	float GetVelocityLengthXY(CBaseEntity* pEntity);
 	void SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw);
 	void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
-	void PostResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 
 	/* PASTED FUNTIONS */
 	void RebuiltLayer6(CAnimState*, Lagcompensation::LagRecord_t* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
@@ -90,6 +89,7 @@ public:
 	float FindMatchingPlaybackRate(float flTarget, std::array<float, 120>& arrPlaybackRates);
 	void FindDesyncSide(Lagcompensation::LagRecord_t* pRecord);
 	void GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
+	void GenerateFreestandMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 
 	/* resolver */
 	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);

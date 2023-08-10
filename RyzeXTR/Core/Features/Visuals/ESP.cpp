@@ -932,31 +932,32 @@ void visual::WelcomeUser(std::string szText) {
 		bGoBack = true;
 	}
 
-	constexpr int iStepSize = 364 / 32;
-	
-	static int iAnimation = 0;
-	int iEaseAnimation = 0.05f * abs(364 - iAnimation);
+	constexpr int iEndPoint = 364;
+	constexpr int iStepSize = iEndPoint / 32;
+	static int iCurrentPoint = 0;
+
+	int iEaseAnimation = 0.05f * abs(iEndPoint - iCurrentPoint);
 	if (abs(iStartTick - i::GlobalVars->iTickCount) <= TIME_TO_TICKS(0.5f))
-		iAnimation += iStepSize * iEaseAnimation;
+		iCurrentPoint += iStepSize * iEaseAnimation;
 	else
 		bDoneAnimating = true;
 
-	if (bGoBack && iAnimation > 0)
-		iAnimation = std::clamp(iAnimation - iStepSize, 0, 364);
+	if (bGoBack && iCurrentPoint > 0)
+		iCurrentPoint = std::clamp(iCurrentPoint - iStepSize, 0, iEndPoint);
 
 	// draw the border
 	i::Surface->DrawSetColor(40, 40, 40, 255);
-	i::Surface->DrawOutlinedRect(0, 50, iAnimation, 125);
+	i::Surface->DrawOutlinedRect(0, 50, iCurrentPoint, 125);
 
 	// draw middle
 	i::Surface->DrawSetColor(12, 12, 12, 255);
-	i::Surface->DrawFilledRect(0, 51, iAnimation - 1, 124);
+	i::Surface->DrawFilledRect(0, 51, iCurrentPoint - 1, 124);
 
 	i::Surface->DrawSetColor(40, 40, 40, 255);
-	i::Surface->DrawOutlinedRect(0, 51 + 8, iAnimation - 1 - 8, 124 - 8);
+	i::Surface->DrawOutlinedRect(0, 51 + 8, iCurrentPoint - 1 - 8, 124 - 8);
 
 	i::Surface->DrawSetColor(22, 22, 22, 255);
-	i::Surface->DrawFilledRect(0, 51 + 9, iAnimation - 1 - 9, 124 - 9);
+	i::Surface->DrawFilledRect(0, 51 + 9, iCurrentPoint - 1 - 9, 124 - 9);
 
 	if (bDoneAnimating) {
 		static int iAlpha = 0;
@@ -968,7 +969,7 @@ void visual::WelcomeUser(std::string szText) {
 
 		iAlpha = std::clamp(iAlpha, 0, 255);
 
-		i::Surface->DrawT(iAnimation / 2, 125 / 2 + 17, Color(255, 255, 255, iAlpha), g::fonts::DebugFont, true, szText.c_str());
+		i::Surface->DrawT(iCurrentPoint / 2, 125 / 2 + 17, Color(255, 255, 255, iAlpha), g::fonts::DebugFont, true, szText.c_str());
 	}
 }
 

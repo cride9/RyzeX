@@ -109,6 +109,8 @@ public:
 
 		// 0 - Visual, 1 - Resolve, 2 - Left, 3 - Right, 4 - Center
 		matrix3x4_t pMatricies[MAX][128];
+		// 0 - Left, 1 - Right
+		matrix3x4_t pSideMatrixes[2][128];
 		LayerData_t LayerData[MAX];
 
 		bool bBreakingLagcompensation{};
@@ -155,8 +157,6 @@ public:
 		int nVelocityMode{};
 		int iActivityTick{};
 		int iActivityType{};
-		int iAntiFreestand{};
-		int iLayerResolve = 0;
 
 		int iFlags{};
 		int iEFlags{};

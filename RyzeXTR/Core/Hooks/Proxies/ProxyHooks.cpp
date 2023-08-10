@@ -7,7 +7,7 @@
 bool p::Setup()
 {
 	// get viewmodel m_nSequence Netvar prop
-	RecvProp_t* pViewModelSequence = n::netvars[ fnv::HashConst( "CBaseViewModel->m_nSequence", 0x811C9DC5 ) ].pRecvProp;
+	RecvProp_t* pViewModelSequence = n::netvars[ fnv::Hash( "CBaseViewModel->m_nSequence" ) ].pRecvProp;
 	if ( pViewModelSequence == nullptr )
 		return false;
 

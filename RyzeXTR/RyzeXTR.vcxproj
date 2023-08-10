@@ -151,12 +151,14 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkCalculateView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkCheckForSequenceChange.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkClampBonesInBBox.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkDoExtraBoneProcessing.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkDoProceduralFootPlant.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkEstimateAbsVelocity.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkInterpolateServerEntites.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsFollowingEntity.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkIsHltv.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkModifyEyePosition.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessInterpolatedList.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupAliveLoop.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupBones.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkShouldSkipAnimationFrame.cpp" />
@@ -174,6 +176,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkGetColorModulation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkGetViewModelFov.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkINetchannelHandler.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkInPrediction.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkLevelShutDownClient.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkListLeavesInBox.cpp" />

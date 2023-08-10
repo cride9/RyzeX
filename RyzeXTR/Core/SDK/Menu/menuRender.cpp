@@ -756,7 +756,8 @@ void menu::Misc(ImVec2 savedCursorPosition) {
 
         ImGui::Checkbox(("Clantag"), &bClantag);
         ImGui::Checkbox(("Invert knife"), &bInvertKnife);
-        ImGui::Checkbox(("Persistent kill feed"), &bPreserveKillfeed);
+		ImGui::Checkbox(("Persistent kill feed"), &bPreserveKillfeed);
+		ImGui::Checkbox(("Animation Breaker"), &cfg::antiaim::bSlideWalk);
     }
     ImGui::EndChild();
 
@@ -919,10 +920,7 @@ void menu::Skins(ImVec2 savedCursorPosition) {
 
                 if (bFilterByWeapon) {
 
-                    if (it.m_iWeaponID != skinChanger.iItemDefinitionIndex && !skinChanger.bIsKnife)
-                        continue;
-
-                    if (skinChanger.bIsKnife && it.m_iWeaponID != 0)
+                    if (it.m_iWeaponID != skinChanger.iItemDefinitionIndex)
                         continue;
                 }
 
@@ -989,7 +987,7 @@ void menu::Skins(ImVec2 savedCursorPosition) {
             skinChanger.bShouldFullUpdate = true;
         }
 
-        if (ImGui::Checkbox("Skin color", &bModifySkinColors[iMenuID]));
+        if (ImGui::Checkbox("Skin color", &bModifySkinColors[iMenuID]))
             skinChanger.bShouldFullUpdate = true;
 
         if (bModifySkinColors[iMenuID]) {

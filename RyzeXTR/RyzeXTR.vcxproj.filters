@@ -92,6 +92,9 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkUpdateAnimationState.cpp" />
     <ClCompile Include="Core\Features\Rage\aimbot.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkBaseInterpolatePart1.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkDoExtraBoneProcessing.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessInterpolatedList.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkInPrediction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />

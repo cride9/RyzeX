@@ -1,4 +1,5 @@
 #include "aimbot.h"
+#include "Animations/EnemyAnimations.h"
 
 void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
@@ -58,6 +59,12 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 
+	if (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey))
+		bShouldSendPacket = false;
+	
+	if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey))
+		bShouldSendPacket = false;
+		
 	if (bShouldSendPacket) {
 
 		bSendPacket = true;
@@ -105,6 +112,9 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 				bool bFirstElement = true;
 
 				for (Vector& vecHitboxPoint : vecWorldPoints) {
+
+					if (i && !autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox))
+						continue;
 
 					if (bShouldSafe) {
 
@@ -462,10 +472,15 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 		//	if (bPenetradable)
 		//		break;
 
+		//	if (pEntity->IsVisible(pEntity, vecEnd, false) && i == 0) {
+		//		bPenetradable = true;
+		//		break;
+		//	}
+
 		//	if (traceData.vecEnd == Vector(0, 0, 0))
 		//		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecEnd), CONTENTS_SOLID | CONTENTS_HITBOX, &traceFilter, &traceData);
 		//	else if (traceData.pHitEntity != pEntity)
-		//		i::EngineTrace->TraceRay(Ray_t(traceData.vecEnd + (traceData.vecEnd - traceData.vecStart) / 10.f, vecEnd), CONTENTS_SOLID | CONTENTS_HITBOX, &traceFilter, &traceData);
+		//		i::EngineTrace->TraceRay(Ray_t(traceData.vecEnd + (traceData.vecEnd - traceData.vecStart) / (traceData.vecEnd - traceData.vecStart).x, vecEnd), CONTENTS_SOLID | CONTENTS_HITBOX, &traceFilter, &traceData);
 
 		//	Trace_t traceDataCheck = Trace_t();
 		//	i::EngineTrace->TraceRay(Ray_t(traceData.vecEnd, vecEnd), MASK_SHOT, &traceFilter, &traceDataCheck);

@@ -82,6 +82,7 @@ public:
 	virtual void SetupShootPosition(CBaseEntity* pLocal);
 	virtual void CopyPlayerAnimationData(bool bFake, CBaseEntity* pLocal);
 	virtual void AnimationBreaker(CBaseEntity*);
+	virtual void SetupInterpolation(CBaseEntity* pLocal, bool bPostFrame);
 
 	virtual float GetYawDelta()
 	{
@@ -110,6 +111,7 @@ private:
 
 		float m_flSpawnTime = 0.0f;
 		float m_flYawDelta = 0.0f;
+		float flInterpolationAmount = 0.f;
 
 		std::array < AnimationRecord_t, 150 > m_AnimRecords;
 

@@ -957,10 +957,6 @@ void misc::ThirdPerson() {
 			pLocal->GetObserverMode() = 5;
 		}
 	}
-	else if (cfg::misc::bThirdPerson && !bAlive) {
-		if (pLocal->GetObserverMode() == 5)
-			pLocal->GetObserverMode() = 4;
-	}
 
 	// camera should be in firstperson.
 	else if (i::Input->CameraInThirdPerson())
@@ -1025,8 +1021,8 @@ void misc::FakeLag(bool& bSendPacket) {
 	if ((*GameRules)->m_bFreezePeriod())
 		return;
 	
-	if (i::EngineClient->IsVoiceRecording())
-		return;
+	//if (i::EngineClient->IsVoiceRecording())
+	//	return;
 
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::iFakelag || !cfg::antiaim::bFakelag) {
 		bSendPacket = true;

@@ -39,6 +39,14 @@ bool __fastcall h::hkTemptEntities( void* ecx, void* edx, void* msg )
 {
 	static auto original = detour::temptEntities.GetOriginal<decltype( &hkTemptEntities )>( );
 
+	int iBackup = i::GlobalVars->nMaxClients;
+
+	i::GlobalVars->nMaxClients = 1;
+	bool bResult = original(ecx, edx, msg);
+	i::GlobalVars->nMaxClients = iBackup;
+
+	return bResult;
+
 	if (!g::pLocal || !i::EngineClient->IsInGame())
 		return original( ecx, edx, msg);
 

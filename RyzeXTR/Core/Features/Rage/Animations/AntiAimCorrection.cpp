@@ -241,6 +241,9 @@ float Animations::GetVelocityLengthXY(CBaseEntity* pEntity)
 void Animations::SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw) {
 
 	CAnimState* pState = pRecord->pEntity->AnimState();
+
+	if (flYaw == VISUAL)
+		flYaw = LEFT;
 	pRecord->iResolveSide = flYaw;
 	switch (flYaw) {
 
@@ -278,106 +281,56 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	static std::array<int, 65> iMissTracker{0};
 	const int iEntityID = pEntity->EntIndex();
 
-	if (pRecord->flGuessedYaw != 0.f && arrMissedShots[iEntityID] == 0) {
-		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flGuessedYaw);
-		return;
+	//if (pRecord->flGuessedYaw != 0.f && arrMissedShots[iEntityID] == 0) {
+	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flGuessedYaw);
+	//	return;
+	//}
+	//return SetYaw(pRecord, LEFT + (arrMissedShots[iEntityID] % 3));
+
+	if (arrMissedShots[iEntityID] != 0) {
+		if (iMissTracker[iEntityID] != arrMissedShots[iEntityID]) {
+
+			switch (pPrevious->iResolveSide) {
+			case RIGHT:
+				iMissTracker[iEntityID] = arrMissedShots[iEntityID];
+				return SetYaw(pRecord, LEFT);
+			case LEFT:
+				iMissTracker[iEntityID] = arrMissedShots[iEntityID];
+				return SetYaw(pRecord, CENTER);
+			case CENTER:
+				iMissTracker[iEntityID] = arrMissedShots[iEntityID];
+				return SetYaw(pRecord, RIGHT);
+			};
+		}
+		return SetYaw(pRecord, pPrevious->iResolveSide);
 	}
 
-	return SetYaw(pRecord, LEFT + (arrMissedShots[iEntityID] % 3));
+	static int iFirstHitSide[65]{0};
 
-	if (pPrevious->iAntiFreestand != 0 && arrMissedShots[iEntityID] == 0)
-		return SetYaw(pRecord, pPrevious->iAntiFreestand);
+	CTraceFilter traceFilter = CTraceFilter(g::pLocal);
+	Vector vecLeft = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pSideMatrixes[0]);
+	Vector vecRight = pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pSideMatrixes[1]);
 
-	if (pPrevious->iLayerResolve != 0 && arrMissedShots[iEntityID] == 0)
-		return SetYaw(pRecord, pPrevious->iLayerResolve);
+	Trace_t traceLeft;
+	i::EngineTrace->TraceRay(Ray_t(g::vecEyePosition, vecLeft), MASK_SHOT, &traceFilter, &traceLeft);
+	
+	Trace_t traceRight;
+	i::EngineTrace->TraceRay(Ray_t(g::vecEyePosition, vecRight), MASK_SHOT, &traceFilter, &traceRight);
 
-	int& it = pPrevious->iResolveSide;
-	if (it == VISUAL)
-		it = RIGHT;
+	bool bHitLeft = traceLeft.pHitEntity == pEntity;
+	bool bHitRight = traceRight.pHitEntity == pEntity;
 
-	if (iMissTracker[iEntityID] != arrMissedShots[iEntityID])
-		SetYaw(pRecord, it == RIGHT ? LEFT : it == LEFT ? CENTER : RIGHT);
+	if (!bHitLeft && !bHitRight)
+		iFirstHitSide[iEntityID] == VISUAL;
 
-	if (iMissTracker[iEntityID] == arrMissedShots[iEntityID])
-		SetYaw(pRecord, it);
+	if (iFirstHitSide[iEntityID] != VISUAL)
+		return SetYaw(pRecord, VISUAL);
+
+	else if (bHitLeft && !bHitRight)
+		iFirstHitSide[iEntityID] == RIGHT;
+
+	else if (!bHitLeft && bHitRight)
+		iFirstHitSide[iEntityID] == LEFT;
 
 	iMissTracker[iEntityID] = arrMissedShots[iEntityID];
-}
-
-void Animations::PostResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
-
-	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!pLocal || !pEntity || !pEntity->IsAlive() || !pRecord || g::bUpdatingSkins || i::ClientState->iDeltaTick <= 0)
-		return;
-
-	const int iEntityID = pEntity->EntIndex();
-	if (arrMissedShots[iEntityID] != 0)
-		return;
-
-	if (auto* pLog = &lagcomp.GetLog(iEntityID); pLog && pLog->pRecord.size() > 3) {
-
-		auto* pBefore = &pLog->pRecord.at(1);
-
-		// from the server.
-		auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate * 1000000.0f;
-
-		// resolver calculations.
-		const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate * 1000000.0f;
-		const float fRightPlaybackrate = pRecord->LayerData[RIGHT].flPlaybackRate * 1000000.0f;
-		const float fLeftPlaybackrate = pRecord->LayerData[LEFT].flPlaybackRate * 1000000.0f;
-
-		// differences.
-		pRecord->flLayerDifferences[CENTER] = fabsf(flFromServerPlaybackrate - fCenterPlaybackrate);
-		pRecord->flLayerDifferences[RIGHT] = fabsf(flFromServerPlaybackrate - fRightPlaybackrate);
-		pRecord->flLayerDifferences[LEFT] = fabsf(flFromServerPlaybackrate - fLeftPlaybackrate);
-
-		if (GetVelocityLengthXY(pEntity) > 0.f && 
-			!pRecord->pLayers[12].flWeight && 
-			(pBefore && 
-				(pRecord->pLayers[6].flWeight == pBefore->pLayers[6].flWeight ||
-					pRecord->vecVelocity.Length2D() > 135.f)
-				&& pRecord->pLayers[6].flWeight == 1.f))
-		{
-			if (pRecord->flLayerDifferences[CENTER] < pRecord->flLayerDifferences[RIGHT] &&
-				pRecord->flLayerDifferences[CENTER] < pRecord->flLayerDifferences[LEFT] &&
-				pBefore->flLayerDifferences[CENTER] < pBefore->flLayerDifferences[RIGHT] &&
-				pBefore->flLayerDifferences[CENTER] < pBefore->flLayerDifferences[LEFT])
-				pRecord->iLayerResolve = CENTER;
-
-			else if (
-				pRecord->flLayerDifferences[RIGHT] < pRecord->flLayerDifferences[CENTER] &&
-				pRecord->flLayerDifferences[RIGHT] < pRecord->flLayerDifferences[LEFT] &&
-				pBefore->flLayerDifferences[RIGHT] < pBefore->flLayerDifferences[CENTER] &&
-				pBefore->flLayerDifferences[RIGHT] < pBefore->flLayerDifferences[LEFT])
-				pRecord->iLayerResolve = RIGHT;
-
-			else if (
-				pRecord->flLayerDifferences[LEFT] < pRecord->flLayerDifferences[CENTER] &&
-				pRecord->flLayerDifferences[LEFT] < pRecord->flLayerDifferences[RIGHT] &&
-				pBefore->flLayerDifferences[LEFT] < pBefore->flLayerDifferences[CENTER] &&
-				pBefore->flLayerDifferences[LEFT] < pBefore->flLayerDifferences[RIGHT])
-				pRecord->iLayerResolve = LEFT;
-		}
-
-	}
-
-	CTraceFilter filterRight(g::pLocal), filterLeft(g::pLocal);
-	Trace_t dataRight, dataLeft;
-
-	i::EngineTrace->TraceRay(Ray_t(g::vecEyePosition, pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[RIGHT])), MASK_SOLID & ~CONTENTS_MONSTER, &filterRight, &dataRight);
-	i::EngineTrace->TraceRay(Ray_t(g::vecEyePosition, pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pMatricies[LEFT])), MASK_SOLID & ~CONTENTS_MONSTER, &filterLeft, &dataLeft);
-
-	bool bTraceRight = dataRight.pHitEntity == pEntity;
-	bool bTraceLeft = dataLeft.pHitEntity == pEntity;
-
-	static std::array<int, 65> iFoundHit{0};
-
-	if (!bTraceRight && !bTraceLeft)
-		iFoundHit[iEntityID] = 0;
-
-	pRecord->iAntiFreestand = iFoundHit[iEntityID];
-	if (iFoundHit[iEntityID] != 0) 
-		return;
-
-	pRecord->iAntiFreestand = iFoundHit[iEntityID] = bTraceLeft ? !bTraceRight ? RIGHT : 0 : bTraceRight ? LEFT : 0;
 }

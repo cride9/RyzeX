@@ -783,7 +783,7 @@ void C_LocalAnimations::TransformateMatricies()
 	if (!pLocal)
 		return;
 
-	Vector vecOriginDelta = pLocal->GetVecOrigin() - m_LocalData.m_Real.m_vecMatriigin;
+	Vector vecOriginDelta = pLocal->GetAbsOrigin() - m_LocalData.m_Real.m_vecMatriigin;
 	for (auto& Matrix : m_LocalData.m_Real.m_Matrix)
 	{
 		Matrix[0][3] += vecOriginDelta.x;
@@ -879,4 +879,19 @@ void C_LocalAnimations::ResetData()
 	m_LocalData.m_Shoot.m_Matrix = { };
 	m_LocalData.m_Shoot.m_Layers = { };
 	m_LocalData.m_Shoot.m_PoseParameters = { };
+}
+
+void C_LocalAnimations::SetupInterpolation(CBaseEntity* pLocal, bool bPostFrame) {
+
+	if (bPostFrame)
+	{
+		i::GlobalVars->flInterpolationAmount = m_LocalData.flInterpolationAmount;
+		return;
+	}
+
+	/* fix interpolation */
+	m_LocalData.flInterpolationAmount = i::GlobalVars->flInterpolationAmount;
+
+	/* fix predicted tick */
+	pLocal->GeFinalPredictedTick() = pLocal->GetTickBase() + 1;
 }

@@ -51,9 +51,9 @@ float Animations::GetYawRotation(Lagcompensation::LagRecord_t* pRecord, int nRot
 	float flEyeRotation = pRecord->vecEyeAngles.y;
 	switch (nRotationSide)
 	{
-	case LEFT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - 60.f); break;
+	case LEFT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - 62.f); break;
 	case CENTER: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation); break;
-	case RIGHT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + 60.f); break;
+	case RIGHT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + 62.f); break;
 	}
 
 	// generate foot yaw
@@ -898,10 +898,10 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 	pEntity->GetPoseParameters(pRecord->flPoses);
 
-	FindDesyncSide(pRecord); // meme but sorta worksXD
-	auto& playerListData = playerList::arrPlayers[pEntity->EntIndex()];
-	if (playerListData.bOverrideResolver)
-		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerListData.flOverrideYaw);
+	//FindDesyncSide(pRecord); // meme but sorta worksXD
+	GenerateFreestandMatricies(pEntity, pRecord);
+	if (playerList::arrPlayers[pEntity->EntIndex()].bOverrideResolver)
+		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerList::arrPlayers[pEntity->EntIndex()].flOverrideYaw);
 	else
 		Resolver(pEntity, pRecord, pPrevious);
 
@@ -1074,7 +1074,7 @@ void Animations::FindDesyncSide(Lagcompensation::LagRecord_t* pRecord) {
 	memcpy(&pBackupState, pRecord->pEntity->AnimState(), sizeof(CAnimState));
 
 	std::array<float, 120> arrPlaybackRates{};
-	for (float i = -60; i < 60; i++)
+	for (float i = -60; i < 60; i += 10)
 	{
 		pRecord->pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + i);
 		UpdateClientSideAnimations(pRecord->pEntity, pRecord);
@@ -1171,4 +1171,41 @@ void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation:
 	}
 	memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 	pRecord->Restore(pEntity);
+}
+
+void Animations::GenerateFreestandMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
+
+	if (!pEntity || !pRecord)
+		return;
+
+	auto BuildFreestandMatrix = [&](int iSideAngle)
+	{
+		// save animation data
+		std::array < CAnimationLayer, 13 > m_Layers;
+		std::array < float, 24 > m_PoseParameters;
+		CAnimState m_AnimationState;
+		Vector vecEyeAngles;
+
+		// copy data
+		std::memcpy(m_Layers.data(), pEntity->GetAnimationOverlays(), sizeof(CAnimationLayer) * 13);
+		std::memcpy(m_PoseParameters.data(), pEntity->GetPoseParameter().data(), sizeof(float) * 24);
+		std::memcpy(&m_AnimationState, pEntity->AnimState(), sizeof(CAnimState));
+		vecEyeAngles.y = pRecord->vecEyeAngles.y;
+
+		pEntity->GetEyeAngles().y += iSideAngle == 0 ? -90 : 90;
+		UpdateClientSideAnimations(pEntity, pRecord);
+
+		SetupPlayerMatrix(pEntity, pRecord, pRecord->pSideMatrixes[iSideAngle], BoneUsedByHitbox);
+
+		std::memcpy(pEntity->GetAnimationOverlays(), m_Layers.data(), sizeof(CAnimationLayer) * 13);
+		std::memcpy(pEntity->GetPoseParameter().data(), m_PoseParameters.data(), sizeof(float) * 24);
+		std::memcpy(pEntity->AnimState(), &m_AnimationState, sizeof(CAnimState));
+		pEntity->GetEyeAngles().y = pRecord->vecEyeAngles.y;
+
+		UpdateClientSideAnimations(pEntity, pRecord);
+		std::memcpy(pEntity->AnimState(), &m_AnimationState, sizeof(CAnimState));
+	};
+
+	BuildFreestandMatrix(0);
+	BuildFreestandMatrix(1);
 }

@@ -112,7 +112,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_RENDER_START:
-
+		//g_LocalAnimations->SetupInterpolation(pLocal, false);
 #ifdef DEBUG
 		misc::ServerHitboxes();
 #endif
@@ -159,7 +159,7 @@ void hkPostFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_RENDER_START:
-
+		//g_LocalAnimations->SetupInterpolation(pLocal, true);
 		break;
 
 	default:
