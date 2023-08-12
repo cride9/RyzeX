@@ -382,7 +382,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 	}*/
 
 #if _DEBUG
-	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
+	if (/*Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()*/true) {
 
 		
 		static auto something = [](int right, int top, int& spacing, std::string print) {
@@ -391,11 +391,13 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 			spacing += 10;
 		};
 
-		const unsigned int iLastValid = pLog->iLastValid;
-		if (iLastValid >= pLog->pRecord.size())
-			return;
+		//something(right, top, spacing, std::format("MOVE_YAW: {}", pEnt->GetPoseParameter()[MOVE_YAW]).c_str());
 
-		auto pRecord = &pLog->pRecord.front();
+		//const unsigned int iLastValid = pLog->iLastValid;
+		//if (iLastValid >= pLog->pRecord.size())
+		//	return;
+
+		//auto pRecord = &pLog->pRecord.front();
 		//something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x8) + 0x24)).c_str());
 		//something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x44) + 0x24)).c_str());
 
@@ -414,7 +416,8 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		//const float fDifferenceLeftPlaybackrate = fabs(flFromServerPlaybackrate - fLeftPlaybackrate);
 
 		//something(right, top, spacing, "[Layer 6]");
-		//something(right, top, spacing, std::format("Left: {}", fLeftPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("Server: {}", flFromServerPlaybackrate).c_str());
+		//something(right, top, spacing, std::format("Velocity: {}", pRecord->vecVelocity.Length2D()).c_str());
 		//something(right, top, spacing, std::format("Right: {}", fRightPlaybackrate).c_str());
 		//something(right, top, spacing, std::format("Center: {}", fCenterPlaybackrate).c_str());
 		//something(right, top, spacing, std::format("Server: {}", flFromServerPlaybackrate).c_str());
@@ -1674,4 +1677,35 @@ void visual::DrawList() {
 
 	while (g::drawList.size() > 32)
 		g::drawList.pop_front();
+}
+
+void visual::HandleDamageIndicator() {
+
+	if (vecDamageIndicator.empty() || cfg::misc::bDamageIndicator)
+		return;
+
+	static std::unordered_map<int, std::pair<float, float>> animationMap{};
+	for (int i = 0; i < vecDamageIndicator.size(); i++) {
+
+		std::pair<Vector, int>& it = vecDamageIndicator.at(i);
+
+		if (!animationMap.contains(it.second))
+			animationMap.emplace(it.second, std::make_pair(i::GlobalVars->flCurrentTime, 1));
+
+		it.first += Vector(0, 0, 0.2f);
+		animationMap.at(it.second).second = std::clamp(animationMap.at(it.second).second - (1.f / 255.f), 0.f, 1.f);
+		if (fabsf(animationMap.at(it.second).first - i::GlobalVars->flCurrentTime) > 2.f) {
+
+			animationMap.erase(it.second);
+			vecDamageIndicator.erase(vecDamageIndicator.begin() + i);
+			i--;
+			continue;
+		}
+
+		Vector vecScreenPosition{};
+		if (i::DebugOverlay->ScreenPosition(it.first, vecScreenPosition))
+			continue;
+
+		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[0], animationMap.at(it.second).second), g::fonts::FlagESP, true, std::to_string(it.second).c_str());
+	}
 }

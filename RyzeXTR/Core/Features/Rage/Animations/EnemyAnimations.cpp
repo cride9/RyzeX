@@ -51,9 +51,9 @@ float Animations::GetYawRotation(Lagcompensation::LagRecord_t* pRecord, int nRot
 	float flEyeRotation = pRecord->vecEyeAngles.y;
 	switch (nRotationSide)
 	{
-	case LEFT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - 62.f); break;
+	case LEFT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - 60.f); break;
 	case CENTER: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation); break;
-	case RIGHT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + 62.f); break;
+	case RIGHT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + 60.f); break;
 	}
 
 	// generate foot yaw
@@ -899,7 +899,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	pEntity->GetPoseParameters(pRecord->flPoses);
 
 	//FindDesyncSide(pRecord); // meme but sorta worksXD
-	GenerateFreestandMatricies(pEntity, pRecord);
+	//GenerateFreestandMatricies(pEntity, pRecord);
 	if (playerList::arrPlayers[pEntity->EntIndex()].bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerList::arrPlayers[pEntity->EntIndex()].flOverrideYaw);
 	else
@@ -908,14 +908,14 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
 	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
 
-	static CConVar* cl_lagcompensation = i::ConVar->FindVar(XorStr("cl_lagcompensation"));
-	if (cl_lagcompensation->GetInt() == 0)
-		lagcomp.ExtrapolatePlayer(pEntity, pRecord, pPrevious);
+	//static CConVar* cl_lagcompensation = i::ConVar->FindVar(XorStr("cl_lagcompensation"));
+	//if (cl_lagcompensation->GetInt() == 0)
+	//	lagcomp.ExtrapolatePlayer(pEntity, pRecord, pPrevious);
 
 	if (cfg::rage::bEnable) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
 		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
-		GetSideLayersForResolver(pEntity, pRecord);
+		//GetSideLayersForResolver(pEntity, pRecord);
 	}
 
 	pEntity->GetVelocity() = vecBackupVelocity;

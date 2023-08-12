@@ -690,61 +690,61 @@ struct ButtonAnim
 
 bool ImGui::ButtonEx(const char* label, const ImVec2& size_arg, ImGuiButtonFlags flags, bool bSelected, bool bFrame)
 {
-    ImGuiWindow* window = GetCurrentWindow();
-    if (window->SkipItems)
-        return false;
+	ImGuiWindow* window = GetCurrentWindow();
+	if (window->SkipItems)
+		return false;
 
-    ImGuiContext& g = *GImGui;
-    const ImGuiStyle& style = g.Style;
-    const ImGuiID id = window->GetID(label);
-    const ImVec2 label_size = CalcTextSize(label, NULL, true);
+	ImGuiContext& g = *GImGui;
+	const ImGuiStyle& style = g.Style;
+	const ImGuiID id = window->GetID(label);
+	const ImVec2 label_size = CalcTextSize(label, NULL, true);
 
-    ImVec2 pos = window->DC.CursorPos;
-    if ((flags & ImGuiButtonFlags_AlignTextBaseLine) && style.FramePadding.y < window->DC.CurrLineTextBaseOffset) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
-        pos.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
-    ImVec2 size = CalcItemSize(size_arg, label_size.x + style.FramePadding.x * 2.0f, label_size.y + style.FramePadding.y * 2.0f);
+	ImVec2 pos = window->DC.CursorPos;
+	if ((flags & ImGuiButtonFlags_AlignTextBaseLine) && style.FramePadding.y < window->DC.CurrLineTextBaseOffset) // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
+		pos.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
+	ImVec2 size = CalcItemSize(size_arg, label_size.x + style.FramePadding.x * 2.0f, label_size.y + style.FramePadding.y * 2.0f);
 
-    const ImRect bb(pos, pos + size);
-    ItemSize(size, style.FramePadding.y);
-    if (!ItemAdd(bb, id))
-        return false;
+	const ImRect bb(pos, pos + size);
+	ItemSize(size, style.FramePadding.y);
+	if (!ItemAdd(bb, id))
+		return false;
 
-    bool hovered, held;
-    bool pressed = ButtonBehavior(bb, id, &hovered, &held, flags);
+	bool hovered, held;
+	bool pressed = ButtonBehavior(bb, id, &hovered, &held, flags);
 
-    // Render
-    ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonHovered : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+	// Render
+	ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonHovered : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
 
-    static std::map<ImGuiID, ButtonAnim> anim;
-    auto it_anim = anim.find(id);
+	static std::map<ImGuiID, ButtonAnim> anim;
+	auto it_anim = anim.find(id);
 
-    if (it_anim == anim.end())
-    {
-        anim.insert({ id, ButtonAnim() });
-        it_anim = anim.find(id);
-    }
-    it_anim->second.BG = ImLerp(it_anim->second.BG, bSelected ? clr::button_bg_active : clr::button_bg, g.IO.DeltaTime * ANIMATIONSPEED);
-    it_anim->second.Frame = ImLerp(it_anim->second.Frame, bSelected ? clr::button_frame_active : clr::button_frame, g.IO.DeltaTime * ANIMATIONSPEED);
-    it_anim->second.Text = ImLerp(it_anim->second.Text, bSelected ? clr::text_active : hovered ? clr::text_hov : clr::text_off, g.IO.DeltaTime * ANIMATIONSPEED);
+	if (it_anim == anim.end())
+	{
+		anim.insert({ id, ButtonAnim() });
+		it_anim = anim.find(id);
+	}
+	it_anim->second.BG = ImLerp(it_anim->second.BG, bSelected ? held ? clr::button_frame_hover : clr::button_bg_active : hovered ? clr::button_frame_hover : clr::button_bg, g.IO.DeltaTime * ANIMATIONSPEED);
+	it_anim->second.Frame = ImLerp(it_anim->second.Frame, bSelected ? clr::button_frame_active : clr::button_frame, g.IO.DeltaTime * ANIMATIONSPEED);
+	it_anim->second.Text = ImLerp(it_anim->second.Text, bSelected ? clr::text_active : hovered ? clr::text_hov : clr::text_off, g.IO.DeltaTime * ANIMATIONSPEED);
 
-    // frame
-    if (bFrame)
-        window->DrawList->AddRect(bb.Min, bb.Max, GetColorU32(it_anim->second.Frame), style.FrameRounding);
+	// frame
+	if (bFrame)
+		window->DrawList->AddRect(bb.Min, bb.Max, GetColorU32(it_anim->second.Frame), style.FrameRounding);
 
-    // fill
-    window->DrawList->AddRectFilled(bb.Min, bb.Max, GetColorU32(it_anim->second.BG), style.FrameRounding);
-
-       
-    //window->DrawList->AddText(ImVec2(bb.GetCenter().x - CalcTextSize(label).x / 2.f, bb.GetCenter().y - CalcTextSize(label).y / 2.f), GetColorU32(it_anim->second.Text), label);
-    if (g.LogEnabled)
-        LogSetNextTextDecoration("[", "]");
-    PushStyleColor(ImGuiCol_Text, it_anim->second.Text);
-    RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
-    PopStyleColor();
+	// fill
+	window->DrawList->AddRectFilled(bb.Min, bb.Max, GetColorU32(it_anim->second.BG), style.FrameRounding);
 
 
-    IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
-    return pressed;
+	//window->DrawList->AddText(ImVec2(bb.GetCenter().x - CalcTextSize(label).x / 2.f, bb.GetCenter().y - CalcTextSize(label).y / 2.f), GetColorU32(it_anim->second.Text), label);
+	if (g.LogEnabled)
+		LogSetNextTextDecoration("[", "]");
+	PushStyleColor(ImGuiCol_Text, it_anim->second.Text);
+	RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
+	PopStyleColor();
+
+
+	IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
+	return pressed;
 }
 
 bool ImGui::Button(const char* label, const ImVec2& size_arg, bool bSelected, bool bFrame)
@@ -3257,7 +3257,7 @@ struct SliderScalarAnim
 // Read code of e.g. SliderFloat(), SliderInt() etc. or examples in 'Demo->Widgets->Data Types' to understand how to use this function directly.
 bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_data, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags)
 {
-
+	flags |= ImGuiSliderFlags_NoInput | ImGuiSliderFlags_AlwaysClamp;
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
         return false;
@@ -3265,7 +3265,14 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     ImGuiContext& g = *GImGui;
     const ImGuiStyle& style = g.Style;
     const ImGuiID id = window->GetID(label);
+	PushItemWidth(CalcItemWidth() - 30.f);
+
     const float w = CalcItemWidth();
+
+	const ImRect frame_bbutton(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, CalcTextSize(label, NULL, true).y + style.FramePadding.y * 2.0f));
+	if (ImGui::Button(std::format("-##{}", label).c_str(), ImVec2(frame_bbutton.Max.y - frame_bbutton.Min.y, frame_bbutton.Max.y - frame_bbutton.Min.y), true, true))
+		data_type == ImGuiDataType_S32 ? (*(int*)p_data) > (*(int*)p_min) ? (*(int*)p_data)-- : (*(int*)p_data) : (*(float*)p_data) > (*(float*)p_min) ? (*(float*)p_data)-- : (*(float*)p_data);
+	ImGui::SameLine();
 
     const ImVec2 label_size = CalcTextSize(label, NULL, true);
     const ImRect frame_bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + style.FramePadding.y * 2.0f));
@@ -3273,8 +3280,10 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
 
     const bool temp_input_allowed = (flags & ImGuiSliderFlags_NoInput) == 0;
     ItemSize(total_bb, style.FramePadding.y);
-    if (!ItemAdd(total_bb, id, &frame_bb, temp_input_allowed ? ImGuiItemFlags_Inputable : 0))
-        return false;
+	if (!ItemAdd(total_bb, id, &frame_bb, temp_input_allowed ? ImGuiItemFlags_Inputable : 0)) {
+		PopItemWidth();
+		return false;
+	}
 
     // Default format string when passing NULL
     if (format == NULL)
@@ -3307,7 +3316,8 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     {
         // Only clamp CTRL+Click input when ImGuiSliderFlags_AlwaysClamp is set
         const bool is_clamp_input = (flags & ImGuiSliderFlags_AlwaysClamp) != 0;
-        return TempInputScalar(frame_bb, id, label, data_type, p_data, format, is_clamp_input ? p_min : NULL, is_clamp_input ? p_max : NULL);
+		PopItemWidth();
+		return TempInputScalar(frame_bb, id, label, data_type, p_data, format, is_clamp_input ? p_min : NULL, is_clamp_input ? p_max : NULL);
     }
 
     static std::map<ImGuiID, SliderScalarAnim> anim;
@@ -3353,6 +3363,9 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     if (grab_bb.Max.x > grab_bb.Min.x)
         window->DrawList->AddRectFilled(ImVec2(frame_bb.Min.x + 2.f, grab_bb.Min.y), ImVec2(it_anim->second.Position, grab_bb.Max.y), GetColorU32(it_anim->second.Grab), style.FrameRounding);
 
+	ImGui::SameLine(frame_bb.GetWidth() + 40);
+	if (ImGui::Button(std::format("+##{}", label).c_str(), ImVec2(frame_bb.Max.y - frame_bb.Min.y, frame_bb.Max.y - frame_bb.Min.y), true, true))
+		data_type == ImGuiDataType_S32 ? (*(int*)p_data) < (*(int*)p_max) ? (*(int*)p_data)++ : (*(int*)p_data) : (*(float*)p_data) < (*(float*)p_max) ? (*(float*)p_data)++ : (*(float*)p_data);
     // push color cuz fuck u
     PushStyleColor(ImGuiCol_Text, it_anim->second.Text);
     {
@@ -3373,13 +3386,12 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
         SameLine(GetContentRegionAvail().x - label_size.x);
         RenderText(ImVec2(GetWindowPos().x + GetCursorPos().x, frame_bb.Min.y + style.FramePadding.y), label);
         Spacing();
-        //SameLine(GetContentRegionAvail().x - label_size.x);
-		//RenderText(GetWindowPos() + GetCursorPos(), label);
-		//Spacing();
     }
     PopStyleColor();
 
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags | (temp_input_allowed ? ImGuiItemStatusFlags_Inputable : 0));
+	PopItemWidth();
+
     return value_changed;
 }
 
@@ -3421,7 +3433,7 @@ bool ImGui::SliderScalarN(const char* label, ImGuiDataType data_type, void* v, i
 
 bool ImGui::SliderFloat(const char* label, float* v, float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
 {
-    return SliderScalar(label, ImGuiDataType_Float, v, &v_min, &v_max, format, flags);
+	return SliderScalar(label, ImGuiDataType_Float, v, &v_min, &v_max, format, flags);
 }
 
 bool ImGui::SliderFloat2(const char* label, float v[2], float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
@@ -3451,7 +3463,6 @@ bool ImGui::SliderAngle(const char* label, float* v_rad, float v_degrees_min, fl
 
 bool ImGui::SliderInt(const char* label, int* v, int v_min, int v_max, const char* format, ImGuiSliderFlags flags)
 {
-    flags |= ImGuiSliderFlags_NoInput;
     return SliderScalar(label, ImGuiDataType_S32, v, &v_min, &v_max, format, flags);
 }
 

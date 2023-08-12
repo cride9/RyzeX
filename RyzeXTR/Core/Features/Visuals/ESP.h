@@ -25,12 +25,10 @@ namespace visual {
 	void AmmoEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void BreakLCESP(int&, float&, int&, float&, CBaseEntity* );
 	void WeaponEsp(int&, float&, int&, float&, CBaseEntity*, Color);
-	void MoneyEsp(int&, float&, int&, float&, CBaseEntity*, Color);
 	void Glow(CBaseEntity* pLocal);
 	void SkeletonEsp(CBaseEntity*, Color);
 	void DrawRadioInformation();
 	void OutOfFov(CBaseEntity*);
-	void BarrelEsp(CBaseEntity*, Color);
 	void WorldLightning(Color);
 	void CustomHud();
 	void Hat();
@@ -46,6 +44,9 @@ namespace visual {
 	void DroppedWeapons(CBaseCombatWeapon*, Vector&);
 
 	void Flags(float&, int&, CBaseEntity*, size_t&, bool*, float[5][4], bool bDormant = false);
+
+	inline std::vector<std::pair<Vector, int>> vecDamageIndicator{};
+	void HandleDamageIndicator();
 
 	void WorldCrosshair();
 	inline Vector vecWorldCrosshair[5];

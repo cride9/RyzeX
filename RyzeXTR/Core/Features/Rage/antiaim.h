@@ -24,7 +24,6 @@ enum EDESYNC : int {
 	EXTENDED,
 	JITTER,
 	FLICK,
-	XJITTER
 };
 
 enum AATYPE : int {
@@ -61,6 +60,7 @@ namespace antiaim {
 	bool FreeStandingDistance(CUserCmd*, Vector&);
 	bool FreeStandingThreat(Vector& angle);
     void InvertOnShoot(CUserCmd* pCmd);
+    void DoRytter(CUserCmd* pCmd, int type);
 	int ClosestToLocal();
 	int ClosesToCrosshair();
 	void AtTarget(CUserCmd*, Vector&);

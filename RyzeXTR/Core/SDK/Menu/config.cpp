@@ -104,13 +104,12 @@ void CConfig::Setup() {
 		SetupValue(iYawBase, 3, 0, "antiaim", "yawbase");
 		SetupValue(bSlideWalk, 0, "antiaim", "slidewalk");
 		SetupValue(bInvertOnShoot, false, 3, "antiaim", "bInvertOnShoot");
-		SetupValue(flBodyLean[0], 3, 0.f, "antiaim", "bodyLean1");
-		SetupValue(flBodyLean[1], 3, 0.f, "antiaim", "bodyLean2");
 		SetupValue(bAntiJitter, false, 3, "antiaim", "bAntiJitter");
 
 		SetupValue(iModifier,3, 0, "antiaim", "modifier");
 
 		SetupValue(iJitterValue, 3, 0, "antiaim", "jittervalue");
+		SetupValue(iSpinSpeed, 3, 0, "antiaim", "iSpinSpeed");
 		SetupValue(iInvertAngle, 3, 0.f, "antiaim", "invertangle");
 
 		SetupValue(iDesyncType, 3, 0, "antiaim", "desynctype");
@@ -752,7 +751,7 @@ void CConfig::Setup() {
 		SetupValue(flHat, 4, 1.f, "misc", "flHat");
 		SetupValue(bCustomHud, false, "misc", "bCustomHud");
 
-		SetupValue(bRemovals, false, 6, "misc", "removals");
+		SetupValue(bRemovals, false, 7, "misc", "removals");
 		SetupValue(bOnScopeViewmodel, false, "misc", "drawViewmodelOnScope");
 		SetupValue(flScopeColor[0], 1.f, "visual", "scopeColorR");
 		SetupValue(flScopeColor[1], 1.f, "visual", "scopeColorG");

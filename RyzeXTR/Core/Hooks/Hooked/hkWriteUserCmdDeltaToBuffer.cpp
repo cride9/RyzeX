@@ -3,6 +3,7 @@
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 #include "../../Features/Rage/antiaim.h"
+#include "../../SDK/InputSystem.h"
 
 static void WriteUsercmd(void* buf, CUserCmd* Cin, CUserCmd* Cout)
 {
@@ -23,14 +24,17 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 
 	static auto original = detour::writeUserCmd.GetOriginal<decltype(&h::hkWriteUserCmdDeltaToBuffer)>();
 
-	if (!exploits::iDefensive)
+	if (!exploits::iDefensive && !exploits::iHideShiftAmount)
 		return original( ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
 
-	int* pNumBackupCommands = (int*)((uintptr_t)(buf)-0x30);
-	int* pNumNewCommands = (int*)((uintptr_t)(buf)-0x2C);
+	if (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey)) 
+		exploits::iDefensive = 0;
+	
+	int* pNumBackupCommands = reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(buf) - 0x30);
+	int* pNumNewCommands = reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(buf) - 0x2C);
 
-	int iExtraCommands = exploits::iDefensive;
-	exploits::iDefensive = 0;
+	int iExtraCommands = exploits::iDefensive + exploits::iHideShiftAmount;
+	exploits::iHideShiftAmount = exploits::iDefensive = 0;
 
 	int iNewCommands = *pNumNewCommands;
 	int iNextCommand = i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands + 1;
@@ -67,54 +71,4 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	}
 
 	return true;
-
-	/*if (!exploits::iDefensive)
-		return original(ecx, edx, nSlot, buf, nFrom, nTo, bNewCommand);
-
-	if (nFrom != -1)
-		return true;
-
-	auto pNewCommands = (int*)((DWORD)buf - 0x2C);
-	auto pBackupCommands = (int*)((DWORD)buf - 0x30);
-	auto iNewCommands = *pNewCommands;
-
-	auto iNextCmd = i::ClientState->nChokedCommands + i::ClientState->iLastOutgoingCommand + 1;
-
-	auto iTotalNewCommands = std::clamp(exploits::iDefensive, 0, 16);
-	exploits::iDefensive -= iTotalNewCommands;
-
-	nFrom = -1;
-
-	*pNewCommands = iTotalNewCommands;
-	*pBackupCommands = 0;
-
-	for (nTo = iNextCmd - iNewCommands + 1; nTo <= iNextCmd; nTo++)
-	{
-		if (!original(ecx, edx, nSlot, buf, nFrom, nTo, true))
-			return false;
-
-		nFrom = nTo;
-	}
-
-	CUserCmd* pRealCommand = i::Input->GetUserCmd(nFrom);
-	CUserCmd pFromCmd;
-
-	if (pRealCommand)
-		memcpy(&pFromCmd, pRealCommand, sizeof(CUserCmd));
-
-	CUserCmd pToCmd;
-	memcpy(&pToCmd, &pFromCmd, sizeof(CUserCmd));
-
-	pToCmd.iCommandNumber++;
-	pToCmd.iTickCount += 200;
-
-	for (int i = iNewCommands; i <= iTotalNewCommands; i++)
-	{
-		WriteUsercmd(buf, &pToCmd, &pFromCmd);
-		memcpy(&pFromCmd, &pToCmd, sizeof(CUserCmd));
-		pToCmd.iCommandNumber++;
-		pToCmd.iTickCount++;
-	}
-
-	return true;*/
 }

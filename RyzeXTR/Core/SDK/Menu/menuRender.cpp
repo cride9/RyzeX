@@ -109,7 +109,7 @@ void menu::Rage(ImVec2 savedCursorPosition) {
 
     using namespace cfg::rage;
 
-    static int iSelect = 0;
+    static int iSelect = PISTOL;
     static const char* arrHitboxNames[] = {("Head"), ("Upper chest"), ("Lower chest"), ("Stomach"), ("Arms"), ("Legs")};
     static const char* arrConditionNames[] = { ("Between shots"), ("In air") };
 
@@ -143,6 +143,11 @@ void menu::Rage(ImVec2 savedCursorPosition) {
 
             if (ImGui::Button(("E##2"), size, iSelect == OTHER))
                 iSelect = OTHER;
+
+			ImGui::SameLine();
+			if (ImGui::Button(("G##2"), size, iSelect == ZEUS))
+				iSelect = ZEUS;
+
             ImGui::PopFont();
 
             ImGui::SameLine();
@@ -232,8 +237,8 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
     static const char* arrPitches[] = { ("Off"), ("Up"), ("Zero"), ("Down") };
     static const char* arrYawBases[] = { ("Local view"), ("At target") };
     static const char* arrYaws[] = { ("Forward"), ("Backward") };
-    static const char* arrModifiers[] = { ("Off"), ("Jitter"), ("Random") };
-    static const char* arrDesyncs[] = { ("Off"), ("Static"), ("Extended"), ("Jitter"), ("Flick"), ("Rytter")};
+    static const char* arrModifiers[] = { ("Off"), ("Jitter"), ("Random"), ("Rytter"), ("Spin")};
+    static const char* arrDesyncs[] = { ("Off"), ("Static"), ("Extended"), ("Jitter"), ("Flick") };
     static const char* arrFreestands[] = { ("Off"), ("Circular"), ("Predictive")};
     static const char* arrFakelagType[] = { ("Normal"), ("Adaptive"), ("Jitter") };
 
@@ -285,31 +290,34 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
             ImGui::Combo(("Yaw"), &iYaw[iSelect], arrYaws, IM_ARRAYSIZE(arrYaws));
             ImGui::Combo(("Modifier"), &iModifier[iSelect], arrModifiers, IM_ARRAYSIZE(arrModifiers));
             if (iModifier[iSelect] != 0) {
-                ImGui::SliderInt(("Value"), &iJitterValue[iSelect], 0, 90);
-                ImGui::Checkbox(("Anti Prediction"), &bAntiJitter[iSelect]);
-            }
+				if (iModifier[iSelect] == 3) {
+
+					if (ImGui::Button(("Add way##1"), ImVec2(ImGui::GetContentRegionAvail().x / 2, 20), true, true) && iEnabledJitters[iSelect] < vecJitterWays[iSelect].size() - 1)
+						iEnabledJitters[iSelect]++;
+					ImGui::SameLine();
+					if (ImGui::Button(("Remove way##1"), ImVec2(ImGui::GetContentRegionAvail().x, 20), true, true) && iEnabledJitters[iSelect] > 0)
+						iEnabledJitters[iSelect]--;
+
+					for (size_t i = 0; i < iEnabledJitters[iSelect]; i++)
+						ImGui::SliderInt(std::format("Step {}", i).c_str(), &vecJitterWays[iSelect].at(i), -180, 180);
+				}
+				else if (iModifier[iSelect] == 4) {
+
+					ImGui::SliderInt(("Speed"), &iSpinSpeed[iSelect], 0, 90);
+				}
+				else {
+					ImGui::SliderInt(("Value"), &iJitterValue[iSelect], 0, 90);
+				}
+				ImGui::Checkbox(("Anti Prediction"), &bAntiJitter[iSelect]);
+			}
             ImGui::Combo(("Desync"), &iDesyncType[iSelect], arrDesyncs, IM_ARRAYSIZE(arrDesyncs));
             if (iDesyncType[iSelect] != 0 && iDesyncType[iSelect] != 5) {
                 ImGui::Checkbox(("Inverter"), &bInverter);
                 ImGui::Keybind(("##iInverterBind"), &iInverterBind);
-                ImGui::SliderFloat(("Lean"), &flBodyLean[0][iSelect], -90.f, 90.f, ("%.f"));
-                ImGui::SliderFloat(("Invert Lean"), &flBodyLean[1][iSelect], -90.f, 90.f, ("%.f"));
                 if (iDesyncType[iSelect] == 4) {
                     ImGui::SliderInt(("Offset"), &iFlickOffset[iSelect], -90, 90);
                     ImGui::SliderInt(("Switch tick"), &flickAngleSwitch[iSelect], 0, iFakeLagMax);
                 }
-            }
-            else if (iDesyncType[iSelect] == 5) {
-
-                if (ImGui::Button(("Add way##1"), ImVec2(ImGui::GetContentRegionAvail().x / 2, 20)) && iEnabledJitters[STANDING] < vecJitterWays[STANDING].size() - 1)
-                    iEnabledJitters[STANDING]++;
-                ImGui::SameLine();
-                if (ImGui::Button(("Remove way##1"), ImVec2(ImGui::GetContentRegionAvail().x, 20)) && iEnabledJitters[STANDING] > 0)
-                    iEnabledJitters[STANDING]--;
-
-                for (size_t i = 0; i < iEnabledJitters[STANDING]; i++)
-                    ImGui::SliderInt(std::format("{} way", i).c_str(), &vecJitterWays[STANDING].at(i), -180, 180);
-
             }
             ImGui::Checkbox(("Invert on shot"), &bInvertOnShoot[iSelect]);
             ImGui::Combo(("Freestand"), &iFreestand[iSelect], arrFreestands, IM_ARRAYSIZE(arrFreestands));
@@ -656,6 +664,9 @@ void menu::Visual(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("World crosshair"), &bWorldCrosshair);
         ImGui::ColorEdit4(("##flWorldCrosshairColor"), flWorldCrosshairColor);
 
+		ImGui::Checkbox(("Damage Indicator"), &bDamageIndicator);
+		ImGui::ColorEdit4(("##flDamageIndicator"), flDamageIndicator);
+
         ImGui::Checkbox(("Capsule on hit"), &bDrawCapsule);
         ImGui::ColorEdit4(("##flDrawCapsuleColor"), flDrawCapsuleColor, true);
         ImGui::ColorEdit4(("##flDrawCapsuleColorHit"), flDrawCapsuleColorHit);
@@ -704,13 +715,14 @@ void menu::Visual(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Remove recoil"), &bRemovals[2]);
         ImGui::Checkbox(("Remove zoom"), &bRemovals[3]);
         ImGui::Checkbox(("Remove scope"), &bRemovals[5]);
-        if (bRemovals[5])
+		ImGui::Checkbox(("Remove post processing"), &bRemovals[4]);
+		ImGui::Checkbox(("Remove shadows"), &bRemovals[6]);
+		if (bRemovals[5])
         {
             ImGui::ColorEdit4(("##scope stuff"), flScopeColor, true);
             ImGui::ColorEdit4(("##scope stuff2"), flScopeColorEnd);
             ImGui::SliderInt(("Scope length"), &iScopeLength, 0.f, 100.f);
         }
-        ImGui::Checkbox(("Remove post processing"), &bRemovals[4]);
     }
     ImGui::EndChild();
 }

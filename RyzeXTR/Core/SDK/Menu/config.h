@@ -72,8 +72,6 @@ namespace cfg {
 		inline int iDesyncType[3];
 		inline int iInverterBind = 0;
 
-		inline float flBodyLean[2][3];
-
 		inline int iFlickOffset[3];
 		inline int flickAngleSwitch[3];
 
@@ -81,6 +79,7 @@ namespace cfg {
 
 		inline int iModifier[3];
 		inline int iJitterValue[3];
+		inline int iSpinSpeed[3];
 		inline float iInvertAngle[3];
 		inline bool bAntiJitter[3];
 
@@ -313,10 +312,13 @@ namespace cfg {
 		inline bool bWorldCrosshair = false; //
 		inline float flWorldCrosshairColor[4] = { 1.f ,1.f, 1.f, 1.f };
 
+		inline bool bDamageIndicator = false; //
+		inline float flDamageIndicator[4] = { 1.f ,1.f, 1.f, 1.f };
+
 		inline int iViewModelFov = 75; //
 		inline int iDebugFov = 90; //
 
-		inline bool bRemovals[] = { false, false ,false ,false, false, false }; //
+		inline bool bRemovals[] = { false, false ,false ,false, false, false, false }; //
 		inline bool bOnScopeViewmodel = false; //
 		inline float flScopeColor[4] = { 1.f, 1.f, 1.f, 1.f }; //
 		inline float flScopeColorEnd[4] = { 1.f, 1.f, 1.f, 1.f }; //

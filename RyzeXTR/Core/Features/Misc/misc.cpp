@@ -108,8 +108,8 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	LeftHandKnife();
 	FogOptions();
 	PreserveKillfeed(nullptr);
-	if (cfg::misc::bSkinnyBoy)
-		g::pLocal->GetModelScale() = cfg::misc::iSkinnyBoy * 0.01f;
+	g::pLocal->GetModelScale() = cfg::misc::bSkinnyBoy ? cfg::misc::iSkinnyBoy * 0.01f : 1.f;
+	RemoveShadows();
 #if NDEBUG || ALPHA
 	Security();
 #endif
@@ -2049,4 +2049,11 @@ void misc::FogOptions() {
 	fog_start->SetValue(iFogStart);
 	fog_end->SetValue(iFogEnd);
 	fog_color->SetValue(std::format(XorStr("{} {} {}"), flFogColor[0] * 255, flFogColor[1] * 255, flFogColor[2] * 255).c_str());
+}
+
+void misc::RemoveShadows() {
+
+	static CConVar* r_shadows = i::ConVar->FindVar("r_shadows");
+
+	r_shadows->SetValue(!cfg::misc::bRemovals[6]);
 }

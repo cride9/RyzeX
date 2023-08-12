@@ -61,6 +61,7 @@ namespace misc {
 	bool ChangeName(bool, const char*);
 	bool ResetName(bool, const char*);
 	void FogOptions();
+	void RemoveShadows();
 
 	void Killsay(IGameEvent*);
 

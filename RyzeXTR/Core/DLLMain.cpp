@@ -21,6 +21,7 @@
 #include "../Dependecies/BASS/API.h"
 #include "SDK/Memory.h"
 #include "xorstr.h"
+#include "../Core/Features/Rage/Animations/EnemyAnimations.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -99,6 +100,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	//g::entityListener.Setup();
 	IPT::Setup();
 	p::Setup();
+	anims.SetupLayerHardCode();
 
 	g::bStartWelcome = true;
 	misc::SetupRadio();

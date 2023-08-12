@@ -5,7 +5,7 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 	static CConVar* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
 
-	if (!cfg::rage::bEnable)
+	if (!cfg::rage::bEnable || (!IPT::HandleInput(cfg::rage::iAimbotKey) && cfg::rage::iAimbotKey != 0))
 		return;
 
 	exploits::bCanCharge = true;
@@ -87,14 +87,14 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 				continue;
 			
 			pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
-			for (auto& iHitbox : curConfig.vecHitboxes[NORMAL]) {
+			for (int& iHitbox : curConfig.vecHitboxes[NORMAL]) {
 
 				bool bShouldMultiPoint = std::find(curConfig.vecHitboxes[MULTIPOINT].begin(), curConfig.vecHitboxes[MULTIPOINT].end(), iHitbox) != curConfig.vecHitboxes[MULTIPOINT].end();
 				bool bShouldForceSafePoint = std::find(curConfig.vecHitboxes[SAFE].begin(), curConfig.vecHitboxes[SAFE].end(), iHitbox) != curConfig.vecHitboxes[SAFE].end();
 				bool bShouldSafe = curConfig.bSafePoint;
 				mstudiobbox_t* pStudioHitbox = it->pEntity->StudioHitbox(iHitbox);
 
-				if (cfg::rage::iAimbotFov < 180) { // we don't wanna multipoint if they are outside of our fov
+				if (cfg::rage::iAimbotFov < 180) {
 					float flRadius = 0.f;
 					Vector vecCenter = pRecord->pEntity->GetHitboxPosition(iHitbox, pRecord->pMatricies[RESOLVE], flRadius);
 
@@ -107,15 +107,18 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 				}
 
 				// OPTIMIZATION: don't create points on body when we're forcing safe point
-				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, i == 0 ? bShouldMultiPoint : bShouldMultiPoint ? iHitbox == HITBOX_HEAD ? true : false : false);
+				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint);
 				// OPTIMIZATION: first element in the vector is always the hitbox center
 				bool bFirstElement = true;
-
 				for (Vector& vecHitboxPoint : vecWorldPoints) {
+
+					if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecHitboxPoint, pLocal, iHitbox, pRecord))
+						continue;
 
 					if (i && !autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox))
 						continue;
 
+					//g::drawList.push_back(vecHitboxPoint);
 					if (bShouldSafe) {
 
 						// OPTIMIZATION: skip baim hitbox center, they're most likely safe
@@ -534,6 +537,13 @@ std::vector<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeap
 
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
+		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
+		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
+
+		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.75f)));
+		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.75f)));
+		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.75f)));
+		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.75f)));
 	}
 	refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
 	refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);

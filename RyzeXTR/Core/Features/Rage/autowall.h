@@ -34,6 +34,8 @@ public:
 	static bool bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4_t* aMatrix);
 	/* Checks if matrixes collide, aka can we shoot every matrix at once */
 	static int SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox, bool* bRollCheck = nullptr);
+	/* Checks if our trace hit the desired hitbox */
+	static bool bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector& vecEnd, CBaseEntity* pFilter, int iHitbox, Lagcompensation::LagRecord_t* pRecord);
 
 private:
 	// Main

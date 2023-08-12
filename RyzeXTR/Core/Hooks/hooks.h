@@ -109,6 +109,7 @@ namespace detour {
 	inline CDetourHook extraBoneProcessing;
 	inline CDetourHook processInterpolatedList;
 	inline CDetourHook inPrediction;
+	inline CDetourHook setupMovement;
 }
 
 namespace h {
@@ -185,6 +186,7 @@ namespace h {
 	bool __fastcall		hkIsFollowingEntity(void*, void*);
 	void __fastcall		hkEstimateAbsVelocity(CBaseEntity*, void*, Vector&);
 	void __fastcall		hkSetupAliveLoop(void* ecx, void* edx);
+	void __fastcall		hkSetUpMovement(CAnimState* ecx, void* edx);
 
 	void __fastcall		hkDoExtraBoneProcessing(void* ecx, void* edx, void* pHdr, void* vecVector, void* pSomething, void* pMatrix, void* pList, void* pContext);
 	void __fastcall		hkProcessInterpolatedList(CBaseEntity* pEntity, uintptr_t edx);

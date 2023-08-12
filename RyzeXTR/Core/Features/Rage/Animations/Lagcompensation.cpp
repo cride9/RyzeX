@@ -536,8 +536,8 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	const float flLerpTime = GetClientInterpAmount();
 	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
-	//if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
-	//	iTickBase -= TICKS_TO_TIME(14);
+	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
+		iTickBase -= 14;
 
 	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - TICKS_TO_TIME(iTickBase - TIME_TO_TICKS(mflSimulationTime));
 	if (fabsf(flDeltaTime) >= flRange)
@@ -603,20 +603,13 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 
 	if (!pMatricies || !pMatricies[iType] || pMatricies[iType]->Base() == nullptr)
 		return;
-	
-	/*pEntity->GetFlags() = iFlags;
-	pEntity->GetSimulationTime() = flSimulationTime;
-	pEntity->GetVecOrigin() = vecOrigin;
-	pEntity->GetEyeAngles() = vecEyeAngles;
-	pEntity->SetAbsOrigin(vecAbsOrigin);
-	pEntity->SetAbsAngles(vecAbsAngles);
 
-	pEntity->SetAnimationLayers(pLayers);
-	pEntity->SetPoseParameters(flPoses);
+	pEntity->GetSimulationTime() = flSimulationTime;
+
 	float flCurtime = i::GlobalVars->flCurrentTime;
 	i::GlobalVars->flCurrentTime = TIME_TO_TICKS(networking.GetCorrectedTickbase());
 	pEntity->SetCollisionBounds(vecMins, vecMaxs);
-	i::GlobalVars->flCurrentTime = flCurtime;*/
+	i::GlobalVars->flCurrentTime = flCurtime;
 
 	pEntity->SetBoneCache(pMatricies[iType]);
 	return pEntity->InvalidateBoneCache();

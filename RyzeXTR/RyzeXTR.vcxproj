@@ -161,6 +161,7 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessInterpolatedList.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupAliveLoop.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetupBones.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetUpMovement.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkShouldSkipAnimationFrame.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkStandardBlendingRules.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkUpdateAnimationState.cpp" />

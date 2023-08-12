@@ -460,9 +460,9 @@ bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstu
 	Trace.bStartSolid = false;
 	// original:	55 8B EC 83 E4 F8 F3 0F 10 42
 	// kittenpopo:	55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F
-	typedef int(__fastcall* ClipRayToHitbox_t)(const Ray_t&, mstudiobbox_t*, matrix3x4_t&, Trace_t&);
+	typedef int(__fastcall* ClipRayToHitbox_t)(const Ray_t&, mstudiobbox_t*, matrix3x4_t&, Trace_t*);
 	static auto sig = (void*)((DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F"))));
-	int iHit = ((ClipRayToHitbox_t)(sig))(Ray, pHitbox, aMatrix[pHitbox->iBone], Trace);
+	int iHit = ((ClipRayToHitbox_t)(sig))(Ray, pHitbox, aMatrix[pHitbox->iBone], &Trace);
 	return iHit >= 0;
 }
 #pragma runtime_checks( "", restore )
@@ -497,4 +497,19 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lag
 		iSafePoint++;
 
 	return iSafePoint;
+}
+
+bool CAutoWall::bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector& vecEnd, CBaseEntity* pFilter, int iHitbox, Lagcompensation::LagRecord_t* pRecord) {
+
+	// Initialize our trace data & information
+	Trace_t traceData = Trace_t();
+	CTraceFilter traceFilter = CTraceFilter(pFilter, TRACE_ENTITIES_ONLY);
+	Ray_t traceRay = Ray_t(vecEyePosition, vecEnd);
+
+	// trace a ray to the entity
+	i::EngineTrace->ClipRayToCollideable(traceRay, MASK_SHOT, pRecord->pEntity->GetCollideable(), &traceData);
+
+	// check if trace did hit the desired hitbox and not other
+	// example: aiming for head -> its behind his chest -> return chest == head
+	return traceData.iHitbox == iHitbox;
 }
