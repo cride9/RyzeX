@@ -426,5 +426,5 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 #endif
 
 	const int iEntityID = pEntity->EntIndex();
-	return SetYaw(pRecord, LEFT + arrMissedShots[iEntityID]);
+	return SetYaw(pRecord, LEFT + arrMissedShots[iEntityID] % 3);
 }
