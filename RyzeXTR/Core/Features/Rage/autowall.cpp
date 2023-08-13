@@ -499,11 +499,10 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lag
 	return iSafePoint;
 }
 
-bool CAutoWall::bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector& vecEnd, CBaseEntity* pFilter, int iHitbox, Lagcompensation::LagRecord_t* pRecord) {
+bool CAutoWall::bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector& vecEnd, int iHitbox, Lagcompensation::LagRecord_t* pRecord) {
 
 	// Initialize our trace data & information
 	Trace_t traceData = Trace_t();
-	CTraceFilter traceFilter = CTraceFilter(pFilter, TRACE_ENTITIES_ONLY);
 	Ray_t traceRay = Ray_t(vecEyePosition, vecEnd);
 
 	// trace a ray to the entity

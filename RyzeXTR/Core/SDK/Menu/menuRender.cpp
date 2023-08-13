@@ -204,8 +204,9 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         ImGui::SliderInt(("Hitchance"), &iHitchances[iSelect], 0, 100);
         ImGui::SliderInt(("Damage"), &iMinDamages[iSelect], 0, 110);
         ImGui::SliderInt(("Override##2"), &iOverride[iSelect], 0, 110);
+		ImGui::SliderInt(("Acc boost"), &iAccuracyBoost[iSelect], 0, 100);
 
-        ImGui::MultiComboBox(("Pointscale"), arrHitboxNames, bHitboxes[1][iSelect], IM_ARRAYSIZE(arrHitboxNames));
+		ImGui::MultiComboBox(("Pointscale"), arrHitboxNames, bHitboxes[1][iSelect], IM_ARRAYSIZE(arrHitboxNames));
         ImGui::SliderInt(("HeadScale"), &iHeadPoints[iSelect], 0, 100);
         ImGui::SliderInt(("BodyScale"), &iBodyPoints[iSelect], 0, 100);
 
@@ -1174,7 +1175,7 @@ void menu::PlayerList(ImVec2 savedCursorPosition) {
     ImGui::BeginChild("##LeftWhole", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
         //ImGui::Checkbox("Disable interpolation", &cfg::debugSwitch);
-        //ImGui::SliderInt("Amount", &cfg::debugSlider1, 0, 30);
+        //ImGui::SliderInt("Amount", &cfg::debugSlider1, -50, 50);
     }
     ImGui::EndChild();
 }

@@ -131,6 +131,7 @@ struct weaponConfig_t {
 
 	int iMinimumDamage{};
 	int iHitchance{};
+	int iAccuracyBoost{};
 	int iAutostopValue{};
 	int iHeadScale{};
 	int iBodyScale{};
@@ -148,6 +149,7 @@ class CAimBot {
 
 public:
 	void CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal);
+    void ResetAimbotData();
 	void PostPrediction(CUserCmd* pCmd, bool& bSendPacket);
 
 	rageBotData_t& GetHitLogData() { return hitlogData; }

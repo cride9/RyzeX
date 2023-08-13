@@ -44,7 +44,8 @@ namespace cfg {
 		// all weapon
 		inline bool bHitboxes[3][7][6];
 
-		inline int iHitchances[7]{false};
+		inline int iHitchances[7]{ false };
+		inline int iAccuracyBoost[7]{ false };
 		inline int iMinDamages[7]{ false };
 		inline int iHeadPoints[7]{ false };
 		inline int iBodyPoints[7]{ false };
@@ -53,7 +54,7 @@ namespace cfg {
 		inline bool bSafePoint[7]{ false };
 		inline bool bAutostop[7]{ false };
 		inline int	bAutostopAggressiveness[7]{ false };
-		inline bool bConditions[6][2]{ false };
+		inline bool bConditions[7][2]{ false };
 		inline bool bAutoScope[] = { false, false, false };
 	}
 	namespace antiaim {

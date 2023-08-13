@@ -108,9 +108,9 @@ public:
 		CBaseEntity* pEntity{};
 
 		// 0 - Visual, 1 - Resolve, 2 - Left, 3 - Right, 4 - Center
-		matrix3x4_t pMatricies[MAX][128];
+		matrix3x4_t pMatricies[MAX][256];
 		// 0 - Left, 1 - Right
-		matrix3x4_t pSideMatrixes[2][128];
+		matrix3x4_t pSideMatrixes[2][256];
 		LayerData_t LayerData[MAX];
 
 		bool bBreakingLagcompensation{};
@@ -219,7 +219,7 @@ public:
 		float flExploitTime;
 
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
-		std::array<matrix3x4_t, 128> pCachedMatrix{matrix3x4_t()};
+		std::array<matrix3x4_t, 256> pCachedMatrix{matrix3x4_t()};
 
 		void ClearData() {
 
@@ -229,7 +229,7 @@ public:
 			flExploitTime = 0.f;
 			iLastValid = 0;
 			pRecord.clear();
-			pCachedMatrix = std::array<matrix3x4_t, 128>();
+			pCachedMatrix = std::array<matrix3x4_t, 256>();
 		}
 
 		void InvalidateRecords() {

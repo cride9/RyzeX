@@ -1001,7 +1001,7 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	pEntity->GetLastSkipFrameCount() = 0;
 
 	g::bSettingUpBones[pEntity->EntIndex()] = true;
-	pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, nBoneMask, 0.0f);
+	pEntity->SetupBones(pMatrix, 256, nBoneMask, 0.0f);
 	g::bSettingUpBones[pEntity->EntIndex()] = false;
 
 	pEntity->GetLastSkipFrameCount() = iLastSkipFrameCount;

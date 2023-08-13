@@ -48,7 +48,7 @@ void CConfig::Setup() {
 		SetupValue( bAutostop[ 4 ], false, "rage", "autostop5" );
 		SetupValue( bAutostop[ 5 ], false, "rage", "autostop6" );
 
-		for (size_t i = 0; i < 6; i++)
+		for (size_t i = 0; i < 7; i++)
 			SetupValue(bConditions[i], false, 2, "rage", std::format("condition{}", i));
 
 		SetupValue( bAutostopAggressiveness[ 0 ], false, "rage", "autostopAggressiveness1" );
@@ -82,6 +82,7 @@ void CConfig::Setup() {
 			SetupValue(bHitboxes[0][i], false, 6, "rage", std::format("hitbox{}", i));
 			SetupValue(bHitboxes[2][i], false, 6, "rage", std::format("safehitbox{}", i));
 			SetupValue(iHitchances[i], 0, "rage", std::format("hitchance{}", i));
+			SetupValue(iAccuracyBoost[i], 0, "rage", std::format("iAccuracyBoost{}", i));
 			SetupValue(iMinDamages[i], 0, "rage", std::format("mindmg{}", i));
 			SetupValue(iHeadPoints[i], 0, "rage", std::format("headpoints{}", i));
 			SetupValue(iBodyPoints[i], 0, "rage", std::format("bodypoints{}", i));
@@ -697,7 +698,7 @@ void CConfig::Setup() {
 		SetupValue(flSkyboxColor[3], 1.f, "visual", "flSkyboxColorA");
 
 		SetupValue(bOverrideLampColors, false, "visual", "bLampColor");
-		SetupValue(flLampColors, 4, 0.f, "visual", "flLampColors");
+		SetupValue(flLampColors, 4, 0.5f, "visual", "flLampColors");
 		SetupValue(iFlicker, 0, "visual", "iFlicker");
 
 		SetupValue(bAspectRatio, false, "misc", "aspectRatio");

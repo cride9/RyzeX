@@ -41,17 +41,14 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	Vector oldViewAngle = g::vecOriginalViewAngle = pCmd->angViewPoint;
 
-	if (cfg::misc::bInfiniteDuck)
-		pCmd->iButtons |= IN_BULLRUSH;
-
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 	playerList::InitializePlayerList(pLocal);
 
 	if (i::ClientState->nChokedCommands >= 14 || exploits::bIsCurrentlyCharging)
 		bSendPacket = true;
 
-	/*if (i::ClientState->iDeltaTick > 0)
-		i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);*/
+	if (i::ClientState->iDeltaTick > 0)
+		i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
 
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
@@ -63,13 +60,13 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 		antiaim::AntiAim(pCmd, bSendPacket);
 
-		//ragebot.CreateMove(pCmd, pLocal, bSendPacket);
 		aimbot.CreateMove(pCmd, pLocal);
 
 		exploits::HandleDoubleTap( bSendPacket, pCmd );
 		exploits::HandleHideShots(bSendPacket, pCmd);
 		exploits::HandleBreakLagcomp(pCmd);
 		misc::IdealTick(pCmd, pLocal);
+		misc::AutoPistol(pCmd, pLocal);
 		antiaim::InvertOnShoot(pCmd);
 	}
 	prediction.End(pCmd, pLocal);
@@ -77,33 +74,23 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	aimbot.PostPrediction(pCmd, bSendPacket);
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 
-	misc::AutoPistol(pCmd, pLocal);
 	misc::MovementFix(pCmd, g::vecOriginalViewAngle);
 
 	INetChannel* pNetChannel = i::ClientState->pNetChannel;
 
 	h::HookNetChannel(pNetChannel);
+	h::HookClientState();
 
 	if ( cfg::misc::bFakePing && pNetChannel)
 		lagcomp.UpdateIncomingSequences( pNetChannel );
 	else
 		lagcomp.ClearIncomingSequences( );
 
-	h::HookClientState();
-
-	if (exploits::bIsShiftingTicks) {
-		if (cfg::antiaim::bAutoPeek && IPT::HandleInput(cfg::antiaim::iAutoPeek))
-			bSendPacket = true;
-		else
-			bSendPacket = exploits::iShiftAmount == 0 ? true : false;
-	}
-
 	if (bSendPacket)
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();
-	pCmd->angViewPoint.z = 0.f; // temporary change, we don't currently use roll anyway.
 
 	pVerifiedCmd->userCmd = *pCmd;
 	pVerifiedCmd->uHashCRC = pCmd->GetChecksum();

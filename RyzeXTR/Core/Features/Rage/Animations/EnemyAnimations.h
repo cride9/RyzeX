@@ -37,11 +37,6 @@
 class Animations {
 
 public:
-	/* enemy anims */
-	std::unordered_map<float, float> GoingLeftLeft;
-	std::unordered_map<float, float> GoingLeftRight;
-	std::unordered_map<float, float> GoingRightLeft;
-	std::unordered_map<float, float> GoingRightRight;
 
 	int iLastGuessedYaw{};
 	float flGuessedYaw{};
@@ -79,7 +74,6 @@ public:
 	Vector bBulletImpact = Vector( 0, 0, 0 );
 
 	void ResolverHandler(IGameEvent*);
-	void SetupLayerHardCode();
 	void ResolverLogic();
 	float GetVelocityLengthXY(CBaseEntity* pEntity);
 	void SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw);

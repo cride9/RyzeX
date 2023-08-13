@@ -6,46 +6,65 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	static CConVar* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
 
 	if (!cfg::rage::bEnable || (!IPT::HandleInput(cfg::rage::iAimbotKey) && cfg::rage::iAimbotKey != 0))
-		return;
+		return ResetAimbotData();
 
-	exploits::bCanCharge = true;
+	/* Run R8 Revolver cock */
 	misc::RevolverCreateMove();
+
+	/* Create new data for aimbot */
 	aimData = rageBotData_t();
 	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
+
 	if (pWeapon == nullptr)
-		return;
+		return ResetAimbotData();
 
 	if (pWeapon->IsGrenade() || pWeapon->IsKnife() || !pWeapon->IsWeapon())
-		return;
+		return ResetAimbotData();
 
 	if (!pWeapon->GetAmmo())
-		return;
+		return ResetAimbotData();
 
+	/* Get currently equipped weapon config */
 	curConfig = GetWeaponConfiguration(pWeapon->GetItemDefinitionIndex());
 	curConfig.pWeapon = pWeapon;
+
+	/* Make a vector out of every valid & tragetable entity */
 	std::vector<Lagcompensation::AnimationInfo_t*> vecTargets = GetTargetableEntities(pLocal);
 
 	if (vecTargets.empty())
-		return;
+		return ResetAimbotData();
 
-	vecEyePosition = pLocal->GetEyePosition(false);
+	/* Get our extrapolated shooting position */
+	vecEyePosition = g_LocalAnimations->GetShootPosition();
+
+	/* Scan stored entities & safepoint */
 	Vector vecShootPosition = ScanHitboxes(vecTargets, pLocal);
 
 	if (aimData.pRecord == nullptr || vecShootPosition == Vector(0, 0, 0))
-		return;
+		return ResetAimbotData();
 
+	/* Apply the selected record to the desired entity */
+	aimData.pRecord->ApplyMatrix(aimData.pAimbotTarget, RESOLVE);
+
+	/* Tell exploits that dont recharge */
 	exploits::bCanCharge = false;
+
+	/* Auto zoom & m_bResumeZoom check */
 	if (curConfig.bAutoScope && !pLocal->IsScoped() && !pLocal->IsResumingScope())
 		pCmd->iButtons |= IN_ZOOM;
 
+	/* Calculate the aim angle with vectorAngles */
 	Vector vecAimAngle = (M::VectorAngles(vecShootPosition - vecEyePosition) -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 
+	/* Calculate current hitchance & accuracy boost */
 	aimData.bCanShoot = HitChance(pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord);
 	AutoStop(pLocal, pCmd);
 
+	/* Wait til we can shoot */
 	if (!aimData.bCanShoot || !pLocal->CanShoot(pWeapon)) 
-		return;
+		return ResetAimbotData();
 	
+	/* Shoot entity when we can & have enough hitchance */
 	pCmd->angViewPoint = vecAimAngle;
 	if (!cfg::rage::bSilentAim) i::EngineClient->SetViewAngles(vecAimAngle);
 
@@ -53,8 +72,15 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	aimData.iTickcount = pCmd->iTickCount;
 	pCmd->iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
 
+	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
 	bShouldSendPacket = true;
 	hitlogData = aimData;
+}
+
+void CAimBot::ResetAimbotData() {
+
+	aimData.ClearTarget();
+	exploits::bCanCharge = true;
 }
 
 void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
@@ -70,22 +96,30 @@ void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 		bSendPacket = true;
 		bShouldSendPacket = false;
 	}
+
+	//if (exploits::bIsShiftingTicks) {
+	//	bSendPacket = exploits::iShiftAmount == 0 ? true : false;
+	//}
 }
 
 Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal) {
 
 	std::vector<Hitscan_t> vecHitscan{};
+	/* Loop through our valid entity logs */
 	for (Lagcompensation::AnimationInfo_t* it : vecIn) {
 
+		/* Invalid data check */
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
 
+		/* Go through every valid data */
 		for (int i = 0; i <= it->iLastValid; i++) {
 
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at(i);
 			if (i != 0 && (!pRecord->bValid || pRecord->bBreakingLagcompensation))
 				continue;
 			
+			/* Set current matrix for accurate tracing */
 			pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
 			for (int& iHitbox : curConfig.vecHitboxes[NORMAL]) {
 
@@ -112,19 +146,22 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 				bool bFirstElement = true;
 				for (Vector& vecHitboxPoint : vecWorldPoints) {
 
-					if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecHitboxPoint, pLocal, iHitbox, pRecord))
+					/* 7/13/2023: Check if this point is meant to hit that hitbox or not, else don't scan // cride9 */
+					if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecHitboxPoint, iHitbox, pRecord))
 						continue;
 
-					if (i && !autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox))
+					/* Only backtrack safe entities */
+					int iCollidePoints = 0;
+
+					// OPTIMIZATION: calculate safe points once and save it later in a variable. It will return if not safe, but when safe we already scanned safety
+					if (iCollidePoints = autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox); iCollidePoints < 3 && i )
 						continue;
 
-					//g::drawList.push_back(vecHitboxPoint);
 					if (bShouldSafe) {
 
-						// OPTIMIZATION: skip baim hitbox center, they're most likely safe
+						// OPTIMIZATION: skip baim hitbox center, they're most likely safe ( edit: they are in fact safe everytime )
 						if (!bFirstElement || iHitbox == HITBOX_HEAD) {
 
-							int iCollidePoints = autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox);
 							if (iCollidePoints < 2) {
 								bFirstElement = false;
 								continue;
@@ -137,10 +174,14 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 						}
 					}
 					bFirstElement = false;
+
+					/* Prepare bullet data variable for later usage */
 					FireBulletData_t pData;
 					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, &pData);
 					if (flDamage != -1.f) {
 						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint)));
+
+						/* If that's a baim hitbox and we can hit it break out of the loop ( Fixes shooting hitbox edge while the middle is out ) */
 						if (iHitbox != HITBOX_HEAD)
 							break;
 					}
@@ -152,10 +193,12 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	if (vecHitscan.empty())
 		return Vector(0, 0, 0);
 
+	/* Sort hitboxes with a bit of logic ( REF: Hitscan_t::operator< ) */
 	std::sort(vecHitscan.begin(), vecHitscan.end());
 
 	for (auto& refRecord : vecHitscan) {
 
+		/* Calculate HP+X damage */
 		float flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)
 			flTransformedDamage = max(refRecord.pRecord->pEntity->GetHealth(), 20) + (curConfig.iMinimumDamage - 100);
@@ -248,10 +291,10 @@ bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosi
 	const float flGetInaccuracy = prediction.flInaccuracy;
 
 	if (vecShootPosition.DistTo(vecWorldPosition) > pWeaponData->flRange)
-		return 0.f;
+		return false;
 
 	if (HasEnoughAccuracy(pLocal, flGetInaccuracy))
-		return 100.f;
+		return true;
 
 	Vector vecForward = Vector(0, 0, 0);
 	Vector vecRight = Vector(0, 0, 0);
@@ -299,6 +342,7 @@ bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosi
 	}
 
 	int iHits = 0;
+	int iAccuracyHits = 0;
 	for (auto i = 0; i < iAccuracry; ++i)
 	{
 		float flInacc = flSpreadValues[i][0] * flGetInaccuracy;
@@ -316,9 +360,17 @@ bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosi
 
 		if (autowall.bCollidePoint(vecShootPosition, vecEnd, aimData.pRecord->pEntity->StudioHitbox(aimData.iHitbox), pMatrix))
 			iHits++;
+
+		if (autowall.bTraceMeantForHitbox(vecShootPosition, vecEnd, aimData.iHitbox, pRecord))
+			iAccuracyHits++;
 	}
 
-	float flFinalHitchance = static_cast<int>((float(iHits) / (iAccuracry / 100.f)));
+	int flFinalHitchance = static_cast<int>((float(iHits) / (iAccuracry / 100.f)));
+	int flFinalAccuracyBoost = static_cast<int>((float(iAccuracyHits) / (iAccuracry / 100.f)));
+
+	int flHitchanceAccuracy = static_cast<int>(float(curConfig.iHitchance) * (float(curConfig.iAccuracyBoost) / 100.f));
+	if (flFinalAccuracyBoost < flHitchanceAccuracy)
+		return false;
 
 	if (flFinalHitchance >= curConfig.iHitchance) {
 		aimData.flHitchance = flFinalHitchance;
@@ -372,6 +424,7 @@ weaponConfig_t CAimBot::GetWeaponConfiguration(short iItemDefinitionIndex) {
 
 	ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[iWeapon] : iMinDamages[iWeapon];
 	ret.iHitchance = iHitchances[iWeapon];
+	ret.iAccuracyBoost = iAccuracyBoost[iWeapon];
 	ret.iHeadScale = iHeadPoints[iWeapon];
 	ret.iBodyScale = iBodyPoints[iWeapon];
 	ret.bSafePoint = bSafePoint[iWeapon];
@@ -463,8 +516,9 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 			continue;
 
 		// OPTIMIZATION: autowall can only penetrate 4 wall check if he's behind 4wall or not
-		// traceray is a lot more fps friendly than simulate fire bullet, but cannot calculate damage.
-		// TODO: only registering players behind wall, but not registering players in the open
+		// traceray is a lot more fps friendly than simulate fire bullet, but cannot calculate lost damage.
+		// COMMENT: Works, but useless. That's not how you want to optimize a ragebot. I'll leave it here for the future tho.
+		
 		//Trace_t traceData = Trace_t();
 		//traceData.vecEnd = Vector(0, 0, 0);
 		//CTraceFilter traceFilter(pLocal);
@@ -539,11 +593,6 @@ std::vector<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeap
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
-
-		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.75f)));
-		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.75f)));
-		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.75f)));
-		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.75f)));
 	}
 	refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
 	refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);

@@ -422,8 +422,6 @@ void Lagcompensation::ExtrapolatePlayer(CBaseEntity* m_pEntity, Lagcompensation:
 	pCurrent->vecVelocity = velocity;
 	m_pEntity->GetVelocity() = velocity;
 
-	//g::drawList.push_back(pCurrent->vecOrigin);
-
 	/*CSimulationData simulationData;
 
 	simulationData.pEntity = m_pEntity;
@@ -604,13 +602,7 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 	if (!pMatricies || !pMatricies[iType] || pMatricies[iType]->Base() == nullptr)
 		return;
 
-	pEntity->GetSimulationTime() = flSimulationTime;
-
-	float flCurtime = i::GlobalVars->flCurrentTime;
-	i::GlobalVars->flCurrentTime = TIME_TO_TICKS(networking.GetCorrectedTickbase());
 	pEntity->SetCollisionBounds(vecMins, vecMaxs);
-	i::GlobalVars->flCurrentTime = flCurtime;
-
 	pEntity->SetBoneCache(pMatricies[iType]);
 	return pEntity->InvalidateBoneCache();
 }

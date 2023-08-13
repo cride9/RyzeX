@@ -50,9 +50,7 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		visual::CrossHair();
 		visual::AutoPeekCircle();
 		visual::HandleDamageIndicator();
-#ifdef _DEBUG
 		visual::DrawList();
-#endif
 		//D::SwapDrawData( );
 	}
 

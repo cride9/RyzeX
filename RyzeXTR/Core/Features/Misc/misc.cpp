@@ -109,6 +109,8 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	FogOptions();
 	PreserveKillfeed(nullptr);
 	g::pLocal->GetModelScale() = cfg::misc::bSkinnyBoy ? cfg::misc::iSkinnyBoy * 0.01f : 1.f;
+	if (cfg::misc::bInfiniteDuck)
+		pCmd->iButtons |= IN_BULLRUSH;
 	RemoveShadows();
 #if NDEBUG || ALPHA
 	Security();
@@ -832,45 +834,95 @@ void misc::MovementFix(CUserCmd* pCmd, Vector& oldang) {
 	if (vMovements.Length2D() == 0)
 		return;
 
-	Vector vRealF, vRealR;
-	Vector aRealDir = pCmd->angViewPoint;
-	aRealDir.Normalize();
-	aRealDir.Clamp();
+	CUserCmd* pUserCmd = static_cast <CUserCmd*> (pCmd);
+	if (!pUserCmd || !pUserCmd->iCommandNumber)
+		return;
 
-	M::AngleVectors(aRealDir, &vRealF, &vRealR, nullptr);
-	vRealF[2] = 0;
-	vRealR[2] = 0;
+	/* get wish angles */
+	Vector angWishAngles;
+	i::EngineClient->GetViewAngles(angWishAngles);
 
-	vRealF.VectorNormalize();
-	vRealR.VectorNormalize();
+	Vector PureForward, PureRight, PureUp, CurrForward, CurrRight, CurrUp;
+	M::AngleVectors(angWishAngles, &PureForward, &PureRight, &PureUp);
+	M::AngleVectors(pUserCmd->angViewPoint, &CurrForward, &CurrRight, &CurrUp);
 
-	Vector aWishDir = oldang;
-	aWishDir.Normalize();
-	aWishDir.Clamp();
+	PureForward[2] = PureRight[2] = CurrForward[2] = CurrRight[2] = 0.f;
 
-	Vector vWishF, vWishR;
-	M::AngleVectors(aWishDir, &vWishF, &vWishR, nullptr);
+	auto VectorNormalize = [](Vector& vec)->float {
+		float radius = sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+		float iradius = 1.f / (radius + FLT_EPSILON);
 
-	vWishF[2] = 0;
-	vWishR[2] = 0;
+		vec.x *= iradius;
+		vec.y *= iradius;
+		vec.z *= iradius;
 
-	vWishF.VectorNormalize();
-	vWishR.VectorNormalize();
+		return radius;
+	};
+	VectorNormalize(PureForward);
+	VectorNormalize(PureRight);
+	VectorNormalize(CurrForward);
+	VectorNormalize(CurrRight);
+	Vector PureWishDir;
+	for (auto i = 0u; i < 2; i++)
+		PureWishDir[i] = PureForward[i] * pUserCmd->flForwardMove + PureRight[i] * pUserCmd->flSideMove;
+	PureWishDir[2] = 0.f;
 
-	Vector vWishVel;
-	vWishVel[0] = vWishF[0] * pCmd->flForwardMove + vWishR[0] * pCmd->flSideMove;
-	vWishVel[1] = vWishF[1] * pCmd->flForwardMove + vWishR[1] * pCmd->flSideMove;
-	vWishVel[2] = 0;
+	Vector CurrWishDir;
+	for (auto i = 0u; i < 2; i++)
+		CurrWishDir[i] = CurrForward[i] * pUserCmd->flForwardMove + CurrRight[i] * pUserCmd->flSideMove;
+	CurrWishDir[2] = 0.f;
 
-	float a = vRealF[0], b = vRealR[0], c = vRealF[1], d = vRealR[1];
-	float v = vWishVel[0], w = vWishVel[1];
+	if (PureWishDir != CurrWishDir) {
+		pUserCmd->flForwardMove = (PureWishDir.x * CurrRight.y - CurrRight.x * PureWishDir.y) / (CurrRight.y * CurrForward.x - CurrRight.x * CurrForward.y);
+		pUserCmd->flSideMove = (PureWishDir.y * CurrForward.x - CurrForward.y * PureWishDir.x) / (CurrRight.y * CurrForward.x - CurrRight.x * CurrForward.y);
+	}
 
-	float flDivide = (a * d - b * c);
-	float x = (d * v - b * w) / flDivide;
-	float y = (a * w - c * v) / flDivide;
+	//static CConVar* cl_forwardspeed = i::ConVar->FindVar("cl_forwardspeed");
+	//static CConVar* cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
 
-	pCmd->flForwardMove = x;
-	pCmd->flSideMove = y;
+	//float flForwardDelta = cl_forwardspeed->GetFloat() - pCmd->flForwardMove;
+	//float flSidewayDelta = cl_sidespeed->GetFloat() - pCmd->flSideMove;
+	//float flMoveDelta = flForwardDelta < flSidewayDelta ? pCmd->flForwardMove / cl_forwardspeed->GetFloat() : pCmd->flSideMove / cl_sidespeed->GetFloat();
+
+	//Vector vRealF, vRealR;
+	//Vector aRealDir = pCmd->angViewPoint;
+	//aRealDir.Normalize();
+	//aRealDir.Clamp();
+
+	//M::AngleVectors(aRealDir, &vRealF, &vRealR, nullptr);
+	//vRealF[2] = 0;
+	//vRealR[2] = 0;
+
+	//vRealF.VectorNormalize();
+	//vRealR.VectorNormalize();
+
+	//Vector aWishDir = oldang;
+	//aWishDir.Normalize();
+	//aWishDir.Clamp();
+
+	//Vector vWishF, vWishR;
+	//M::AngleVectors(aWishDir, &vWishF, &vWishR, nullptr);
+
+	//vWishF[2] = 0;
+	//vWishR[2] = 0;
+
+	//vWishF.VectorNormalize();
+	//vWishR.VectorNormalize();
+
+	//Vector vWishVel;
+	//vWishVel[0] = vWishF[0] * pCmd->flForwardMove + vWishR[0] * pCmd->flSideMove;
+	//vWishVel[1] = vWishF[1] * pCmd->flForwardMove + vWishR[1] * pCmd->flSideMove;
+	//vWishVel[2] = 0;
+
+	//float a = vRealF[0], b = vRealR[0], c = vRealF[1], d = vRealR[1];
+	//float v = vWishVel[0], w = vWishVel[1];
+
+	//float flDivide = (a * d - b * c);
+	//float x = (d * v - b * w) / flDivide;
+	//float y = (a * w - c * v) / flDivide;
+
+	//pCmd->flForwardMove = x + (flMoveDelta * pCmd->angViewPoint.z);
+	//pCmd->flSideMove = y + (flMoveDelta * pCmd->angViewPoint.z);
 
 }
 
@@ -1021,8 +1073,8 @@ void misc::FakeLag(bool& bSendPacket) {
 	if ((*GameRules)->m_bFreezePeriod())
 		return;
 	
-	//if (i::EngineClient->IsVoiceRecording())
-	//	return;
+	if (i::EngineClient->IsVoiceRecording())
+		return;
 
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::iFakelag || !cfg::antiaim::bFakelag) {
 		bSendPacket = true;
