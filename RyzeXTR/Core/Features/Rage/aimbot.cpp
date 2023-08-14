@@ -157,6 +157,9 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					if (iCollidePoints = autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox); iCollidePoints < 3 && i )
 						continue;
 
+					if (playerList::arrPlayers[pRecord->iEntIndex].bSafePoint && iCollidePoints < 3)
+						continue;
+
 					if (bShouldSafe) {
 
 						// OPTIMIZATION: skip baim hitbox center, they're most likely safe ( edit: they are in fact safe everytime )
@@ -515,6 +518,9 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 		if (pLog->pEntity->GetVecOrigin().DistTo(pLocal->GetVecOrigin()) > pWeaponData->flRange)
 			continue;
 
+		if (playerList::arrPlayers[i].bWhiteList)
+			continue;
+
 		// OPTIMIZATION: autowall can only penetrate 4 wall check if he's behind 4wall or not
 		// traceray is a lot more fps friendly than simulate fire bullet, but cannot calculate lost damage.
 		// COMMENT: Works, but useless. That's not how you want to optimize a ragebot. I'll leave it here for the future tho.
@@ -551,9 +557,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 	}
 
 	if (!ret.empty())
-		std::sort(ret.begin(), ret.end(), 
-			[](Lagcompensation::AnimationInfo_t* pLog1, Lagcompensation::AnimationInfo_t* pLog2) {
-			return pLog1->pEntity->GetHealth() < pLog2->pEntity->GetHealth(); });
+		std::sort(ret.begin(), ret.end());
 
 	return ret;
 }

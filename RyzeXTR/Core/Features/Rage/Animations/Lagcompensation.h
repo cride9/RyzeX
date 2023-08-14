@@ -3,6 +3,7 @@
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
 #include "../../../SDK/math.h"
+#include "../../Misc/Playerlist.h"
 
 #pragma region lagcompensation_definitions
 #define LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR ( 64.0f * 64.0f )
@@ -237,6 +238,14 @@ public:
 				it.bValid = false;
 
 			iLastValid = 0;
+		}
+
+		bool operator<(AnimationInfo_t& other) {
+
+			if (playerList::arrPlayers[pEntity->EntIndex()].bPriority)
+				return true;
+
+			return pEntity->GetHealth() < other.pEntity->GetHealth();
 		}
 	};
 

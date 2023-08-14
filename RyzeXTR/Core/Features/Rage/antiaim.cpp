@@ -531,7 +531,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 		if (!g::pLocal || !pEnt || !pEnt->IsAlive() || !pEnt->IsEnemy(g::pLocal) || pEnt == g::pLocal)
 			continue;
 
-		if (playerList::arrPlayers[i].iPriority == FRIEND)
+		if (playerList::arrPlayers[i].bPriority == FRIEND)
 			continue;
 
 		Vector vecCalcAngle;

@@ -795,7 +795,7 @@ void menu::Misc(ImVec2 savedCursorPosition) {
 
         for (size_t i = 0; i < 65; i++) {
             if (playerList::arrPlayers[i].bLocalPlayer) {
-                if (playerList::arrPlayers[i].teamID == TEAM_TT) {
+                if (playerList::arrPlayers[i].iTeamID == TEAM_TT) {
 
                     static const char* pistolsT[] = { ("none"), ("glock"), ("dual beretta"), ("p250"),  ("tec9 / cz-auto"), ("desert eagle / revolver") };
                     static const char* riflesT[] = { ("none"), ("galil ar"), ("ak47"), ("sg 553") };
@@ -1154,7 +1154,10 @@ void menu::Config(ImVec2 savedCursorPosition) {
 
 void menu::PlayerList(ImVec2 savedCursorPosition) {
 
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x + 1);
+	static int iSelectedEntity = 0;
+	std::vector<playerSettings_t> vecPlayers = playerList::GetPlayers();
+
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x + 1);
     menu::DrawCustomChildRounding(("##TopBar"), ImVec2(ImGui::GetContentRegionAvail().x, 80), true, 0, ImDrawCornerFlags_TopRight);
     {
         ImGui::SameLine();
@@ -1174,10 +1177,61 @@ void menu::PlayerList(ImVec2 savedCursorPosition) {
     ImVec2 TopLeftSize = ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f);
     ImGui::BeginChild("##LeftWhole", ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
-        //ImGui::Checkbox("Disable interpolation", &cfg::debugSwitch);
-        //ImGui::SliderInt("Amount", &cfg::debugSlider1, -50, 50);
+		ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
+		{
+			std::vector<std::string> vecNames = playerList::GetNames(vecPlayers);
+			ImGui::ListBoxVector("##players", &iSelectedEntity, vecNames, 15);
+		}
+		ImGui::PopItemWidth();
+
+		if (vecPlayers.size() <= iSelectedEntity)
+			return ImGui::EndChild();
+
+		playerSettings_t& refCurrentSelected = playerList::arrPlayers[vecPlayers.at(iSelectedEntity).iIndex];
+
+		ImGui::Checkbox("Prioritize", &refCurrentSelected.bPriority);
+		ImGui::Checkbox("WhiteList", &refCurrentSelected.bWhiteList);
     }
     ImGui::EndChild();
+
+	ImGui::SetCursorPos(ImVec2(savedCursorPosition.x + TopLeftSize.x + Padding.x, savedCursorPosition.y + 80 + ImGui::GetStyle().WindowPadding.y));
+	ImGui::BeginChild(("##RightWhole"), ImVec2(ImGui::GetContentRegionAvail().x - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
+	{
+		if (vecPlayers.size() <= iSelectedEntity)
+			return ImGui::EndChild();
+
+		playerSettings_t& refCurrentSelected = playerList::arrPlayers[vecPlayers.at(iSelectedEntity).iIndex];
+
+		if (ImGui::Button("Force safe", ImVec2(100, 20), refCurrentSelected.bSafePoint, true))
+			refCurrentSelected.bSafePoint = !refCurrentSelected.bSafePoint;
+
+		ImGui::SameLine();
+		if (ImGui::Button("Override yaw", ImVec2(100, 20), refCurrentSelected.bOverrideResolver, true))
+			refCurrentSelected.bOverrideResolver = !refCurrentSelected.bOverrideResolver;
+
+		if (refCurrentSelected.bOverrideResolver)
+			ImGui::SliderInt("Override", &refCurrentSelected.flOverrideYaw, -58, 58);
+
+		if (refCurrentSelected.bLocalPlayer) {
+			if (ImGui::Button("Reset name", ImVec2(100, 20), true, true))
+				misc::ResetName(false, std::format("{}\n", refCurrentSelected.playerInfo.szName).c_str());
+		}
+		else
+			if (ImGui::Button("Steal name", ImVec2(100, 20), true, true))
+				misc::ChangeName(false, std::format("{}\n", refCurrentSelected.playerInfo.szName).c_str());
+
+		ImGui::SameLine();
+		if (ImGui::Button("Vote kick", ImVec2(100, 20), true, true))
+			i::EngineClient->ExecuteClientCmd(std::format("callvote kick {} {}\n", refCurrentSelected.playerInfo.nUserID, refCurrentSelected.iIndex).c_str());
+
+		if (ImGui::Button("Copy name", ImVec2(100, 20), true, true))
+			util::CopyToClipboard(refCurrentSelected.playerInfo.szName);
+
+		ImGui::SameLine();
+		if (ImGui::Button("Copy steamID", ImVec2(100, 20), true, true))
+			util::CopyToClipboard(refCurrentSelected.playerInfo.szSteamID);
+	}
+	ImGui::EndChild();
 }
 
 void menu::SaveWarning(bool& saved, bool type) noexcept {

@@ -37,7 +37,7 @@ struct playerSettings_t {
 	void UpdateData(CBaseEntity* _pEntity) {
 
 		pEntity = _pEntity;
-		bLocalPlayer = pEntity == g::pLocal;
+		bLocalPlayer = iIndex == g::pLocal->EntIndex();
 		vecOrigin = pEntity->GetVecOrigin();
 		vecAngles = pEntity->GetEyeAngles();
 		iTeamID = (ETeamID)pEntity->GetTeam();
@@ -47,13 +47,15 @@ struct playerSettings_t {
 	void ClearData() {
 
 		iIndex = -1;
-		iPriority = EPriority::NEUTRAL;
+		bPriority = false;
+		bWhiteList = false;
 		iTeamID = TEAM_UNASSIGNED;
 	}
 
 	CBaseEntity* pEntity = nullptr;
 	int iIndex = -1;
-	EPriority iPriority = EPriority::NEUTRAL;
+	bool bPriority = false;
+	bool bWhiteList = false;
 	ETeamID iTeamID = TEAM_UNASSIGNED;
 
 	PlayerInfo_t playerInfo;
@@ -63,12 +65,19 @@ struct playerSettings_t {
 	bool bSafePoint = false;
 	bool bOverrideResolver;
 	int flOverrideYaw;
-	int teamID;
 
 	bool bLocalPlayer;
 	
 	bool BlueScreenNigger = false;
 	bool bIsRyzeXTRUser = false;
+
+	bool operator<(const playerSettings_t& other) const {
+		
+		if (bLocalPlayer)
+			return true;
+
+		return iTeamID > other.iTeamID;
+	}
 };
 
 namespace playerList {
@@ -76,10 +85,31 @@ namespace playerList {
 	inline std::array<playerSettings_t, 65> arrPlayers{ playerSettings_t() };
 	inline int iFollowPlayerIndex = -1;
 
+	inline std::vector<playerSettings_t> GetPlayers() {
+
+		std::vector<playerSettings_t> vecOut;
+
+		for (auto& thisPlayer : arrPlayers)
+			if (thisPlayer.iTeamID != TEAM_UNASSIGNED)
+				vecOut.push_back(thisPlayer);
+
+		std::sort(vecOut.begin(), vecOut.end());
+		return vecOut;
+	}
+
+	inline std::vector<std::string> GetNames(std::vector<playerSettings_t>& in) {
+
+		std::vector<std::string> vecOut;
+		for (playerSettings_t& it : in) 
+			vecOut.push_back(it.playerInfo.szName);
+		
+		return vecOut;
+	}
+
 	inline bool IsFriendly(CBaseEntity* pEntity) {
 
 		for (auto& current : arrPlayers)
-			if (current.iIndex == pEntity->EntIndex() && current.iPriority == FRIEND) 
+			if (current.iIndex == pEntity->EntIndex() && current.bPriority == FRIEND) 
 				return true;
 			
 		return false;
