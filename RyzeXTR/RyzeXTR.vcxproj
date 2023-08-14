@@ -59,18 +59,18 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)output\debug\</OutDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)Dependecies\freetype\include</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)Dependecies\freetype\win32</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)Dependecies\lua\;$(SolutionDir)Dependecies\freetype\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)Dependecies\lua\embedding\;$(SolutionDir)Dependecies\freetype\win32</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)output\release\</OutDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)Dependecies\freetype\include</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)Dependecies\freetype\win32</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)Dependecies\lua;$(SolutionDir)Dependecies\freetype\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)Dependecies\lua\embedding\;$(SolutionDir)Dependecies\freetype\win32</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Alpha|Win32'">
     <OutDir>$(SolutionDir)output\alpha\</OutDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)Dependecies\freetype\include</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)Dependecies\freetype\win32</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)Dependecies\lua;$(SolutionDir)Dependecies\freetype\include</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)Dependecies\lua\embedding\;$(SolutionDir)Dependecies\freetype\win32</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -242,6 +242,7 @@
     <ClInclude Include="Core\Features\Rage\autowall.h" />
     <ClInclude Include="Core\Features\Rage\exploits.h" />
     <ClInclude Include="Core\Features\Visuals\chams.h" />
+    <ClInclude Include="Core\Features\Visuals\drawlist.h" />
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
     <ClInclude Include="Core\globals.h" />
     <ClInclude Include="Core\Interface\Classes\CMsg.h" />
@@ -427,6 +428,15 @@
     <ClInclude Include="Dependecies\ImGui\imstb_rectpack.h" />
     <ClInclude Include="Dependecies\ImGui\imstb_textedit.h" />
     <ClInclude Include="Dependecies\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Dependecies\lua\embedding\lauxlib.h" />
+    <ClInclude Include="Dependecies\lua\embedding\lua.h" />
+    <ClInclude Include="Dependecies\lua\embedding\lua.hpp" />
+    <ClInclude Include="Dependecies\lua\embedding\luaconf.h" />
+    <ClInclude Include="Dependecies\lua\embedding\luajit.h" />
+    <ClInclude Include="Dependecies\lua\embedding\lualib.h" />
+    <ClInclude Include="Dependecies\lua\embedding\sol\config.hpp" />
+    <ClInclude Include="Dependecies\lua\embedding\sol\forward.hpp" />
+    <ClInclude Include="Dependecies\lua\embedding\sol\sol.hpp" />
     <ClInclude Include="Dependecies\Minhook\buffer.h" />
     <ClInclude Include="Dependecies\Minhook\detour.hpp" />
     <ClInclude Include="Dependecies\Minhook\hde\hde32.h" />

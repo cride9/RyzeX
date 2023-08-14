@@ -307,6 +307,16 @@
     <ClInclude Include="Core\Interface\Interfaces\IVEngineEffects.h" />
     <ClInclude Include="Core\Interface\Interfaces\CNetworkStringTableContainer.h" />
     <ClInclude Include="Core\Features\Rage\aimbot.h" />
+    <ClInclude Include="Dependecies\lua\embedding\sol\config.hpp" />
+    <ClInclude Include="Dependecies\lua\embedding\sol\forward.hpp" />
+    <ClInclude Include="Dependecies\lua\embedding\sol\sol.hpp" />
+    <ClInclude Include="Dependecies\lua\embedding\lauxlib.h" />
+    <ClInclude Include="Dependecies\lua\embedding\lua.h" />
+    <ClInclude Include="Dependecies\lua\embedding\lua.hpp" />
+    <ClInclude Include="Dependecies\lua\embedding\luaconf.h" />
+    <ClInclude Include="Dependecies\lua\embedding\luajit.h" />
+    <ClInclude Include="Dependecies\lua\embedding\lualib.h" />
+    <ClInclude Include="Core\Features\Visuals\drawlist.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependecies\freetype\win32\freetype.lib" />

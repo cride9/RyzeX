@@ -16,6 +16,7 @@
 #include <shlobj.h>
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Features/Rage/aimbot.h"
+#include "../../Lua/Lua.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -52,6 +53,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
+	// Run lua callbacks
+	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_PRE_PREDICTION ], pCmd );
+
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
 		g::vecEyePosition = pLocal->GetEyePosition(false);
@@ -68,6 +72,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		misc::IdealTick(pCmd, pLocal);
 		misc::AutoPistol(pCmd, pLocal);
 		antiaim::InvertOnShoot(pCmd);
+
+		LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_PREDICTION ], pCmd );
 	}
 	prediction.End(pCmd, pLocal);
 
@@ -88,6 +94,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 	if (bSendPacket)
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
+
+	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_CREATE_MOVE ], pCmd );
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();

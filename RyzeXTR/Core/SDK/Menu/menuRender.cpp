@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "../../Features/Rage/antiaim.h"
 #include "../../Features/Changers/SkinChanger.h"
+#include "../../Lua/Lua.h"
 
 void menu::HandleMenuElements() noexcept {
 
@@ -1075,9 +1076,25 @@ void menu::Skins(ImVec2 savedCursorPosition) {
 
 void menu::Config(ImVec2 savedCursorPosition) {
 
+    static int iSelect = 0;
+    static std::string szSelectedScriptPath = "";
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x + 1);
     menu::DrawCustomChildRounding(("##TopBar"), ImVec2(ImGui::GetContentRegionAvail().x, 80), true, 0, ImDrawCornerFlags_TopRight);
     {
+        ImGui::PushFont( defaultFontBigger );
+        ImGui::SetCursorPosY( ImGui::GetCursorPosY( ) - ImGui::GetStyle( ).WindowPadding.y );
+
+        ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 0.f );
+
+        ImVec2 size = ImVec2( ( ImGui::GetContentRegionAvail( ).x - 5 * 9 ) / 4.f, ImGui::GetContentRegionAvail( ).y + ImGui::GetStyle( ).WindowPadding.y );
+        if (ImGui::Button( XorStr( "General" ), size, iSelect == 0 ))
+            iSelect = 0;
+        ImGui::SameLine( );
+
+        if (ImGui::Button( XorStr( "Elements" ), size, iSelect == 1 ))
+            iSelect = 1;
+
+        ImGui::PopFont( );
         ImGui::SameLine();
         ImGui::PushFont(tabIconsPreview);
         {
@@ -1086,70 +1103,250 @@ void menu::Config(ImVec2 savedCursorPosition) {
             ImGui::PopStyleColor();
         }
         ImGui::PopFont();
+        ImGui::PopStyleVar( );
     }
     ImGui::EndChild();
 
     ImVec2 Padding = ImVec2(ImGui::GetStyle().WindowPadding.x, ImGui::GetStyle().WindowPadding.y);
-    ImGui::SetCursorPos(ImVec2(savedCursorPosition.x, savedCursorPosition.y + 80 + ImGui::GetStyle().WindowPadding.y));
-
-    ImVec2 TopLeftSize = ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f);
-    ImGui::BeginChild(("##LeftWhole"), ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
+    ImGui::SetCursorPos( ImVec2( savedCursorPosition.x, savedCursorPosition.y + 80 + ImGui::GetStyle( ).WindowPadding.y ) );
+    ImGui::BeginChild(("##Left"), ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
-        static std::string selectedConfig = "";
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x); 
-        if (ImGui::ListBoxVector(("##configs"), &cfg::configID, Config2->vecConfigs, 15)) {
-            selectedConfig = Config2->vecConfigs[cfg::configID];
+        if (iSelect == 0)
+        {
+            static std::string selectedConfig = "";
+            ImGui::PushItemWidth( ImGui::GetContentRegionAvail( ).x );
+            if (ImGui::ListBoxVector( ( "##configs" ), &cfg::configID, Config2->vecConfigs, 15 )) {
+                selectedConfig = Config2->vecConfigs[ cfg::configID ];
+            }
+
+            static char buf[ 255 ]{};
+            ImGui::InputText( ( "##Config name" ), buf, sizeof( buf ) );
+
+            if (ImGui::Button( ( "Refresh" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+                Config2->RefreshConfigs( );
+            }
+
+            ImGui::Spacing( );
+            if (ImGui::Button( ( "Save" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+                bPressedSave = true;
+                bWarningMethod = true;
+            }
+
+            ImGui::Spacing( );
+            if (ImGui::Button( ( "Load" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+                bPressedSave = true;
+                bWarningMethod = false;
+            }
+
+            ImGui::Spacing( );
+            if (ImGui::Button( ( "Create" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+
+                Config2->Save( buf );
+            }
+
+            ImGui::Spacing( );
+            if (ImGui::Button( ( "Delete" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+
+                Config2->DeleteConfig( selectedConfig );
+                Config2->RefreshConfigs( );
+            }
+            ImGui::Spacing( );
+            if (ImGui::Button( ( "Reset" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+
+                Config2->Setup( );
+            }
+            ImGui::Spacing( );
+            if (ImGui::Button( ( "Open config location" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+
+                ShellExecuteA( NULL, ( "open" ), Config2->ConfigPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );;
+            }
+            ImGui::Spacing( );
+            if (ImGui::Button( ( "Unload" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+
+                cfg::bDoUnload = true;
+            }
+            ImGui::PopItemWidth( );
         }
+        else // scripts
+        {
+            LuaImplementation::ScriptInfo_t* pScript = LuaImplementation::FindScriptByPath( szSelectedScriptPath );
+            if (pScript)
+            {
+                if (pScript->bLoaded)
+                {
+                    for (auto& item : pScript->vecMenuItems)
+                    {
+                        if (!item.bVisible)
+                            continue;
 
-        static char buf[255]{};
-        ImGui::InputText(("##Config name"), buf, sizeof(buf));
+                        if (item.iType == LuaImplementation::MENUITEM_CHECKBOX)
+                        {
+                            LuaImplementation::CheckboxMenuItem_t& checkbox = reinterpret_cast< LuaImplementation::CheckboxMenuItem_t& >( item );
+                            ImGui::Checkbox( checkbox.szLabel.c_str( ), &checkbox.bValue );
+                        }
+                        else if (item.iType == LuaImplementation::MENUITEM_SLIDERINT)
+                        {
+                            LuaImplementation::SliderIntMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderIntMenuItem_t& >( item );
+                            ImGui::SliderInt( slider.szLabel.c_str( ), &slider.iValue, slider.iMinValue, slider.iMaxValue, slider.szFormat.c_str( ) );
+                        }
+                        else if (item.iType == LuaImplementation::MENUITEM_SLIDERFLOAT)
+                        {
+                            LuaImplementation::SliderFloatMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderFloatMenuItem_t& >( item );
+                            ImGui::SliderFloat( slider.szLabel.c_str( ), &slider.flValue, slider.flMinValue, slider.flMaxValue, slider.szFormat.c_str( ) );
+                        }
+                        else if (item.iType == LuaImplementation::MENUITEM_KEYBIND)
+                        {
+                            LuaImplementation::KeybindMenuItem_t& keybind = reinterpret_cast< LuaImplementation::KeybindMenuItem_t& >( item );
+                            ImGui::Text( keybind.szLabel.c_str( ) );
+                            std::string szKeybindText = keybind.szLabel + XorStr( "##bind" );
+                            ImGui::Keybind( szKeybindText.c_str( ), &keybind.iValue, &keybind.iKeyMode );
+                        }
+                        // FIX ME
+                        /*else if (item.iType == LuaImplementation::MENUITEM_COMBOBOX)
+                        {
+                            LuaImplementation::ComboMenuItem_t& combo = reinterpret_cast< LuaImplementation::ComboMenuItem_t& >( item );
+                            ImGui::Combo( combo.szLabel.c_str( ), &combo.iValue, combo.vecComboboxLabels.data()->c_str() );
+                        }
+                        else if (item.iType == LuaImplementation::MENUITEM_MULTICOMBOBOX)
+                        {
+                            LuaImplementation::MultiComboMenuItem_t& multi_combo = reinterpret_cast< LuaImplementation::MultiComboMenuItem_t& >( item );
+                            ImGui::MultiComboBox( multi_combo.szLabel.c_str( ), multi_combo.vecComboboxLabels.data()->c_str(), vecValues, multi_combo.vecComboboxLabels.size() );
+                        }*/
+                        else if (item.iType == LuaImplementation::MENUITEM_COLORPICKER)
+                        {
+                            LuaImplementation::ColorPickerMenuItem_t& color_picker = reinterpret_cast< LuaImplementation::ColorPickerMenuItem_t& >( item );
 
-        if (ImGui::Button(("Refresh"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
-            Config2->RefreshConfigs();
+                            ImGui::Text( color_picker.szLabel.c_str( ) );
+                            std::string szColorPickerText = color_picker.szLabel + XorStr( "##bind" );
+                            float flColor[ 4 ] = {color_picker.cValue.Get<COLOR_R>( ) / 255.f, color_picker.cValue.Get<COLOR_G>( ) / 255.f, color_picker.cValue.Get<COLOR_B>( ) / 255.f , color_picker.cValue.Get<COLOR_A>( ) / 255.f};
+                            ImGui::ColorEdit4( szColorPickerText.c_str( ), flColor, true, true );
+                            color_picker.cValue = Color( flColor[ 0 ] * 255.f, flColor[ 1 ] * 255.f, flColor[ 2 ] * 255.f, flColor[ 3 ] * 255.f );
+                        }
+                        else if (item.iType == LuaImplementation::MENUITEM_BUTTON)
+                        {
+                            LuaImplementation::ButtonMenuItem_t& button = reinterpret_cast< LuaImplementation::ButtonMenuItem_t& >( item );
+                            if (button.szLabel.size( )) {
+                                if (ImGui::Button( button.szLabel.c_str( ), ImVec2( -1, 0 ) ) ) {
+                                    for (auto& ref : button.vecFunctions)
+                                    {
+                                        try {
+                                            auto ret = ref( );
+                                            if (!ret.valid( ))
+                                            {
+                                                sol::error err = ret;
+                                                LuaImplementation::PrintError( err.what( ) );
+                                                pScript->Unload( );
+                                            }
+                                        }
+                                        catch (const char* cs) {
+                                            LuaImplementation::PrintError( cs );
+                                            pScript->Unload( );
+                                        }
+                                        catch (const std::string& s) {
+                                            LuaImplementation::PrintError( s );
+                                            pScript->Unload( );
+                                        }
+                                        catch (sol::error& ex)
+                                        {
+                                            LuaImplementation::PrintError( ex.what( ) );
+                                            pScript->Unload( );
+                                        }
+                                        catch (std::exception& ex)
+                                        {
+                                            LuaImplementation::PrintError( ex.what( ) );
+                                            pScript->Unload( );
+                                        }
+                                        catch (...) {
+                                            LuaImplementation::PrintError( XorStr( "unknown" ) );
+                                            pScript->Unload( );
+                                        }   
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-
-        ImGui::Spacing();
-        if (ImGui::Button(("Save"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
-            bPressedSave = true;
-            bWarningMethod = true;
-        }
-
-        ImGui::Spacing();
-        if (ImGui::Button(("Load"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
-            bPressedSave = true;
-            bWarningMethod = false;
-        }
-
-        ImGui::Spacing();
-        if (ImGui::Button(("Create"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
-
-            Config2->Save(buf);
-        }
-
-        ImGui::Spacing();
-        if (ImGui::Button(("Delete"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
-
-            Config2->DeleteConfig(selectedConfig);
-            Config2->RefreshConfigs();
-        }
-        ImGui::Spacing();
-        if (ImGui::Button(("Reset"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
-
-            Config2->Setup();
-        }
-        ImGui::Spacing();
-        if (ImGui::Button(("Open config location"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
-
-            ShellExecuteA(NULL, ("open"), Config2->ConfigPath.c_str(), NULL, NULL, SW_SHOWNORMAL);;
-        }
-        ImGui::Spacing();
-        if (ImGui::Button(("Unload"), ImVec2(ImGui::GetContentRegionAvail().x, 20.f), true, true)) {
-
-            cfg::bDoUnload = true;
-        }
-        ImGui::PopItemWidth();
+       
     }
     ImGui::EndChild();
+
+    ImGui::SameLine( );
+    ImVec2 NextWindowCursor = ImVec2( ImGui::GetCursorPos( ).x, ImGui::GetCursorPosY( ) + ImGui::GetContentRegionAvail( ).y * 0.7f - 25.f );
+    ImGui::BeginChild( XorStr( "##Right" ), ImVec2( ImGui::GetContentRegionAvail( ).x - Padding.x, ImGui::GetContentRegionAvail( ).y - Padding.y - 25.f ), true );
+    {
+        if (ImGui::BeginListBox( XorStr( "##scripts" ), ImVec2( -1, ImGui::GetContentRegionAvail( ).y - ( ( ImGui::GetFrameHeight( ) + ImGui::GetStyle( ).ItemSpacing.y ) * 5 ) - ( ImGui::GetStyle( ).FramePadding.y * 2 ) - 5.0f ) ))
+        {
+            for (auto& script : LuaImplementation::vecScriptInfos)
+            {
+                std::string szPath = script.szPath;
+                std::string szName = script.szName;
+
+                if (ImGui::Selectable( szName.c_str( ), szPath == szSelectedScriptPath || script.bLoaded ))
+                {
+                    szSelectedScriptPath = szPath;
+                }
+            }
+
+            ImGui::EndListBox( );
+        }
+
+        if (ImGui::Button( XorStr( "Refresh" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
+            LuaImplementation::Parse( );
+        }
+
+        LuaImplementation::ScriptInfo_t* pScript = LuaImplementation::FindScriptByPath( szSelectedScriptPath );
+        if (pScript)
+        {
+            if (pScript->bLoaded)
+            {
+                ImGui::Spacing( );
+                if (ImGui::Button( XorStr( "Unload" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true ))
+                {
+                    pScript->Unload( );
+                }
+
+                ImGui::Spacing( );
+                if (ImGui::Button( XorStr( "Reload" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true ))
+                {
+                    pScript->Unload( );
+                    pScript->Load( );
+                }
+            }
+            else
+            {
+                ImGui::Spacing( );
+                if (ImGui::Button( XorStr( "Load" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true ))
+                {
+                    pScript->Load( );
+                }
+            }
+        }
+
+        if (ImGui::Button( XorStr( "Open script location" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true ))
+        {
+            CHAR my_documents[ MAX_PATH ];
+            HRESULT result = SHGetFolderPathA( NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT, my_documents );
+
+            std::string szPath = my_documents;
+
+            // appdata/ryzextr
+            szPath += XorStr( "\\ryzextr" );
+            CreateDirectory( szPath.c_str( ), NULL );
+
+            // appdata/ryzextr/scripts
+            szPath += XorStr( "\\scripts" );
+            CreateDirectory( szPath.c_str( ), NULL );
+
+            // jump inside folder
+            szPath += XorStr( "\\" );
+
+            ShellExecute( NULL, XorStr( "open" ), szPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );
+        }
+      
+    }
+    ImGui::EndChild( );
 }
 
 void menu::PlayerList(ImVec2 savedCursorPosition) {

@@ -2,6 +2,9 @@
 #include <cstdint>
 #include "CRC32.h"
 #include "DataTyes/Vector.h"
+#include <../lua/embedding/sol/sol.hpp>
+
+#define XorStr(str)(str)
 
 enum ECommandButtons : int
 {
@@ -80,6 +83,69 @@ public:
 		CRC32::Final(&uHashCRC);
 
 		return uHashCRC;
+	}
+
+	// exclusive lua only
+	sol::object _lua_get( sol::stack_object key, sol::this_state L ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+			if (k == XorStr( "iCommandNumber" )) { return sol::object( L, sol::in_place, this->iCommandNumber ); }
+			else if (k == XorStr( "iTickCount" )) { return sol::object( L, sol::in_place, this->iTickCount ); }
+			else if (k == XorStr( "angViewPoint" )) { return sol::object( L, sol::in_place, this->angViewPoint ); }
+			else if (k == XorStr( "vecAimDirection" )) { return sol::object( L, sol::in_place, this->vecAimDirection ); }
+			else if (k == XorStr( "flForwardMove" )) { return sol::object( L, sol::in_place, this->flForwardMove ); }
+			else if (k == XorStr( "flSideMove" )) { return sol::object( L, sol::in_place, this->flSideMove ); }
+			else if (k == XorStr( "flUpMove" )) { return sol::object( L, sol::in_place, this->flUpMove ); }
+			else if (k == XorStr( "iButtons" )) { return sol::object( L, sol::in_place, this->iButtons ); }
+			else if (k == XorStr( "uImpulse" )) { return sol::object( L, sol::in_place, this->uImpulse ); }
+			else if (k == XorStr( "iWeaponSelect" )) { return sol::object( L, sol::in_place, this->iWeaponSelect ); }
+			else if (k == XorStr( "iWeaponSubType" )) { return sol::object( L, sol::in_place, this->iWeaponSubType ); }
+			else if (k == XorStr( "iRandomSeed" )) { return sol::object( L, sol::in_place, this->iRandomSeed ); }
+			else if (k == XorStr( "sMouseDeltaX" )) { return sol::object( L, sol::in_place, this->sMouseDeltaX ); }
+			else if (k == XorStr( "sMouseDeltaY" )) { return sol::object( L, sol::in_place, this->sMouseDeltaY ); }
+			else if (k == XorStr( "bHasBeenPredicted" )) { return sol::object( L, sol::in_place, this->bHasBeenPredicted ); }
+			else if (k == XorStr( "vecHeadAngles" )) { return sol::object( L, sol::in_place, this->vecHeadAngles ); }
+			else if (k == XorStr( "vecHeadOffset" )) { return sol::object( L, sol::in_place, this->vecHeadOffset ); }
+		}
+
+		// No valid key: push nil
+		return sol::object( L, sol::in_place, sol::lua_nil );
+	}
+
+	// exclusive lua only
+	void _lua_set( sol::stack_object key, sol::stack_object value,
+		sol::this_state ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+
+			if (k == XorStr( "iCommandNumber" )) { this->iCommandNumber = value.as< int >( ); }
+			else if (k == XorStr( "iTickCount" )) { this->iTickCount = value.as< int >( ); }
+			else if (k == XorStr( "angViewPoint" )) { this->angViewPoint = value.as< Vector >( ); }
+			else if (k == XorStr( "vecAimDirection" )) { this->vecAimDirection = value.as< Vector >( ); }
+			else if (k == XorStr( "flForwardMove" )) { this->flForwardMove = value.as< float >( ); }
+			else if (k == XorStr( "flSideMove" )) { this->flSideMove = value.as< float >( ); }
+			else if (k == XorStr( "flUpMove" )) { this->flUpMove = value.as< float >( ); }
+			else if (k == XorStr( "iButtons" )) { this->iButtons = value.as< int >( ); }
+			else if (k == XorStr( "uImpulse" )) { this->uImpulse = value.as< char >( ); }
+			else if (k == XorStr( "iWeaponSelect" )) { this->iWeaponSelect = value.as< int >( ); }
+			else if (k == XorStr( "iWeaponSubType" )) { this->iWeaponSubType = value.as< int >( ); }
+			else if (k == XorStr( "iRandomSeed" )) { this->iRandomSeed = value.as< int >( ); }
+			else if (k == XorStr( "sMouseDeltaX" )) { this->sMouseDeltaX = value.as< short >( ); }
+			else if (k == XorStr( "sMouseDeltaY" )) { this->sMouseDeltaY = value.as< short >( ); }
+			else if (k == XorStr( "bHasBeenPredicted" )) { this->bHasBeenPredicted = value.as< bool >( ); }
+			else if (k == XorStr( "vecHeadAngles" )) { this->vecHeadAngles = value.as< Vector >( ); }
+			else if (k == XorStr( "vecHeadOffset" )) { this->vecHeadOffset = value.as< Vector >( ); }
+		}
 	}
 };
 

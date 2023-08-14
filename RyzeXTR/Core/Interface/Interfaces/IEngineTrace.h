@@ -4,6 +4,7 @@
 #include "../../SDK/DataTyes/UtlVector.h"
 #include "../../SDK/DataTyes/Matrix.h"
 #include <functional>
+#include <../lua/embedding/sol/sol.hpp>
 
 #define CONTENTS_EMPTY					0
 #define CONTENTS_SOLID					0x1
@@ -155,7 +156,7 @@ public:
 	int					iHitGroup;				// 0 == generic, non-zero is specific body part
 	short				sPhysicsBone;			// physics bone hit by trace in studio
 	std::uint16_t		uWorldSurfaceIndex;		// index of the msurface2_t, if applicable
-	CBaseEntity* pHitEntity;				// entity hit by trace
+	CBaseEntity*		pHitEntity;				// entity hit by trace
 	int					iHitbox;				// box hit by trace in studio
 
 	inline bool DidHit() const
@@ -166,6 +167,61 @@ public:
 	inline bool IsVisible() const
 	{
 		return (flFraction > 0.97f);
+	}
+
+	// exclusive lua only
+	sol::object _lua_get( sol::stack_object key, sol::this_state L ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybeStringKey
+			= key.as< sol::optional< std::string > >( );
+		if (maybeStringKey) {
+			const std::string& k = *maybeStringKey;
+			if (k == XorStr( "vecStart" )) {
+				return sol::object(
+					L, sol::in_place, this->vecStart );
+			}
+			else if (k == XorStr( "vecEnd" )) {
+				return sol::object(
+					L, sol::in_place, this->vecEnd );
+			}
+			else if (k == XorStr( "flFraction" )) {
+				return sol::object(
+					L, sol::in_place, this->flFraction );
+			}
+			else if (k == XorStr( "iContents" )) {
+				return sol::object(
+					L, sol::in_place, this->iContents );
+			}
+			else if (k == XorStr( "bAllSolid" )) {
+				return sol::object(
+					L, sol::in_place, this->bAllSolid );
+			}
+			else if (k == XorStr( "bStartSolid" )) {
+				return sol::object(
+					L, sol::in_place, this->bStartSolid );
+			}
+			/*else if (k == XorStr( "pHitEntity" )) {
+				return sol::object(
+					L, sol::in_place, this->pHitEntity );
+			}*/
+			else if (k == XorStr( "iHitGroup" )) {
+				return sol::object(
+					L, sol::in_place, this->iHitGroup );
+			}
+			else if (k == XorStr( "iHitbox" )) {
+				return sol::object(
+					L, sol::in_place, this->iHitbox );
+			}
+			else if (k == XorStr( "fDispFlags" )) {
+				return sol::object(
+					L, sol::in_place, this->fDispFlags );
+			}
+		}
+
+		// No valid key: push nil
+		return sol::object( L, sol::in_place, sol::lua_nil );
 	}
 
 private:

@@ -6,6 +6,8 @@
 // used: numeric_limits
 #include <limits>
 #include <algorithm>
+#include <../lua/embedding/sol/sol.hpp>
+
 
 class Vector2D
 {
@@ -17,6 +19,10 @@ public:
 	{
 		return (std::fpclassify(this->x) == FP_ZERO &&
 			std::fpclassify(this->y) == FP_ZERO);
+	}
+
+	float Length( ) const {
+		return std::sqrtf( this->x * this->x + this->y * this->y );
 	}
 
 	inline Vector2D operator*(const float n) const {
@@ -45,6 +51,84 @@ public:
 	}
 	bool operator!=(const Vector2D& v) const {
 		return (v.x != x || v.y != y);
+	}
+
+	// exclusive lua only
+	sol::object _lua_get( sol::stack_object key, sol::this_state L ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+			if (k == ( "x" )) {
+				// Return x
+				return sol::object(
+					L, sol::in_place, this->x );
+			}
+			else if (k == ( "y" )) {
+				// Return y
+				return sol::object(
+					L, sol::in_place, this->y );
+			}
+		}
+
+		// String keys failed, check for numbers
+		auto maybe_numeric_key = key.as< sol::optional< int > >( );
+		if (maybe_numeric_key) {
+			int n = *maybe_numeric_key;
+			switch (n) {
+			case 0:
+				return sol::object(
+					L, sol::in_place, this->x );
+			case 1:
+				return sol::object(
+					L, sol::in_place, this->y );
+			default:
+				break;
+			}
+		}
+
+		// No valid key: push nil
+		return sol::object( L, sol::in_place, sol::lua_nil );
+	}
+
+	// exclusive lua only
+	void _lua_set( sol::stack_object key, sol::stack_object value,
+		sol::this_state ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+			if (k == ( "x" )) {
+				// set x
+				this->x = value.as< float >( );
+			}
+			else if (k == ( "y" )) {
+				// set y
+				this->y = value.as< float >( );
+			}
+		}
+
+		// String keys failed, check for numbers
+		auto maybe_numeric_key = key.as< sol::optional< int > >( );
+		if (maybe_numeric_key) {
+			int n = *maybe_numeric_key;
+			switch (n) {
+			case 0:
+				this->x = value.as< float >( );
+				break;
+			case 1:
+				this->y = value.as< float >( );
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 public:
@@ -343,6 +427,99 @@ public:
 			this->y * vecCross.z - this->z * vecCross.y, 
 			this->z * vecCross.x - this->x * vecCross.z, 
 			this->x * vecCross.y - this->y * vecCross.x);
+	}
+
+	// exclusive lua only
+	sol::object _lua_get( sol::stack_object key, sol::this_state L ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+			if (k == ( "x" )) {
+				// Return x
+				return sol::object(
+					L, sol::in_place, this->x );
+			}
+			else if (k == ( "y" )) {
+				// Return y
+				return sol::object(
+					L, sol::in_place, this->y );
+			}
+			else if (k == ( "z" )) {
+				// Return z
+				return sol::object(
+					L, sol::in_place, this->z );
+			}
+		}
+
+		// String keys failed, check for numbers
+		auto maybe_numeric_key = key.as< sol::optional< int > >( );
+		if (maybe_numeric_key) {
+			int n = *maybe_numeric_key;
+			switch (n) {
+			case 0:
+				return sol::object(
+					L, sol::in_place, this->x );
+			case 1:
+				return sol::object(
+					L, sol::in_place, this->y );
+			case 2:
+				return sol::object(
+					L, sol::in_place, this->z );
+			default:
+				break;
+			}
+		}
+
+		// No valid key: push nil
+		return sol::object( L, sol::in_place, sol::lua_nil );
+	}
+
+	// exclusive lua only
+	void _lua_set( sol::stack_object key, sol::stack_object value,
+		sol::this_state ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+			if (k == ( "x" )) {
+				// set x
+				this->x = value.as< float >( );
+			}
+			else if (k == ( "y" )) {
+				// set y
+				this->y = value.as< float >( );
+			}
+			else if (k == ( "z" )) {
+				// set z
+				this->z = value.as< float >( );
+			}
+		}
+
+		// String keys failed, check for numbers
+		auto maybe_numeric_key = key.as< sol::optional< int > >( );
+		if (maybe_numeric_key) {
+			int n = *maybe_numeric_key;
+			switch (n) {
+			case 0:
+				this->x = value.as< float >( );
+				break;
+			case 1:
+				this->y = value.as< float >( );
+				break;
+			case 2:
+				this->z = value.as< float >( );
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 public:

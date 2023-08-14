@@ -5,10 +5,15 @@
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/serversounds.h"
 #include "../../SDK/Draw.h"
+#include "../../Features/Visuals/drawlist.h"
+#include "../../Features/../Lua/Lua.h"
 
 void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPanel, bool forceRepaint, bool allowForce) {
 
 	static auto original = detour::paintTraverse.GetOriginal<decltype(&h::hkPaintTraverse)>();
+
+	// check luas in paint traverse, this hook runs all the time at the correct time
+	LuaImplementation::RunChecks( );
 
 	if (cfg::misc::bRemovals[5] && !strcmp("HudZoom", i::Panel->GetName(vguiPanel)))
 		return;
@@ -37,10 +42,14 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 			visual::WelcomeUser("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
 #endif
 
+		LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_DRAW ] );
+
 		//D::ClearDrawData( );
 		serversound.Start();
 		visual::VisualRender();
 		serversound.Finish();
+
+		drawlist::Draw( );
 
 		visual::WorldEsp();
 		visual::CoolHackKeyBindList();
@@ -54,5 +63,5 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		//D::SwapDrawData( );
 	}
 
-	original(pPanels, edx, vguiPanel, forceRepaint, allowForce);
+	original( pPanels, edx, vguiPanel, forceRepaint, allowForce );
 }

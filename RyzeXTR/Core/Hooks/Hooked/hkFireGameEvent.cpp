@@ -3,6 +3,7 @@
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
+#include "../../Lua/Lua.h"
 
 void Event::FireGameEvent(IGameEvent* pEvent) {
 
@@ -14,6 +15,8 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 
 	misc::EventHandler(pEvent);
 	anims.ResolverHandler(pEvent);
+
+	LuaImplementation::RunCallbacks( pEvent->GetName( ), pEvent );
 
 	//auto pEventInfo = i::ClientState->pEvents; //0x4E6C
 	//CEventInfo* pNextEvent = nullptr;

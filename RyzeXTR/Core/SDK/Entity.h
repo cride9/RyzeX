@@ -545,6 +545,15 @@ class CBaseEntity : public IClientEntity{
 
 public:
 
+	template< typename T >
+	T& get( size_t offset ) {
+		return *( T* )( ( uintptr_t )this + offset );
+	}
+
+	template< typename T >
+	void set( size_t offset, const T& val ) {
+		*( T* )( ( uintptr_t )this + offset ) = val;
+	}
 
 	//ADD_POFFSET(AnimState, CAnimState, 0x9960); You are fr a handicapped fuck, just fucking netvar it
 	//ADD_OFFSET(GetEFlags, int, 0xE8);

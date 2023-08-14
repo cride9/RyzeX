@@ -6,6 +6,7 @@
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Rage/exploits.h"
 #include "../../Features/Changers/SkinChanger.h"
+#include "../../Lua/Lua.h"
 
 /*
 
@@ -132,6 +133,8 @@ void hkPreFrameStageNotify(EStage curStage) {
 	default:
 		break;
 	}
+
+	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_FRAME_STAGE_NOTIFY ], curStage );
 }
 
 void hkPostFrameStageNotify(EStage curStage) {

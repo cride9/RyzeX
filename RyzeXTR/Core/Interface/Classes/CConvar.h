@@ -55,6 +55,19 @@ public:
 		return util::CallVFunc<void>(this, 17, colValue);
 	}
 
+	// implemented like this bcs of lua api lolol
+	void SetValueString( std::string value ) {
+		SetValue( value.c_str( ) );
+	}
+
+	void SetValueFloat( float value ) {
+		SetValue( value );
+	}
+
+	void SetValueInt( int value ) {
+		SetValue( value );
+	}
+
 public:
 	std::byte						pad0[0x4];			//0x00
 	CConVar* pNext;				//0x04

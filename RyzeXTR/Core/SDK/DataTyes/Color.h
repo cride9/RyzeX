@@ -3,6 +3,7 @@
 #include <array>
 #include <d3d9.h>
 #include "../../../Dependecies/ImGui/imgui.h"
+#include <../lua/embedding/sol/sol.hpp>
 
 enum
 {
@@ -247,6 +248,114 @@ public:
 		const float b = this->Base<COLOR_B>();
 
 		return max(r, max(g, b));
+	}
+
+	// exclusive lua only
+	sol::object _lua_get( sol::stack_object key, sol::this_state L ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+			if (k == ( "r" )) {
+				// Return r
+				return sol::object(
+					L, sol::in_place, this->arrColor[ COLOR_R ] );
+			}
+			else if (k == ( "g" )) {
+				// Return g
+				return sol::object(
+					L, sol::in_place, this->arrColor[ COLOR_G ] );
+			}
+			else if (k == ( "b" )) {
+				// Return b
+				return sol::object(
+					L, sol::in_place, this->arrColor[ COLOR_B ] );
+			}
+			else if (k == ( "a" )) {
+				// Return a
+				return sol::object(
+					L, sol::in_place, this->arrColor[ COLOR_A ] );
+			}
+		}
+
+		// String keys failed, check for numbers
+		auto maybe_numeric_key = key.as< sol::optional< int > >( );
+		if (maybe_numeric_key) {
+			int n = *maybe_numeric_key;
+			switch (n) {
+			case 0:
+				return sol::object(
+					L, sol::in_place, this->arrColor[ COLOR_R ] );
+			case 1:
+				return sol::object(
+					L, sol::in_place, this->arrColor[ COLOR_G ] );
+			case 2:
+				return sol::object(
+					L, sol::in_place, this->arrColor[ COLOR_B ] );
+			case 3:
+				return sol::object(
+					L, sol::in_place, this->arrColor[ COLOR_A ] );
+			default:
+				break;
+			}
+		}
+
+		// No valid key: push nil
+		return sol::object( L, sol::in_place, sol::lua_nil );
+	}
+
+	// exclusive lua only
+	void _lua_set( sol::stack_object key, sol::stack_object value,
+		sol::this_state ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+			if (k == ( "r" )) {
+				// set r
+				this->arrColor[ COLOR_R ] = value.as< int >( );
+			}
+			else if (k == ( "g" )) {
+				// set g
+				this->arrColor[ COLOR_G ] = value.as< int >( );
+			}
+			else if (k == ( "b" )) {
+				// set b
+				this->arrColor[ COLOR_B ] = value.as< int >( );
+			}
+			else if (k == ( "a" )) {
+				// set a
+				this->arrColor[ COLOR_A ] = value.as< int >( );
+			}
+		}
+
+		// String keys failed, check for numbers
+		auto maybe_numeric_key = key.as< sol::optional< int > >( );
+		if (maybe_numeric_key) {
+			int n = *maybe_numeric_key;
+			switch (n) {
+			case 0:
+				this->arrColor[ COLOR_R ] = value.as< int >( );
+				break;
+			case 1:
+				this->arrColor[ COLOR_G ] = value.as< int >( );
+				break;
+			case 2:
+				this->arrColor[ COLOR_B ] = value.as< int >( );
+				break;
+			case 3:
+				this->arrColor[ COLOR_A ] = value.as< int >( );
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	///* return RGB color converted from HSB/HSV color */

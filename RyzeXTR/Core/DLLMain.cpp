@@ -22,6 +22,7 @@
 #include "SDK/Memory.h"
 #include "xorstr.h"
 #include "../Core/Features/Rage/Animations/EnemyAnimations.h"
+#include "Lua/Lua.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -96,6 +97,8 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	skinChanger.Dump();
 	menu::Setup();
 	M::Setup();
+	// Funny scripts 
+	LuaImplementation::Initialize( );
 	h::SetupHooks();
 	//g::entityListener.Setup();
 	IPT::Setup();
@@ -103,7 +106,6 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 
 	g::bStartWelcome = true;
 	misc::SetupRadio();
-
 	// destroy radio
 	BASS::bass_init = FALSE;
 	BASS_Stop( );
