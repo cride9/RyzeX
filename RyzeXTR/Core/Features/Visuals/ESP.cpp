@@ -549,7 +549,7 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 		return child;
 	};
 
-	if (g::pLocal == pEntity && cfg::model::localDesync && cfg::model::localDesyncSkeleton) {
+	if (g::pLocal == pEntity && cfg::model::bDesyncChams && cfg::model::bDesyncSkeleton) {
 		for (int i = 0; i < pStudioHdr->nBones; i++){
 
 			auto bone = pStudioHdr->GetBone(i);
@@ -586,7 +586,7 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 			i::DebugOverlay->ScreenPosition(parent, sParent);
 			i::DebugOverlay->ScreenPosition(child, sChild);
 
-			i::Surface->DrawSetColor(cfg::model::localDesyncColor[0] * 255.f, cfg::model::localDesyncColor[1] * 255.f, cfg::model::localDesyncColor[2] * 255.f, color[3]);
+			i::Surface->DrawSetColor(cfg::model::flDesyncChamsCol[0] * 255.f, cfg::model::flDesyncChamsCol[1] * 255.f, cfg::model::flDesyncChamsCol[2] * 255.f, color[3]);
 			i::Surface->DrawLine(sParent[0], sParent[1], sChild[0], sChild[1]);
 		}
 	}
@@ -906,7 +906,7 @@ void visual::OutOfFov(CBaseEntity* pEntity) {
 	
 	Color drawColor; 
 	if (!pEntity->IsDormant())
-		drawColor = Color(cfg::misc::flOOF);
+		drawColor = Color(cfg::misc::flOOFColor);
 	else
 		drawColor = Color(vecDormantColor);
 
@@ -1516,7 +1516,7 @@ void visual::AutoPeekCircle() {
 			}
 		}
 
-		Color colCircle = cfg::model::localIdealTickColor;
+		Color colCircle = cfg::model::flAutopeekColor;
 		colCircle = colCircle.Set<COLOR_A>(a);
 
 		i::Surface->DrawSetColor(colCircle);

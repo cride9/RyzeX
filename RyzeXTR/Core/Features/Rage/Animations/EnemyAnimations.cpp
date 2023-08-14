@@ -72,14 +72,14 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 	auto BuildSafePoint = [&](int nRotationSide)
 	{
 		// save animation data
-		std::array < CAnimationLayer, 13 > m_Layers;
-		std::array < float, 24 > m_PoseParameters;
-		CAnimState m_AnimationState;
+		std::array < CAnimationLayer, 13 > arrLayers;
+		std::array < float, 24 > arrPoses;
+		CAnimState pAnimationState;
 
 		// copy data
-		std::memcpy(m_Layers.data(), pEntity->GetAnimationOverlays(), sizeof(CAnimationLayer) * 13);
-		std::memcpy(m_PoseParameters.data(), pEntity->GetPoseParameter().data(), sizeof(float) * 24);
-		std::memcpy(&m_AnimationState, pEntity->AnimState(), sizeof(CAnimState));
+		std::memcpy(arrLayers.data(), pEntity->GetAnimationOverlays(), sizeof(CAnimationLayer) * 13);
+		std::memcpy(arrPoses.data(), pEntity->GetPoseParameter().data(), sizeof(float) * 24);
+		std::memcpy(&pAnimationState, pEntity->AnimState(), sizeof(CAnimState));
 
 		pEntity->AnimState()->flGoalFeetYaw = GetYawRotation(pRecord, nRotationSide);
 
@@ -89,9 +89,9 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 
 		SetupPlayerMatrix(pEntity, pRecord, aMatrix, BoneUsedByHitbox);
 
-		std::memcpy(pEntity->GetAnimationOverlays(), m_Layers.data(), sizeof(CAnimationLayer) * 13);
-		std::memcpy(pEntity->GetPoseParameter().data(), m_PoseParameters.data(), sizeof(float) * 24);
-		std::memcpy(pEntity->AnimState(), &m_AnimationState, sizeof(CAnimState));
+		std::memcpy(pEntity->GetAnimationOverlays(), arrLayers.data(), sizeof(CAnimationLayer) * 13);
+		std::memcpy(pEntity->GetPoseParameter().data(), arrPoses.data(), sizeof(float) * 24);
+		std::memcpy(pEntity->AnimState(), &pAnimationState, sizeof(CAnimState));
 	};
 
 	// check conditions
@@ -106,16 +106,16 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 
 float Animations::BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
 
-	CAnimState* m_AnimationState = pEntity->AnimState();
-	if (!m_AnimationState)
+	CAnimState* pAnimationState = pEntity->AnimState();
+	if (!pAnimationState)
 		return 0.0f;
 
-	float flAimMatrixWidthRange = M::Lerp(std::clamp(m_AnimationState->flRunningSpeed, 0.f, 1.f), 1.0f, M::Lerp(m_AnimationState->flWalkToRunTransition, 0.8f, 0.5f));
-	if (m_AnimationState->flDuckAmount > 0)
-		flAimMatrixWidthRange = M::Lerp(m_AnimationState->flDuckAmount * std::clamp(m_AnimationState->flDuckingSpeed, 0.0f, 1.0f), flAimMatrixWidthRange, 0.5f);
+	float flAimMatrixWidthRange = M::Lerp(std::clamp(pAnimationState->flRunningSpeed, 0.f, 1.f), 1.0f, M::Lerp(pAnimationState->flWalkToRunTransition, 0.8f, 0.5f));
+	if (pAnimationState->flDuckAmount > 0)
+		flAimMatrixWidthRange = M::Lerp(pAnimationState->flDuckAmount * std::clamp(pAnimationState->flDuckingSpeed, 0.0f, 1.0f), flAimMatrixWidthRange, 0.5f);
 
-	float flTempYawMax = m_AnimationState->flMaxBodyYaw * flAimMatrixWidthRange;
-	float flTempYawMin = m_AnimationState->flMinBodyYaw * flAimMatrixWidthRange;
+	float flTempYawMax = pAnimationState->flMaxBodyYaw * flAimMatrixWidthRange;
+	float flTempYawMin = pAnimationState->flMinBodyYaw * flAimMatrixWidthRange;
 
 	float flFootYaw = M::NormalizeAngle(pRecord->pEntity->AnimState()->flEyeYaw);
 
@@ -125,10 +125,10 @@ float Animations::BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 	else if (flEyeFootDelta < flTempYawMin)
 		flFootYaw = pRecord->vecEyeAngles.y + fabs(flTempYawMin);
 
-	if (m_AnimationState->bOnGround) {
+	if (pAnimationState->bOnGround) {
 
-		if (m_AnimationState->flVelocityLenght2D > 0.1f || m_AnimationState->flJumpFallVelocity > 100.0f)
-			flFootYaw = M::ApproachAngle(pRecord->pEntity->AnimState()->flEyeYaw, flFootYaw, i::GlobalVars->flIntervalPerTick * (30.0f + (20.0f * m_AnimationState->flWalkToRunTransition)));
+		if (pAnimationState->flVelocityLenght2D > 0.1f || pAnimationState->flJumpFallVelocity > 100.0f)
+			flFootYaw = M::ApproachAngle(pRecord->pEntity->AnimState()->flEyeYaw, flFootYaw, i::GlobalVars->flIntervalPerTick * (30.0f + (20.0f * pAnimationState->flWalkToRunTransition)));
 		else
 			flFootYaw = M::ApproachAngle(pRecord->flLowerBodyYawTarget, flFootYaw, i::GlobalVars->flIntervalPerTick * 100.f);
 	}
@@ -258,7 +258,7 @@ void Animations::SetUpMovement(Lagcompensation::LagRecord_t* pRecord, CAnimState
 	float flMoveWeightWithAirSmooth = pState->flMoveWeight * pState->flInAirSmoothValue;
 
 	// dampen move weight for landings
-	flMoveWeightWithAirSmooth *= max((1.0f - pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB].flWeight), 0.55f);
+	flMoveWeightWithAirSmooth *= max((1.0f - pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB].flWeight), 0.55f);
 
 	float flMoveCycleRate = 0;
 	if (pRecord->vecVelocity.Length2D() > 0) {
@@ -423,12 +423,12 @@ Vector DeterminePlayerVelocity(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 	const float flMaxSpeed = sv_maxspeed->GetFloat();
 
 	/* Get animation layers */
-	const CAnimationLayer* AliveLoop = &pRecord->pLayers[ANIMATION_LAYER_ALIVELOOP];
-	const CAnimationLayer* PrevAliveLoop = &pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP];
-	const CAnimationLayer* Movement = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
-	const CAnimationLayer* PrevMovement = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
-	const CAnimationLayer* Landing = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
-	const CAnimationLayer* PrevLanding = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	const CAnimationLayer* AliveLoop = &pRecord->arrLayers[ANIMATION_LAYER_ALIVELOOP];
+	const CAnimationLayer* PrevAliveLoop = &pPrevious->arrLayers[ANIMATION_LAYER_ALIVELOOP];
+	const CAnimationLayer* Movement = &pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
+	const CAnimationLayer* PrevMovement = &pPrevious->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE];
+	const CAnimationLayer* Landing = &pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	const CAnimationLayer* PrevLanding = &pPrevious->arrLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
 
 	/* Recalculate velocity using origin delta */
 	pRecord->vecVelocity = (pRecord->vecOrigin - pPrevious->vecOrigin) * (1.0f / TICKS_TO_TIME(pRecord->iChoked));
@@ -489,7 +489,7 @@ Vector DeterminePlayerVelocity(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 					if (flWeight > PrevMovement->flWeight)
 					{
 						/* Skip on direction switch */
-						if (pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence == pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence)
+						if (pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence == pPrevious->arrLayers[ANIMATION_LAYER_MOVEMENT_STRAFECHANGE].nSequence)
 						{
 							/* Check move sequence */
 							if (Movement->nSequence == PrevMovement->nSequence)
@@ -498,7 +498,7 @@ Vector DeterminePlayerVelocity(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 								if (Landing->nSequence == PrevLanding->nSequence)
 								{
 									/* Check stand sequence */
-									if (pRecord->pLayers[ANIMATION_LAYER_ADJUST].nSequence == pPrevious->pLayers[ANIMATION_LAYER_ADJUST].nSequence)
+									if (pRecord->arrLayers[ANIMATION_LAYER_ADJUST].nSequence == pPrevious->arrLayers[ANIMATION_LAYER_ADJUST].nSequence)
 									{
 										/* Check Flags */
 										if (pRecord->iFlags & FL_ONGROUND)
@@ -547,8 +547,8 @@ Vector DeterminePlayerVelocity(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 
 int DetermineAnimationCycle(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
-	const CAnimationLayer* pAliveLoop = &pRecord->pLayers[ANIMATION_LAYER_ALIVELOOP];
-	const CAnimationLayer* pPrevAliveLoop = &pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP];
+	const CAnimationLayer* pAliveLoop = &pRecord->arrLayers[ANIMATION_LAYER_ALIVELOOP];
+	const CAnimationLayer* pPrevAliveLoop = &pPrevious->arrLayers[ANIMATION_LAYER_ALIVELOOP];
 
 	/* Get ticks animated on the server ( by default it's simtime delta ) */
 	int nTicksAnimated = pRecord->iChoked;
@@ -582,14 +582,14 @@ void CopyRecordData(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord,
 	if (pPrevious)
 		pForceRecord = pPrevious;
 
-	CAnimationLayer* pStrafeLayer = &pForceRecord->pLayers[7];
+	CAnimationLayer* pStrafeLayer = &pForceRecord->arrLayers[7];
 	pState->flStrafeChangeCycle = pStrafeLayer->flCycle;
 	pState->flStrafeChangeWeight = pStrafeLayer->flWeight;
 	pState->nStrafeSequence = pStrafeLayer->nSequence;
-	pState->flFeetCycle = pForceRecord->pLayers[6].flCycle;
-	pState->flMoveWeight = pForceRecord->pLayers[6].flWeight;
-	pState->flAccelerationWeight = pForceRecord->pLayers[12].flWeight;
-	pEntity->SetAnimationLayers(pForceRecord->pLayers);
+	pState->flFeetCycle = pForceRecord->arrLayers[6].flCycle;
+	pState->flMoveWeight = pForceRecord->arrLayers[6].flWeight;
+	pState->flAccelerationWeight = pForceRecord->arrLayers[12].flWeight;
+	pEntity->SetAnimationLayers(pForceRecord->arrLayers);
 }
 
 void UpdateCollision(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
@@ -605,10 +605,10 @@ void UpdateCollision(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord
 
 void SimulatePlayerActivity(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
-	const CAnimationLayer* pJumpingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
-	const CAnimationLayer* pLandingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
-	const CAnimationLayer* pPrevJumpingLayer = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
-	const CAnimationLayer* pPrevLandingLayer = &pPrevious->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	const CAnimationLayer* pJumpingLayer = &pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	const CAnimationLayer* pLandingLayer = &pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	const CAnimationLayer* pPrevJumpingLayer = &pPrevious->arrLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	const CAnimationLayer* pPrevLandingLayer = &pPrevious->arrLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
 
 	const int nJumpingActivity = pEntity->GetSequenceActivity(pJumpingLayer->nSequence);
 	const int nLandingActivity = pEntity->GetSequenceActivity(pLandingLayer->nSequence);
@@ -647,8 +647,8 @@ void SimulatePlayerActivity(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* 
 
 float ComputeActivityPlayback(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
 
-	CAnimationLayer* pJumpingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
-	CAnimationLayer* pLandingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	CAnimationLayer* pJumpingLayer = &pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	CAnimationLayer* pLandingLayer = &pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
 
 	float flActivityPlayback = 0.0f;
 	if (pJumpingLayer && pLandingLayer) {
@@ -670,8 +670,8 @@ float ComputeActivityPlayback(CBaseEntity* pEntity, Lagcompensation::LagRecord_t
 void HandleDormancyLeaving(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, CAnimState* pState) {
 
 	/* Get animation layers */
-	const CAnimationLayer* JumpingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
-	const CAnimationLayer* LandingLayer = &pRecord->pLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
+	const CAnimationLayer* JumpingLayer = &pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL];
+	const CAnimationLayer* LandingLayer = &pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB];
 
 	/* Final flLastUpdateTime */
 	float flLastUpdateTime = pRecord->flSimulationTime - i::GlobalVars->flIntervalPerTick;
@@ -884,7 +884,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 		}
 	}
 
-	pEntity->SetAnimationLayers(pRecord->pLayers);
+	pEntity->SetAnimationLayers(pRecord->arrLayers);
 
 	pEntity->SetAbsOrigin(pRecord->vecAbsOrigin);
 
@@ -899,11 +899,14 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	pEntity->GetPoseParameters(pRecord->flPoses);
 
 	//FindDesyncSide(pRecord); // meme but sorta worksXD
-	//GenerateFreestandMatricies(pEntity, pRecord);
+	GenerateFreestandMatricies(pEntity, pRecord);
 	if (playerList::arrPlayers[pEntity->EntIndex()].bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerList::arrPlayers[pEntity->EntIndex()].flOverrideYaw);
 	else
 		Resolver(pEntity, pRecord, pPrevious);
+
+	//if (pPrevious)
+	//	pEntity->GetEyeAngles().z = M::NormalizeYaw(pRecord->vecEyeAngles.y - pPrevious->vecEyeAngles.y);
 
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
 	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
@@ -938,7 +941,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* pMatrix, int nFlags) {
 
-	pEntity->SetAnimationLayers(pRecord->pLayers);
+	pEntity->SetAnimationLayers(pRecord->arrLayers);
 
 	const float flCurrentTime = i::GlobalVars->flCurrentTime;
 	const float flRealTime = i::GlobalVars->flRealTime;
@@ -1010,7 +1013,7 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	pEntity->GetOcclusionFlags() = iOcclusionFlags;
 	pEntity->SetAbsOrigin(vecAbsOrigin);
 
-	pEntity->SetAnimationLayers(pRecord->pLayers);
+	pEntity->SetAnimationLayers(pRecord->arrLayers);
 
 	i::GlobalVars->flCurrentTime = flCurrentTime;
 	i::GlobalVars->flRealTime = flRealTime;
@@ -1095,7 +1098,7 @@ void Animations::FindDesyncSide(Lagcompensation::LagRecord_t* pRecord) {
 	// restore animstate to its original phase so it will update everything normally
 	memcpy(pRecord->pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 
-	pRecord->flGuessedYaw = FindMatchingPlaybackRate(pRecord->pLayers[6].flPlaybackRate, arrPlaybackRates);
+	pRecord->flGuessedYaw = FindMatchingPlaybackRate(pRecord->arrLayers[6].flPlaybackRate, arrPlaybackRates);
 }
 
 void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
@@ -1181,29 +1184,37 @@ void Animations::GenerateFreestandMatricies(CBaseEntity* pEntity, Lagcompensatio
 	auto BuildFreestandMatrix = [&](int iSideAngle)
 	{
 		// save animation data
-		std::array < CAnimationLayer, 13 > m_Layers;
-		std::array < float, 24 > m_PoseParameters;
-		CAnimState m_AnimationState;
+		std::array < CAnimationLayer, 13 > arrLayers;
+		std::array < float, 24 > arrPoses;
+		CAnimState pAnimationState;
 		Vector vecEyeAngles;
 
 		// copy data
-		std::memcpy(m_Layers.data(), pEntity->GetAnimationOverlays(), sizeof(CAnimationLayer) * 13);
-		std::memcpy(m_PoseParameters.data(), pEntity->GetPoseParameter().data(), sizeof(float) * 24);
-		std::memcpy(&m_AnimationState, pEntity->AnimState(), sizeof(CAnimState));
+		std::memcpy(arrLayers.data(), pEntity->GetAnimationOverlays(), sizeof(CAnimationLayer) * 13);
+		std::memcpy(arrPoses.data(), pEntity->GetPoseParameter().data(), sizeof(float) * 24);
+		std::memcpy(&pAnimationState, pEntity->AnimState(), sizeof(CAnimState));
 		vecEyeAngles.y = pRecord->vecEyeAngles.y;
 
+		// set the matrix angle
 		pEntity->GetEyeAngles().y += iSideAngle == 0 ? -90 : 90;
+
+		// update animations
 		UpdateClientSideAnimations(pEntity, pRecord);
 
+		// build matrix for that animation
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pSideMatrixes[iSideAngle], BoneUsedByHitbox);
 
-		std::memcpy(pEntity->GetAnimationOverlays(), m_Layers.data(), sizeof(CAnimationLayer) * 13);
-		std::memcpy(pEntity->GetPoseParameter().data(), m_PoseParameters.data(), sizeof(float) * 24);
-		std::memcpy(pEntity->AnimState(), &m_AnimationState, sizeof(CAnimState));
+		// restore data to not mess with game animations
+		std::memcpy(pEntity->GetAnimationOverlays(), arrLayers.data(), sizeof(CAnimationLayer) * 13);
+		std::memcpy(pEntity->GetPoseParameter().data(), arrPoses.data(), sizeof(float) * 24);
+		std::memcpy(pEntity->AnimState(), &pAnimationState, sizeof(CAnimState));
 		pEntity->GetEyeAngles().y = pRecord->vecEyeAngles.y;
 
+		// update our data again to apply back the actual animation we had before
 		UpdateClientSideAnimations(pEntity, pRecord);
-		std::memcpy(pEntity->AnimState(), &m_AnimationState, sizeof(CAnimState));
+
+		// apply animstate again so the updating wont update the last update time or else it wont allow us to update again this frame
+		std::memcpy(pEntity->AnimState(), &pAnimationState, sizeof(CAnimState));
 	};
 
 	BuildFreestandMatrix(0);

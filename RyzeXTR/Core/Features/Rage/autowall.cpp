@@ -499,7 +499,7 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lag
 	return iSafePoint;
 }
 
-bool CAutoWall::bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector& vecEnd, int iHitbox, Lagcompensation::LagRecord_t* pRecord) {
+bool CAutoWall::bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector& vecEnd, int iHitbox, Lagcompensation::LagRecord_t* pRecord, EMatrixType iMatrix) {
 
 	// Initialize our trace data & information
 	Trace_t traceData = Trace_t();

@@ -105,6 +105,7 @@ public:
 		void Restore(CBaseEntity* pEntity);
 		void Apply(CBaseEntity* pEntity);
 		void ApplyMatrix(CBaseEntity* pEntity, EMatrixType iType);
+		void ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t* pMatrix);
 
 		CBaseEntity* pEntity{};
 
@@ -134,7 +135,7 @@ public:
 		Vector vecEyeAngles{};
 		Vector vecAbsAngles{};
 
-		CAnimationLayer pLayers[13];
+		CAnimationLayer arrLayers[13];
 		float flPoses[24];
 
 		float flSimulationTime{};
@@ -234,9 +235,8 @@ public:
 		}
 
 		void InvalidateRecords() {
-			for (auto& it : pRecord)
-				it.bValid = false;
 
+			pRecord.clear();
 			iLastValid = 0;
 		}
 

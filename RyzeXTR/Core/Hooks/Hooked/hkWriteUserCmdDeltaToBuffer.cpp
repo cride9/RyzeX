@@ -33,6 +33,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	int* pNumBackupCommands = reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(buf) - 0x30);
 	int* pNumNewCommands = reinterpret_cast<int*>(reinterpret_cast<uintptr_t>(buf) - 0x2C);
 
+	bool bHideshot = exploits::iDefensive ? false : true;
 	int iExtraCommands = exploits::iDefensive + exploits::iHideShiftAmount;
 	exploits::iHideShiftAmount = exploits::iDefensive = 0;
 
@@ -58,7 +59,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	CUserCmd FromCmd = *pCmd;
 
 	ToCmd.iCommandNumber++;
-	ToCmd.iTickCount += ((int)(1.0f / i::GlobalVars->flIntervalPerTick));
+	ToCmd.iTickCount += bHideshot ? 1 : ((int)(1.0f / i::GlobalVars->flIntervalPerTick));
 
 	for (int i = 0; i < iExtraCommands; i++)
 	{

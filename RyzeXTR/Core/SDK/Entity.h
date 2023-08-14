@@ -1089,7 +1089,7 @@ public:
 	int						GetSequenceActivity(int iSequence);
 	void					SetUpMovement();
 	void					SetUpVelocity();
-	bool					IsGrenade(CBaseCombatWeapon* weapon);
+	bool					IsGrenade(CBaseCombatWeapon* bWeapon);
 	CBaseCombatWeapon*		GetWeapon();
 	int						GetMaxHealth();
 	std::optional<Vector>	GetBonePosition(int iBone);

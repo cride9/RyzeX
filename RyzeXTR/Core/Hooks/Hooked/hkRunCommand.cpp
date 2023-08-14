@@ -21,16 +21,16 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 		return;
 	}
 
-	//TickbaseRecord_t* Record = prediction.GetTickbaseRecord(pCmd->iCommandNumber);
-	//if (Record->bIsValid)
-	//{
-	//	/* set tickbase */
-	//	pEnt->GetTickBase() = Record->iTickbase - 1;
+	TickbaseRecord_t* Record = prediction.GetTickbaseRecord(pCmd->iCommandNumber);
+	if (Record->bIsValid)
+	{
+		/* set tickbase */
+		pEnt->GetTickBase() = Record->iTickbase - 1;
 
-	//	/* reset record */
-	//	Record->iTickbase = -1;
-	//	Record->bIsValid = false;
-	//}
+		/* reset record */
+		Record->iTickbase = -1;
+		Record->bIsValid = false;
+	}
 
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
 	misc::RevolverRunCommand(pEnt);

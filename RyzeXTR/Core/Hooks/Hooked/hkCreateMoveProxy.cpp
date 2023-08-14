@@ -104,7 +104,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
 
 	if (bSendPacket)
-		localanim.localdata.vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
+		g_LocalAnimations->vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
 
 	g_LocalAnimations->OnCreateMove(bSendPacket, pLocal);
 	lagcomp.FinishLagcompensation(pLocal);

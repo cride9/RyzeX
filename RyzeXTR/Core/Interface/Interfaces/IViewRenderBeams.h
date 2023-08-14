@@ -171,7 +171,7 @@ struct BeamInfo_t
 	float			m_flBlue;
 	bool			m_bRenderable;
 	int				m_nSegments;
-	int				m_nFlags;
+	int				iFlags;
 	// Rings
 	Vector			m_vecCenter;
 	float			m_flStartRadius;
@@ -186,7 +186,7 @@ struct BeamInfo_t
 		m_nModelIndex = -1;
 		m_nHaloIndex = -1;
 		m_bRenderable = true;
-		m_nFlags = 0;
+		iFlags = 0;
 	}
 };
 

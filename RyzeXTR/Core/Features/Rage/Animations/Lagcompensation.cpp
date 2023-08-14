@@ -19,7 +19,7 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 	vecAbsOrigin = pEntity->GetAbsOrigin();
 	vecMins = pEntity->GetCollideable()->OBBMins();
 	vecMaxs = pEntity->GetCollideable()->OBBMaxs();
-	pEntity->GetAnimationLayers(pLayers);
+	pEntity->GetAnimationLayers(arrLayers);
 	pEntity->GetPoseParameters(flPoses);
 	bValid = true;
 	bDidShot = false;
@@ -85,7 +85,7 @@ void Lagcompensation::LagRecord_t::Restore(CBaseEntity* pEntity)
 	pEntity->GetEFlags() = iEFlags;
 	pEntity->GetDuckAmount() = flDuck;
 	// set animlayers
-	pEntity->SetAnimationLayers(pLayers);
+	pEntity->SetAnimationLayers(arrLayers);
 	pEntity->GetLowerBodyYaw() = flLowerBodyYawTarget;
 	pEntity->GetVecOrigin() = vecOrigin;
 	pEntity->SetAbsOrigin(vecAbsOrigin);
@@ -186,7 +186,7 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		if (pLog->bLeftDormancy)
 			pRecord.bFirstAfterDormant = true;
 
-		pLog->pRecord.emplace_front(pRecord);
+		pLog->pRecord.push_front(pRecord);
 		while (pLog->pRecord.size() > 32)
 			pLog->pRecord.pop_back();
 
@@ -197,17 +197,17 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		pPlayerLogs[i].bContainsInvalid = false;
 		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
-			auto& pCurrentRecord = pLog->pRecord.at(j);
-			if (!pCurrentRecord.bValid)
+			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);
+			if (!pCurrentRecord->bValid || pCurrentRecord->bBreakingLagcompensation || pRecord.flSimulationTime <= pLog->flExploitTime)
 				continue;
 
-			if (pCurrentRecord.bValid = lagcomp.IsValidRecord(pCurrentRecord.flSimulationTime))
+			if (pCurrentRecord->bValid = lagcomp.IsValidRecord(pCurrentRecord->flSimulationTime))
 				pPlayerLogs[i].iLastValid = j;
 
 			if (pRecord.bBreakingLagcompensation)
-				pCurrentRecord.bBreakingLagcompensation = true;
+				pCurrentRecord->bBreakingLagcompensation = true;
 
-			if (pCurrentRecord.bBreakingLagcompensation)
+			if (pCurrentRecord->bBreakingLagcompensation)
 				pPlayerLogs[i].bContainsInvalid = true;
 		}
 	}
@@ -534,10 +534,10 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	const float flLerpTime = GetClientInterpAmount();
 	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
-	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
-		iTickBase -= 14;
+	//if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
+	//	iTickBase -= 14;
 
-	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - TICKS_TO_TIME(iTickBase - TIME_TO_TICKS(mflSimulationTime));
+	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (i::GlobalVars->flCurrentTime - mflSimulationTime);
 	if (fabsf(flDeltaTime) >= flRange)
 		return false;
 
@@ -607,6 +607,17 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 	return pEntity->InvalidateBoneCache();
 }
 
+void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t* pMatrix) {
+
+	if (!pMatrix)
+		return;
+
+	pEntity->SetCollisionBounds(vecMins, vecMaxs);
+	pEntity->SetBoneCache(pMatrix);
+	return pEntity->InvalidateBoneCache();
+}
+
+
 void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
 
 	if (g::bUpdatingSkins)
@@ -632,7 +643,7 @@ void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
 		data.flCollisionChangeTime = pEntity->GetCollisionChangeTime();
 		data.flCollisionChangeOrigin = pEntity->GetCollisionChangeOrigin();
 
-		pEntity->GetAnimationLayers(data.pLayers);
+		pEntity->GetAnimationLayers(data.arrLayers);
 		pEntity->GetPoseParameters(data.flPoses);
 		pEntity->GetBoneCache(data.pMatricies[VISUAL]);
 
@@ -655,7 +666,7 @@ void Lagcompensation::FinishLagcompensation(CBaseEntity* pLocal) {
 
 		auto& data = arrBackupData[i].first;
 
-		pEntity->SetAnimationLayers(data.pLayers);
+		pEntity->SetAnimationLayers(data.arrLayers);
 		pEntity->SetPoseParameters(data.flPoses);
 		pEntity->SetBoneCache(data.pMatricies[VISUAL]);
 
@@ -677,7 +688,7 @@ void Lagcompensation::FinishLagcompensation(CBaseEntity* pLocal) {
 bool Lagcompensation::DataChanged(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pPrevious) {
 
 	if (pPrevious)
-		if (pEntity->GetAnimationOverlays()[ANIMATION_LAYER_ALIVELOOP].flCycle == pPrevious->pLayers[ANIMATION_LAYER_ALIVELOOP].flCycle)
+		if (pEntity->GetAnimationOverlays()[ANIMATION_LAYER_ALIVELOOP].flCycle == pPrevious->arrLayers[ANIMATION_LAYER_ALIVELOOP].flCycle)
 			pEntity->GetSimulationTime() = pEntity->GetOldSimulationTime();
 
 	return pEntity->GetSimulationTime() != pEntity->GetOldSimulationTime();

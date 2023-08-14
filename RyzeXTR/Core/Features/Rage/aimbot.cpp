@@ -91,15 +91,13 @@ void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 	if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey))
 		bShouldSendPacket = false;
 		
-	if (bShouldSendPacket) {
-
+	if (bShouldSendPacket) 
 		bSendPacket = true;
-		bShouldSendPacket = false;
-	}
 
-	//if (exploits::bIsShiftingTicks) {
-	//	bSendPacket = exploits::iShiftAmount == 0 ? true : false;
-	//}
+	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::bIsShiftingTicks)
+		bSendPacket = exploits::iShiftAmount == 0 ? true : false;
+
+	bShouldSendPacket = false;
 }
 
 Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal) {
@@ -149,7 +147,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					/* 7/13/2023: Check if this point is meant to hit that hitbox or not, else don't scan // cride9 */
 					if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecHitboxPoint, iHitbox, pRecord))
 						continue;
-
+					
 					/* Only backtrack safe entities */
 					int iCollidePoints = 0;
 
@@ -296,8 +294,8 @@ bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosi
 	if (vecShootPosition.DistTo(vecWorldPosition) > pWeaponData->flRange)
 		return false;
 
-	if (HasEnoughAccuracy(pLocal, flGetInaccuracy))
-		return true;
+	//if (HasEnoughAccuracy(pLocal, flGetInaccuracy))
+	//	return true;
 
 	Vector vecForward = Vector(0, 0, 0);
 	Vector vecRight = Vector(0, 0, 0);
@@ -371,6 +369,7 @@ bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosi
 	int flFinalHitchance = static_cast<int>((float(iHits) / (iAccuracry / 100.f)));
 	int flFinalAccuracyBoost = static_cast<int>((float(iAccuracyHits) / (iAccuracry / 100.f)));
 
+	/* Hitchance * accuracyboost% = how much shot MUST hit head */
 	int flHitchanceAccuracy = static_cast<int>(float(curConfig.iHitchance) * (float(curConfig.iAccuracyBoost) / 100.f));
 	if (flFinalAccuracyBoost < flHitchanceAccuracy)
 		return false;
@@ -521,6 +520,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 		if (playerList::arrPlayers[i].bWhiteList)
 			continue;
 
+		anims.CreateMoveResolver(&pLog->pRecord.front(), vecEyePosition);
 		// OPTIMIZATION: autowall can only penetrate 4 wall check if he's behind 4wall or not
 		// traceray is a lot more fps friendly than simulate fire bullet, but cannot calculate lost damage.
 		// COMMENT: Works, but useless. That's not how you want to optimize a ragebot. I'll leave it here for the future tho.

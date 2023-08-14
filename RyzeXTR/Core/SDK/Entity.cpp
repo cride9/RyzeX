@@ -57,10 +57,10 @@ CBaseCombatWeapon* CBaseEntity::GetWeapon()
 		return nullptr;
 }
 
-bool CBaseEntity::IsGrenade(CBaseCombatWeapon* weapon)
+bool CBaseEntity::IsGrenade(CBaseCombatWeapon* bWeapon)
 {
-	if (weapon == nullptr) return false;
-	int id = weapon->GetItemDefinitionIndex();
+	if (bWeapon == nullptr) return false;
+	int id = bWeapon->GetItemDefinitionIndex();
 	static const std::vector<int> v = { WEAPON_FLASHBANG, WEAPON_HEGRENADE, WEAPON_SMOKEGRENADE, WEAPON_MOLOTOV, WEAPON_DECOY, WEAPON_INCGRENADE };
 	return (std::find(v.begin(), v.end(), id) != v.end());
 }

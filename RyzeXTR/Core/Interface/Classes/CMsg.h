@@ -32,7 +32,7 @@ public:
 	uint32_t m_nUnCompressedSampleOffset; //0x002C
 	int32_t m_nCachedSize; //0x0030
 
-	uint32_t m_nFlags; //0x0034
+	uint32_t iFlags; //0x0034
 
 	uint8_t NoStackOverFlow[0xFF]; // fix clown crashers
 

@@ -829,100 +829,100 @@ void misc::AutoStrafe(Vector& vecView, CUserCmd* pCmd) {
 
 void misc::MovementFix(CUserCmd* pCmd, Vector& oldang) {
 
-	Vector vMovements(pCmd->flForwardMove, pCmd->flSideMove, 0.f);
+	//Vector vMovements(pCmd->flForwardMove, pCmd->flSideMove, 0.f);
 
-	if (vMovements.Length2D() == 0)
-		return;
+	//if (vMovements.Length2D() == 0)
+	//	return;
 
-	CUserCmd* pUserCmd = static_cast <CUserCmd*> (pCmd);
-	if (!pUserCmd || !pUserCmd->iCommandNumber)
-		return;
+	//CUserCmd* pUserCmd = static_cast <CUserCmd*> (pCmd);
+	//if (!pUserCmd || !pUserCmd->iCommandNumber)
+	//	return;
 
-	/* get wish angles */
-	Vector angWishAngles;
-	i::EngineClient->GetViewAngles(angWishAngles);
+	///* get wish angles */
+	//Vector angWishAngles;
+	//i::EngineClient->GetViewAngles(angWishAngles);
 
-	Vector PureForward, PureRight, PureUp, CurrForward, CurrRight, CurrUp;
-	M::AngleVectors(angWishAngles, &PureForward, &PureRight, &PureUp);
-	M::AngleVectors(pUserCmd->angViewPoint, &CurrForward, &CurrRight, &CurrUp);
+	//Vector PureForward, PureRight, PureUp, CurrForward, CurrRight, CurrUp;
+	//M::AngleVectors(angWishAngles, &PureForward, &PureRight, &PureUp);
+	//M::AngleVectors(pUserCmd->angViewPoint, &CurrForward, &CurrRight, &CurrUp);
 
-	PureForward[2] = PureRight[2] = CurrForward[2] = CurrRight[2] = 0.f;
+	//PureForward[2] = PureRight[2] = CurrForward[2] = CurrRight[2] = 0.f;
 
-	auto VectorNormalize = [](Vector& vec)->float {
-		float radius = sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
-		float iradius = 1.f / (radius + FLT_EPSILON);
+	//auto VectorNormalize = [](Vector& vec)->float {
+	//	float radius = sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+	//	float iradius = 1.f / (radius + FLT_EPSILON);
 
-		vec.x *= iradius;
-		vec.y *= iradius;
-		vec.z *= iradius;
+	//	vec.x *= iradius;
+	//	vec.y *= iradius;
+	//	vec.z *= iradius;
 
-		return radius;
-	};
-	VectorNormalize(PureForward);
-	VectorNormalize(PureRight);
-	VectorNormalize(CurrForward);
-	VectorNormalize(CurrRight);
-	Vector PureWishDir;
-	for (auto i = 0u; i < 2; i++)
-		PureWishDir[i] = PureForward[i] * pUserCmd->flForwardMove + PureRight[i] * pUserCmd->flSideMove;
-	PureWishDir[2] = 0.f;
+	//	return radius;
+	//};
+	//VectorNormalize(PureForward);
+	//VectorNormalize(PureRight);
+	//VectorNormalize(CurrForward);
+	//VectorNormalize(CurrRight);
+	//Vector PureWishDir;
+	//for (auto i = 0u; i < 2; i++)
+	//	PureWishDir[i] = PureForward[i] * pUserCmd->flForwardMove + PureRight[i] * pUserCmd->flSideMove;
+	//PureWishDir[2] = 0.f;
 
-	Vector CurrWishDir;
-	for (auto i = 0u; i < 2; i++)
-		CurrWishDir[i] = CurrForward[i] * pUserCmd->flForwardMove + CurrRight[i] * pUserCmd->flSideMove;
-	CurrWishDir[2] = 0.f;
+	//Vector CurrWishDir;
+	//for (auto i = 0u; i < 2; i++)
+	//	CurrWishDir[i] = CurrForward[i] * pUserCmd->flForwardMove + CurrRight[i] * pUserCmd->flSideMove;
+	//CurrWishDir[2] = 0.f;
 
-	if (PureWishDir != CurrWishDir) {
-		pUserCmd->flForwardMove = (PureWishDir.x * CurrRight.y - CurrRight.x * PureWishDir.y) / (CurrRight.y * CurrForward.x - CurrRight.x * CurrForward.y);
-		pUserCmd->flSideMove = (PureWishDir.y * CurrForward.x - CurrForward.y * PureWishDir.x) / (CurrRight.y * CurrForward.x - CurrRight.x * CurrForward.y);
-	}
+	//if (PureWishDir != CurrWishDir) {
+	//	pUserCmd->flForwardMove = (PureWishDir.x * CurrRight.y - CurrRight.x * PureWishDir.y) / (CurrRight.y * CurrForward.x - CurrRight.x * CurrForward.y);
+	//	pUserCmd->flSideMove = (PureWishDir.y * CurrForward.x - CurrForward.y * PureWishDir.x) / (CurrRight.y * CurrForward.x - CurrRight.x * CurrForward.y);
+	//}
 
-	//static CConVar* cl_forwardspeed = i::ConVar->FindVar("cl_forwardspeed");
-	//static CConVar* cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
+	static CConVar* cl_forwardspeed = i::ConVar->FindVar("cl_forwardspeed");
+	static CConVar* cl_sidespeed = i::ConVar->FindVar("cl_sidespeed");
 
-	//float flForwardDelta = cl_forwardspeed->GetFloat() - pCmd->flForwardMove;
-	//float flSidewayDelta = cl_sidespeed->GetFloat() - pCmd->flSideMove;
-	//float flMoveDelta = flForwardDelta < flSidewayDelta ? pCmd->flForwardMove / cl_forwardspeed->GetFloat() : pCmd->flSideMove / cl_sidespeed->GetFloat();
+	float flForwardDelta = cl_forwardspeed->GetFloat() - pCmd->flForwardMove;
+	float flSidewayDelta = cl_sidespeed->GetFloat() - pCmd->flSideMove;
+	float flMoveDelta = flForwardDelta < flSidewayDelta ? pCmd->flForwardMove / cl_forwardspeed->GetFloat() : pCmd->flSideMove / cl_sidespeed->GetFloat();
 
-	//Vector vRealF, vRealR;
-	//Vector aRealDir = pCmd->angViewPoint;
-	//aRealDir.Normalize();
-	//aRealDir.Clamp();
+	Vector vRealF, vRealR;
+	Vector aRealDir = pCmd->angViewPoint;
+	aRealDir.Normalize();
+	aRealDir.Clamp();
 
-	//M::AngleVectors(aRealDir, &vRealF, &vRealR, nullptr);
-	//vRealF[2] = 0;
-	//vRealR[2] = 0;
+	M::AngleVectors(aRealDir, &vRealF, &vRealR, nullptr);
+	vRealF[2] = 0;
+	vRealR[2] = 0;
 
-	//vRealF.VectorNormalize();
-	//vRealR.VectorNormalize();
+	vRealF.VectorNormalize();
+	vRealR.VectorNormalize();
 
-	//Vector aWishDir = oldang;
-	//aWishDir.Normalize();
-	//aWishDir.Clamp();
+	Vector aWishDir = oldang;
+	aWishDir.Normalize();
+	aWishDir.Clamp();
 
-	//Vector vWishF, vWishR;
-	//M::AngleVectors(aWishDir, &vWishF, &vWishR, nullptr);
+	Vector vWishF, vWishR;
+	M::AngleVectors(aWishDir, &vWishF, &vWishR, nullptr);
 
-	//vWishF[2] = 0;
-	//vWishR[2] = 0;
+	vWishF[2] = 0;
+	vWishR[2] = 0;
 
-	//vWishF.VectorNormalize();
-	//vWishR.VectorNormalize();
+	vWishF.VectorNormalize();
+	vWishR.VectorNormalize();
 
-	//Vector vWishVel;
-	//vWishVel[0] = vWishF[0] * pCmd->flForwardMove + vWishR[0] * pCmd->flSideMove;
-	//vWishVel[1] = vWishF[1] * pCmd->flForwardMove + vWishR[1] * pCmd->flSideMove;
-	//vWishVel[2] = 0;
+	Vector vWishVel;
+	vWishVel[0] = vWishF[0] * pCmd->flForwardMove + vWishR[0] * pCmd->flSideMove;
+	vWishVel[1] = vWishF[1] * pCmd->flForwardMove + vWishR[1] * pCmd->flSideMove;
+	vWishVel[2] = 0;
 
-	//float a = vRealF[0], b = vRealR[0], c = vRealF[1], d = vRealR[1];
-	//float v = vWishVel[0], w = vWishVel[1];
+	float a = vRealF[0], b = vRealR[0], c = vRealF[1], d = vRealR[1];
+	float v = vWishVel[0], w = vWishVel[1];
 
-	//float flDivide = (a * d - b * c);
-	//float x = (d * v - b * w) / flDivide;
-	//float y = (a * w - c * v) / flDivide;
+	float flDivide = (a * d - b * c);
+	float x = (d * v - b * w) / flDivide;
+	float y = (a * w - c * v) / flDivide;
 
-	//pCmd->flForwardMove = x + (flMoveDelta * pCmd->angViewPoint.z);
-	//pCmd->flSideMove = y + (flMoveDelta * pCmd->angViewPoint.z);
+	pCmd->flForwardMove = x + (flMoveDelta * pCmd->angViewPoint.z);
+	pCmd->flSideMove = y + (flMoveDelta * pCmd->angViewPoint.z);
 
 }
 
@@ -1169,7 +1169,7 @@ void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
 	info.m_flBlue = color[2];
 	info.m_nSegments = 2;
 	info.m_bRenderable = true;
-	info.m_nFlags = FBEAM_ONLYNOISEONCE | FBEAM_NOTILE | FBEAM_HALOBEAM;
+	info.iFlags = FBEAM_ONLYNOISEONCE | FBEAM_NOTILE | FBEAM_HALOBEAM;
 	info.m_vecStart = vecSource;
 	info.m_vecEnd = vecEnd;
 

@@ -343,7 +343,7 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
             ImGui::SliderInt(("Min"), &iFakelagMin, 0, iFakelag);
             ImGui::SliderInt(("Max"), &iFakeLagMax, iFakelagMin, iFakelag);
 
-            ImGui::Checkbox(("Break lagcompenstaion"), &bDefensive);
+            ImGui::Checkbox(("Break lagcompenstaion"), &bBreakLagcompensation);
 
             ImGui::Checkbox(("Fake ping"), &cfg::misc::bFakePing);
             if (cfg::misc::bFakePing)
@@ -363,7 +363,7 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
         ImGui::Keybind(("##iFakeDuckKey"), &iFakeDuckKey);
 
         ImGui::Checkbox("Auto peek", &bAutoPeek);
-        ImGui::ColorEdit4("##localIdealTickColor", cfg::model::localIdealTickColor, true);
+        ImGui::ColorEdit4("##localIdealTickColor", cfg::model::flAutopeekColor, true);
         ImGui::Keybind("##iAutoPeek", &iAutoPeek);
     }
     ImGui::EndChild();
@@ -450,7 +450,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
 
             ImGui::Checkbox(("Out of fov"), &cfg::misc::bOOF);
             if (cfg::misc::bOOF) {
-                ImGui::ColorEdit4(("##flOOF"), cfg::misc::flOOF);
+                ImGui::ColorEdit4(("##flOOF"), cfg::misc::flOOFColor);
                 ImGui::SliderInt(("Distance##2"), &cfg::misc::iOOFDistance, 1, 100);
                 ImGui::SliderInt(("Size"), &cfg::misc::iOOFSize, 1, 30);
             }
@@ -490,18 +490,18 @@ void menu::Visual(ImVec2 savedCursorPosition) {
 
             if (iSelect == ENEMY) {
 
-                ImGui::Checkbox(("Backtrack"), &enemyBTEnable);
-                if (enemyBTEnable) {
-                    ImGui::ColorEdit4(("##enemyBTColor"), enemyBTColor);
-                    ImGui::Combo(("Material##5"), &enemyBTType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
+                ImGui::Checkbox(("Backtrack"), &bBacktrackChams);
+                if (bBacktrackChams) {
+                    ImGui::ColorEdit4(("##enemyBTColor"), flBacktrackColor);
+                    ImGui::Combo(("Material##5"), &iBacktrackType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
                 }
             }
             else if (iSelect == LOCAL) {
 
-                ImGui::Checkbox(("Desync"), &localDesync);
-                if (localDesync) {
-                    ImGui::ColorEdit4(("##localDesyncColor"), localDesyncColor);
-                    ImGui::Combo(("Material##4"), &localDesyncType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
+                ImGui::Checkbox(("Desync"), &bDesyncChams);
+                if (bDesyncChams) {
+                    ImGui::ColorEdit4(("##localDesyncColor"), flDesyncChamsCol);
+                    ImGui::Combo(("Material##4"), &bDesyncType, arrChamsType, IM_ARRAYSIZE(arrChamsType));
                 }
             }
 
@@ -543,62 +543,62 @@ void menu::Visual(ImVec2 savedCursorPosition) {
 
         case 2:
 
-            ImGui::Checkbox("Attachment", &attachmentChams[iSelect]);
-            ImGui::ColorEdit4("##attachmentpicker", attachmentChamsColor[iSelect]);
-            ImGui::Checkbox("Wireframe", &attachmentChamsXhair[iSelect]);
+            ImGui::Checkbox("Attachment", &bAttachment[iSelect]);
+            ImGui::ColorEdit4("##attachmentpicker", flAttachmentColor[iSelect]);
+            ImGui::Checkbox("Wireframe", &bAttachmentXhair[iSelect]);
 
             ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
             switch (iSelectedOverlay) {
             case 0:
                 // overlay
-                ImGui::Checkbox(("Overlay##1"), &attachmentOverlay[iSelect]);
-                ImGui::ColorEdit4(("##OverlayColor"), attachmentOverlayColor[iSelect]);
-                ImGui::Checkbox(("Wireframe##3"), &attachmentOverlayXhair[iSelect]);
+                ImGui::Checkbox(("Overlay##1"), &bAttachmentOverlay[iSelect]);
+                ImGui::ColorEdit4(("##OverlayColor"), bAttachmentOverlayColor[iSelect]);
+                ImGui::Checkbox(("Wireframe##3"), &bAttachmentOverlayXhair[iSelect]);
                 break;
 
             case 1:
                 // thin
-                ImGui::Checkbox(("Overlay##2"), &attachmentThinOverlay[iSelect]);
-                ImGui::ColorEdit4(("##ThinOverlayColor"), attachmentThinOverlayColor[iSelect]);
-                ImGui::Checkbox(("Wireframe##3"), &attachmentThinOverlayXhair[iSelect]);
+                ImGui::Checkbox(("Overlay##2"), &bAttachmentThinOverlay[iSelect]);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), bAttachmentThinOverlayColor[iSelect]);
+                ImGui::Checkbox(("Wireframe##3"), &bAttachmentThinOverlayXhair[iSelect]);
                 break;
 
             case 2:
                 // animated
-                ImGui::Checkbox(("Overlay##3"), &attachmentAnimatedOverlay[iSelect]);
-                ImGui::ColorEdit4(("##AnimOverlayColor"), attachmentAnimatedOverlayColor[iSelect]);
-                ImGui::Checkbox(("Wireframe##3"), &attachmentAnimatedOverlayXhair[iSelect]);
+                ImGui::Checkbox(("Overlay##3"), &bAttachmentAnimatedOverlay[iSelect]);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), bAttachmentAnimatedOverlayColor[iSelect]);
+                ImGui::Checkbox(("Wireframe##3"), &bAttachmentAnimatedOverlayXhair[iSelect]);
                 break;
             }
             break;
 
         case 3:
 
-            ImGui::Combo(("Material"), &viewmodelType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
+            ImGui::Combo(("Material"), &iViewmodelType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
 
-            ImGui::Checkbox("Hands", &viewmodel);
-            ImGui::ColorEdit4("##viewmodelColor", viewmodelColor);
+            ImGui::Checkbox("Hands", &bViewmodel);
+            ImGui::ColorEdit4("##viewmodelColor", flViewmodelColor);
             ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
             switch (iSelectedOverlay) {
             case 0:
                 // overlay
-                ImGui::Checkbox(("Overlay##1"), &viewmodelOverlay);
-                ImGui::ColorEdit4(("##OverlayColor"), viewmodelOverlayColor);
-                ImGui::Checkbox(("Wireframe##3"), &viewmodelOverlayXhair);
+                ImGui::Checkbox(("Overlay##1"), &bViewmodelOverlay);
+                ImGui::ColorEdit4(("##OverlayColor"), flViewmodelOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bViewmodelOverlayXhair);
                 break;
 
             case 1:
                 // thin
-                ImGui::Checkbox(("Overlay##2"), &viewmodelThinOverlay);
-                ImGui::ColorEdit4(("##ThinOverlayColor"), viewmodelThinOverlayColor);
-                ImGui::Checkbox(("Wireframe##3"), &viewmodelThinOverlayXhair);
+                ImGui::Checkbox(("Overlay##2"), &bViewmodelThinOverlay);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), flViewmodelThinOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bViewmodelThinOverlayXhair);
                 break;
 
             case 2:
                 // animated
-                ImGui::Checkbox(("Overlay##3"), &viewmodelAnimOverlay);
-                ImGui::ColorEdit4(("##AnimOverlayColor"), viewmodelAnimOverlayColor);
-                ImGui::Checkbox(("Wireframe##3"), &viewmodelAnimOverlayXhair);
+                ImGui::Checkbox(("Overlay##3"), &bViewmodelAnimOverlay);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), flViewmodelAnimOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bViewmodelAnimOverlayXhair);
                 break;
             }
 
@@ -606,31 +606,31 @@ void menu::Visual(ImVec2 savedCursorPosition) {
 
         case 4:
 
-            ImGui::Combo(("Material"), &weaponType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
+            ImGui::Combo(("Material"), &iWeaponType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
 
-            ImGui::Checkbox("Weapon", &weapon);
-            ImGui::ColorEdit4("##weaponColor", weaponColor);
+            ImGui::Checkbox("Weapon", &cfg::model::bWeapon);
+            ImGui::ColorEdit4("##weaponColor", cfg::model::flWeaponColor);
             ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
             switch (iSelectedOverlay) {
             case 0:
                 // overlay
-                ImGui::Checkbox(("Overlay##1"), &weaponOverlay);
-                ImGui::ColorEdit4(("##OverlayColor"), weaponOverlayColor);
-                ImGui::Checkbox(("Wireframe##3"), &weaponOverlayXhair);
+                ImGui::Checkbox(("Overlay##1"), &bWeaponOverlay);
+                ImGui::ColorEdit4(("##OverlayColor"), flWeaponOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bWeaponOverlayXhair);
                 break;
 
             case 1:
                 // thin
-                ImGui::Checkbox(("Overlay##2"), &weaponThinOverlay);
-                ImGui::ColorEdit4(("##ThinOverlayColor"), weaponThinOverlayColor);
-                ImGui::Checkbox(("Wireframe##3"), &weaponThinOverlayXhair);
+                ImGui::Checkbox(("Overlay##2"), &bWeaponThinOverlay);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), bWeaponThinOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bWeaponThinOverlayXhair);
                 break;
 
             case 2:
                 // animated
-                ImGui::Checkbox(("Overlay##3"), &weaponAnimOverlay);
-                ImGui::ColorEdit4(("##AnimOverlayColor"), weaponAnimOverlayColor);
-                ImGui::Checkbox(("Wireframe##3"), &weaponAnimOverlayXhair);
+                ImGui::Checkbox(("Overlay##3"), &bWeaponAnimOverlay);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), flWeaponAnimOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &flWeaponAnimOverlayXhair);
                 break;
             }
 
@@ -837,6 +837,7 @@ void menu::Misc(ImVec2 savedCursorPosition) {
     ImGui::SetCursorPos(NextWindowCursor);
     ImGui::BeginChild("##BotRight", ImVec2(ImGui::GetContentRegionAvail().x - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
+		ImGui::Checkbox("Keybind", &cfg::misc::bKeyBindList);
         if (bKeyBindList) {
             static const char* options[] = { "Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping" };
             ImGui::MultiComboBox("Keybinds", options, cfg::misc::iKeyBindList, IM_ARRAYSIZE(options));

@@ -2,54 +2,11 @@
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
 
-struct animationData_t {
-
-	float flPoseParameters[24];
-	float flGoalFeetYaw;
-	float flVelocityModifier;
-
-	int lastUpdateTime[15];
-
-	CAnimationLayer AnimationLayer[15];
-	matrix3x4_t Matrix[128];
-	Vector vecViewAngle;
-};
-
-class localanimation {
-
-public:
-
-	animationData_t localdata{};
-
-	bool bdoneBuildingLayers = false;
-	bool bdoneBuildingPoses = false;
-
-	bool storeLayer = false;
-	bool restoreLayer = false;
-
-	bool update = false;
-
-	void FixVelocityModifer();
-	void UpdateLocal();
-
-	void SetSequence(CAnimationLayer*, int);
-	void SetCycle(CAnimationLayer*, int);
-	void SetOrder(CAnimationLayer*, int);
-	void SetWeight(CAnimationLayer*, float);
-	void AnimlayerFix(CUserCmd*, CAnimState*);
-	void SetLayerSequence(CAnimationLayer*, int);
-	
-private:
-
-	float flLastLayerFix = 0.f;
-};
-inline localanimation localanim;
-
 struct AnimationRecord_t
 {
-	int m_nFlags = 0;
+	int iFlags = 0;
 	int m_nButtons = 0;
-	int m_nMoveType = 0;
+	int iMoveType = 0;
 
 	bool m_bIsShooting = false;
 
@@ -62,6 +19,20 @@ struct AnimationRecord_t
 
 	Vector m_vecOrigin = Vector(0, 0, 0);
 	Vector m_vecVelocity = Vector(0, 0, 0);
+};
+
+struct animationData_t {
+
+	int iMoveType = 0;
+	int iFlags = 0;
+
+	std::array<CAnimationLayer, ANIMATION_LAYER_COUNT> arrLayers = { };
+	std::array<float, MAXSTUDIOPOSEPARAM> arrPoses = { };
+
+	Vector vecMatrixOrigin = Vector(0, 0, 0);
+	std::array < matrix3x4_t, MAXSTUDIOBONES > arrMatrix = { };
+
+	CAnimState pAnimationState;
 };
 
 class C_LocalAnimations
@@ -86,70 +57,49 @@ public:
 
 	virtual float GetYawDelta()
 	{
-		return m_LocalData.m_flYawDelta;
+		return LocalData_t.flYawDelta;
 	}
 	virtual Vector GetShootPosition()
 	{
-		return m_LocalData.m_vecShootPosition;
+		return LocalData_t.vecShootPosition;
 	}
 	virtual void ResetData();
 	virtual std::array < matrix3x4_t, MAXSTUDIOBONES > GetDesyncMatrix()
 	{
-		return m_LocalData.m_Fake.m_Matrix;
+		return LocalData_t.FakeData.arrMatrix;
 	}
 	virtual std::array < matrix3x4_t, MAXSTUDIOBONES > GetRealMatrix()
 	{
-		return m_LocalData.m_Real.m_Matrix;
+		return LocalData_t.RealData.arrMatrix;
 	}
+	Vector vecViewAngle = Vector(0, 0, 0);
 private:
+
 
 	struct
 	{
-		Vector m_vecAbsOrigin = Vector(0, 0, 0);
-		int m_nFlags = 0;
+		Vector vecAbsOrigin = Vector(0, 0, 0);
+		int iFlags = 0;
 		int iSimulationTick = 0;
 
-		float m_flSpawnTime = 0.0f;
-		float m_flYawDelta = 0.0f;
+		float flSpawnTime = 0.0f;
+		float flYawDelta = 0.0f;
 		float flInterpolationAmount = 0.f;
 
-		std::array < AnimationRecord_t, 150 > m_AnimRecords;
+		std::array < AnimationRecord_t, 150 > arrAnimRecords;
 
-		Vector m_vecShootPosition = Vector(0, 0, 0);
-		struct
-		{
-			int m_nMoveType = 0;
-			int m_nFlags = 0;
-
-			std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_Layers = { };
-			std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_CleanLayers = { };
-			std::array < float, MAXSTUDIOPOSEPARAM > m_PoseParameters = { };
-
-			Vector m_vecMatriigin = Vector(0, 0, 0);
-			std::array < matrix3x4_t, MAXSTUDIOBONES > m_Matrix = { };
-
-			CAnimState m_AnimationState;
-		} m_Fake;
+		Vector vecShootPosition = Vector(0, 0, 0);
+		animationData_t FakeData;
+		animationData_t RealData;
 
 		struct
 		{
-			std::array < matrix3x4_t, MAXSTUDIOBONES > m_Matrix = { };
-			std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_Layers = { };
-			std::array < float, MAXSTUDIOPOSEPARAM > m_PoseParameters = { };
-			CAnimState m_AnimationState;
-		} m_Shoot;
+			std::array < matrix3x4_t, MAXSTUDIOBONES > arrMatrix = { };
+			std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > arrLayers = { };
+			std::array < float, MAXSTUDIOPOSEPARAM > arrPoses = { };
+			CAnimState pAnimationState;
+		} ShootData_t;
 
-		struct
-		{
-			int m_nMoveType = 0;
-			int m_nFlags = 0;
-
-			std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > m_Layers = { };
-			std::array < float, MAXSTUDIOPOSEPARAM > m_PoseParameters = { };
-
-			Vector m_vecMatriigin = Vector(0, 0, 0);
-			std::array < matrix3x4_t, MAXSTUDIOBONES > m_Matrix = { };
-		} m_Real;
-	} m_LocalData;
+	} LocalData_t;
 };
 inline C_LocalAnimations* g_LocalAnimations = new C_LocalAnimations();
