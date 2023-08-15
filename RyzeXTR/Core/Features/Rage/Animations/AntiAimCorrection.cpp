@@ -283,43 +283,12 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 #endif
 
 	const int iEntityID = pEntity->EntIndex();
-	if (arrMissedShots[iEntityID] != 0) 
-		return SetYaw(pRecord, LEFT + arrMissedShots[iEntityID] % 3);
+	switch (arrMissedShots[iEntityID] % 3) {
 
-	if (pPrevious->iResolveSide != VISUAL)
-		return SetYaw(pRecord, pPrevious->iResolveSide);
-
-	return SetYaw(pRecord, RIGHT);
-}
-
-void Animations::CreateMoveResolver(Lagcompensation::LagRecord_t* pRecord, Vector vecEyePosition) {
-
-	CBaseEntity* pEntity = pRecord->pEntity;
-	const int iEntityID = pEntity->EntIndex();
-
-	if (arrMissedShots[iEntityID] != 0)
-		return;
-
-	CTraceFilter filterRight(g::pLocal), filterLeft(g::pLocal);
-	Trace_t dataRight, dataLeft;
-
-	pRecord->ApplyMatrix(pEntity, pRecord->pSideMatrixes[1]);
-	i::EngineTrace->TraceRay(Ray_t(vecEyePosition, pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pSideMatrixes[1])), MASK_SOLID & ~CONTENTS_MONSTER, &filterRight, &dataRight);
-	pRecord->ApplyMatrix(pEntity, pRecord->pSideMatrixes[0]);
-	i::EngineTrace->TraceRay(Ray_t(vecEyePosition, pEntity->GetHitboxPosition(HITBOX_HEAD, pRecord->pSideMatrixes[0])), MASK_SOLID & ~CONTENTS_MONSTER, &filterLeft, &dataLeft);
-
-	pRecord->ApplyMatrix(pEntity, RESOLVE);
-	bool bTraceRight = dataRight.pHitEntity == pEntity;
-	bool bTraceLeft = dataLeft.pHitEntity == pEntity;
-
-	static std::array<int, 65> iFoundHit{0};
-
-	if (!bTraceRight && !bTraceLeft)
-		iFoundHit[iEntityID] = 0;
-
-	pRecord->iResolveSide = iFoundHit[iEntityID];
-	if (iFoundHit[iEntityID] != 0)
-		return;
-
-	pRecord->iResolveSide = iFoundHit[iEntityID] = bTraceLeft ? !bTraceRight ? RIGHT : 0 : bTraceRight ? LEFT : 0;
+	case 1:
+		return SetYaw(pRecord, LEFT);
+		
+	case 2:
+		return SetYaw(pRecord, RIGHT);
+	}
 }

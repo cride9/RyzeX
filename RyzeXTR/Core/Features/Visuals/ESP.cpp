@@ -1681,8 +1681,10 @@ void visual::DrawList() {
 
 void visual::HandleDamageIndicator() {
 
-	if (vecDamageIndicator.empty() || cfg::misc::bDamageIndicator)
+	if (vecDamageIndicator.empty() || !cfg::misc::bDamageIndicator) {
+		vecDamageIndicator.clear();
 		return;
+	}
 
 	static std::unordered_map<int, std::pair<float, float>> animationMap{};
 	for (int i = 0; i < vecDamageIndicator.size(); i++) {
@@ -1706,6 +1708,6 @@ void visual::HandleDamageIndicator() {
 		if (i::DebugOverlay->ScreenPosition(it.first, vecScreenPosition))
 			continue;
 
-		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[0], animationMap.at(it.second).second), g::fonts::FlagESP, true, std::to_string(it.second).c_str());
+		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[1], cfg::misc::flDamageIndicator[2], animationMap.at(it.second).second), g::fonts::FlagESP, true, std::to_string(it.second).c_str());
 	}
 }

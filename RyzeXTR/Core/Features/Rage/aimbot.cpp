@@ -110,13 +110,22 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
 
+		if (vecHitscan.size() > 2)
+			break;
+
+		float flTransformedDamage = curConfig.iMinimumDamage;
+		if (curConfig.iMinimumDamage > 100)
+			flTransformedDamage = max(it->pEntity->GetHealth(), 20) + (curConfig.iMinimumDamage - 100);
+
 		/* Go through every valid data */
 		for (int i = 0; i <= it->iLastValid; i++) {
 
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at(i);
-			if (i != 0 && (!pRecord->bValid || pRecord->bBreakingLagcompensation))
+			if (pRecord->bBreakingLagcompensation || !pRecord->bValid)
 				continue;
-			
+
+			bool bFarAway = pRecord->vecOrigin.DistTo(vecEyePosition) >= 16384.f;
+
 			/* Set current matrix for accurate tracing */
 			pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
 			for (int& iHitbox : curConfig.vecHitboxes[NORMAL]) {
@@ -132,17 +141,19 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 					Vector output;
 					M::VectorAngles(vecCenter - vecEyePosition, output);
-					Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.NormalizeAngle());
+					Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.Normalize());
 
-					if (abs((vecDistanceBetween).NormalizeAngle().Length2D()) > cfg::rage::iAimbotFov)
+					if (abs((vecDistanceBetween).Normalize().Length2D()) > cfg::rage::iAimbotFov)
 						continue;
 				}
 
 				// OPTIMIZATION: don't create points on body when we're forcing safe point
-				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint);
+				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint && !bFarAway);
 				// OPTIMIZATION: first element in the vector is always the hitbox center
 				bool bFirstElement = true;
-				for (Vector& vecHitboxPoint : vecWorldPoints) {
+				for (size_t j = 0; j < vecWorldPoints.size(); j++) {
+
+					Vector& vecHitboxPoint = vecWorldPoints.at(j);
 
 					/* 7/13/2023: Check if this point is meant to hit that hitbox or not, else don't scan // cride9 */
 					if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecHitboxPoint, iHitbox, pRecord))
@@ -179,7 +190,9 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					/* Prepare bullet data variable for later usage */
 					FireBulletData_t pData;
 					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, &pData);
-					if (flDamage != -1.f) {
+					if (flDamage >= flTransformedDamage) {
+
+						/* Push back this shit */
 						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint)));
 
 						/* If that's a baim hitbox and we can hit it break out of the loop ( Fixes shooting hitbox edge while the middle is out ) */
@@ -520,11 +533,9 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 		if (playerList::arrPlayers[i].bWhiteList)
 			continue;
 
-		anims.CreateMoveResolver(&pLog->pRecord.front(), vecEyePosition);
 		// OPTIMIZATION: autowall can only penetrate 4 wall check if he's behind 4wall or not
 		// traceray is a lot more fps friendly than simulate fire bullet, but cannot calculate lost damage.
 		// COMMENT: Works, but useless. That's not how you want to optimize a ragebot. I'll leave it here for the future tho.
-		
 		//Trace_t traceData = Trace_t();
 		//traceData.vecEnd = Vector(0, 0, 0);
 		//CTraceFilter traceFilter(pLocal);
@@ -595,11 +606,11 @@ std::vector<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeap
 
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
-		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
-		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
 	}
-	refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
-	refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);
+	else {
+		refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
+		refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);
+	}
 
 	return refVecPoints;
 }

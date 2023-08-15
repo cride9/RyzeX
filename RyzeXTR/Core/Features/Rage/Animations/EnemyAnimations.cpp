@@ -898,8 +898,6 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 	pEntity->GetPoseParameters(pRecord->flPoses);
 
-	//FindDesyncSide(pRecord); // meme but sorta worksXD
-	GenerateFreestandMatricies(pEntity, pRecord);
 	if (playerList::arrPlayers[pEntity->EntIndex()].bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerList::arrPlayers[pEntity->EntIndex()].flOverrideYaw);
 	else

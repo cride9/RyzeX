@@ -604,7 +604,7 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 
 	pEntity->SetCollisionBounds(vecMins, vecMaxs);
 	pEntity->SetBoneCache(pMatricies[iType]);
-	return pEntity->InvalidateBoneCache();
+	//return pEntity->InvalidateBoneCache();
 }
 
 void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t* pMatrix) {
@@ -614,7 +614,7 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t
 
 	pEntity->SetCollisionBounds(vecMins, vecMaxs);
 	pEntity->SetBoneCache(pMatrix);
-	return pEntity->InvalidateBoneCache();
+	//return pEntity->InvalidateBoneCache();
 }
 
 

@@ -466,9 +466,9 @@ int antiaim::ClosesToCrosshair() {
 
 		Vector output;
 		M::VectorAngles(pEntity->GetHitboxPosition(HITBOX_HEAD, pLog->pCachedMatrix.data()) - vecLocalPosition, output);
-		Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.NormalizeAngle());
+		Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.Normalize());
 
-		float flFov = abs((vecDistanceBetween).NormalizeAngle().Length2D());
+		float flFov = abs((vecDistanceBetween).Normalize().Length2D());
 
 		if (flFov < flLowestFOV) {
 
@@ -538,7 +538,7 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 		auto vecPosition = pEnt->IsDormant() ? visual::vecDormatPosition[i] : pEnt->GetVecOrigin();
 
 		M::VectorAngles(vecPosition - g::pLocal->GetEyePosition(false), vecCalcAngle);
-		Vector vecDistanceBetween = (g::vecOriginalViewAngle.NormalizeAngle() - vecCalcAngle.NormalizeAngle());
+		Vector vecDistanceBetween = (g::vecOriginalViewAngle.Normalize() - vecCalcAngle.Normalize());
 
 		if (abs(vecDistanceBetween.Length2D()) < flBestFov) {
 

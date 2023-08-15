@@ -1584,6 +1584,7 @@ void LuaImplementation::CreateLuaState( )
 		ut_PlayerList_PlayerSettings[ XorStr( "IsOverridingResolver" ) ] = &LUAClasses::LuaPlayerList_PlayerSettings::IsOverridingResolver;
 		ut_PlayerList_PlayerSettings[ XorStr( "ToggleResolverOverride" ) ] = &LUAClasses::LuaPlayerList_PlayerSettings::ToggleResolverOverride;
 		ut_PlayerList_PlayerSettings[ XorStr( "SetCustomResolveYaw" ) ] = &LUAClasses::LuaPlayerList_PlayerSettings::SetCustomResolveYaw;
+
 	}
 
 	/* CUserCmd */ {
