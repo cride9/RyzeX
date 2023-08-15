@@ -341,17 +341,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 					BeginChams(materials[iBacktrackType], flBacktrackColor.data(), true, bBacktrackXhair);
 					original(i::StudioRender, 0U, pResults, info, pLog->pRecord.at(pLog->iLastValid).pMatricies[VISUAL], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-				
-#ifdef _DEBUG
-					BeginChams(materials[enemyBTType], ChamsColorXQZ[0], true, enemyBTXhair);
-					original(i::StudioRender, 0U, pResults, info, pLog->pRecord.front().pSideMatrixes[0], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-
-					BeginChams(materials[enemyBTType], OverlayColorXQZ[0], true, enemyBTXhair);
-					original(i::StudioRender, 0U, pResults, info, pLog->pRecord.front().pSideMatrixes[1], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-
-					//BeginChams(materials[enemyBTType], ThinOverlayColorXQZ[0], true, enemyBTXhair);
-					//original(i::StudioRender, 0U, pResults, info, pLog->pRecord.front().pMatricies[CENTER], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-#endif
 				}
 			}
 			if (bChams[0]) {

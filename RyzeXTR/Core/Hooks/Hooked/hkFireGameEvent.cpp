@@ -44,18 +44,20 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 	//} while ( pNextEvent != nullptr );
 }
 
-bool __fastcall h::hkFireEvent( void* ecx, void* edx, IGameEvent* m_pEvent )
+bool __fastcall h::hkFireEvent( void* ecx, void* edx, IGameEvent* pEvent )
 {
 	static auto oFireEvent = detour::fireEvent.GetOriginal<decltype( &hkFireEvent )>( );
 
+	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_FIRE_GAME_EVENT ], pEvent );
+
 	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
-		return oFireEvent( ecx, edx, m_pEvent );
+		return oFireEvent( ecx, edx, pEvent );
 
 	auto pEventInfo = i::ClientState->pEvents; //0x4E6C
 	CEventInfo* pNextEvent = nullptr;
 
 	if ( !pEventInfo )
-		return oFireEvent( ecx, edx, m_pEvent );
+		return oFireEvent( ecx, edx, pEvent );
 
 	do
 	{
@@ -77,5 +79,5 @@ bool __fastcall h::hkFireEvent( void* ecx, void* edx, IGameEvent* m_pEvent )
 	}
 	
 	while ( pNextEvent != nullptr );
-		return oFireEvent( ecx, edx, m_pEvent );
+		return oFireEvent( ecx, edx, pEvent );
 }

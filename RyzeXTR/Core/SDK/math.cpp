@@ -589,6 +589,44 @@ float M::RemapValClamped(float val, float A, float B, float C, float D)
 	return C + (D - C) * cVal;
 }
 
+bool M::WorldToScreen( const Vector& in, Vector2D& out )
+{
+	const auto ScreenTransform = []( const Vector& in, Vector2D& out ) -> bool
+	{
+		static auto& W2SMatrix = i::EngineClient->WorldToScreenMatrix( );
+
+		out.x = W2SMatrix.arrData[ 0 ][ 0 ] * in.x + W2SMatrix.arrData[ 0 ][ 1 ] * in.y + W2SMatrix.arrData[ 0 ][ 2 ] * in.z + W2SMatrix.arrData[ 0 ][ 3 ];
+		out.y = W2SMatrix.arrData[ 1 ][ 0 ] * in.x + W2SMatrix.arrData[ 1 ][ 1 ] * in.y + W2SMatrix.arrData[ 1 ][ 2 ] * in.z + W2SMatrix.arrData[ 1 ][ 3 ];
+
+		const float w = W2SMatrix.arrData[ 3 ][ 0 ] * in.x + W2SMatrix.arrData[ 3 ][ 1 ] * in.y + W2SMatrix.arrData[ 3 ][ 2 ] * in.z + W2SMatrix.arrData[ 3 ][ 3 ];
+
+		if (w < 0.001f)
+		{
+			out.x *= 100000.0f;
+			out.y *= 100000.0f;
+			return false;
+		}
+
+		out.x /= w;
+		out.y /= w;
+
+		return true;
+	};
+
+	if (ScreenTransform( in, out ))
+	{
+		int w = 0, h = 0;
+		i::EngineClient->GetScreenSize( w, h );
+
+		out.x = ( w / 2.0f ) + ( out.x * w ) / 2.0f;
+		out.y = ( h / 2.0f ) - ( out.y * h ) / 2.0f;
+
+		return true;
+	}
+
+	return false;
+}
+
 //float M::ApproachAngle(float target, float value, float speed) {
 //
 //	target = anglemod(target);

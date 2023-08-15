@@ -7,6 +7,7 @@
 #include "../../../xorstr.h"
 #include "../../Visuals/ESP.h"
 #include "../../Visuals/chams.h"
+#include <format>
 
 void Animations::ResolverLogic() {
 
@@ -45,8 +46,8 @@ void Animations::ResolverLogic() {
 			anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		misc::Print(std::format(
-			("Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}"),
+		misc::Print(std::vformat(
+			XorStr("Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}" ), std::make_format_args(
 			info.szName,
 			misc::GetHitgroupName(iHitHitbox),
 			iHitDmg,
@@ -55,7 +56,7 @@ void Animations::ResolverLogic() {
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
-		));
+		) ) );
 		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, iHitDmg));
 		refCurrentData.ClearTarget();
 		return;
@@ -68,8 +69,8 @@ void Animations::ResolverLogic() {
 			anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++; 
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		misc::Print(std::format(
-			("Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}"),
+		misc::Print(std::vformat(
+			XorStr("Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}"), std::make_format_args(
 			info.szName,
 			misc::GetHitgroupName(iHitHitbox),
 			iHitDmg,
@@ -78,7 +79,7 @@ void Animations::ResolverLogic() {
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
-		));
+		)));
 		visual::vecDamageIndicator.push_back(std::make_pair(bBulletImpact, iHitDmg));
 		refCurrentData.ClearTarget();
 		return;
@@ -93,29 +94,29 @@ void Animations::ResolverLogic() {
 		if (refCurrentData.bBacktrack) {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
-			misc::Print(std::format(
-				("Missed {}'s {} due to invalid record or resolver on backtrack. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"),
+			misc::Print(std::vformat(
+				XorStr("Missed {}'s {} due to invalid record or resolver on backtrack. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args( 
 				info.szName,
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
-			));
+			)));
 			refCurrentData.ClearTarget();
 			return;
 		}
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		misc::Print(std::format(
-			("Missed {}'s {} due to resolver. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"),
+		misc::Print(std::vformat(
+			XorStr("Missed {}'s {} due to resolver. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args( 
 			info.szName,
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
-		));
+		)));
 		refCurrentData.ClearTarget();
 	}
 	else {
@@ -123,15 +124,15 @@ void Animations::ResolverLogic() {
 		if (refCurrentData.flHitchance >= 99) {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
-			misc::Print(std::format(
-				("Missed {}'s {} due to correction. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"),
+			misc::Print(std::vformat(
+				XorStr("Missed {}'s {} due to correction. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
 				info.szName,
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
-			));
+			)));
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -146,29 +147,29 @@ void Animations::ResolverLogic() {
 		if (bOccluded) { // traceData.pHitEntity != nullptr && traceData.pHitEntity == refCurrentData.pAimbotTarget || data.flCurrentDamage == 0.f
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
-			misc::Print(std::format(
-				("Missed {}'s {} due to occlusion. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"),
+			misc::Print(std::vformat(
+				XorStr("Missed {}'s {} due to occlusion. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
 				info.szName,
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flHitchance,
 				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
-			));
+			)));
 			refCurrentData.ClearTarget();
 			return;
 		}
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		misc::Print(std::format(
-			("Missed {}'s {} due to spread. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"),
+		misc::Print(std::vformat(
+			XorStr("Missed {}'s {} due to spread. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
 			info.szName,
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flHitchance,
 			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
-		));
+		)));
 		refCurrentData.ClearTarget();
 	}
 }

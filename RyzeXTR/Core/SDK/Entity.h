@@ -544,7 +544,6 @@ class CWeaponCSBase;
 class CBaseEntity : public IClientEntity{
 
 public:
-
 	template< typename T >
 	T& get( size_t offset ) {
 		return *( T* )( ( uintptr_t )this + offset );

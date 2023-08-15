@@ -108,6 +108,8 @@ namespace M
 
 	float RemapValClamped(float val, float A, float B, float C, float D);
 
+	bool WorldToScreen( const Vector& in, Vector2D& out );
+
 	float AngleDiff(float destAngle, float srcAngle);
 
 	float DotProduct(Vector v1, Vector v2);

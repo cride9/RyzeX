@@ -6,8 +6,25 @@
 
 #include "../Features/Misc/Playerlist.h"
 #include "../Features/Visuals/drawlist.h"
+#include "../Features/Rage/aimbot.h"
 
 #include "../../Dependecies/ImGui/imgui_internal.h"
+
+namespace ExloError
+{
+	template <typename T>
+	inline void ParseError( T* Value, std::string szReason = XorStr("") )
+	{
+		if (Value == nullptr)
+		{
+			LuaImplementation::PrintError( std::vformat(XorStr( "Data was null when trying to get: {}" ), std::make_format_args( szReason ) ) );
+			return;
+		}
+		
+		LuaImplementation::PrintError( XorStr( "Unknown error" ) );
+	}
+
+};
 
 void LuaPanic( sol::optional< std::string > message )
 {
@@ -264,6 +281,110 @@ namespace LUAClasses
 				return;
 
 			pSettings->flOverrideYaw = value;
+		}
+	};
+
+	class RageBot_CachedData
+	{
+		rageBotData_t* pData = &aimbot.GetHitLogData( );
+	public:
+		RageBot_CachedData( ) : pData{ nullptr } { }
+		RageBot_CachedData( rageBotData_t* pData ) : pData{ pData } { }
+
+		LuaPlayer* GetTarget( ) {
+			if (!pData || pData->pAimbotTarget)
+			{
+				ExloError::ParseError( pData, XorStr( "GetTarget" ) );
+				return nullptr;
+			}
+			
+			return reinterpret_cast<LuaPlayer*>( pData->pAimbotTarget );
+		}
+
+		/*matrix3x4_t* GetMatrix( )
+		{
+			if ( !pData || !pData->pTargetMatrix )
+				return nullptr;
+
+			return pData->pTargetMatrix;
+		}*/
+
+		Vector GetLocalShootPosition( )
+		{
+			if (!pData || pData->vecLocalShootPosition.IsZero( ))
+			{
+				ExloError::ParseError( pData, XorStr( "GetLocalShootPosition" ) );
+				return Vector( 0, 0, 0 );
+			}
+				
+
+			return pData->vecLocalShootPosition;
+		}
+
+		int GetHitbox( )
+		{
+			if (!pData || pData->iHitbox <= 0)
+			{
+				ExloError::ParseError( pData, XorStr( "GetHitbox" ) );
+				return 0;
+			}
+
+			return pData->iHitbox;
+		}
+
+		int GetBacktrack( )
+		{
+			if (!pData || pData->iTickcount <= 0 || pData->flTargetSimulation <= 0.0f)
+			{
+				ExloError::ParseError( pData, XorStr( "GetBacktrack" ) );
+				return 0;
+			}
+
+			return ( pData->iTickcount - TIME_TO_TICKS( pData->pRecord->flSimulationTime ) );
+		}
+
+		float GetDamage( )
+		{
+			if (!pData || pData->flDamage <= 0.0f)
+			{
+				ExloError::ParseError( pData, XorStr( "GetDamage" ) );
+				return 0.0f;
+			}
+
+			return pData->flDamage;
+		}
+
+		float GetHitChance( )
+		{
+			if (!pData || pData->flHitchance <= 0.0f)
+			{
+				ExloError::ParseError( pData, XorStr( "GetHitChance" ) );
+				return 0.0f;
+			}
+
+			return pData->flHitchance;
+		}
+
+		float GetTargetSimulationTime( )
+		{
+			if (!pData || pData->flTargetSimulation <= 0.0f)
+			{
+				ExloError::ParseError( pData, XorStr( "GetTargetSimulationTime" ) );
+				return 0.0f;
+			}
+
+			return pData->flTargetSimulation;
+		}
+
+		bool CanShoot( )
+		{
+			if (!pData)
+			{
+				ExloError::ParseError( pData, XorStr( "CanShoot" ) );
+				return false;
+			}
+
+			return pData->bCanShoot;
 		}
 	};
 }
@@ -589,6 +710,13 @@ namespace LUAModules
 		{
 			return i::EngineClient->IsVoiceRecording( );
 		}
+
+		Vector2D GetScreenSize( )
+		{
+			int x, y = 0;
+			i::EngineClient->GetScreenSize( x, y );			
+			return Vector2D( x, y );
+		}
 	}
 
 	namespace Render 
@@ -682,11 +810,6 @@ namespace LUAModules
 		//		outline.value_or( false )
 		//	);
 		//}
-
-		//vec2_t GetScreenSize( ) {
-		//	auto ret = g_renderer.get_screen_size( );
-		//	return vec2_t( ret.w, ret.h );
-		//}
 	}
 
 	namespace Print
@@ -701,8 +824,14 @@ namespace LUAModules
 	{
 		int FindOffset( std::string szTableProp ) 
 		{
-			int iOffset = n::netvars[ fnv::Hash( szTableProp.c_str( ) ) ].uOffset;
-			return iOffset;
+			int nOffset = n::netvars[ fnv::HashConst( szTableProp.c_str( ) ) ].uOffset;
+			if (nOffset == 0)
+			{
+				ExloError::ParseError( &nOffset, XorStr( "FindOffset [ " ) + szTableProp + XorStr( " ]" ) );
+				return 0;
+			}
+			
+			return nOffset;
 		}
 	}
 
@@ -1098,43 +1227,6 @@ namespace LUAModules
 		{
 			Config2->FindString(szVar) = szValue;
 		}
-
-		//LuaImplementation::ScriptVarReference_t FindVar( std::string szVarName, sol::this_state L ) 
-		//{
-		//	std::string szCurrentScriptName = helpers::GetCurrentLuaFilename( L );
-		//	int current_line = helpers::GetCurrentLine( L );
-
-		//	auto script = LuaImplementation::FindScriptByName( szCurrentScriptName );
-		//	if (!script) {
-
-		//		// formatting could be better here
-		//		LuaImplementation::PrintError( XorStr( "[FindVar] Failed to find script " ) + szCurrentScriptName );
-		//		return nullptr;
-		//	}
-
-		//	unsigned int hash = std::hash< std::string >( )( szVarName );
-
-		//	auto it = std::find_if( vars::m_vars.begin( ), vars::m_vars.end( ), [ & ]( std::pair< unsigned int, vars::CValue* >& v ) {
-		//		return v.first == hash;
-		//		} );
-
-		//	if (it == vars::m_vars.end( )) {
-		//		// formatting could be better here
-		//		LuaImplementation::PrintError( XorStr( "[FindVar] Could not find variable " ) + szVarName + XorStr( " ( line: " ) + std::to_string( current_line ) + XorStr( " in " ) + szCurrentScriptName + XorStr( " )" ) );
-		//		script->Unload( );
-		//		return nullptr;
-		//	}
-
-		//	if (it->second->is_non_user_accessible( ))
-		//	{
-		//		// formatting could be better here
-		//		LuaImplementation::PrintError( XorStr( "[FindVar] Variable " ) + szVarName + XorStr( " can't be accessed by user ( line: " ) + std::to_string( current_line ) + XorStr( " in " ) + szCurrentScriptName + XorStr( " )" ) );
-		//		script->Unload( );
-		//		return nullptr;
-		//	}
-
-		//	return LuaImplementation::ScriptVarReference_t( it->second );
-		//}
 	}
 
 	namespace CVars 
@@ -1219,20 +1311,19 @@ namespace LUAModules
 			return _CreateInterface< void* >( szModuleName.c_str( ), szInterfaceVer.c_str( ) );
 		}
 
-		void* FindSignature( const wchar_t* szModuleName, std::string szSignature ) 
+		void* FindSignature( std::string szModuleName, std::string szSignature ) 
 		{
-			return reinterpret_cast<void*>( MEM::FindPattern( szModuleName, szSignature.c_str( ) ) );
+			return reinterpret_cast<void*>( MEM::FindPattern( std::wstring( szModuleName.begin( ), szModuleName.end( ) ).c_str(), szSignature.c_str( ) ) );
 		}
 
-		/*sol::object WorldToScreen( Vector vecOrigin, sol::this_state L ) 
+		Vector2D WorldToScreen( Vector vecOrigin, sol::this_state L ) 
 		{
 			Vector2D ret;
-			if (Math::world_to_screen( ret, vecOrigin )) {
-				return sol::make_object( L, ret );
-			}
+			if (M::WorldToScreen( vecOrigin,ret )) 
+				return ret;
 
-			return sol::nil;
-		}*/
+			return Vector2D( 0, 0 );
+		}
 	}
 
 	namespace Trace 
@@ -1526,7 +1617,8 @@ void LuaImplementation::CreateLuaState( )
 		);
 	}
 
-	/* Color */ {
+	/* Color */ 
+	{
 		auto ut_Color = lua.new_usertype< Color >(
 			XorStr( "Color" ),
 
@@ -1585,6 +1677,22 @@ void LuaImplementation::CreateLuaState( )
 		ut_PlayerList_PlayerSettings[ XorStr( "ToggleResolverOverride" ) ] = &LUAClasses::LuaPlayerList_PlayerSettings::ToggleResolverOverride;
 		ut_PlayerList_PlayerSettings[ XorStr( "SetCustomResolveYaw" ) ] = &LUAClasses::LuaPlayerList_PlayerSettings::SetCustomResolveYaw;
 
+	}
+
+	/* LuaRageBot_CachedData */
+	{
+		auto ut_RageBot_CachedData = lua.new_usertype< LUAClasses::RageBot_CachedData >( XorStr( "RageBot_CachedData" ) );
+		// get
+		ut_RageBot_CachedData[ XorStr( "GetBacktrack" ) ] = &LUAClasses::RageBot_CachedData::GetBacktrack;
+		ut_RageBot_CachedData[ XorStr( "GetDamage" ) ] = &LUAClasses::RageBot_CachedData::GetDamage;
+		ut_RageBot_CachedData[ XorStr( "GetHitbox" ) ] = &LUAClasses::RageBot_CachedData::GetHitbox;
+		ut_RageBot_CachedData[ XorStr( "GetHitChance" ) ] = &LUAClasses::RageBot_CachedData::GetHitChance;
+		ut_RageBot_CachedData[ XorStr( "GetLocalShootPosition" ) ] = &LUAClasses::RageBot_CachedData::GetLocalShootPosition;
+		ut_RageBot_CachedData[ XorStr( "GetTarget" ) ] = &LUAClasses::RageBot_CachedData::GetTarget;
+		ut_RageBot_CachedData[ XorStr( "GetTargetSimulationTime" ) ] = &LUAClasses::RageBot_CachedData::GetTargetSimulationTime;
+
+		// can
+		ut_RageBot_CachedData[ XorStr( "CanShoot" ) ] = &LUAClasses::RageBot_CachedData::CanShoot;
 	}
 
 	/* CUserCmd */ {
@@ -1680,6 +1788,7 @@ void LuaImplementation::CreateLuaState( )
 		Engine[ XorStr( "IsInGame" ) ] = LUAModules::Engine::IsInGame;
 		Engine[ XorStr( "IsConnected" ) ] = LUAModules::Engine::IsConnected;
 		Engine[ XorStr( "IsVoiceRecording" ) ] = LUAModules::Engine::IsVoiceRecording;
+		Engine[ XorStr( "GetScreenSize" ) ] = LUAModules::Engine::GetScreenSize;
 		lua[ XorStr( "Engine" ) ] = Engine;
 	}
 
@@ -1764,7 +1873,7 @@ void LuaImplementation::CreateLuaState( )
 		auto Utils = lua.create_table( );
 		Utils[ XorStr( "CreateInterface" ) ] = LUAModules::Utilities::CreateInterface;
 		Utils[ XorStr( "FindSignature" ) ] = LUAModules::Utilities::FindSignature;
-		//Utils[ XorStr( "WorldToScreen" ) ] = LUAModules::Utilities::WorldToScreen;
+		Utils[ XorStr( "WorldToScreen" ) ] = LUAModules::Utilities::WorldToScreen;
 		lua[ XorStr( "Utils" ) ] = Utils;
 	}
 
@@ -1793,6 +1902,7 @@ void LuaImplementation::Initialize( )
 	vecCallbackList[ CALLBACK_PREDICTION ] = XorStr( "Prediction" );
 	vecCallbackList[ CALLBACK_ON_CREATE_MOVE ] = XorStr( "Createmove" );
 	vecCallbackList[ CALLBACK_FRAME_STAGE_NOTIFY ] = XorStr( "FrameStageNotify" );
+	vecCallbackList[ CALLBACK_FIRE_GAME_EVENT ] = XorStr( "Event" );
 
 	LuaImplementation::Parse( );
 
@@ -1802,7 +1912,6 @@ void LuaImplementation::Initialize( )
 void LuaImplementation::RunChecks( )
 {
 	// Should we unload any script?
-	LUACallbackMutex.lock( );
 	for (auto& script : vecScriptInfos) {
 		bool bShouldUnload = script.bShouldUnload;
 		script.bShouldUnload = false;
@@ -1814,7 +1923,6 @@ void LuaImplementation::RunChecks( )
 			script.Unload( );
 		}
 	}
-	LUACallbackMutex.unlock( );
 }
 
 void LuaImplementation::Parse( )
@@ -1822,7 +1930,7 @@ void LuaImplementation::Parse( )
 	CHAR path[ MAX_PATH ];
 	HRESULT result = SHGetFolderPathA( NULL, CSIDL_APPDATA, NULL, 0, path );
 	if (result != S_OK) {
-		PrintError( XorStr( "Could not get path to User\\Documents" ) );
+		PrintError( XorStr( "Could not get path to User\\appdata" ) );
 		return;
 	}
 
@@ -2154,7 +2262,6 @@ bool LuaImplementation::ScriptInfo_t::Load( )
 	//sol::state_view state( luaState );
 	//state.script_file( path, []( lua_State* me, sol::protected_function_result result ) {
 
-//	LUACallbackMutex.lock( );
 	try {
 		auto ret = lua_state.do_file( this->szPath );
 		if (!ret.valid( ))
@@ -2174,7 +2281,6 @@ bool LuaImplementation::ScriptInfo_t::Load( )
 		this->Destroy( );
 		bSucceded = false;
 	}
-	//LUACallbackMutex.unlock( );
 
 	bLoaded = bSucceded;
 
@@ -2183,10 +2289,8 @@ bool LuaImplementation::ScriptInfo_t::Load( )
 
 void LuaImplementation::ScriptInfo_t::Unload( )
 {
-	LUACallbackMutex.lock( );
 	if (!bLoaded) {
 		bShouldUnload = true;
-		LUACallbackMutex.unlock( );
 		return;
 	}
 
@@ -2199,5 +2303,4 @@ void LuaImplementation::ScriptInfo_t::Unload( )
 	this->vecMenuItems.clear( );
 
 	bLoaded = false;
-	LUACallbackMutex.unlock( );
 }
