@@ -174,7 +174,7 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Enabled##0"), &bEnable);
         ImGui::Keybind(("aimbotkey"), &iAimbotKey);
         ImGui::Checkbox(("Silent"), &bSilentAim);
-        ImGui::SliderFloat(("Fov"), &iAimbotFov, 0.f, 180.f, ("%.f")); 
+        ImGui::SliderInt(("Fov"), &iAimbotFov, 0, 180); 
         ImGui::Checkbox(("Resolver"), &bResolver);
 
         ImGui::Checkbox(("Force baim"), &bForceBaim);

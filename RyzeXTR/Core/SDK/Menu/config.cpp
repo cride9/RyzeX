@@ -36,7 +36,7 @@ void CConfig::Setup() {
 
 		SetupBool(bEnable, false, XorStr("bEnable"));
 		SetupInt(iAimbotKey, 0, XorStr("iAimbotKey"));
-		SetupFloat(iAimbotFov, 180, XorStr("iAimbotFov"));
+		SetupInt(iAimbotFov, 180, XorStr("iAimbotFov"));
 
 		SetupBool(bSilentAim, false, XorStr("bSilentAim"));
 

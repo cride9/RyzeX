@@ -27,7 +27,7 @@ namespace cfg {
 
 		inline bool bEnable = false;
 		inline int iAimbotKey = 0;
-		inline float iAimbotFov = 180.f;
+		inline int iAimbotFov = 180;
 		inline bool bSilentAim = false;
 
 		inline bool bDoubletap = false;

@@ -1059,6 +1059,46 @@ namespace LUAModules
 
 	namespace Variables 
 	{
+		bool& GetBool(std::string szVar, sol::this_state L)
+		{
+			return Config2->FindBool(szVar);
+		}
+
+		float& GetFloat(std::string szVar, sol::this_state L)
+		{
+			return Config2->FindFloat(szVar);
+		}
+
+		int& GetInt(std::string szVar, sol::this_state L)
+		{
+			return Config2->FindInt(szVar);
+		}
+
+		std::string& GetString(std::string szVar, sol::this_state L)
+		{
+			return Config2->FindString(szVar);
+		}
+
+		void SetBool(std::string szVar, bool bValue, sol::this_state L)
+		{
+			Config2->FindBool(szVar) = bValue;
+		}
+
+		void SetFloat(std::string szVar, float flValue, sol::this_state L)
+		{
+			Config2->FindFloat(szVar) = flValue;
+		}
+
+		void SetInt(std::string szVar, int iValue, sol::this_state L)
+		{
+			Config2->FindInt(szVar) = iValue;
+		}
+
+		void SetString(std::string szVar, std::string szValue, sol::this_state L)
+		{
+			Config2->FindString(szVar) = szValue;
+		}
+
 		//LuaImplementation::ScriptVarReference_t FindVar( std::string szVarName, sol::this_state L ) 
 		//{
 		//	std::string szCurrentScriptName = helpers::GetCurrentLuaFilename( L );
@@ -1690,7 +1730,15 @@ void LuaImplementation::CreateLuaState( )
 
 	/* Vars */ {
 		auto Vars = lua.create_table( );
-		//Vars[ XorStr( "FindVar" ) ] = LUAModules::Variables::FindVar;
+		Vars[ XorStr( "GetBool" ) ] = LUAModules::Variables::GetBool;
+		Vars[ XorStr( "GetFloat" ) ] = LUAModules::Variables::GetFloat;
+		Vars[ XorStr( "GetInt" ) ] = LUAModules::Variables::GetInt;
+		Vars[ XorStr( "GetString" ) ] = LUAModules::Variables::GetString;
+
+		Vars[ XorStr( "SetBool" ) ] = LUAModules::Variables::SetBool;
+		Vars[ XorStr( "SetFloat" ) ] = LUAModules::Variables::SetFloat;
+		Vars[ XorStr( "SetInt" ) ] = LUAModules::Variables::SetInt;
+		Vars[ XorStr( "SetString" ) ] = LUAModules::Variables::SetString;
 		lua[ XorStr( "Vars" ) ] = Vars;
 	}
 
