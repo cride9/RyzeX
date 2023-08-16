@@ -37,7 +37,7 @@ void Animations::ResolverLogic() {
 
 	// Simulate a bullet shot
 	FireBulletData_t data;
-	autowall.GetDamage(g::pLocal, refCurrentData.vecLocalShootPosition, bBulletImpact, g::pLocal->GetWeapon(), &data);
+	autowall.GetDamage(g::pLocal, refCurrentData.vecLocalShootPosition, bBulletImpact, g::pLocal->GetWeapon(), refCurrentData.pRecord , &data);
 
 	// Check if we killed, or hurt the player
 	if (bResolverHandler[PLAYERHURT] || bResolverHandler[PLAYERDEATH]) {
@@ -282,14 +282,101 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	if (pEntity->GetPlayerInfo().bFakePlayer)
 		return;
 #endif
-
 	const int iEntityID = pEntity->EntIndex();
-	switch (arrMissedShots[iEntityID] % 3) {
 
-	case 1:
-		return SetYaw(pRecord, LEFT);
+	//switch (arrMissedShots[iEntityID] % 3) {
+
+	//case 1:
+	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + 58);
+	//	break;
+	//	//return SetYaw(pRecord, LEFT);
+
+	//case 2:
+	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - 58);
+	//	break;
+	//	//return SetYaw(pRecord, RIGHT);
+	//}
+
+	static std::array<int, 65> arrMissCounter{0};
+
+	if (arrMissedShots[iEntityID] == 0) {
+
+		/* Up pitch is most likely overlapped with eachother */
+		if (pRecord->vecEyeAngles.x < -30.f)
+			return;
+
+		float flVelocityDelta = fabsf(pRecord->vecVelocity.Length2D() - pPrevious->vecVelocity.Length2D());
+		/* Constant speed check lmao */
+		if (flVelocityDelta < 2.f && pRecord->vecVelocity.Length2D() > 20.f) {
+
+			/* Get playbackrate delta */
+			float flPlaybackrateDelta = (pRecord->arrLayers[6].flPlaybackRate - pPrevious->arrLayers[6].flPlaybackRate) * 10000.f;
+
+			/* At constant speed, if the playbackrate is increased suddenly by that many that means he's inverted */
+			/* Based on previous logs & playbackrate caches LEFT side invert has a larger number */
+			if (flPlaybackrateDelta > 3.f)
+				SetYaw(pRecord, LEFT);
+
+			else if (flPlaybackrateDelta < 3.f)
+				SetYaw(pRecord, RIGHT);
+		}
+
+		/* Playbackrate increases with speed (not exactly speed, flWalkToRunTransition but I dont back those up) */
+		/* TODO: save walk to run transition in record and use that as check instead of velocity */
+		else if (pRecord->vecVelocity.Length2D() > pPrevious->vecVelocity.Length2D() && pRecord->arrLayers[6].flPlaybackRate < pPrevious->arrLayers[6].flPlaybackRate)
+			SetYaw(pRecord, RIGHT);
+
+		/* Don't resolve onshot */
+		else if (pRecord->bDidShot)
+			return;
 		
-	case 2:
-		return SetYaw(pRecord, RIGHT);
+		/* breaking to the left */
+		else if (pRecord->flPoses[BODY_YAW] > 0.85f && pRecord->vecVelocity.Length2D() < 1.f) 
+			SetYaw(pRecord, RIGHT);
+		
+		/* breaking to the right */
+		else if (pRecord->flPoses[BODY_YAW] < 0.15f && pRecord->vecVelocity.Length2D() < 1.f)
+			SetYaw(pRecord, LEFT);
+
+		/* Apply previous data if no new data */
+		else if (pPrevious->iResolveSide != VISUAL)		
+			SetYaw(pRecord, pPrevious->iResolveSide);
+		
+		/* If we didn't get any data apply right side & no previous data */
+		else if (pRecord->iResolveSide == VISUAL)
+			SetYaw(pRecord, RIGHT);
 	}
+	else if (arrMissCounter[iEntityID] != arrMissedShots[iEntityID]) {
+
+		switch (pPrevious->iResolveSide) {
+		case VISUAL: SetYaw(pRecord, LEFT);
+			break;
+
+		case LEFT: SetYaw(pRecord, RIGHT);
+			break;
+
+		case RIGHT: SetYaw(pRecord, LEFT);
+			break;
+		}
+	}
+	else if (pPrevious->iResolveSide != VISUAL) 
+		SetYaw(pRecord, pPrevious->iResolveSide);
+	
+	else 
+		SetYaw(pRecord, RIGHT);
+	
+
+	//arrMissCounter[iEntityID] = arrMissedShots[iEntityID];
+	//switch (arrMissedShots[iEntityID] % 3) {
+
+	//case 1:
+	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + 58);
+	//	break;
+	//	//return SetYaw(pRecord, LEFT);
+
+	//case 2:
+	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - 58);
+	//	break;
+	//	//return SetYaw(pRecord, RIGHT);
+	//}
 }

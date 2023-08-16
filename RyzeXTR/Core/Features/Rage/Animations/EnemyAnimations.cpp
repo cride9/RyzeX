@@ -51,9 +51,9 @@ float Animations::GetYawRotation(Lagcompensation::LagRecord_t* pRecord, int nRot
 	float flEyeRotation = pRecord->vecEyeAngles.y;
 	switch (nRotationSide)
 	{
-	case LEFT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - 60.f); break;
+	case LEFT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - 58.f); break;
 	case CENTER: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation); break;
-	case RIGHT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + 60.f); break;
+	case RIGHT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + 58.f); break;
 	}
 
 	// generate foot yaw

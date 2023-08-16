@@ -213,7 +213,6 @@ public:
 		CBaseEntity* pEntity;
 
 		bool bLeftDormancy{};
-		bool bContainsInvalid{};
 
 		int iLastValid = 0;
 		int iLastResolve{};

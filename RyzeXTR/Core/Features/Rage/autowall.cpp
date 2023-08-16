@@ -3,7 +3,7 @@
 #include "../Misc/Playerlist.h"
 #include "Animations/Lagcompensation.h"
 
-float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, FireBulletData_t* pDataOut)
+float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* pDataOut)
 {
 	if (!pWeapon)
 		return -1.0f;
@@ -13,7 +13,7 @@ float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, c
 	data.vecPosition = vecEyePosition;
 	data.vecDirection = ( vecPoint - vecEyePosition).Normalized( );
 
-	if (!SimulateFireBullet( pLocal, pWeapon, data ) )
+	if (!SimulateFireBullet( pLocal, pWeapon, data, pRecord) )
 		return -1.0f;
 
 	if ( pDataOut != nullptr )
@@ -85,7 +85,7 @@ void CAutoWall::ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const fl
 }
 
 // @credits: https://github.com/perilouswithadollarsign/cstrike15_src/blob/master/game/shared/util_shared.cpp#L757
-void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, CTraceFilter* pFilter, Trace_t* pTrace, const float flMinRange)
+void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, CTraceFilter* pFilter, Trace_t* pTrace, Lagcompensation::LagRecord_t* pRecord, const float flMinRange)
 {
 	// @ida util_cliptracetoplayers: client.dll @ E8 ? ? ? ? 0F 28 84 24 68 02 00 00
 	if (i::ClientState->iDeltaTick <= 0)
@@ -96,41 +96,24 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 
 	const Ray_t ray( vecAbsStart, vecAbsEnd );
 
-	static std::array<CBaseEntity*, 65> arrPlayers;
-	static int iBackup = 0;
-	if (iBackup != i::GlobalVars->iTickCount)
-	{
-		for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
-			CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
-
-			arrPlayers[i] = pEntity;
-		}
-		iBackup = i::GlobalVars->iTickCount;
-	}
-
-	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++)
+	//for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++)
 	{
 		//CBaseEntity* pEntity = lagcomp.arrBackupData[i].first.pEntity;
-		CBaseEntity* pEntity = arrPlayers[i];
+		CBaseEntity* pEntity = pRecord->pEntity;
 
-		if ( pEntity == nullptr || !pEntity->IsAlive( ) || pEntity->IsDormant( ))
-			continue;
+		//if ( pEntity == nullptr || !pEntity->IsAlive( ) || pEntity->IsDormant( ))
+		//	return;
 
 		if ( pFilter != nullptr && !pFilter->ShouldHitEntity( pEntity, fMask ) )
-			continue;
-
-		const ICollideable* pCollideable = pEntity->GetCollideable( );
-
-		if ( pCollideable == nullptr )
-			continue;
+			return;
 
 		// get bounding box
-		const Vector vecMin = pCollideable->OBBMins( );
-		const Vector vecMax = pCollideable->OBBMaxs( );
+		const Vector vecMin = pRecord->vecMins;
+		const Vector vecMax = pRecord->vecMaxs;
 
 		// calculate world space center
 		const Vector vecCenter = ( vecMax + vecMin ) * 0.5f;
-		const Vector vecPosition = vecCenter + pEntity->GetVecOrigin( );
+		const Vector vecPosition = vecCenter + pRecord->vecOrigin;
 
 		const Vector vecTo = vecPosition - vecAbsStart;
 		Vector vecDirection = vecAbsEnd - vecAbsStart;
@@ -152,7 +135,7 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 
 		constexpr float flMaxRange = 60.f;
 		if ( flRange < flMinRange || flRange > flMaxRange )
-			continue;
+			return;
 
 		i::EngineTrace->ClipRayToEntity( ray, fMask | CONTENTS_HITBOX, pEntity, &trace );
 
@@ -165,7 +148,7 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 	}
 }
 
-bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vector& vecPosition, const Vector& vecDirection, const CBaseEntity* pClipPlayer )
+bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vector& vecPosition, const Vector& vecDirection, const CBaseEntity* pClipPlayer, Lagcompensation::LagRecord_t* pRecord)
 {
 	// @ida tracetoexit: client.dll @ 55 8B EC 83 EC 4C F3
 	// server.dll @ 55 8B EC 83 EC 4C F3 0F 10 75
@@ -198,7 +181,7 @@ bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vect
 			if (static CConVar* sv_clip_penetration_traces_to_players = i::ConVar->FindVar(XorStr("sv_clip_penetration_traces_to_players")); sv_clip_penetration_traces_to_players != nullptr && sv_clip_penetration_traces_to_players->GetBool())
 			{
 				CTraceFilter filter( pClipPlayer );
-				ClipTraceToPlayers( vecEnd, vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &exitTrace, -60.f );
+				ClipTraceToPlayers( vecEnd, vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &exitTrace, pRecord, -60.f );
 			}
 
 			// check if a hitbox is in-front of our enemy and if they are behind of a solid wall
@@ -252,7 +235,7 @@ bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vect
 	return false;
 }
 
-bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInfo* pWeaponData, const surfacedata_t* pEnterSurfaceData, FireBulletData_t& data )
+bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInfo* pWeaponData, const surfacedata_t* pEnterSurfaceData, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord)
 {
 	// @ida handlebulletpenetration: client.dll @ E8 ? ? ? ? 83 C4 40 84 C0
 
@@ -271,7 +254,7 @@ bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInf
 		return false;
 
 	Trace_t exitTrace = { };
-	if ( !TraceToExit( data.enterTrace, exitTrace, data.enterTrace.vecEnd, data.vecDirection, pLocal ) && !( i::EngineTrace->GetPointContents( data.enterTrace.vecEnd, MASK_SHOT_HULL, nullptr ) & MASK_SHOT_HULL ) )
+	if ( !TraceToExit( data.enterTrace, exitTrace, data.enterTrace.vecEnd, data.vecDirection, pLocal, pRecord) && !( i::EngineTrace->GetPointContents( data.enterTrace.vecEnd, MASK_SHOT_HULL, nullptr ) & MASK_SHOT_HULL ) )
 		return false;
 
 	const surfacedata_t* pExitSurfaceData = i::PhysicsProps->GetSurfaceData( exitTrace.surface.nSurfaceProps );
@@ -341,7 +324,7 @@ bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInf
 	return true;
 }
 
-bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data)
+bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord)
 {
 	// @ida firebullet: client.dll @ 55 8B EC 83 E4 F0 81 EC ? ? ? ? F3 0F 7E
 
@@ -373,7 +356,7 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 		i::EngineTrace->TraceRay( ray, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &data.enterTrace );
 
 		// check for player hitboxes extending outside their collision bounds
-		ClipTraceToPlayers( data.vecPosition, vecEnd + data.vecDirection * 40.0f, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &data.enterTrace, 0.f);
+		ClipTraceToPlayers( data.vecPosition, vecEnd + data.vecDirection * 40.0f, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &data.enterTrace, pRecord, 0.f);
 
 		const surfacedata_t* pEnterSurfaceData = i::PhysicsProps->GetSurfaceData( data.enterTrace.surface.nSurfaceProps );
 		const float flEnterPenetrationModifier = pEnterSurfaceData->game.flPenetrationModifier;
@@ -399,14 +382,14 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 		}
 
 		// calling handlebulletpenetration here reduces our penetration ñounter, and if it returns true, we can't shoot through it
-		if ( !HandleBulletPenetration( pLocal, pWeaponData, pEnterSurfaceData, data ) )
+		if ( !HandleBulletPenetration( pLocal, pWeaponData, pEnterSurfaceData, data, pRecord) )
 			break;
 	}
 
 	return false;
 }
 
-bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSource) {
+bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSource, Lagcompensation::LagRecord_t* pRecord) {
 
 	if (!g::pLocal)
 		return false;
@@ -440,7 +423,7 @@ bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSou
 	if (data.enterTrace.flFraction == 1.f)
 		return true;
 
-	if (HandleBulletPenetration(g::pLocal, pWeaponData, pEnterSurfaceData, data)) {
+	if (HandleBulletPenetration(g::pLocal, pWeaponData, pEnterSurfaceData, data, pRecord)) {
 		return true;
 	}
 

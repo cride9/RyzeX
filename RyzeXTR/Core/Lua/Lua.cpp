@@ -135,11 +135,17 @@ namespace LUAClasses
 	class LuaEntity : public CBaseEntity
 	{
 	public:
+
+		Vector GetEyePosition(bool bShouldCorrent = false)
+		{
+			return this->GetEyePosition(bShouldCorrent);
+		}
+
 		LuaPlayer* ToPlayer( ) 
 		{
 			return ( LuaPlayer* )this;
 		}
-
+			
 		uintptr_t GetAddress( ) 
 		{
 			return ( uintptr_t )this;
@@ -1716,6 +1722,7 @@ void LuaImplementation::CreateLuaState( )
 
 	/* CEntity */ {
 		auto ut_CEntity = lua.new_usertype< LUAClasses::LuaEntity >( XorStr( "CEntity" ) );
+		ut_CEntity[ XorStr( "GetEyePosition" ) ] = &LUAClasses::LuaEntity::GetEyePosition;
 		ut_CEntity[ XorStr( "ToPlayer" ) ] = &LUAClasses::LuaEntity::ToPlayer;
 		ut_CEntity[ XorStr( "GetAddress" ) ] = &LUAClasses::LuaEntity::GetAddress;
 		ut_CEntity[ XorStr( "GetIndex" ) ] = &LUAClasses::LuaEntity::GetIndex;
@@ -1732,6 +1739,7 @@ void LuaImplementation::CreateLuaState( )
 		ut_CEntity[ XorStr( "SetPropDouble" ) ] = &LUAClasses::LuaEntity::SetPropDouble;
 		ut_CEntity[ XorStr( "SetPropBool" ) ] = &LUAClasses::LuaEntity::SetPropBool;
 		ut_CEntity[ XorStr( "SetPropVector" ) ] = &LUAClasses::LuaEntity::SetPropVector;
+
 	}
 
 	/* CPlayer */ {

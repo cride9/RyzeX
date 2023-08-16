@@ -407,7 +407,7 @@ public:
 	float NormalizeInPlace()
 	{
 		const float flLength = this->Length();
-		const float flRadius = 1.0f / (flLength + std::numeric_limits<float>::epsilon());
+		const float flRadius = 1.0f / (flLength + FLT_EPSILON);
 
 		this->x *= flRadius;
 		this->y *= flRadius;

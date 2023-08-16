@@ -110,9 +110,6 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
 
-		if (vecHitscan.size() > 2)
-			break;
-
 		float flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)
 			flTransformedDamage = max(it->pEntity->GetHealth(), 20) + (curConfig.iMinimumDamage - 100);
@@ -121,7 +118,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		for (int i = 0; i <= it->iLastValid; i++) {
 
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at(i);
-			if (pRecord->bBreakingLagcompensation || !pRecord->bValid)
+			if (pRecord->bBreakingLagcompensation || !pRecord->bValid && pRecord != &it->pRecord.front())
 				continue;
 
 			bool bFarAway = pRecord->vecOrigin.DistTo(vecEyePosition) >= 16384.f;
@@ -189,7 +186,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 					/* Prepare bullet data variable for later usage */
 					FireBulletData_t pData;
-					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, &pData);
+					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData);
 					if (flDamage >= flTransformedDamage) {
 
 						/* Push back this shit */
@@ -210,24 +207,15 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	/* Sort hitboxes with a bit of logic ( REF: Hitscan_t::operator< ) */
 	std::sort(vecHitscan.begin(), vecHitscan.end());
 
-	for (auto& refRecord : vecHitscan) {
+	Hitscan_t& refRecord = vecHitscan.front();
 
-		/* Calculate HP+X damage */
-		float flTransformedDamage = curConfig.iMinimumDamage;
-		if (curConfig.iMinimumDamage > 100)
-			flTransformedDamage = max(refRecord.pRecord->pEntity->GetHealth(), 20) + (curConfig.iMinimumDamage - 100);
+	aimData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
+	aimData.flDamage = refRecord.flDamage;
+	aimData.iHitbox = refRecord.iHitbox;
+	aimData.iHitGroup = refRecord.iHitgroup;
+	aimData.vecTargetShootPosition = refRecord.vecPoint;
 
-		if (refRecord.flDamage < flTransformedDamage)
-			continue;
-
-		aimData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
-		aimData.flDamage = refRecord.flDamage;
-		aimData.iHitbox = refRecord.iHitbox;
-		aimData.iHitGroup = refRecord.iHitgroup;
-		aimData.vecTargetShootPosition = refRecord.vecPoint;
-
-		return refRecord.vecPoint;
-	}
+	return refRecord.vecPoint;
 }
 
 void CAimBot::AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd) {
@@ -533,36 +521,21 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 		if (playerList::arrPlayers[i].bWhiteList)
 			continue;
 
-		// OPTIMIZATION: autowall can only penetrate 4 wall check if he's behind 4wall or not
-		// traceray is a lot more fps friendly than simulate fire bullet, but cannot calculate lost damage.
-		// COMMENT: Works, but useless. That's not how you want to optimize a ragebot. I'll leave it here for the future tho.
-		//Trace_t traceData = Trace_t();
-		//traceData.vecEnd = Vector(0, 0, 0);
-		//CTraceFilter traceFilter(pLocal);
-		//Vector vecEnd = pEntity->GetHitboxPosition(HITBOX_STOMACH, pLog->pRecord.front().pMatricies[RESOLVE]);
-		//bool bPenetradable = false;
-		//for (size_t i = 0; i < 4; i++) {
+		for (auto j = 0u; j < pLog->pRecord.size(); j++) {
 
-		//	if (bPenetradable)
-		//		break;
+			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);
+			if (!pCurrentRecord->bValid || pCurrentRecord->bBreakingLagcompensation || pCurrentRecord->flSimulationTime <= pLog->flExploitTime)
+				pCurrentRecord->bValid = false;
+			
+			if (pCurrentRecord->flSimulationTime < pCurrentRecord->flOldSimulationTime)
+				pCurrentRecord->bValid = false;
+			
+			if (!pCurrentRecord->bValid)
+				continue;
 
-		//	if (pEntity->IsVisible(pEntity, vecEnd, false) && i == 0) {
-		//		bPenetradable = true;
-		//		break;
-		//	}
-
-		//	if (traceData.vecEnd == Vector(0, 0, 0))
-		//		i::EngineTrace->TraceRay(Ray_t(vecEyePosition, vecEnd), CONTENTS_SOLID | CONTENTS_HITBOX, &traceFilter, &traceData);
-		//	else if (traceData.pHitEntity != pEntity)
-		//		i::EngineTrace->TraceRay(Ray_t(traceData.vecEnd + (traceData.vecEnd - traceData.vecStart) / (traceData.vecEnd - traceData.vecStart).x, vecEnd), CONTENTS_SOLID | CONTENTS_HITBOX, &traceFilter, &traceData);
-
-		//	Trace_t traceDataCheck = Trace_t();
-		//	i::EngineTrace->TraceRay(Ray_t(traceData.vecEnd, vecEnd), MASK_SHOT, &traceFilter, &traceDataCheck);
-		//	if (traceDataCheck.pHitEntity == pEntity)
-		//		bPenetradable = true;
-		//}
-		//if (!bPenetradable)
-		//	continue;
+			if (pCurrentRecord->bValid = lagcomp.IsValidRecord(pCurrentRecord->flSimulationTime))
+				pLog->iLastValid = j;
+		}
 
 		ret.push_back(pLog);
 	}
@@ -606,11 +579,12 @@ std::vector<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeap
 
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
 		refVecPoints.push_back(vecCenter + (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
+
+		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecLeft * (flHitboxDistance * 0.5f)));
+		refVecPoints.push_back(vecCenter - (vecTop * flHitboxDistance) + (vecRight * (flHitboxDistance * 0.5f)));
 	}
-	else {
-		refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
-		refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);
-	}
+	refVecPoints.push_back(vecCenter + vecLeft * flHitboxDistance);
+	refVecPoints.push_back(vecCenter + vecRight * flHitboxDistance);
 
 	return refVecPoints;
 }

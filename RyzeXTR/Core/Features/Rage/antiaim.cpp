@@ -573,6 +573,10 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 			|| !pPlayerEntity->IsEnemy(g::pLocal))
 			continue;
 
+		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
+		if (!pLog || pLog->pRecord.empty())
+			continue;
+
 		float flAngToLocal = M::CalcAngle(g::pLocal->GetVecOrigin(), pPlayerEntity->GetVecOrigin()).y;
 		Vector vecViewPoint = pPlayerEntity->GetVecOrigin() + Vector(0, 0, 90);
 
@@ -593,7 +597,7 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 			Vector vecOriginAutowall = { vecOrigin.x + vecOriginLeftRight[iSide].x,  vecOrigin.y - vecOriginLeftRight[iSide].y , vecOrigin.z + 80 };
 			Vector vecOriginAutowall2 = { vecViewPoint.x + vecOriginLeftRightLocal[iSide].x,  vecViewPoint.y - vecOriginLeftRightLocal[iSide].y , vecViewPoint.z };
 
-			if (autowall.CanHitFloatingPoint(vecOriginAutowall, vecViewPoint)) {
+			if (autowall.CanHitFloatingPoint(vecOriginAutowall, vecViewPoint, &pLog->pRecord.front())) {
 
 				if (iSide == 1)	{
 
@@ -612,7 +616,7 @@ bool antiaim::FreeStandingThreat(Vector& angle)
 
 					Vector vecOriginAutowall3 = { vecOrigin.x + vecOriginLeftRight[iSideID].x,  vecOrigin.y - vecOriginLeftRight[iSideID].y , vecOrigin.z + 80 };
 
-					if (autowall.CanHitFloatingPoint(vecOriginAutowall3, vecOriginAutowall2)) {
+					if (autowall.CanHitFloatingPoint(vecOriginAutowall3, vecOriginAutowall2, &pLog->pRecord.front())) {
 
 						if (iSideID == 1) {
 

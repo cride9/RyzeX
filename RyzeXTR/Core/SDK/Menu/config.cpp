@@ -108,8 +108,8 @@ void CConfig::Setup() {
 		using namespace cfg::antiaim;
 		PushCategory(XorStr("AntiAim"));
 
-		//SetupIntArray(iEnabledJitters.data(), 3, 0, XorStr("iEnabledJitters"));
-		//for (size_t i = 0; i < 64; i++) SetupIntArray(&iEnabledJitters[i], 3, 0, std::format("{}{}", XorStr("iEnabledJitters"), i));
+		SetupIntArray(iEnabledJitters.data(), 3, 0, XorStr("iEnabledJitters"));
+		//for (size_t i = 0; i < 64; i++) SetupIntArray(vecJitterWays[i].data(), 3, 0, std::format("{}{}", XorStr("vecJitterWays"), i));
 		
 		SetupBoolArray(bEnabled, 3, false, XorStr("bEnabled"));
 		SetupIntArray(iPitch, 3, 0, XorStr("iPitch"));

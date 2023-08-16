@@ -194,22 +194,18 @@ void Lagcompensation::FrameStageNotify() noexcept {
 
 		pLog->bLeftDormancy = false;
 
-		pPlayerLogs[i].bContainsInvalid = false;
-		for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
+		//for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
 
-			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);
-			if (!pCurrentRecord->bValid || pCurrentRecord->bBreakingLagcompensation || pRecord.flSimulationTime <= pLog->flExploitTime)
-				continue;
+		//	Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);
+		//	if (!pCurrentRecord->bValid || pCurrentRecord->bBreakingLagcompensation || pRecord.flSimulationTime <= pLog->flExploitTime)
+		//		continue;
 
-			if (pCurrentRecord->bValid = lagcomp.IsValidRecord(pCurrentRecord->flSimulationTime))
-				pPlayerLogs[i].iLastValid = j;
+		//	if (pCurrentRecord->bValid = lagcomp.IsValidRecord(pCurrentRecord->flSimulationTime))
+		//		pPlayerLogs[i].iLastValid = j;
 
-			if (pRecord.bBreakingLagcompensation)
-				pCurrentRecord->bBreakingLagcompensation = true;
-
-			if (pCurrentRecord->bBreakingLagcompensation)
-				pPlayerLogs[i].bContainsInvalid = true;
-		}
+		//	if (pRecord.bBreakingLagcompensation)
+		//		pCurrentRecord->bBreakingLagcompensation = true;
+		//}
 	}
 }
 
@@ -534,7 +530,7 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	const float flLerpTime = GetClientInterpAmount();
 	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
-	//if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
+	//if ((cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) || (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey))) && exploits::iTicksToStore > 0)
 	//	iTickBase -= 14;
 
 	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (i::GlobalVars->flCurrentTime - mflSimulationTime);
