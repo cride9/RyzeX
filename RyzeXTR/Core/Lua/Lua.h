@@ -232,9 +232,6 @@ namespace LuaImplementation {
 
 		int Get( ) { return this->iValue; }
 		void Set( int value ) { this->iValue = value; }
-
-		int GetKeyMode( ) { return this->iKeyMode; }
-		void SetKeyMode( int value ) { this->iKeyMode = value; }
 	};
 
 	class ComboMenuItem_t : public BaseMenuItem_t {

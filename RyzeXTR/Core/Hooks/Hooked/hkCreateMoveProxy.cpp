@@ -95,7 +95,11 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (bSendPacket)
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
 
-	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_CREATE_MOVE ], pCmd );
+	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_CREATE_MOVE ], pCmd, *g::bSendPacket );
+
+	// re-verify the command after running lua callbacks
+	if ( i::ClientState->nChokedCommands >= 14 )
+		bSendPacket = true;
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();

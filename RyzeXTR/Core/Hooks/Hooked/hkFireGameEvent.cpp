@@ -16,6 +16,8 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 	misc::EventHandler(pEvent);
 	anims.ResolverHandler(pEvent);
 
+	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_FIRE_GAME_EVENT ], pEvent );
+	
 	LuaImplementation::RunCallbacks( pEvent->GetName( ), pEvent );
 
 	//auto pEventInfo = i::ClientState->pEvents; //0x4E6C
@@ -47,8 +49,6 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 bool __fastcall h::hkFireEvent( void* ecx, void* edx, IGameEvent* pEvent )
 {
 	static auto oFireEvent = detour::fireEvent.GetOriginal<decltype( &hkFireEvent )>( );
-
-	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_FIRE_GAME_EVENT ], pEvent );
 
 	if ( !g::pLocal || !g::pLocal->IsAlive( ) )
 		return oFireEvent( ecx, edx, pEvent );

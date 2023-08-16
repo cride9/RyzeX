@@ -136,11 +136,6 @@ namespace LUAClasses
 	{
 	public:
 
-		Vector GetEyePosition(bool bShouldCorrent = false)
-		{
-			return this->GetEyePosition(bShouldCorrent);
-		}
-
 		LuaPlayer* ToPlayer( ) 
 		{
 			return ( LuaPlayer* )this;
@@ -243,6 +238,11 @@ namespace LUAClasses
 		{
 			// had to cast..
 			return this->GetAbsAngles( );
+		}
+
+		Vector GetEyePosition( bool bShouldCorrent )
+		{
+			return this->GetEyePosition( bShouldCorrent );
 		}
 	};
 
@@ -596,7 +596,8 @@ namespace LUAModules
 		}
 	}
 
-	namespace GlobalVars {
+	namespace GlobalVars 
+	{
 		float GetRealtime( )
 		{
 			return i::GlobalVars->flRealTime;
@@ -1243,6 +1244,54 @@ namespace LUAModules
 		}
 	}
 
+	namespace Events
+	{
+		const char* GetName( IGameEvent* pEvent, sol::this_state L )
+		{
+			return pEvent->GetName( );
+		}
+
+		int GetInt( IGameEvent* pEvent, sol::this_state L )
+		{
+			return pEvent->GetInt( );
+		}
+
+		bool GetBool( IGameEvent* pEvent, sol::this_state L )
+		{
+			return pEvent->GetBool( );
+		}
+
+		float GetFloat( IGameEvent* pEvent, sol::this_state L )
+		{
+			return pEvent->GetFloat( );
+		}
+
+		std::string GetString( IGameEvent* pEvent, sol::this_state L )
+		{
+			return pEvent->GetString( );
+		}
+
+		void SetInt( IGameEvent* pEvent, std::string szVariableName, int iValue, sol::this_state L )
+		{
+			pEvent->SetInt( szVariableName.c_str(), iValue );
+		}
+
+		void SetBool( IGameEvent* pEvent, std::string szVariableName, bool bValue, sol::this_state L )
+		{
+			pEvent->SetBool( szVariableName.c_str( ), bValue );
+		}
+
+		void SetFloat( IGameEvent* pEvent, std::string szVariableName, float flValue, sol::this_state L )
+		{
+			pEvent->SetFloat( szVariableName.c_str( ), flValue );
+		}
+
+		void SetString( IGameEvent* pEvent, std::string szVariableName, std::string szValue, sol::this_state L )
+		{
+			return pEvent->SetString( szVariableName.c_str( ), szValue.c_str() );
+		}
+	}
+
 	// add if you want
 	namespace Input 
 	{
@@ -1495,8 +1544,6 @@ void LuaImplementation::CreateLuaState( )
 		ut_KeybindMenuItem_t[ XorStr( "IsActive" ) ] = &KeybindMenuItem_t::IsActive;
 		ut_KeybindMenuItem_t[ XorStr( "Get" ) ] = &KeybindMenuItem_t::Get;
 		ut_KeybindMenuItem_t[ XorStr( "Set" ) ] = &KeybindMenuItem_t::Set;
-		ut_KeybindMenuItem_t[ XorStr( "GetKeyMode" ) ] = &KeybindMenuItem_t::GetKeyMode;
-		ut_KeybindMenuItem_t[ XorStr( "SetKeyMode" ) ] = &KeybindMenuItem_t::SetKeyMode;
 
 		// from BaseMenuItem_t
 		ut_KeybindMenuItem_t[ XorStr( "IsVisible" ) ] = &KeybindMenuItem_t::IsVisible;
@@ -1701,8 +1748,8 @@ void LuaImplementation::CreateLuaState( )
 		ut_RageBot_CachedData[ XorStr( "CanShoot" ) ] = &LUAClasses::RageBot_CachedData::CanShoot;
 	}
 
-	/* CUserCmd */ {
-		
+	/* CUserCmd */ 
+	{	
 		auto ut_CUserCmd = lua.new_usertype< CUserCmd >(
 			XorStr( "CUserCmd" ),
 
@@ -1720,9 +1767,9 @@ void LuaImplementation::CreateLuaState( )
 	//	ut_font_t[ XorStr( "DrawText" ) ] = &ScriptFont_t::DrawText_;
 	//}
 
-	/* CEntity */ {
+	/* CEntity */ 
+	{
 		auto ut_CEntity = lua.new_usertype< LUAClasses::LuaEntity >( XorStr( "CEntity" ) );
-		ut_CEntity[ XorStr( "GetEyePosition" ) ] = &LUAClasses::LuaEntity::GetEyePosition;
 		ut_CEntity[ XorStr( "ToPlayer" ) ] = &LUAClasses::LuaEntity::ToPlayer;
 		ut_CEntity[ XorStr( "GetAddress" ) ] = &LUAClasses::LuaEntity::GetAddress;
 		ut_CEntity[ XorStr( "GetIndex" ) ] = &LUAClasses::LuaEntity::GetIndex;
@@ -1742,11 +1789,13 @@ void LuaImplementation::CreateLuaState( )
 
 	}
 
-	/* CPlayer */ {
+	/* CPlayer */ 
+	{
 		auto ut_CPlayer = lua.new_usertype< LUAClasses::LuaPlayer >( XorStr( "CPlayer" ), sol::base_classes, sol::bases< LUAClasses::LuaEntity >( ) );
 		ut_CPlayer[ XorStr( "IsEnemy" ) ] = &LUAClasses::LuaPlayer::IsEnemyOf;
 		ut_CPlayer[ XorStr( "GetAbsOrigin" ) ] = &LUAClasses::LuaPlayer::GetAbsOrigin;
 		ut_CPlayer[ XorStr( "GetAbsAngles" ) ] = &LUAClasses::LuaPlayer::GetAbsAngles;
+		ut_CPlayer[ XorStr( "GetEyePosition" ) ] = &LUAClasses::LuaEntity::GetEyePosition;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1846,7 +1895,8 @@ void LuaImplementation::CreateLuaState( )
 		lua[ XorStr( "Menu" ) ] = Menu;
 	}
 
-	/* Vars */ {
+	/* Vars */ 
+	{
 		auto Vars = lua.create_table( );
 		Vars[ XorStr( "GetBool" ) ] = LUAModules::Variables::GetBool;
 		Vars[ XorStr( "GetFloat" ) ] = LUAModules::Variables::GetFloat;
@@ -1860,10 +1910,30 @@ void LuaImplementation::CreateLuaState( )
 		lua[ XorStr( "Vars" ) ] = Vars;
 	}
 
-	/* Convars */ {
+	/* Convars */ 
+	{
 		auto Convars = lua.create_table( );
 		Convars[ XorStr( "FindVar" ) ] = LUAModules::CVars::FindVar;
 		lua[ XorStr( "Convars" ) ] = Convars;
+	}
+
+	/* Convars */
+	{
+		auto Events = lua.create_table( );
+		// get
+		Events[ XorStr( "GetName" ) ] = LUAModules::Events::GetName;
+		Events[ XorStr( "GetInt" ) ] = LUAModules::Events::GetInt;
+		Events[ XorStr( "GetBool" ) ] = LUAModules::Events::GetBool;
+		Events[ XorStr( "GetFloat" ) ] = LUAModules::Events::GetFloat;
+		Events[ XorStr( "GetString" ) ] = LUAModules::Events::GetString;
+
+		// set
+		Events[ XorStr( "SetInt" ) ] = LUAModules::Events::SetInt;
+		Events[ XorStr( "SetBool" ) ] = LUAModules::Events::SetBool;
+		Events[ XorStr( "SetFloat" ) ] = LUAModules::Events::SetFloat;
+		Events[ XorStr( "SetString" ) ] = LUAModules::Events::SetString;
+
+		lua[ XorStr( "Events" ) ] = Events;
 	}
 
 	/* Input */ 
@@ -1892,7 +1962,8 @@ void LuaImplementation::CreateLuaState( )
 		lua[ XorStr( "Trace" ) ] = Trace;
 	}
 
-	/* PlayerList */ {
+	/* PlayerList */ 
+	{
 		auto PlayerList = lua.create_table( );
 		PlayerList[ XorStr( "GetPlayerSettings" ) ] = LUAModules::PlayerList::GetPlayerSettings;
 		lua[ XorStr( "PlayerList" ) ] = PlayerList;
@@ -1910,7 +1981,7 @@ void LuaImplementation::Initialize( )
 	vecCallbackList[ CALLBACK_PREDICTION ] = XorStr( "Prediction" );
 	vecCallbackList[ CALLBACK_ON_CREATE_MOVE ] = XorStr( "Createmove" );
 	vecCallbackList[ CALLBACK_FRAME_STAGE_NOTIFY ] = XorStr( "FrameStageNotify" );
-	vecCallbackList[ CALLBACK_FIRE_GAME_EVENT ] = XorStr( "Event" );
+	vecCallbackList[ CALLBACK_FIRE_GAME_EVENT ] = XorStr( "Events" );
 
 	LuaImplementation::Parse( );
 
