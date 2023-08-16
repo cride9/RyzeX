@@ -1200,7 +1200,7 @@ void menu::Config(ImVec2 savedCursorPosition) {
                             LuaImplementation::KeybindMenuItem_t& keybind = reinterpret_cast< LuaImplementation::KeybindMenuItem_t& >( item );
                             ImGui::Text( keybind.szLabel.c_str( ) );
                             std::string szKeybindText = keybind.szLabel + XorStr( "##bind" );
-                            ImGui::Keybind( szKeybindText.c_str( ), &keybind.iValue, &keybind.iKeyMode );
+                            ImGui::Keybind( szKeybindText.c_str( ), &keybind.iValue );
                         }
                         // FIX ME
                         /*else if (item.iType == LuaImplementation::MENUITEM_COMBOBOX)

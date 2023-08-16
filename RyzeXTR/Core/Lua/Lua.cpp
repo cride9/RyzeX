@@ -1026,7 +1026,6 @@ namespace LUAModules
 			pKeybind.szLabel = szLabel;
 			pKeybind.szVarName = szVarName;
 			pKeybind.iValue = iDefaultKey.value_or( 0 );
-			pKeybind.iKeyMode = iDefaultKeyMode.value_or( 0 );
 
 			return &pKeybind;
 		}
@@ -1600,7 +1599,6 @@ void LuaImplementation::CreateLuaState( )
 		//auto ut_Keybind_t = lua.new_usertype< Keybind_t >( XorStr( "Keybind_t" ) );
 		//ut_Keybind_t[ XorStr( "GetName" ) ] = &Keybind_t::GetName;
 		//ut_Keybind_t[ XorStr( "GetKey" ) ] = &Keybind_t::GetKey;
-		//ut_Keybind_t[ XorStr( "GetKeyMode" ) ] = &Keybind_t::GetKeyMode;
 		//ut_Keybind_t[ XorStr( "IsActive" ) ] = &Keybind_t::IsActive;
 	}
 

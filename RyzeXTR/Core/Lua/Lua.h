@@ -166,7 +166,6 @@ namespace LuaImplementation {
 
 		// for keybinds
 		// iValue is the key
-		int iKeyMode = 0;
 		bool bIsKeybindActive = false;
 
 		int iMinValue = 0;
