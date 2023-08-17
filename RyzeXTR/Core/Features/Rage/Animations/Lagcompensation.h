@@ -106,6 +106,7 @@ public:
 		void Apply(CBaseEntity* pEntity);
 		void ApplyMatrix(CBaseEntity* pEntity, EMatrixType iType);
 		void ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t* pMatrix);
+		bool IsValid();
 
 		CBaseEntity* pEntity{};
 

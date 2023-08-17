@@ -336,7 +336,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				auto pLog = &lagcomp.GetLog(pEnt->EntIndex());
 				if (pLog->pRecord.size() >= 2) {
 
-					std::array<float, 4> flBacktrackColor = { flBacktrackColor[0], flBacktrackColor[1], flBacktrackColor[2], flBacktrackColor[3] };
+					std::array<float, 4> flBacktrackColor = { cfg::model::flBacktrackColor[0], cfg::model::flBacktrackColor[1], cfg::model::flBacktrackColor[2], cfg::model::flBacktrackColor[3] };
 					flBacktrackColor[3] *= min(pLog->pRecord.at(pLog->iLastValid).vecOrigin.DistTo(pEnt->GetVecOrigin()) / 10.f, 1.f);
 
 					BeginChams(materials[iBacktrackType], flBacktrackColor.data(), true, bBacktrackXhair);

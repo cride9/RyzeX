@@ -502,16 +502,12 @@ float Lagcompensation::GetClientInterpAmount()
 	return fmax(m_flLerpAmount, flLerpRatio / m_nUpdateRate);
 }
 
-bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
-{
-	if (!i::EngineClient->GetNetChannelInfo())
-		return false;
-
+/*
 	//auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
 
 	//constexpr float flMagicNumber = 0.00075f;
 
-	//const float flLerpTime = GetClientInterpAmount(); 
+	//const float flLerpTime = GetClientInterpAmount();
 	//float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
 	//float flIncoming = i::EngineClient->GetNetChannelInfo()->GetLatency(FLOW_INCOMING) * 1000.f;
@@ -522,6 +518,12 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	//	return false;
 
 	//return (i::GlobalVars->flCurrentTime - mflSimulationTime + flLerpTime) < flRange;
+*/
+
+bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
+{
+	if (!i::EngineClient->GetNetChannelInfo())
+		return false;
 
 	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
 
@@ -614,6 +616,59 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t
 	//return pEntity->InvalidateBoneCache();
 }
 
+bool Lagcompensation::LagRecord_t::IsValid() {
+
+	if (!this->bValid || this->bBreakingLagcompensation || !i::EngineClient->GetNetChannelInfo())
+		return false;
+
+	if (this->flSimulationTime < this->flOldSimulationTime)
+		return false;
+
+	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo();
+
+	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
+
+	int iTickBase = g::pLocal->GetTickBase();
+	const float flLerpTime = GetClientInterpAmount();
+	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
+
+	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
+		iTickBase -= 14;
+
+	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (i::GlobalVars->flCurrentTime - this->flSimulationTime);
+	if (fabsf(flDeltaTime) >= 0.2f)
+		return false;
+
+	int nDeadTime = static_cast<int>(static_cast<float>(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - 0.2f);
+	if (TIME_TO_TICKS(this->flSimulationTime + flLerpTime) < nDeadTime)
+		return false;
+
+	return true;
+
+	//INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
+	//if (!pNetChannel)
+	//	return false;
+
+	//float flServerTime = i::GlobalVars->flCurrentTime;
+	//if (g::pLocal && g::pLocal->IsAlive())
+	//	flServerTime = TICKS_TO_TIME(networking.GetCorrectedTickbase());
+	//
+	//const float flDeltaTime = std::clamp(pNetChannel->GetLatency(MAX_FLOWS) + lagcomp.GetClientInterpAmount(), 0.f, 0.2f) - (flServerTime - this->flSimulationTime);
+	//if (fabsf(flDeltaTime) > 0.2f)
+	//	return false;
+
+	//int iChokedModifierClient = 0;
+	//if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey))
+	//	iChokedModifierClient = 15 - i::ClientState->nChokedCommands;
+
+	//iChokedModifierClient += i::ClientState->clockDriftMgr.nServerTick + TIME_TO_TICKS(pNetChannel->GetLatency(FLOW_OUTGOING));
+
+	//const auto flDeadTime = (int)(TICKS_TO_TIME(iChokedModifierClient) - 0.2f);
+	//if (this->flSimulationTime < flDeadTime)
+	//	return false;
+
+	//return true;
+}
 
 void Lagcompensation::StartLagcompensation(CBaseEntity* pLocal) {
 

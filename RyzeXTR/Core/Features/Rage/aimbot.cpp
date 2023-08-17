@@ -118,6 +118,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		/* Go through every valid data */
 		for (int i = 0; i <= it->iLastValid; i++) {
 
+			//int i = it->iLastValid;
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at(i);
 			if (pRecord->bBreakingLagcompensation || !pRecord->bValid && pRecord != &it->pRecord.front())
 				continue;
@@ -527,16 +528,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 
 			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);
 
-			if (!pCurrentRecord->bValid || pCurrentRecord->bBreakingLagcompensation || pCurrentRecord->flSimulationTime <= pLog->flExploitTime)
-				pCurrentRecord->bValid = false;
-			
-			if (pCurrentRecord->flSimulationTime < pCurrentRecord->flOldSimulationTime)
-				pCurrentRecord->bValid = false;
-			
-			if (!pCurrentRecord->bValid)
-				continue;
-
-			if (pCurrentRecord->bValid = lagcomp.IsValidRecord(pCurrentRecord->flSimulationTime))
+			if (pCurrentRecord->bValid = pCurrentRecord->IsValid(); pCurrentRecord->bValid)
 				pLog->iLastValid = j;
 		}
 
