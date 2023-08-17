@@ -95,10 +95,14 @@ struct rageBotData_t
 
 	bool bBacktrack{};
 	bool bCanShoot{};
+	bool bSafe{};
 
 	float flTargetSimulation{};
 	float flDamage{};
 	float flHitchance{};
+
+	int iBacktrackTicks{};
+	int iServerHitbox{};
 
 	void SetTarget(Lagcompensation::LagRecord_t* _pRecord, Vector vecEyePosition, bool _bBacktrack) {
 

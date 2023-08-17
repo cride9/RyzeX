@@ -346,7 +346,7 @@ namespace LUAClasses
 				return 0;
 			}
 
-			return ( pData->iTickcount - TIME_TO_TICKS( pData->pRecord->flSimulationTime ) );
+			return pData->iBacktrackTicks;
 		}
 
 		float GetDamage( )
@@ -391,6 +391,50 @@ namespace LUAClasses
 			}
 
 			return pData->bCanShoot;
+		}
+
+		bool GetSafe()
+		{
+			if (!pData) {
+
+				ExloError::ParseError(pData, XorStr("GetSafe"));
+				return false;
+			}
+
+			return pData->bSafe;
+		}
+
+		int GetClientHitbox() {
+
+			if (!pData) {
+
+				ExloError::ParseError(pData, XorStr("GetClientHitbox"));
+				return false;
+			}
+
+			return pData->iHitGroup;
+		}
+
+		int GetServerHitbox() {
+
+			if (!pData) {
+
+				ExloError::ParseError(pData, XorStr("GetServerHitbox"));
+				return false;
+			}
+
+			return pData->iServerHitbox;
+		}
+
+		float GetResolveDelta() {
+
+			if (!pData) {
+
+				ExloError::ParseError(pData, XorStr("GetResolveDelta"));
+				return false;
+			}
+
+			return pData->pRecord->flResolveDelta;
 		}
 	};
 }
@@ -1741,6 +1785,11 @@ void LuaImplementation::CreateLuaState( )
 		ut_RageBot_CachedData[ XorStr( "GetLocalShootPosition" ) ] = &LUAClasses::RageBot_CachedData::GetLocalShootPosition;
 		ut_RageBot_CachedData[ XorStr( "GetTarget" ) ] = &LUAClasses::RageBot_CachedData::GetTarget;
 		ut_RageBot_CachedData[ XorStr( "GetTargetSimulationTime" ) ] = &LUAClasses::RageBot_CachedData::GetTargetSimulationTime;
+		ut_RageBot_CachedData[ XorStr( "GetClientHitbox" ) ] = &LUAClasses::RageBot_CachedData::GetClientHitbox;
+		ut_RageBot_CachedData[ XorStr( "GetServerHitbox" ) ] = &LUAClasses::RageBot_CachedData::GetServerHitbox;
+		ut_RageBot_CachedData[ XorStr( "GetSafe" ) ] = &LUAClasses::RageBot_CachedData::GetSafe;
+		ut_RageBot_CachedData[ XorStr( "GetBacktrack" ) ] = &LUAClasses::RageBot_CachedData::GetBacktrack;
+		ut_RageBot_CachedData[ XorStr( "GetResolveDelta" ) ] = &LUAClasses::RageBot_CachedData::GetResolveDelta;
 
 		// can
 		ut_RageBot_CachedData[ XorStr( "CanShoot" ) ] = &LUAClasses::RageBot_CachedData::CanShoot;
@@ -1980,6 +2029,7 @@ void LuaImplementation::Initialize( )
 	vecCallbackList[ CALLBACK_ON_CREATE_MOVE ] = XorStr( "Createmove" );
 	vecCallbackList[ CALLBACK_FRAME_STAGE_NOTIFY ] = XorStr( "FrameStageNotify" );
 	vecCallbackList[ CALLBACK_FIRE_GAME_EVENT ] = XorStr( "Events" );
+	vecCallbackList[ CALLBACK_ON_RAGEBOT_SHOT ] = XorStr( "OnAimbotFire" );
 
 	LuaImplementation::Parse( );
 

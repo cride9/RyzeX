@@ -59,7 +59,7 @@ bool __fastcall h::hkWriteUserCmdDeltaToBuffer(void* ecx, void* edx, int nSlot, 
 	CUserCmd FromCmd = *pCmd;
 
 	ToCmd.iCommandNumber++;
-	ToCmd.iTickCount += bHideshot ? 1 : ((int)(1.0f / i::GlobalVars->flIntervalPerTick));
+	ToCmd.iTickCount += ((int)(1.0f / i::GlobalVars->flIntervalPerTick));
 
 	for (int i = 0; i < iExtraCommands; i++)
 	{

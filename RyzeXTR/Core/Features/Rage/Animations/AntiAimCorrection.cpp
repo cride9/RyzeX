@@ -8,6 +8,67 @@
 #include "../../Visuals/ESP.h"
 #include "../../Visuals/chams.h"
 #include <format>
+#include "../../../Lua/Lua.h"
+
+
+void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
+
+	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
+	if (!cfg::rage::bResolver || !pLocal || !pEntity || !pEntity->IsAlive() || !pRecord || !pPrevious)
+		return;
+
+#ifdef NDEBUG
+	if (pEntity->GetPlayerInfo().bFakePlayer)
+		return;
+#endif
+	const int iEntityID = pEntity->EntIndex();
+
+	int iCurrentBrute = arrMissedShots[iEntityID] % 2;
+
+	/* Up pitch is most likely overlapped with eachother */
+	if (pRecord->vecEyeAngles.x < -30.f)
+		return;
+
+	float flVelocityDelta = fabsf(pRecord->flWalkToRunTransition - pPrevious->flWalkToRunTransition);
+	/* Constant speed check lmao */
+	if (flVelocityDelta < 0.1f && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
+
+		/* Get playbackrate delta */
+		float flPlaybackrateDelta = (pRecord->arrLayers[6].flPlaybackRate - pPrevious->arrLayers[6].flPlaybackRate) * 10000.f;
+
+		/* At constant speed, if the playbackrate is increased suddenly by that many that means he's inverted */
+		/* Based on previous logs & playbackrate caches LEFT side invert has a larger number */
+		if (flPlaybackrateDelta > 3.f)
+			SetYaw(pRecord, LEFT + iCurrentBrute);
+
+		else if (flPlaybackrateDelta < 3.f)
+			SetYaw(pRecord, RIGHT - iCurrentBrute);
+	}
+
+	/* Playbackrate increases with flWalkToRunTransition */
+	else if (pRecord->flWalkToRunTransition > pPrevious->flWalkToRunTransition && pRecord->arrLayers[6].flPlaybackRate < pPrevious->arrLayers[6].flPlaybackRate)
+		SetYaw(pRecord, RIGHT - iCurrentBrute);
+
+	/* Don't resolve onshot */
+	else if (pRecord->bDidShot)
+		return;
+
+	/* breaking to the left */
+	else if (pRecord->flPoses[BODY_YAW] > 0.85f && pRecord->vecVelocity.Length2D() < 1.f)
+		SetYaw(pRecord, RIGHT);
+
+	/* breaking to the right */
+	else if (pRecord->flPoses[BODY_YAW] < 0.15f && pRecord->vecVelocity.Length2D() < 1.f)
+		SetYaw(pRecord, LEFT);
+
+	/* Apply previous data if no new data */
+	else if (pPrevious->iResolveSide != VISUAL)
+		SetYaw(pRecord, pPrevious->iResolveSide == RIGHT ? RIGHT - iCurrentBrute : LEFT + iCurrentBrute);
+
+	/* If we didn't get any data apply right side & no previous data */
+	else if (pRecord->iResolveSide == VISUAL)
+		SetYaw(pRecord, RIGHT - iCurrentBrute);
+}
 
 void Animations::ResolverLogic() {
 
@@ -34,6 +95,10 @@ void Animations::ResolverLogic() {
 	
 	// apply shot matrix
 	refCurrentData.pRecord->ApplyMatrix(pTarget, RESOLVE);
+	refCurrentData.iServerHitbox = iHitHitbox;
+	refCurrentData.iBacktrackTicks = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
+
+	LuaImplementation::RunCallbacks(LuaImplementation::vecCallbackList[LuaImplementation::CALLBACK_ON_RAGEBOT_SHOT], aimbot.GetHitLogData());
 
 	// Simulate a bullet shot
 	FireBulletData_t data;
@@ -52,7 +117,7 @@ void Animations::ResolverLogic() {
 			misc::GetHitgroupName(iHitHitbox),
 			iHitDmg,
 			refCurrentData.flHitchance,
-			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
+			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
@@ -75,7 +140,7 @@ void Animations::ResolverLogic() {
 			misc::GetHitgroupName(iHitHitbox),
 			iHitDmg,
 			refCurrentData.flHitchance,
-			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
+			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
@@ -99,10 +164,11 @@ void Animations::ResolverLogic() {
 				info.szName,
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flHitchance,
-				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
+				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
 			)));
+			visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -113,10 +179,11 @@ void Animations::ResolverLogic() {
 			info.szName,
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flHitchance,
-			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
+			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
 		)));
+		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
 		refCurrentData.ClearTarget();
 	}
 	else {
@@ -129,10 +196,11 @@ void Animations::ResolverLogic() {
 				info.szName,
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flHitchance,
-				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
+				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
 			)));
+			visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -152,10 +220,11 @@ void Animations::ResolverLogic() {
 				info.szName,
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flHitchance,
-				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
+				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
 			)));
+			visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -166,10 +235,11 @@ void Animations::ResolverLogic() {
 			info.szName,
 			misc::GetHitgroupName(refCurrentData.iHitGroup),
 			refCurrentData.flHitchance,
-			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.pRecord->flSimulationTime)),
+			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
 		)));
+		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
 		refCurrentData.ClearTarget();
 	}
 }
@@ -270,113 +340,4 @@ void Animations::SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw) {
 		pRecord->flResolveDelta = pRecord->flDesyncDelta;
 		break;
 	}
-}
-
-void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
-
-	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!cfg::rage::bResolver || !pLocal || !pEntity || !pEntity->IsAlive() || !pRecord || !pPrevious)
-		return;
-
-#ifdef NDEBUG
-	if (pEntity->GetPlayerInfo().bFakePlayer)
-		return;
-#endif
-	const int iEntityID = pEntity->EntIndex();
-
-	//switch (arrMissedShots[iEntityID] % 3) {
-
-	//case 1:
-	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + 58);
-	//	break;
-	//	//return SetYaw(pRecord, LEFT);
-
-	//case 2:
-	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - 58);
-	//	break;
-	//	//return SetYaw(pRecord, RIGHT);
-	//}
-
-	static std::array<int, 65> arrMissCounter{0};
-
-	if (arrMissedShots[iEntityID] == 0) {
-
-		/* Up pitch is most likely overlapped with eachother */
-		if (pRecord->vecEyeAngles.x < -30.f)
-			return;
-
-		float flVelocityDelta = fabsf(pRecord->vecVelocity.Length2D() - pPrevious->vecVelocity.Length2D());
-		/* Constant speed check lmao */
-		if (flVelocityDelta < 2.f && pRecord->vecVelocity.Length2D() > 20.f) {
-
-			/* Get playbackrate delta */
-			float flPlaybackrateDelta = (pRecord->arrLayers[6].flPlaybackRate - pPrevious->arrLayers[6].flPlaybackRate) * 10000.f;
-
-			/* At constant speed, if the playbackrate is increased suddenly by that many that means he's inverted */
-			/* Based on previous logs & playbackrate caches LEFT side invert has a larger number */
-			if (flPlaybackrateDelta > 3.f)
-				SetYaw(pRecord, LEFT);
-
-			else if (flPlaybackrateDelta < 3.f)
-				SetYaw(pRecord, RIGHT);
-		}
-
-		/* Playbackrate increases with speed (not exactly speed, flWalkToRunTransition but I dont back those up) */
-		/* TODO: save walk to run transition in record and use that as check instead of velocity */
-		else if (pRecord->vecVelocity.Length2D() > pPrevious->vecVelocity.Length2D() && pRecord->arrLayers[6].flPlaybackRate < pPrevious->arrLayers[6].flPlaybackRate)
-			SetYaw(pRecord, RIGHT);
-
-		/* Don't resolve onshot */
-		else if (pRecord->bDidShot)
-			return;
-		
-		/* breaking to the left */
-		else if (pRecord->flPoses[BODY_YAW] > 0.85f && pRecord->vecVelocity.Length2D() < 1.f) 
-			SetYaw(pRecord, RIGHT);
-		
-		/* breaking to the right */
-		else if (pRecord->flPoses[BODY_YAW] < 0.15f && pRecord->vecVelocity.Length2D() < 1.f)
-			SetYaw(pRecord, LEFT);
-
-		/* Apply previous data if no new data */
-		else if (pPrevious->iResolveSide != VISUAL)		
-			SetYaw(pRecord, pPrevious->iResolveSide);
-		
-		/* If we didn't get any data apply right side & no previous data */
-		else if (pRecord->iResolveSide == VISUAL)
-			SetYaw(pRecord, RIGHT);
-	}
-	else if (arrMissCounter[iEntityID] != arrMissedShots[iEntityID]) {
-
-		switch (pPrevious->iResolveSide) {
-		case VISUAL: SetYaw(pRecord, LEFT);
-			break;
-
-		case LEFT: SetYaw(pRecord, RIGHT);
-			break;
-
-		case RIGHT: SetYaw(pRecord, LEFT);
-			break;
-		}
-	}
-	else if (pPrevious->iResolveSide != VISUAL) 
-		SetYaw(pRecord, pPrevious->iResolveSide);
-	
-	else 
-		SetYaw(pRecord, RIGHT);
-	
-
-	//arrMissCounter[iEntityID] = arrMissedShots[iEntityID];
-	//switch (arrMissedShots[iEntityID] % 3) {
-
-	//case 1:
-	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + 58);
-	//	break;
-	//	//return SetYaw(pRecord, LEFT);
-
-	//case 2:
-	//	pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - 58);
-	//	break;
-	//	//return SetYaw(pRecord, RIGHT);
-	//}
 }

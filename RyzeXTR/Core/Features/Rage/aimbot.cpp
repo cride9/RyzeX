@@ -1,5 +1,6 @@
 #include "aimbot.h"
 #include "Animations/EnemyAnimations.h"
+#include "../../Lua/Lua.h"
 
 void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
@@ -210,6 +211,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	Hitscan_t& refRecord = vecHitscan.front();
 
 	aimData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
+	aimData.bSafe = refRecord.bSafe;
 	aimData.flDamage = refRecord.flDamage;
 	aimData.iHitbox = refRecord.iHitbox;
 	aimData.iHitGroup = refRecord.iHitgroup;
@@ -524,6 +526,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 		for (auto j = 0u; j < pLog->pRecord.size(); j++) {
 
 			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);
+
 			if (!pCurrentRecord->bValid || pCurrentRecord->bBreakingLagcompensation || pCurrentRecord->flSimulationTime <= pLog->flExploitTime)
 				pCurrentRecord->bValid = false;
 			

@@ -138,6 +138,7 @@ public:
 		CAnimationLayer arrLayers[13];
 		float flPoses[24];
 
+		float flWalkToRunTransition{};
 		float flSimulationTime{};
 		float flOldSimulationTime{};
 		float flInterpTime{};

@@ -34,6 +34,7 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 	flInterpTime = 0.f;
 	flMaxSpeed = pWeapon ? pEntity->IsScoped() ? pWeapon->GetCSWpnData()->flMaxSpeed[0] : pWeapon->GetCSWpnData()->flMaxSpeed[1] : 260.f;
 	flThirdPersonRecoil = pEntity->GetThirdpersonRecoil();
+	flWalkToRunTransition = pEntity->AnimState()->flWalkToRunTransition;
 
 	vecEyeAngles = pEntity->GetEyeAngles();
 	vecAbsAngles = pEntity->GetAbsAngles();
