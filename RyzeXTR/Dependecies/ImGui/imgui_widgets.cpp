@@ -5682,6 +5682,15 @@ bool ImGui::ColorEdit4(const char* label, float col[4], bool bSameRow, ImGuiColo
     if (value_changed && g.LastItemData.ID != 0) // In case of ID collision, the second EndGroup() won't catch g.ActiveId
         MarkItemEdited(g.LastItemData.ID);
 
+    if (ImGui::IsItemHovered( ))
+    {
+        if (ImGui::IsKeyDown( ImGuiKey_LeftCtrl ) && ( ImGui::IsKeyPressed( ImGuiKey_C, false ) ))
+            std::memcpy( g::flColorBuffer, col, sizeof( float ) * 4 );
+
+        if (ImGui::IsKeyDown( ImGuiKey_LeftCtrl ) && ( ImGui::IsKeyPressed( ImGuiKey_V, false ) ))
+            std::memcpy( col, g::flColorBuffer, sizeof( float ) * 4 );
+    }
+    
     return value_changed;
 }
 

@@ -9,6 +9,7 @@
 #include "../../SDK/InputSystem.h"
 #include "../../../Dependecies/BASS/dll.h"
 #include "../Misc/Playerlist.h"
+#include "drawlist.h"
 
 void SafepointDebug(CBaseEntity* pEnt) {
 
@@ -47,6 +48,30 @@ void SafepointDebug(CBaseEntity* pEnt) {
 	//i::Surface->DrawFilledRect(points.x - 10, points.y - 10, points.x + 10, points.y + 10);
 }
 
+void DrawWeaponInfo( )
+{
+	if ( !g::pLocal || !g::pLocal->IsAlive( ) || !g::pLocal->GetWeapon( ))
+		return;
+	
+	int x, y = 0;
+	i::EngineClient->GetScreenSize( x, y );
+
+	static float flAnimationValue = 0.0f;
+	Vector vecTransformedOrigin = Vector( 0, 0, 0 );
+	if (i::DebugOverlay->ScreenPosition( g::pLocal->GetBonePosition( 32 ).value( ), vecTransformedOrigin ))
+		return;
+
+	static int xDelta = ( x / 2 ) + ( x / 12 );
+	static int yDelta = ( y / 2 ) - ( y / 16 ) + ( x / 50 );
+	static float flFaggot = 0.00000000000000000000000300000000100300f; // preciese decimal numbers
+	flFaggot = flFaggot + i::GlobalVars->flAbsFrameTime;
+	const int yAnimated = yDelta - std::sin( flFaggot * static_cast<double>( std::abs(  static_cast<int>( std::roundf(3.5555) ) )  )) * 15;
+
+	drawlist::AddLine( Vector2D( vecTransformedOrigin.x, vecTransformedOrigin.y ), Vector2D( xDelta, yAnimated ), Color(255, 255, 255, 255) );
+	//drawlist::AddRect( Vector2D( xDelta, yAnimated ), Vector2D( xDelta + 250, yAnimated - 200 ), DRAWFLAGS::DRAWFLAGS_FILLED, Color( 12, 12, 12, 255 ) );
+	drawlist::AddRect( Vector2D( xDelta, yAnimated ), Vector2D( xDelta + 250, yAnimated - 200 ), DRAWFLAGS::DRAWFLAGS_OUTLINE, RYZEXCOLOR );
+}
+
 void HitboxVisualization() {
 
 	Vector screenPoint;
@@ -59,6 +84,8 @@ void HitboxVisualization() {
 using namespace cfg::visual;
 
 void visual::VisualRender() {
+
+	DrawWeaponInfo( );
 
 	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 
@@ -1494,8 +1521,8 @@ void visual::AutoPeekCircle() {
 		return;
 
 	int iOuterRadius = 25;
-	const int iSegemnts = 32;
-	const int iInnerRadius = 30;
+	const int iSegemnts = 90;
+	const int iInnerRadius = 20;
 	const float flStep = 0.02f;
 
 	for (int i = 1; i <= iInnerRadius; ++i) {
@@ -1522,25 +1549,6 @@ void visual::AutoPeekCircle() {
 		i::Surface->DrawSetColor(colCircle);
 		i::Surface->DrawPolyLine(vecPointsX.data(), vecPointsY.data(), static_cast<int>(vecPointsX.size()));
 	}
-
-	/*float flStep = (2 * M_PI) / 64.f;
-	float flRadius = 9;
-
-	for (float rotation = 0; rotation < (M_PI * 2.0); rotation += flStep) {
-	
-		Vector pointA(flRadius * cos(rotation) + misc::vecRecord.x, flRadius * sin(rotation) + misc::vecRecord.y, misc::vecRecord.z);
-		Vector pointB(flRadius * cos(rotation + flStep) + misc::vecRecord.x, flRadius * sin(rotation + flStep) + misc::vecRecord.y, misc::vecRecord.z);
-
-		Vector vecDraw1, vecDraw2;
-		if (!i::DebugOverlay->ScreenPosition(pointA, vecDraw1)) {
-
-			if (!i::DebugOverlay->ScreenPosition(pointB, vecDraw2)) {
-
-				i::Surface->DrawSetColor(Color(cfg::model::localIdealTickColor));
-				i::Surface->DrawLine(vecDraw1.x, vecDraw1.y, vecDraw2.x, vecDraw2.y);
-			}
-		}
-	}*/
 }
 
 void visual::Hat() {

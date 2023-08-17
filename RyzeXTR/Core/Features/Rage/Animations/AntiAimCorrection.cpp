@@ -98,7 +98,7 @@ void Animations::ResolverLogic() {
 	refCurrentData.iServerHitbox = iHitHitbox;
 	refCurrentData.iBacktrackTicks = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
 
-	LuaImplementation::RunCallbacks(LuaImplementation::vecCallbackList[LuaImplementation::CALLBACK_ON_RAGEBOT_SHOT], aimbot.GetHitLogData());
+	LuaImplementation::RunCallbacks(LuaImplementation::vecCallbackList[LuaImplementation::CALLBACK_ON_RAGEBOT_SHOT], refCurrentData );
 
 	// Simulate a bullet shot
 	FireBulletData_t data;

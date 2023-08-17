@@ -15,6 +15,8 @@ namespace g {
 
 	inline float flVelocityModifier;
 
+	inline float flColorBuffer[4];
+
 	inline bool bAllowAnimations[65];
 	inline bool bUpdatingSkins = false;
 	inline bool bStartWelcome = false;

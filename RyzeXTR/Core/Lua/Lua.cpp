@@ -230,13 +230,11 @@ namespace LUAClasses
 
 		Vector GetAbsOrigin( ) 
 		{
-			// had to cast..
 			return this->GetAbsOrigin( );
 		}
 
 		Vector GetAbsAngles( ) 
 		{
-			// had to cast..
 			return this->GetAbsAngles( );
 		}
 
@@ -287,154 +285,6 @@ namespace LUAClasses
 				return;
 
 			pSettings->flOverrideYaw = value;
-		}
-	};
-
-	class RageBot_CachedData
-	{
-		rageBotData_t* pData = &aimbot.GetHitLogData( );
-	public:
-		RageBot_CachedData( ) : pData{ nullptr } { }
-		RageBot_CachedData( rageBotData_t* pData ) : pData{ pData } { }
-
-		LuaPlayer* GetTarget( ) {
-			if (!pData || pData->pAimbotTarget)
-			{
-				ExloError::ParseError( pData, XorStr( "GetTarget" ) );
-				return nullptr;
-			}
-			
-			return reinterpret_cast<LuaPlayer*>( pData->pAimbotTarget );
-		}
-
-		/*matrix3x4_t* GetMatrix( )
-		{
-			if ( !pData || !pData->pTargetMatrix )
-				return nullptr;
-
-			return pData->pTargetMatrix;
-		}*/
-
-		Vector GetLocalShootPosition( )
-		{
-			if (!pData || pData->vecLocalShootPosition.IsZero( ))
-			{
-				ExloError::ParseError( pData, XorStr( "GetLocalShootPosition" ) );
-				return Vector( 0, 0, 0 );
-			}
-				
-
-			return pData->vecLocalShootPosition;
-		}
-
-		int GetHitbox( )
-		{
-			if (!pData || pData->iHitbox <= 0)
-			{
-				ExloError::ParseError( pData, XorStr( "GetHitbox" ) );
-				return 0;
-			}
-
-			return pData->iHitbox;
-		}
-
-		int GetBacktrack( )
-		{
-			if (!pData || pData->iTickcount <= 0 || pData->flTargetSimulation <= 0.0f)
-			{
-				ExloError::ParseError( pData, XorStr( "GetBacktrack" ) );
-				return 0;
-			}
-
-			return pData->iBacktrackTicks;
-		}
-
-		float GetDamage( )
-		{
-			if (!pData || pData->flDamage <= 0.0f)
-			{
-				ExloError::ParseError( pData, XorStr( "GetDamage" ) );
-				return 0.0f;
-			}
-
-			return pData->flDamage;
-		}
-
-		float GetHitChance( )
-		{
-			if (!pData || pData->flHitchance <= 0.0f)
-			{
-				ExloError::ParseError( pData, XorStr( "GetHitChance" ) );
-				return 0.0f;
-			}
-
-			return pData->flHitchance;
-		}
-
-		float GetTargetSimulationTime( )
-		{
-			if (!pData || pData->flTargetSimulation <= 0.0f)
-			{
-				ExloError::ParseError( pData, XorStr( "GetTargetSimulationTime" ) );
-				return 0.0f;
-			}
-
-			return pData->flTargetSimulation;
-		}
-
-		bool CanShoot( )
-		{
-			if (!pData)
-			{
-				ExloError::ParseError( pData, XorStr( "CanShoot" ) );
-				return false;
-			}
-
-			return pData->bCanShoot;
-		}
-
-		bool GetSafe()
-		{
-			if (!pData) {
-
-				ExloError::ParseError(pData, XorStr("GetSafe"));
-				return false;
-			}
-
-			return pData->bSafe;
-		}
-
-		int GetClientHitbox() {
-
-			if (!pData) {
-
-				ExloError::ParseError(pData, XorStr("GetClientHitbox"));
-				return false;
-			}
-
-			return pData->iHitGroup;
-		}
-
-		int GetServerHitbox() {
-
-			if (!pData) {
-
-				ExloError::ParseError(pData, XorStr("GetServerHitbox"));
-				return false;
-			}
-
-			return pData->iServerHitbox;
-		}
-
-		float GetResolveDelta() {
-
-			if (!pData) {
-
-				ExloError::ParseError(pData, XorStr("GetResolveDelta"));
-				return false;
-			}
-
-			return pData->pRecord->flResolveDelta;
 		}
 	};
 }
@@ -1294,24 +1144,24 @@ namespace LUAModules
 			return pEvent->GetName( );
 		}
 
-		int GetInt( IGameEvent* pEvent, sol::this_state L )
+		int GetInt( IGameEvent* pEvent, std::string szVariableName, sol::this_state L )
 		{
-			return pEvent->GetInt( );
+			return pEvent->GetInt( szVariableName.c_str() );
 		}
 
-		bool GetBool( IGameEvent* pEvent, sol::this_state L )
+		bool GetBool( IGameEvent* pEvent, std::string szVariableName, sol::this_state L )
 		{
-			return pEvent->GetBool( );
+			return pEvent->GetBool( szVariableName.c_str( ) );
 		}
 
-		float GetFloat( IGameEvent* pEvent, sol::this_state L )
+		float GetFloat( IGameEvent* pEvent, std::string szVariableName, sol::this_state L )
 		{
-			return pEvent->GetFloat( );
+			return pEvent->GetFloat( szVariableName.c_str( ) );
 		}
 
-		std::string GetString( IGameEvent* pEvent, sol::this_state L )
+		std::string GetString( IGameEvent* pEvent, std::string szVariableName, sol::this_state L )
 		{
-			return pEvent->GetString( );
+			return pEvent->GetString( szVariableName.c_str() );
 		}
 
 		void SetInt( IGameEvent* pEvent, std::string szVariableName, int iValue, sol::this_state L )
@@ -1334,6 +1184,145 @@ namespace LUAModules
 			return pEvent->SetString( szVariableName.c_str( ), szValue.c_str() );
 		}
 	}
+
+	namespace RageData
+	{
+		LUAClasses::LuaPlayer* GetTarget( rageBotData_t* pData ) 
+		{
+			if (!pData || pData->pAimbotTarget)
+			{
+				ExloError::ParseError( pData, XorStr( "GetTarget" ) );
+				return nullptr;
+			}
+
+			return reinterpret_cast< LUAClasses::LuaPlayer * >( pData->pAimbotTarget );
+		}
+
+		/*matrix3x4_t* GetMatrix( )
+		{
+			if ( !pData || !pData->pTargetMatrix )
+				return nullptr;
+
+			return pData->pTargetMatrix;
+		}*/
+
+		Vector GetLocalShootPosition( rageBotData_t* pData )
+		{
+			if (!pData || pData->vecLocalShootPosition.IsZero( ))
+			{
+				ExloError::ParseError( pData, XorStr( "GetLocalShootPosition" ) );
+				return Vector( 0, 0, 0 );
+			}
+
+
+			return pData->vecLocalShootPosition;
+		}
+
+		int GetBacktrack( rageBotData_t* pData )
+		{
+			if (!pData)
+			{
+				ExloError::ParseError( pData, XorStr( "GetBacktrack" ) );
+				return 0;
+			}
+
+			return pData->iBacktrackTicks;
+		}
+
+		float GetDamage( rageBotData_t* pData )
+		{
+			if (!pData || pData->flDamage <= 0.0f)
+			{
+				ExloError::ParseError( pData, XorStr( "GetDamage" ) );
+				return 0.0f;
+			}
+
+			return pData->flDamage;
+		}
+
+		float GetHitChance( rageBotData_t* pData )
+		{
+			if (!pData || pData->flHitchance <= 0.0f)
+			{
+				ExloError::ParseError( pData, XorStr( "GetHitChance" ) );
+				return 0.0f;
+			}
+
+			return pData->flHitchance;
+		}
+
+		float GetTargetSimulationTime( rageBotData_t* pData )
+		{
+			if (!pData || pData->flTargetSimulation <= 0.0f)
+			{
+				ExloError::ParseError( pData, XorStr( "GetTargetSimulationTime" ) );
+				return 0.0f;
+			}
+
+			return pData->flTargetSimulation;
+		}
+
+		bool CanShoot( rageBotData_t* pData )
+		{
+			if (!pData)
+			{
+				ExloError::ParseError( pData, XorStr( "CanShoot" ) );
+				return false;
+			}
+
+			return pData->bCanShoot;
+		}
+
+		bool GetSafe( rageBotData_t* pData )
+		{
+			if (!pData)
+			{
+
+				ExloError::ParseError( pData, XorStr( "GetSafe" ) );
+				return false;
+			}
+
+			return pData->bSafe;
+		}
+
+		int GetClientHitbox( rageBotData_t* pData ) 
+		{
+
+			if (!pData)
+			{
+
+				ExloError::ParseError( pData, XorStr( "GetClientHitbox" ) );
+				return false;
+			}
+
+			return pData->iHitGroup;
+		}
+
+		int GetServerHitbox( rageBotData_t* pData ) 
+		{
+
+			if (!pData) 
+			{
+
+				ExloError::ParseError( pData, XorStr( "GetServerHitbox" ) );
+				return false;
+			}
+
+			return pData->iServerHitbox;
+		}
+
+		float GetResolveDelta( rageBotData_t* pData ) 
+		{
+			if (!pData) 
+			{
+
+				ExloError::ParseError( pData, XorStr( "GetResolveDelta" ) );
+				return false;
+			}
+
+			return pData->pRecord->flResolveDelta;
+		}
+	};
 
 	// add if you want
 	namespace Input 
@@ -1683,7 +1672,7 @@ void LuaImplementation::CreateLuaState( )
 
 	/* Vector2D */ 
 	{
-		auto ut_vec2_t = lua.new_usertype< Vector2D >(
+		auto ut_Vector2D = lua.new_usertype< Vector2D >(
 			XorStr( "Vector2D" ),
 
 			sol::call_constructor, sol::constructors< Vector2D( ), Vector2D( float, float ) >( ),
@@ -1697,7 +1686,7 @@ void LuaImplementation::CreateLuaState( )
 
 	/* Vector3D */ 
 	{
-		auto ut_vec3_t = lua.new_usertype< Vector >(
+		auto ut_Vector3D = lua.new_usertype< Vector >(
 			XorStr( "Vector3D" ),
 
 			sol::call_constructor, sol::constructors< Vector( ), Vector( float, float, float ) >( ),
@@ -1774,25 +1763,24 @@ void LuaImplementation::CreateLuaState( )
 
 	}
 
-	/* LuaRageBot_CachedData */
+	/* RageData */
 	{
-		auto ut_RageBot_CachedData = lua.new_usertype< LUAClasses::RageBot_CachedData >( XorStr( "RageBot_CachedData" ) );
+		auto RageData = lua.create_table( );
 		// get
-		ut_RageBot_CachedData[ XorStr( "GetBacktrack" ) ] = &LUAClasses::RageBot_CachedData::GetBacktrack;
-		ut_RageBot_CachedData[ XorStr( "GetDamage" ) ] = &LUAClasses::RageBot_CachedData::GetDamage;
-		ut_RageBot_CachedData[ XorStr( "GetHitbox" ) ] = &LUAClasses::RageBot_CachedData::GetHitbox;
-		ut_RageBot_CachedData[ XorStr( "GetHitChance" ) ] = &LUAClasses::RageBot_CachedData::GetHitChance;
-		ut_RageBot_CachedData[ XorStr( "GetLocalShootPosition" ) ] = &LUAClasses::RageBot_CachedData::GetLocalShootPosition;
-		ut_RageBot_CachedData[ XorStr( "GetTarget" ) ] = &LUAClasses::RageBot_CachedData::GetTarget;
-		ut_RageBot_CachedData[ XorStr( "GetTargetSimulationTime" ) ] = &LUAClasses::RageBot_CachedData::GetTargetSimulationTime;
-		ut_RageBot_CachedData[ XorStr( "GetClientHitbox" ) ] = &LUAClasses::RageBot_CachedData::GetClientHitbox;
-		ut_RageBot_CachedData[ XorStr( "GetServerHitbox" ) ] = &LUAClasses::RageBot_CachedData::GetServerHitbox;
-		ut_RageBot_CachedData[ XorStr( "GetSafe" ) ] = &LUAClasses::RageBot_CachedData::GetSafe;
-		ut_RageBot_CachedData[ XorStr( "GetBacktrack" ) ] = &LUAClasses::RageBot_CachedData::GetBacktrack;
-		ut_RageBot_CachedData[ XorStr( "GetResolveDelta" ) ] = &LUAClasses::RageBot_CachedData::GetResolveDelta;
-
+		RageData[ XorStr( "GetBacktrack" ) ] = &LUAModules::RageData::GetBacktrack;
+		RageData[ XorStr( "GetDamage" ) ] = &LUAModules::RageData::GetDamage;
+		RageData[ XorStr( "GetHitChance" ) ] = &LUAModules::RageData::GetHitChance;
+		RageData[ XorStr( "GetLocalShootPosition" ) ] = &LUAModules::RageData::GetLocalShootPosition;
+		RageData[ XorStr( "GetTarget" ) ] = &LUAModules::RageData::GetTarget;
+		RageData[ XorStr( "GetTargetSimulationTime" ) ] = &LUAModules::RageData::GetTargetSimulationTime;
+		RageData[ XorStr( "GetClientHitbox" ) ] = &LUAModules::RageData::GetClientHitbox;
+		RageData[ XorStr( "GetServerHitbox" ) ] = &LUAModules::RageData::GetServerHitbox;
+		RageData[ XorStr( "GetSafe" ) ] = &LUAModules::RageData::GetSafe;
+		RageData[ XorStr( "GetResolveDelta" ) ] = &LUAModules::RageData::GetResolveDelta;
 		// can
-		ut_RageBot_CachedData[ XorStr( "CanShoot" ) ] = &LUAClasses::RageBot_CachedData::CanShoot;
+		RageData[ XorStr( "CanShoot" ) ] = &LUAModules::RageData::CanShoot;
+
+		lua[ XorStr( "RageData" ) ] = RageData;
 	}
 
 	/* CUserCmd */ 
@@ -1833,7 +1821,6 @@ void LuaImplementation::CreateLuaState( )
 		ut_CEntity[ XorStr( "SetPropDouble" ) ] = &LUAClasses::LuaEntity::SetPropDouble;
 		ut_CEntity[ XorStr( "SetPropBool" ) ] = &LUAClasses::LuaEntity::SetPropBool;
 		ut_CEntity[ XorStr( "SetPropVector" ) ] = &LUAClasses::LuaEntity::SetPropVector;
-
 	}
 
 	/* CPlayer */ 
@@ -1842,7 +1829,7 @@ void LuaImplementation::CreateLuaState( )
 		ut_CPlayer[ XorStr( "IsEnemy" ) ] = &LUAClasses::LuaPlayer::IsEnemyOf;
 		ut_CPlayer[ XorStr( "GetAbsOrigin" ) ] = &LUAClasses::LuaPlayer::GetAbsOrigin;
 		ut_CPlayer[ XorStr( "GetAbsAngles" ) ] = &LUAClasses::LuaPlayer::GetAbsAngles;
-		ut_CPlayer[ XorStr( "GetEyePosition" ) ] = &LUAClasses::LuaEntity::GetEyePosition;
+		ut_CPlayer[ XorStr( "GetEyePosition" ) ] = &LUAClasses::LuaPlayer::GetEyePosition;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1964,7 +1951,7 @@ void LuaImplementation::CreateLuaState( )
 		lua[ XorStr( "Convars" ) ] = Convars;
 	}
 
-	/* Convars */
+	/* Events */
 	{
 		auto Events = lua.create_table( );
 		// get
@@ -2029,7 +2016,7 @@ void LuaImplementation::Initialize( )
 	vecCallbackList[ CALLBACK_ON_CREATE_MOVE ] = XorStr( "Createmove" );
 	vecCallbackList[ CALLBACK_FRAME_STAGE_NOTIFY ] = XorStr( "FrameStageNotify" );
 	vecCallbackList[ CALLBACK_FIRE_GAME_EVENT ] = XorStr( "Events" );
-	vecCallbackList[ CALLBACK_ON_RAGEBOT_SHOT ] = XorStr( "OnAimbotFire" );
+	vecCallbackList[ CALLBACK_ON_RAGEBOT_SHOT ] = XorStr( "AimbotFire" );
 
 	LuaImplementation::Parse( );
 

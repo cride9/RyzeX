@@ -1114,6 +1114,8 @@ void menu::Config(ImVec2 savedCursorPosition) {
     {
         if (iSelect == 0)
         {
+            ImGui::SliderInt(XorStr("##debugSlider1"), &cfg::debugSlider1, 0, 85, XorStr("debugSlider1: %d"));
+
             static std::string selectedConfig = "";
             ImGui::PushItemWidth( ImGui::GetContentRegionAvail( ).x );
             if (ImGui::ListBoxVector( ( "##configs" ), &cfg::configID, Config2->vecConfigs, 15 )) {

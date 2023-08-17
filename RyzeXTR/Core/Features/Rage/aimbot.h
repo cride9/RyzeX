@@ -127,6 +127,31 @@ struct rageBotData_t
 		flHitchance = 0.f;
 	}
 
+	sol::object _lua_get( sol::stack_object key, sol::this_state L ) {
+		// we use stack_object for the arguments because we
+		// know the values from Lua will remain on Lua's stack,
+		// so long we we don't mess with it
+		auto maybe_string_key
+			= key.as< sol::optional< std::string > >( );
+		if (maybe_string_key) {
+			const std::string& k = *maybe_string_key;
+			if (k == XorStr( "GetBacktrack" )) { return sol::object( L, sol::in_place, this->iBacktrackTicks ); }
+			else if (k == XorStr( "GetDamage" )) { return sol::object( L, sol::in_place, this->flDamage ); }
+			else if (k == XorStr( "GetServerHitbox" )) { return sol::object( L, sol::in_place, this->iServerHitbox ); }
+			else if (k == XorStr( "GetHitChance" )) { return sol::object( L, sol::in_place, this->flHitchance ); }
+			else if (k == XorStr( "GetLocalShootPosition" )) { return sol::object( L, sol::in_place, this->vecLocalShootPosition ); }
+			else if (k == XorStr( "GetTarget" )) { return sol::object( L, sol::in_place, this->pAimbotTarget ); }
+			else if (k == XorStr( "GetTargetSimulationTime" )) { return sol::object( L, sol::in_place, this->flTargetSimulation ); }
+			else if (k == XorStr( "GetClientHitbox" )) { return sol::object( L, sol::in_place, this->iHitbox ); }
+			else if (k == XorStr( "GetServerHitbox" )) { return sol::object( L, sol::in_place, this->iServerHitbox ); }
+			else if (k == XorStr( "GetSafe" )) { return sol::object( L, sol::in_place, this->bSafe ); }
+			else if (k == XorStr( "GetResolveDelta" )) { return sol::object( L, sol::in_place, this->pRecord->flResolveDelta ); }
+			else if (k == XorStr( "CanShoot" )) { return sol::object( L, sol::in_place, this->bCanShoot ); }
+		}
+
+		// No valid key: push nil
+		return sol::object( L, sol::in_place, sol::lua_nil );
+	}
 };
 
 struct weaponConfig_t {

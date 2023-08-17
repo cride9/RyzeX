@@ -8,6 +8,8 @@
 #include "../../SDK/Menu/gui.h"
 #include "../Misc/Playerlist.h"
 
+#include "drawlist.h"
+
 static std::string_view szScrollProxies = XorStr(R"#(
 	"texturescroll"
     {
@@ -331,6 +333,23 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			return true;
 		}
 		else {
+
+			//auto pLog = &lagcomp.GetLog( pEnt->EntIndex( ) );
+			//if (pLog->pRecord.size( ) >= 2) 
+			//{
+			//	// left
+			//	BeginChams( materials[ iBacktrackType ], Color( 255, 0, 0, 255 ).BaseAlpha().data(), true, bBacktrackXhair );
+			//	original( i::StudioRender, 0U, pResults, info, pLog->pRecord.front( ).pMatricies[ LEFT ], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags );
+
+			//	// center
+			//	BeginChams( materials[ iBacktrackType ], Color( 0, 0, 255, 255 ).BaseAlpha( ).data( ), true, bBacktrackXhair );
+			//	original( i::StudioRender, 0U, pResults, info, pLog->pRecord.front( ).pMatricies[ CENTER ], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags );
+
+			//	// right
+			//	BeginChams( materials[ iBacktrackType ], Color( 0, 255, 0, 255 ).BaseAlpha( ).data( ), true, bBacktrackXhair );
+			//	original( i::StudioRender, 0U, pResults, info, pLog->pRecord.front().pMatricies[ RIGHT ], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags );
+			//}
+
 			if (bBacktrackChams) {
 
 				auto pLog = &lagcomp.GetLog(pEnt->EntIndex());

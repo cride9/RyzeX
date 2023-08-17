@@ -99,12 +99,12 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 	//for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++)
 	{
 		//CBaseEntity* pEntity = lagcomp.arrBackupData[i].first.pEntity;
-		CBaseEntity* pEntity = pRecord->pEntity;
+
 
 		//if ( pEntity == nullptr || !pEntity->IsAlive( ) || pEntity->IsDormant( ))
 		//	return;
 
-		if ( pFilter != nullptr && !pFilter->ShouldHitEntity( pEntity, fMask ) )
+		if ( pFilter != nullptr && !pFilter->ShouldHitEntity( pRecord->pEntity, fMask ) )
 			return;
 
 		// get bounding box
@@ -137,7 +137,7 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 		if ( flRange < flMinRange || flRange > flMaxRange )
 			return;
 
-		i::EngineTrace->ClipRayToEntity( ray, fMask | CONTENTS_HITBOX, pEntity, &trace );
+		i::EngineTrace->ClipRayToEntity( ray, fMask | CONTENTS_HITBOX, pRecord->pEntity, &trace );
 
 		if ( trace.flFraction < flSmallestFraction )
 		{
