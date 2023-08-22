@@ -25,6 +25,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	// call original first so our movement and other stuff will be sent normally
 	CUserCmd* pCmd = i::Input->GetUserCmd(nSequenceNumber);
 	CVerifiedUserCmd* pVerifiedCmd = i::Input->GetVerifiedCmd(nSequenceNumber);
+	CUserCmd* pCmdBackup = pCmd;
 
 	original(i::ClientDll, 0, nSequenceNumber, flInputSampleFrametime, bIsActive);
 
@@ -54,7 +55,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
 	// Run lua callbacks
+	pCmdBackup = pCmd;
 	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_PRE_PREDICTION ], pCmd );
+	pCmd = pCmdBackup;
 
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
@@ -73,7 +76,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		misc::AutoPistol(pCmd, pLocal);
 		antiaim::InvertOnShoot(pCmd);
 
+		pCmdBackup = pCmd;
 		LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_PREDICTION ], pCmd );
+		pCmd = pCmdBackup;
 	}
 	prediction.End(pCmd, pLocal);
 
@@ -95,7 +100,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (bSendPacket)
 		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
 
+	pCmdBackup = pCmd;
 	LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_CREATE_MOVE ], pCmd, *g::bSendPacket );
+	pCmd = pCmdBackup;
 
 	// re-verify the command after running lua callbacks
 	if ( i::ClientState->nChokedCommands >= 14 )

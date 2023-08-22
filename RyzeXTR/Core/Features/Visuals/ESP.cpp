@@ -56,20 +56,42 @@ void DrawWeaponInfo( )
 	int x, y = 0;
 	i::EngineClient->GetScreenSize( x, y );
 
-	static float flAnimationValue = 0.0f;
 	Vector vecTransformedOrigin = Vector( 0, 0, 0 );
 	if (i::DebugOverlay->ScreenPosition( g::pLocal->GetBonePosition( 32 ).value( ), vecTransformedOrigin ))
 		return;
 
+	static float flLengthBefore = 0.0f;
+	static float flHeightBefore = 0.0f;
+	if (!vecTransformedOrigin.IsZero( ))
+	{
+		flLengthBefore += M::NormalizeYaw( vecTransformedOrigin.y ) * 5;
+		flHeightBefore -= M::NormalizeYaw( vecTransformedOrigin.x ) * 5;
+
+		if (flLengthBefore > 0.0f)
+			flLengthBefore -= std::abs( vecTransformedOrigin.x + 200 + flLengthBefore - vecTransformedOrigin.x ) / 20;
+
+		if (flLengthBefore < 0.0f)
+			flLengthBefore += std::abs( vecTransformedOrigin.x + 200 + flLengthBefore - vecTransformedOrigin.x ) / 20;
+
+
+		if (flHeightBefore > 0.0f)
+			flHeightBefore -= std::abs( vecTransformedOrigin.y - 100 + flHeightBefore - vecTransformedOrigin.y ) / 20;
+
+		if (flHeightBefore < 0.0f)
+			flHeightBefore += std::abs( vecTransformedOrigin.y - 100 + flHeightBefore - vecTransformedOrigin.y ) / 20;
+	}
+
 	static int xDelta = ( x / 2 ) + ( x / 12 );
 	static int yDelta = ( y / 2 ) - ( y / 16 ) + ( x / 50 );
-	static float flFaggot = 0.00000000000000000000000300000000100300f; // preciese decimal numbers
-	flFaggot = flFaggot + i::GlobalVars->flAbsFrameTime;
-	const int yAnimated = yDelta - std::sin( flFaggot * static_cast<double>( std::abs(  static_cast<int>( std::roundf(3.5555) ) )  )) * 15;
+	Vector vecBeforeViewAngle = Vector( 0, 0, 0 );
+	static float flAnimationNumber = 0;
+	flAnimationNumber += i::GlobalVars->flAbsFrameTime;
+	float vecCurrentValueX = xDelta + flLengthBefore + 200.0f;
+	float vecCurrentValueY = yDelta - 100.0f - ( std::sin( flAnimationNumber * 2 ) * 30 ) + flHeightBefore;
 
-	drawlist::AddLine( Vector2D( vecTransformedOrigin.x, vecTransformedOrigin.y ), Vector2D( xDelta, yAnimated ), Color(255, 255, 255, 255) );
+	drawlist::AddLine( Vector2D( vecTransformedOrigin.x, vecTransformedOrigin.y ), Vector2D( vecCurrentValueX, vecCurrentValueY ), Color(255, 255, 255, 255) );
 	//drawlist::AddRect( Vector2D( xDelta, yAnimated ), Vector2D( xDelta + 250, yAnimated - 200 ), DRAWFLAGS::DRAWFLAGS_FILLED, Color( 12, 12, 12, 255 ) );
-	drawlist::AddRect( Vector2D( xDelta, yAnimated ), Vector2D( xDelta + 250, yAnimated - 200 ), DRAWFLAGS::DRAWFLAGS_OUTLINE, RYZEXCOLOR );
+	drawlist::AddRect( Vector2D( vecCurrentValueX, vecCurrentValueY ), Vector2D( vecCurrentValueX + 250, vecCurrentValueY - 200 ), DRAWFLAGS::DRAWFLAGS_OUTLINE, RYZEXCOLOR );
 }
 
 void HitboxVisualization() {
