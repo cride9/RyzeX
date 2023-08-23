@@ -406,7 +406,7 @@ bool antiaim::FreeStandingDistance(CUserCmd* pCmd, Vector& vecCMDViewAngle) {
         pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iIndex));
 
     if (!pEntity)
-        return;
+        return false;
 
 	float flStep = (2 * M_PI) / 18.f; // One PI = half a circle ( for stacker cause low iq :sunglasses: ), 28
 
