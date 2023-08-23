@@ -195,8 +195,7 @@ namespace ROP
 namespace MEM
 {
 	/// store ROP gadgets, exported functions from game modules
-	/// @returns: true if ROP gadget addresses and all exports were successfully found, false otherwise
-	[[nodiscard]] bool Setup();
+	[[nodiscard]] void Setup();
 
 	/* @section: allocation */
 	// allocate a block of memory from a heap

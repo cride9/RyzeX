@@ -9,48 +9,52 @@ std::uintptr_t ROP::ClientGadget_t::uReturnGadget = 0xDEADC0DE;
 
 #define Q_OFFSETOF(STRUCT, MEMBER) reinterpret_cast<std::size_t>(&reinterpret_cast<volatile const char&>(static_cast<STRUCT*>(nullptr)->MEMBER))
 
-bool MEM::Setup()
+void MEM::Setup()
 {
-	// @todo: store pointers of the all used game modules once
-	bool bSuccess = true;
-
 	// @note: make sure that 'FindPattern()' and all nested calls inside it doesn't attempt to call any of game virtual functions, otherwise it will cause crash
 	// look for the gadget in the needed modules, we have the exact instruction for the selected register, but if this is not the case, then even some operand of another instruction will work just fine
 	ROP::EngineGadget_t::uReturnGadget = reinterpret_cast<std::uintptr_t>(FindPattern(ENGINE_DLL, XorStr("83 C3 10 FF 23")) + 0x3);
-	bSuccess &= (ROP::EngineGadget_t::uReturnGadget != 0U);
+	if ( ROP::EngineGadget_t::uReturnGadget == 0U )
+		return;
 
 	ROP::ClientGadget_t::uReturnGadget = reinterpret_cast<std::uintptr_t>(FindPattern(CLIENT_DLL, XorStr("83 C3 10 FF 23")) + 0x3);
-	bSuccess &= (ROP::ClientGadget_t::uReturnGadget != 0U);
+	if ( ROP::EngineGadget_t::uReturnGadget == 0U )
+		return;
 
 	fnRTDynamicCast = reinterpret_cast<decltype(fnRTDynamicCast)>(FindPattern(CLIENT_DLL, XorStr("6A 18 68 ? ? ? ? E8 ? ? ? ? 8B 7D 08")));
-	bSuccess &= (fnRTDynamicCast != nullptr);
+	if ( !fnRTDynamicCast )
+		return;
 
 	const void* hVstdLib = GetModuleBaseHandle(VSTDLIB_DLL);
 	const void* hDbgHelp = GetModuleBaseHandle(XorStr(L"dbghelp.dll"));
 
 	if (hVstdLib == nullptr || hDbgHelp == nullptr)
-		return false;
+		return;
 
-	fnRandomSeed = reinterpret_cast<decltype(fnRandomSeed)>(GetExportAddress(hVstdLib, XorStr("RandomSeed")));
-	bSuccess &= (fnRandomSeed != nullptr);
+	fnRandomSeed = reinterpret_cast< decltype( fnRandomSeed ) >( GetExportAddress( hVstdLib, XorStr( "RandomSeed" ) ) );
+	if ( !fnRandomSeed )
+		return;
 
 	fnRandomFloat = reinterpret_cast<decltype(fnRandomFloat)>(GetExportAddress(hVstdLib, XorStr("RandomFloat")));
-	bSuccess &= (fnRandomFloat != nullptr);
+	if ( !fnRandomFloat )
+		return;
 
 	fnRandomFloatExp = reinterpret_cast<decltype(fnRandomFloatExp)>(GetExportAddress(hVstdLib, XorStr("RandomFloatExp")));
-	bSuccess &= (fnRandomFloatExp != nullptr);
+	if ( !fnRandomFloatExp )
+		return;
 
 	fnRandomInt = reinterpret_cast<decltype(fnRandomInt)>(GetExportAddress(hVstdLib, XorStr("RandomInt")));
-	bSuccess &= (fnRandomInt != nullptr);
+	if ( !fnRandomInt )
+		return;
 
 	fnRandomGaussianFloat = reinterpret_cast<decltype(fnRandomGaussianFloat)>(GetExportAddress(hVstdLib, XorStr("RandomGaussianFloat")));
-	bSuccess &= (fnRandomGaussianFloat != nullptr);
+	if ( !fnRandomGaussianFloat )
+		return;
 
 	// @todo: move to win.cpp (or platform.cpp?)
 	fnUnDecorateSymbolName = reinterpret_cast<decltype(fnUnDecorateSymbolName)>(GetExportAddress(hDbgHelp, XorStr("UnDecorateSymbolName")));
-	bSuccess &= (fnUnDecorateSymbolName != nullptr);
-
-	return bSuccess;
+	if ( !fnUnDecorateSymbolName )
+		return;
 }
 
 #pragma region memory_allocation
