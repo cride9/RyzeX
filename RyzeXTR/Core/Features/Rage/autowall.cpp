@@ -411,7 +411,7 @@ bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSou
 	if (!pWeaponData)
 		return false;
 
-	data.flCurrentDamage = (float)pWeaponData->iDamage;
+	data.flCurrentDamage = static_cast<float>(pWeaponData->iDamage);
 	float flTraceLengthRemaining = pWeaponData->flRange - flTraceLength;
 
 	Vector vecEnd = data.vecPosition + data.vecDirection * flTraceLengthRemaining;
@@ -432,21 +432,25 @@ bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSou
 
 #pragma runtime_checks( "", off )
 bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4_t* aMatrix) {
-
 	if (!pHitbox)
 		return false;
 
-	Ray_t Ray(vecStart, vecEnd);
+	Ray_t ray(vecStart, vecEnd);
+	Trace_t trace;
+	trace.flFraction = 1.0f;
+	trace.bStartSolid = false;
 
-	Trace_t Trace;
-	Trace.flFraction = 1.0f;
-	Trace.bStartSolid = false;
-	// original:	55 8B EC 83 E4 F8 F3 0F 10 42
-	// kittenpopo:	55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F
-	typedef int(__fastcall* ClipRayToHitbox_t)(const Ray_t&, mstudiobbox_t*, matrix3x4_t&, Trace_t*);
-	static auto sig = (void*)((DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F"))));
-	int iHit = ((ClipRayToHitbox_t)(sig))(Ray, pHitbox, aMatrix[pHitbox->iBone], &Trace);
-	return iHit >= 0;
+	// Define a typedef for the ClipRayToHitbox function prototype
+	using ClipRayToHitbox_t = int(__fastcall*)(const Ray_t&, mstudiobbox_t*, matrix3x4_t&, Trace_t*);
+
+	// Example pattern: "55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F"
+	static auto clipRayToHitbox = reinterpret_cast<ClipRayToHitbox_t>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F")));
+
+	if (!clipRayToHitbox)
+		return false;
+
+	int hitIndex = clipRayToHitbox(ray, pHitbox, aMatrix[pHitbox->iBone], &trace);
+	return hitIndex >= 0;
 }
 #pragma runtime_checks( "", restore )
 
