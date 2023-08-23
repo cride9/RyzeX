@@ -96,7 +96,7 @@ void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 		bSendPacket = true;
 
 	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::bIsShiftingTicks)
-		bSendPacket = exploits::iShiftAmount == 0 ? true : false;
+		bSendPacket = exploits::iShiftAmount == 0;
 
 	bShouldSendPacket = false;
 }
@@ -370,11 +370,11 @@ bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosi
 			iAccuracyHits++;
 	}
 
-	int flFinalHitchance = static_cast<int>((float(iHits) / (iAccuracry / 100.f)));
-	int flFinalAccuracyBoost = static_cast<int>((float(iAccuracyHits) / (iAccuracry / 100.f)));
+	int flFinalHitchance = static_cast<int>(iHits / (static_cast<float>(iAccuracry) / 100.f));
+	int flFinalAccuracyBoost = static_cast<int>(static_cast<float>(iAccuracyHits) / (iAccuracry / 100.f));
 
 	/* Hitchance * accuracyboost% = how much shot MUST hit head */
-	int flHitchanceAccuracy = static_cast<int>(float(curConfig.iHitchance) * (float(curConfig.iAccuracyBoost) / 100.f));
+	int flHitchanceAccuracy = static_cast<int>(curConfig.iHitchance * (static_cast<float>(curConfig.iAccuracyBoost) / 100.f));
 	if (flFinalAccuracyBoost < flHitchanceAccuracy)
 		return false;
 

@@ -11,8 +11,6 @@
 #include "../Misc/Playerlist.h"
 #include "../Visuals/ESP.h"
 
-bool ShouldDisableAntiaim(CUserCmd* pCmd, bool&);
-
 static bool jitter = false;
 
 void HandleJitter(AATYPE type) {
@@ -65,9 +63,10 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 	HandleJitter(type);
 	bool bInverted = IPT::HandleInput(iInverterBind);
-	short bInvertValue = bInverted ? -1 : 1;
-	if (cfg::antiaim::bInvertOnShoot[type])
-		bInvertValue = bInverted ? antiaim::shotInvert ? 1 : -1 : antiaim::shotInvert ? -1 : 1;
+	short bInvertValue = 1;
+	if ( cfg::antiaim::bInvertOnShoot[ type ] )
+		bInvertValue = antiaim::shotInvert ? -1 : 1;
+	bInvertValue *= bInverted ? -1 : 1;
 	short bJitterValue = jitter ? -1 : 1;
 	switch (iPitch[type]) {
 
@@ -366,11 +365,7 @@ bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 }
 
 bool antiaim::FreeStandingDistance(CUserCmd* pCmd, Vector& vecCMDViewAngle) {
-
-	bool bNoActive = true;
-	float flBestRotation = 0.f;
-	float flHighestThickness = 0.f;
-	Vector vecBestHead;
+	float flBestRotation = 0.f, flHighestThickness = 0.f;
 
 	static float flBestThreat = 0.f;
 
@@ -384,16 +379,15 @@ bool antiaim::FreeStandingDistance(CUserCmd* pCmd, Vector& vecCMDViewAngle) {
 		Vector vecEndPos1, vecEndPos2;
 		Vector vecEyePos = pEntity->GetVecOrigin() + pEntity->GetViewOffset();
 
-
 		CTraceFilter filter(pEntity);
 
 		Trace_t trace1, trace2;
 		i::EngineTrace->TraceRay(Ray_t(vecNewHead, vecEyePos), MASK_SHOT_BRUSHONLY, &filter, &trace1);
 
-		if (trace1.DidHit())
-			vecEndPos1 = trace1.vecEnd;
-		else
+		if (!trace1.DidHit())
 			return 0.f;
+
+		vecEndPos1 = trace1.vecEnd;
 
 		i::EngineTrace->TraceRay(Ray_t(vecEyePos, vecNewHead), MASK_SHOT_BRUSHONLY, &filter, &trace2);
 
@@ -404,15 +398,15 @@ bool antiaim::FreeStandingDistance(CUserCmd* pCmd, Vector& vecCMDViewAngle) {
 		return vecEndPos1.DistTo(vecEndPos2) + add / 3;
 	};
 
-	int iIndex = ClosesToCrosshair();
+    int iIndex = ClosesToCrosshair();
 
-	CBaseEntity* pEntity = nullptr;
+    CBaseEntity* pEntity = nullptr;
 
-	if (iIndex != -1)
-		pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iIndex));
+    if (iIndex != -1)
+        pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(iIndex));
 
-	if (!pEntity)
-		return false;
+    if (!pEntity)
+        return;
 
 	float flStep = (2 * M_PI) / 18.f; // One PI = half a circle ( for stacker cause low iq :sunglasses: ), 28
 
@@ -423,15 +417,12 @@ bool antiaim::FreeStandingDistance(CUserCmd* pCmd, Vector& vecCMDViewAngle) {
 
 		float totalthickness = 0.f;
 
-		bNoActive = false;
-
 		totalthickness += flCheckThickness(pEntity, newhead);
 
 		if (totalthickness > flHighestThickness)
 		{
 			flHighestThickness = totalthickness;
 			flBestRotation = rotation;
-			vecBestHead = newhead;
 		}
 	}
 	
