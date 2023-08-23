@@ -162,7 +162,7 @@ CNetvarData* CNetworking::GetRecord() {
 
 void CNetworking::StartNetworking() {
 
-	data.iTickRate = (int)(1.0f / i::GlobalVars->flIntervalPerTick);
+	data.iTickRate = static_cast<int>(1.0f / i::GlobalVars->flIntervalPerTick);
 	data.iMaxChoke = 14;
 	data.bSkipDataGram = true;
 
