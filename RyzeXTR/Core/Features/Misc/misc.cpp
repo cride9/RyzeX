@@ -1218,9 +1218,7 @@ void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
 	cfg::misc::flWorldCrosshairColor[3] = 1.f;
 	visual::flWorldCrosshairLength[i] = i::GlobalVars->flCurrentTime;
 	visual::vecWorldCrosshair[i] = Vector(pEvent->GetInt(XorStr("x")), pEvent->GetInt(XorStr("y")), pEvent->GetInt(XorStr("z")));
-	i++;
-	if (i >= 5)
-		i = 0;
+	i = ( i + 1 ) % 5;
 }
 
 void misc::FixScopeSens() {
@@ -1257,40 +1255,37 @@ void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
 }
 
 void misc::RemoveSmoke() {
-
 	static int flCurrentTime = i::GlobalVars->flCurrentTime;
 
 	if (!cfg::misc::bRemovals[0] || !g::pLocal || flCurrentTime > (i::GlobalVars->flCurrentTime - TICKS_TO_TIME(32)))
 		return;
 
 	flCurrentTime = i::GlobalVars->flCurrentTime;
-	static auto sigLineGoesThroughSmoke = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 08 8B 15 ? ? ? ? 0F 57 C0"));
 
-	static const char* vecSmokeWireframe =
-	{
-		XorStr("particle/vistasmokev1/vistasmokev1_smokegrenade"),
-	};
+    if (static auto sigLineGoesThroughSmoke = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 08 8B 15 ? ? ? ? 0F 57 C0")); sigLineGoesThroughSmoke) {
+        int* smokeCount = reinterpret_cast<int*>(*reinterpret_cast<DWORD*>(sigLineGoesThroughSmoke + 0x8));
+        *smokeCount = 0;
+    }
 
-	static std::array<const char*, 3> vecSmokeNoDraw =
-	{
-		XorStr("particle/vistasmokev1/vistasmokev1_fire"),
-		XorStr("particle/vistasmokev1/vistasmokev1_emods"),
-		XorStr("particle/vistasmokev1/vistasmokev1_emods_impactdust"),
-	};
+    static const char* vecSmokeWireframe = XorStr("particle/vistasmokev1/vistasmokev1_smokegrenade");
 
-	{
-		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(vecSmokeWireframe, XorStr("Other textures"));
-		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, true); //wireframe
-	}
+    IMaterial* wireframeMaterial = i::MaterialSystem->FindMaterial(vecSmokeWireframe, XorStr("Other textures"));
+    if (wireframeMaterial) {
+        wireframeMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, true);
+    }
 
-	for (auto szCurrentMat : vecSmokeNoDraw) {
+    static std::array<const char*, 3> vecSmokeNoDraw = {
+        XorStr("particle/vistasmokev1/vistasmokev1_fire"),
+        XorStr("particle/vistasmokev1/vistasmokev1_emods"),
+        XorStr("particle/vistasmokev1/vistasmokev1_emods_impactdust")
+    };
 
-		IMaterial* pMaterial = i::MaterialSystem->FindMaterial(szCurrentMat, XorStr("Other textures"));
-		pMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
-	}
-
-	static auto iSmokeCount = *reinterpret_cast<DWORD*>(sigLineGoesThroughSmoke + 0x8);
-	*reinterpret_cast<int*>(iSmokeCount) = 0;
+    for (const char* smokeMaterialName : vecSmokeNoDraw) {
+        IMaterial* smokeMaterial = i::MaterialSystem->FindMaterial(smokeMaterialName, XorStr("Other textures"));
+        if (smokeMaterial) {
+            smokeMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
+        }
+    }
 }
 
 void misc::WalkBotHandler(IGameEvent* pEvent) {
@@ -1299,7 +1294,7 @@ void misc::WalkBotHandler(IGameEvent* pEvent) {
 	//	bNewRound = true;
 }
 
-void TraceRayBot(CUserCmd* pCmd);
+//void TraceRayBot(CUserCmd* pCmd);
 //void misc::WalkBot(CUserCmd* pCmd) {
 //
 //	static int positionID = 0;
@@ -1633,60 +1628,34 @@ void misc::BlockBot(CUserCmd* pCmd) {
 }
 
 void misc::ClanTag() {
+    static bool bShouldPrint = true;
+    INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
 
-	static bool bShouldPrint = true;
-	INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
+    if (!pNetChannel)
+        return;
 
-	if (!pNetChannel)
-		return;
+    if (!bShouldPrint && !cfg::misc::bClantag)
+        return;
 
-	if (!bShouldPrint && !cfg::misc::bClantag)
-		return;
+    static const float kIntervals = 0.4f / i::GlobalVars->flIntervalPerTick;
+    static const int kAnimationSteps = 17;
 
-	//std::vector<std::string> vecClantagString = util::AnimateText("RyzeXTR");
+    int iTicks = TIME_TO_TICKS(pNetChannel->GetAvgLatency(FLOW_OUTGOING)) + i::GlobalVars->iTickCount;
+    int iMainTime = static_cast<int>(iTicks / kIntervals) % kAnimationSteps;
 
-	static float flTime = 1;
-	int iTicks = TIME_TO_TICKS(pNetChannel->GetAvgLatency(FLOW_OUTGOING)) + (float)i::GlobalVars->iTickCount;
-	float intervals = 0.4f / i::GlobalVars->flIntervalPerTick;
-	int iMainTime = (int)(iTicks / intervals) % 17; // 17
-	if (iMainTime != flTime)
-	{
-		if (cfg::misc::bClantag) {
+	static const char* clanTagSteps[ kAnimationSteps ] = {
+		XorStr( "R" ), XorStr( "TR" ), XorStr( "XTR" ), XorStr( "eXTR" ), XorStr( "zeXTR" ), XorStr( "yzeXTR" ),
+		XorStr( "RyzeXTR" ), XorStr( "RyzeXTR" ), XorStr( "RyzeXTR" ), XorStr( "RyzeXTR" ),
+		XorStr( "RyzeXT" ), XorStr( "RyzeX" ), XorStr( "Ryze" ), XorStr( "Ryz" ), XorStr( "Ry" ), XorStr( "R" ), XorStr( "" )
+	};
 
-			/*for (size_t i = 0; i < vecClantagString.size(); i++)
-			{
-				if (iMainTime % i == 0) {
-					util::SetClan(vecClantagString.at(i).c_str());
-				}
-			}*/
-			bShouldPrint = true;
-			switch (iMainTime) {
-			case 0: util::SetClan(XorStr("R")); break;
-			case 1: util::SetClan(XorStr("TR")); break;
-			case 2: util::SetClan(XorStr("XTR")); break;
-			case 3: util::SetClan(XorStr("eXTR")); break;
-			case 4: util::SetClan(XorStr("zeXTR")); break;
-			case 5: util::SetClan(XorStr("yzeXTR")); break;
-			case 6: util::SetClan(XorStr("RyzeXTR")); break;
-			case 7: util::SetClan(XorStr("RyzeXTR")); break;
-			case 8: util::SetClan(XorStr("RyzeXTR")); break;
-			case 9: util::SetClan(XorStr("RyzeXTR")); break;
-			case 10: util::SetClan(XorStr("RyzeXT")); break;
-			case 11: util::SetClan(XorStr("RyzeX")); break;
-			case 12: util::SetClan(XorStr("Ryze")); break;
-			case 13: util::SetClan(XorStr("Ryz")); break;
-			case 14: util::SetClan(XorStr("Ry")); break;
-			case 15: util::SetClan(XorStr("R")); break;
-			case 16: util::SetClan(XorStr("")); break;
-			case 17: util::SetClan(XorStr("")); break;
-			}
-		}
-		else {
-			bShouldPrint = false;
-			util::SetClan(" ");
-		}
-	}
-	flTime = iMainTime;
+    if (cfg::misc::bClantag) {
+        bShouldPrint = true;
+        util::SetClan(clanTagSteps[iMainTime]);
+    } else {
+        bShouldPrint = false;
+        util::SetClan(" ");
+    }
 }
 
 void misc::Killsay(IGameEvent* pEvent) {
@@ -1834,8 +1803,8 @@ void DECLSPEC_NOINLINE NET_SetConVar(const char* value, const char* cvar)
 	static DWORD setaddr = (DWORD)MEM::FindPattern(ENGINE_DLL, XorStr("8D 4C 24 1C E8 ? ? ? ? 56"));
 	if (setaddr != 0)
 	{
-		void* pvSetConVar = (char*)setaddr;
-		Invoke_NET_SetConVar(pvSetConVar, cvar, value);
+		void* pvSetConVar = reinterpret_cast< void* >( setaddr );
+		Invoke_NET_SetConVar( pvSetConVar, cvar, value );
 	}
 }
 
@@ -1864,9 +1833,7 @@ bool misc::ChangeName(bool bReconnect, const char* szName) {
 bool misc::ResetName(bool bReconnect, const char* szName) {
 
 	static CConVar* pNameVar = i::ConVar->FindVar(XorStr("name"));
-
-	ChangeName(false, pNameVar->GetString());
-	return true;
+	return ChangeName(false, pNameVar->GetString());
 }
 
 void misc::RevolverRunCommand(CBaseEntity* pEntity) {
