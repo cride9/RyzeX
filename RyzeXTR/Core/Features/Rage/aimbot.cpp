@@ -162,7 +162,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					int iCollidePoints = 0;
 
 					// OPTIMIZATION: calculate safe points once and save it later in a variable. It will return if not safe, but when safe we already scanned safety
-					if (iCollidePoints = autowall.SafePoint(vecEyePosition, curConfig.pWeapon, pRecord, vecHitboxPoint, iHitbox); iCollidePoints < 3 && i )
+					if (iCollidePoints = autowall.SafePoint(vecEyePosition, pRecord, vecHitboxPoint, iHitbox); iCollidePoints < 3 && i )
 						continue;
 
 					if (playerList::arrPlayers[pRecord->iEntIndex].bSafePoint && iCollidePoints < 3)

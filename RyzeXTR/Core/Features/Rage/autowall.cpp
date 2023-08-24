@@ -454,35 +454,28 @@ bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstu
 }
 #pragma runtime_checks( "", restore )
 
-int CAutoWall::SafePoint(Vector& vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox, bool* bRollCheck) {
-
-	if (pRecord->pMatricies[EMatrixType::RIGHT]->GetOrigin() == Vector(0, 0, 0) ||
-		pRecord->pMatricies[EMatrixType::LEFT]->GetOrigin() == Vector(0, 0, 0) ||
-		pRecord->pMatricies[EMatrixType::CENTER]->GetOrigin() == Vector(0, 0, 0))
-	{
-		return 0;
-	}
-
+int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox) {
+	// If we don't have a record how would we safepoint men
 	if (!pRecord)
 		return 0;
 
+	// Safepoint count
 	int iSafePoint = 0;
-	Vector vecStart = vecEyePosition;
-	Vector vecEnd = vecShootposition;
+	for ( int iSafeSide = EMatrixType::LEFT; iSafeSide <= EMatrixType::CENTER; iSafeSide++) {
+	   // Check matrix origins for this hitbox
+		if (pRecord->pMatricies[iSafeSide]->GetOrigin() == Vector(0,0,0))
+			continue;  // Skip this hitbox if any matrix origin is invalid
 
-	mstudiobbox_t* studioBox = pRecord->pEntity->StudioHitbox(iHitbox);
-	if (!studioBox)
-		return 0;
+		Vector vecStart = vecEyePosition;
+		Vector vecEnd = vecShootposition;
 
-	if (autowall.bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[RIGHT]))
-		iSafePoint++;
+		mstudiobbox_t* studioBox = pRecord->pEntity->StudioHitbox(iHitbox);
+		if (!studioBox)
+			continue;  // Skip this hitbox if it's invalid
 
-	if (autowall.bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[LEFT]))
-		iSafePoint++;
-
-	if (autowall.bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[CENTER]))
-		iSafePoint++;
-
+		// Increment iSafePoint based on the collidepoint results
+		iSafePoint += autowall.bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[iSafeSide]);
+	}
 	return iSafePoint;
 }
 
