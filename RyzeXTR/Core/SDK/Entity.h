@@ -659,7 +659,7 @@ public:
 	}
 
 	VarMapping_t* GetVarMap() {
-		return reinterpret_cast<VarMapping_t*>((std::uintptr_t)(this) + 0x24); //0x4C );
+		return reinterpret_cast<VarMapping_t*>(reinterpret_cast<std::uintptr_t>(this) + 0x24); // 0x4C );
 	}
 
 	bool IsAlive() {
@@ -743,9 +743,9 @@ public:
 
 	void SetupBones_AttachmentHelper()
 	{// 55 8B EC 83 EC 48 53 8B 5D 08 89 4D F4
-		
-		static auto sig = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 48 53 8B 5D"));
-		return ((void(__thiscall*)(void*, void*))(sig))(this, this->GetStudioHdr());
+		using SetupBones_AttachmentHelper = void(__thiscall*)(decltype(this), void*);
+		static auto oSetupBones_AttachmentHelper = reinterpret_cast<SetupBones_AttachmentHelper>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 48 53 8B 5D")));
+		return oSetupBones_AttachmentHelper(this, this->GetStudioHdr());
 	}
 
 	static unsigned long& GetModelBoneCounter()
@@ -765,11 +765,10 @@ public:
 	}
 
 	IKContext* GetIKContext( ) {
-		return *( IKContext** )( ( uintptr_t )this + 9836 + 0x4 );
+		return *( IKContext** )( reinterpret_cast< uintptr_t >( this ) + 9836 + 0x4 );
 	}
-
 	IKContext*& GetIKContext2( ) {
-		return *( IKContext** )( ( uintptr_t )this + 0x2670 );
+		return *( IKContext** )( reinterpret_cast< uintptr_t >( this ) + 0x2670 );
 	}
 
 	CStudioHdr* GetModelPtr( )
@@ -921,17 +920,14 @@ public:
 	//ADD_NETVAROFFSET(GetRecentModelBoneCounter, unsigned long, "CBaseAnimating->m_nForceBone", 0x4);
 	//ADD_NETVAROFFSET(GetLastSetupBonesTime, unsigned long, "CBaseAnimating->m_nForceBone", -0x20);
 
-	Vector& m_angVisualAngles()
-	{
-		return *(Vector*)((DWORD)(this) + 0x31E8);
+	Vector& m_angVisualAngles( ) {
+		return *reinterpret_cast< Vector* >( reinterpret_cast< DWORD >( this ) + 0x31E8 );
 	}
-	float& GetCollisionChangeTime()
-	{
-		return *(float*)((DWORD)(this) + 0x9924);
+	float& GetCollisionChangeTime( ) {
+		return *reinterpret_cast< float* >( reinterpret_cast< DWORD >( this ) + 0x9924 );
 	}
-	float& GetCollisionChangeOrigin()
-	{
-		return *(float*)((DWORD)(this) + 0x9920);
+	float& GetCollisionChangeOrigin( ) {
+		return *reinterpret_cast< float* >( reinterpret_cast< DWORD >( this ) + 0x9920 );
 	}
 
 	std::array<float, 24>& GetPoseParameter() {
@@ -942,9 +938,9 @@ public:
 
 	// pattern::find( m_client_dll, ( "55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75" ) ).as<uintptr_t>( );
 	int LookupSequence(const char* name) {
-
-		static uintptr_t sig = (uintptr_t)MEM::FindPattern(CLIENT_DLL, XorStr("55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75"));
-		return ((int(__thiscall*)(CBaseEntity*, const char*))sig)(this, name);
+		using LookupSequence = int(__thiscall*)(decltype(this), const char*);
+		static auto oLookupSequence = reinterpret_cast< LookupSequence >(MEM::FindPattern(CLIENT_DLL, XorStr("55 8b ec 56 8b f1 83 be ? ? ? ? ? 75 ? 8b 46 ? 8d 4e ? ff 50 ? 85 c0 74 ? 8b ce e8 ? ? ? ? 8b b6 ? ? ? ? 85 f6 74 ? 83 3e ? 74 ? 8b ce e8 ? ? ? ? 84 c0 74 ? ff 75")));
+		return oLookupSequence(this, name);
 	}
 
 	inline void SetPoseAngles(float flYaw, float flPitch) {
@@ -1069,9 +1065,9 @@ public:
 	}
 
 	void SetCollisionBounds(Vector vecMins, Vector vecMaxs) {
-
-		static auto sig = (void*)((DWORD)(MEM::FindPattern(CLIENT_DLL, XorStr("53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 89 6C 24 04 8B EC 83 EC 18 56 57 8B 7B"))));
-		((void(__thiscall*)(void*, Vector*, Vector*))(sig))((void*)((DWORD)(this) + 0x320), &vecMins, &vecMaxs);
+		using UpdateRenderBounds = void(__thiscall*)(void*, Vector*, Vector*);
+		static auto oUpdateRenderBounds = reinterpret_cast<UpdateRenderBounds>(MEM::FindPattern(CLIENT_DLL, XorStr("53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 89 6C 24 04 8B EC 83 EC 18 56 57 8B 7B")));
+		oUpdateRenderBounds(reinterpret_cast<void*>(reinterpret_cast<DWORD>(this) + 0x320), &vecMins, &vecMaxs);
 	}
 
 	bool PhysicsRunThink(int nThinkMethod) {
