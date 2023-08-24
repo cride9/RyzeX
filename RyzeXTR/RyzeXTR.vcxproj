@@ -250,6 +250,7 @@
     <ClInclude Include="Core\globals.h" />
     <ClInclude Include="Core\Interface\Classes\CMsg.h" />
     <ClInclude Include="Core\Interface\Interfaces\CNetworkStringTableContainer.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IClientLeafSystem.h" />
     <ClInclude Include="Core\Interface\Interfaces\IVEngineEffects.h" />
     <ClInclude Include="Core\SDK\Draw.h" />
     <ClInclude Include="Core\xorstr.h" />

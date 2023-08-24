@@ -25,49 +25,49 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 
 	int iCurrentBrute = arrMissedShots[iEntityID] % 2;
 
-	/* Up pitch is most likely overlapped with eachother */
-	if (pRecord->vecEyeAngles.x < -30.f)
-		return;
+	if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND) {
 
-	float flVelocityDelta = fabsf(pRecord->flWalkToRunTransition - pPrevious->flWalkToRunTransition);
-	/* Constant speed check lmao */
-	if (flVelocityDelta < 0.1f && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
+		float flVelocityDelta = fabsf(pRecord->flWalkToRunTransition - pPrevious->flWalkToRunTransition);
+		/* Constant speed check lmao */
+		if (flVelocityDelta < 0.1f && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
 
-		/* Get playbackrate delta */
-		float flPlaybackrateDelta = (pRecord->arrLayers[6].flPlaybackRate - pPrevious->arrLayers[6].flPlaybackRate) * 10000.f;
+			/* Get playbackrate delta */
+			float flPlaybackrateDelta = (pRecord->arrLayers[6].flPlaybackRate - pPrevious->arrLayers[6].flPlaybackRate) * 10000.f;
 
-		/* At constant speed, if the playbackrate is increased suddenly by that many that means he's inverted */
-		/* Based on previous logs & playbackrate caches LEFT side invert has a larger number */
-		if (flPlaybackrateDelta > 3.f)
-			SetYaw(pRecord, LEFT + iCurrentBrute);
+			/* At constant speed, if the playbackrate is increased suddenly by that many that means he's inverted */
+			/* Based on previous logs & playbackrate caches LEFT side invert has a larger number */
+			if (flPlaybackrateDelta > 3.f)
+				SetYaw(pRecord, LEFT);
 
-		else if (flPlaybackrateDelta < 3.f)
-			SetYaw(pRecord, RIGHT - iCurrentBrute);
+			else if (flPlaybackrateDelta < 3.f)
+				SetYaw(pRecord, RIGHT);
+		}
+
+		/* Playbackrate increases with flWalkToRunTransition */
+		else if (pRecord->flWalkToRunTransition > pPrevious->flWalkToRunTransition && pRecord->arrLayers[6].flPlaybackRate < pPrevious->arrLayers[6].flPlaybackRate)
+			SetYaw(pRecord, RIGHT);
 	}
-
-	/* Playbackrate increases with flWalkToRunTransition */
-	else if (pRecord->flWalkToRunTransition > pPrevious->flWalkToRunTransition && pRecord->arrLayers[6].flPlaybackRate < pPrevious->arrLayers[6].flPlaybackRate)
-		SetYaw(pRecord, RIGHT - iCurrentBrute);
-
 	/* Don't resolve onshot */
 	else if (pRecord->bDidShot)
 		return;
 
 	/* breaking to the left */
-	else if (pRecord->flPoses[BODY_YAW] > 0.85f && pRecord->vecVelocity.Length2D() < 1.f)
+	else if (pRecord->flPoses[BODY_YAW] > 0.85f && pRecord->arrLayers[6].flPlaybackRate == 0.f)
 		SetYaw(pRecord, RIGHT);
 
 	/* breaking to the right */
-	else if (pRecord->flPoses[BODY_YAW] < 0.15f && pRecord->vecVelocity.Length2D() < 1.f)
+	else if (pRecord->flPoses[BODY_YAW] < 0.15f && pRecord->arrLayers[6].flPlaybackRate == 0.f)
 		SetYaw(pRecord, LEFT);
 
 	/* Apply previous data if no new data */
 	else if (pPrevious->iResolveSide != VISUAL)
-		SetYaw(pRecord, pPrevious->iResolveSide == RIGHT ? RIGHT - iCurrentBrute : LEFT + iCurrentBrute);
+		SetYaw(pRecord, pPrevious->iResolveSide);
 
 	/* If we didn't get any data apply right side & no previous data */
 	else if (pRecord->iResolveSide == VISUAL)
-		SetYaw(pRecord, RIGHT - iCurrentBrute);
+		SetYaw(pRecord, RIGHT);
+
+	SetYaw(pRecord, pPrevious->iResolveSide == LEFT ? pPrevious->iResolveSide + iCurrentBrute : pPrevious->iResolveSide - iCurrentBrute);
 }
 
 void Animations::ResolverLogic() {
@@ -122,6 +122,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
 		) ) );
+		refCurrentData.pRecord->iHitAmount++;
 		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, iHitDmg));
 		refCurrentData.ClearTarget();
 		return;
@@ -145,6 +146,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
 		)));
+		refCurrentData.pRecord->iHitAmount++;
 		visual::vecDamageIndicator.push_back(std::make_pair(bBulletImpact, iHitDmg));
 		refCurrentData.ClearTarget();
 		return;
@@ -160,7 +162,7 @@ void Animations::ResolverLogic() {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
 			misc::Print(std::vformat(
-				XorStr("Missed {}'s {} due to invalid record or resolver on backtrack. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args( 
+				XorStr("Missed {}'s {} due to invalid record | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args( 
 				info.szName,
 				misc::GetHitgroupName(refCurrentData.iHitGroup),
 				refCurrentData.flHitchance,
@@ -327,17 +329,17 @@ void Animations::SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw) {
 
 	case LEFT:
 		pState->flGoalFeetYaw = GetYawRotation(pRecord, LEFT);
-		pRecord->flResolveDelta = -pRecord->flDesyncDelta;
+		pRecord->flResolveDelta = M::NormalizeYaw(pRecord->vecEyeAngles.y - pState->flGoalFeetYaw);
 		break;
 
 	case CENTER:
 		pState->flGoalFeetYaw = GetYawRotation(pRecord, CENTER);
-		pRecord->flResolveDelta = 0.f;
+		pRecord->flResolveDelta = M::NormalizeYaw(pRecord->vecEyeAngles.y - pState->flGoalFeetYaw);
 		break;
 
 	case RIGHT:
 		pState->flGoalFeetYaw = GetYawRotation(pRecord, RIGHT);
-		pRecord->flResolveDelta = pRecord->flDesyncDelta;
+		pRecord->flResolveDelta = M::NormalizeYaw(pRecord->vecEyeAngles.y - pState->flGoalFeetYaw);
 		break;
 	}
 }

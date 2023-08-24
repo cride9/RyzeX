@@ -317,6 +317,7 @@
     <ClInclude Include="Dependecies\lua\embedding\luajit.h" />
     <ClInclude Include="Dependecies\lua\embedding\lualib.h" />
     <ClInclude Include="Core\Features\Visuals\drawlist.h" />
+    <ClInclude Include="Core\Interface\Interfaces\IClientLeafSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependecies\freetype\win32\freetype.lib" />

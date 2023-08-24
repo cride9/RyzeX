@@ -485,8 +485,14 @@ bool CAutoWall::bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector&
 	Trace_t traceData = Trace_t();
 	Ray_t traceRay = Ray_t(vecEyePosition, vecEnd);
 
+	// Apply bone cache for accurate tracing
+	pRecord->ApplyMatrix(pRecord->pEntity, iMatrix);
+
 	// trace a ray to the entity
 	i::EngineTrace->ClipRayToCollideable(traceRay, MASK_SHOT, pRecord->pEntity->GetCollideable(), &traceData);
+
+	// Restore
+	pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
 
 	// check if trace did hit the desired hitbox and not other
 	// example: aiming for head -> its behind his chest -> return chest == head

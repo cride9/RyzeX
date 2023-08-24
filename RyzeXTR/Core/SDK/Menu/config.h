@@ -446,7 +446,6 @@ private:
 	std::string szCategory;
 	void PushCategory(std::string szCateg) { szCategory = szCateg; };
 
-	void SetupColor(float colColor[4], float colDefault[4], std::string szName);
 	void SetupColor(float(*colColor)[4], int iLength, Color colDefault, std::string szName);
 	void SetupColor(float colColor[4], Color colDefault, std::string szName);
 

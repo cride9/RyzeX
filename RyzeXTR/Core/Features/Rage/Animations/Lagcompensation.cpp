@@ -274,8 +274,8 @@ void Lagcompensation::SetInterpolationFlags()
 		void* m_VarMap = *(void**)((DWORD)(pEntity)+0x24);
 		if (m_VarMap)
 		{
-			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = i::GlobalVars->flIntervalPerTick;
-			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = i::GlobalVars->flIntervalPerTick;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x8) + 0x24) = i::GlobalVars->flIntervalPerTick * 1.5f;
+			*(float*)(*(DWORD*)((DWORD)(m_VarMap)+0x44) + 0x24) = i::GlobalVars->flIntervalPerTick * 1.5f;
 		}
 	}
 }
@@ -601,9 +601,12 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 	if (!pMatricies || !pMatricies[iType] || pMatricies[iType]->Base() == nullptr)
 		return;
 
-	pEntity->SetCollisionBounds(vecMins, vecMaxs);
+	if (!this)
+		return;
+
+	//pEntity->SetCollisionBounds(vecMins, vecMaxs);
 	pEntity->SetBoneCache(pMatricies[iType]);
-	//return pEntity->InvalidateBoneCache();
+	return pEntity->InvalidateBoneCache();
 }
 
 void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t* pMatrix) {
@@ -611,9 +614,9 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t
 	if (!pMatrix)
 		return;
 
-	pEntity->SetCollisionBounds(vecMins, vecMaxs);
+	//pEntity->SetCollisionBounds(vecMins, vecMaxs);
 	pEntity->SetBoneCache(pMatrix);
-	//return pEntity->InvalidateBoneCache();
+	return pEntity->InvalidateBoneCache();
 }
 
 bool Lagcompensation::LagRecord_t::IsValid() {

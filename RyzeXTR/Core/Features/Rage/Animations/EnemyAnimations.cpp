@@ -49,28 +49,29 @@ float Animations::GetYawRotation(Lagcompensation::LagRecord_t* pRecord, int nRot
 
 	// set eye yaw
 	float flEyeRotation = pRecord->vecEyeAngles.y;
-	//switch (nRotationSide)
-	//{
-	//case LEFT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - 58.f); break;
-	//case CENTER: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation); break;
-	//case RIGHT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + 58.f); break;
-	//}
+	switch (nRotationSide)
+	{
+	case LEFT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation - pRecord->pEntity->AnimState()->GetMaxDesync()); break;
+	case CENTER: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation); break;
+	case RIGHT: pRecord->pEntity->AnimState()->flEyeYaw = M::NormalizeAngle(flEyeRotation + pRecord->pEntity->AnimState()->GetMaxDesync()); break;
+	}
 
 	// generate foot yaw
 	float flFootYaw = 0.0f;
+	flFootYaw = BuildFootYaw(pRecord->pEntity, pRecord);
 
-	switch (nRotationSide)
-	{
-		case LEFT: flFootYaw = M::NormalizeAngle(flEyeRotation - 58.f); break;
-		case CENTER: flFootYaw = M::NormalizeAngle(flEyeRotation); break;
-		case RIGHT: flFootYaw = M::NormalizeAngle(flEyeRotation + 58.f); break;
-	}
+	//switch (nRotationSide)
+	//{
+	//	case LEFT: flFootYaw = M::NormalizeAngle(flEyeRotation - 58.f); break;
+	//	case CENTER: flFootYaw = M::NormalizeAngle(flEyeRotation); break;
+	//	case RIGHT: flFootYaw = M::NormalizeAngle(flEyeRotation + 58.f); break;
+	//}
 
 	// restore eye yaw                                   
-	//pRecord->pEntity->AnimState()->flEyeYaw = flOldEyeYaw;
+	pRecord->pEntity->AnimState()->flEyeYaw = flOldEyeYaw;
 
-	// return result
-	return flFootYaw;
+	//return result
+	return M::NormalizeYaw(flFootYaw);
 }
 
 void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
@@ -159,7 +160,8 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 
 void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 
-	g_LocalAnimations->InterpolateMatricies();
+	if (!exploits::bIsShiftingTicks)
+		g_LocalAnimations->InterpolateMatricies();
 	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++)
 	{
 		CBaseEntity* pPlayer = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));

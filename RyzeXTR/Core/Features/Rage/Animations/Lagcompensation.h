@@ -168,6 +168,8 @@ public:
 		int iEntIndex{};
 		int iChoked{};
 		int iResolveSide = 0;
+		int iShotAmount{};
+		int iHitAmount{};
 	};
 
 	enum EResolverMode

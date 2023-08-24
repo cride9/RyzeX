@@ -969,6 +969,13 @@ void menu::Skins(ImVec2 savedCursorPosition) {
                     iSkinId[iMenuID] = vecPaintKit.at(iCurrentIndex[iMenuID]);
                 }
             }
+
+			static std::vector<const char*> vecAgentList{};
+			if (vecAgentList.empty())
+				for (const AgentObject_t& it : skinChanger.agentList)
+					vecAgentList.push_back(it.szDisplayName.c_str());
+
+			ImGui::Combo("Agents", &iSkinId[36], vecAgentList.data(), vecAgentList.size());
         }
     }
     ImGui::EndChild();
@@ -1114,8 +1121,6 @@ void menu::Config(ImVec2 savedCursorPosition) {
     {
         if (iSelect == 0)
         {
-            ImGui::SliderInt(XorStr("##debugSlider1"), &cfg::debugSlider1, 0, 85, XorStr("debugSlider1: %d"));
-
             static std::string selectedConfig = "";
             ImGui::PushItemWidth( ImGui::GetContentRegionAvail( ).x );
             if (ImGui::ListBoxVector( ( "##configs" ), &cfg::configID, Config2->vecConfigs, 15 )) {

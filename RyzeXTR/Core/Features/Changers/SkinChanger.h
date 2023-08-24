@@ -445,8 +445,8 @@ public:
 	void Event(IGameEvent* pEvent);
 	/* dump stikers and paintkits */
 	void Dump();
+    void AgentChanger(CBaseEntity* pLocal, EStage stage);
 	//void DumpStickers(ItemSchema* item_schema);
-	void AgentChanger(EStage stage);
 
 	int GetMenuFromId(short ID);
 	int GetGloveIdFromMenu(int m_iWeaponIndex);

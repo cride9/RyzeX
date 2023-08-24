@@ -109,7 +109,8 @@ void CConfig::Setup() {
 		PushCategory(XorStr("AntiAim"));
 
 		SetupIntArray(iEnabledJitters.data(), 3, 0, XorStr("iEnabledJitters"));
-		//for (size_t i = 0; i < 64; i++) SetupIntArray(vecJitterWays[i].data(), 3, 0, std::format("{}{}", XorStr("vecJitterWays"), i));
+		//for (size_t i = 0; i < 64; i++)
+		//	SetupIntArray(vecJitterWays.data()[i].data(), 3, 0, std::format("{}{}", XorStr("vecJitterWays"), i));
 		
 		SetupBoolArray(bEnabled, 3, false, XorStr("bEnabled"));
 		SetupIntArray(iPitch, 3, 0, XorStr("iPitch"));
@@ -183,7 +184,7 @@ void CConfig::Setup() {
 		SetupColor(flWeaponColor[ENEMY], Color(1.f, 1.f, 1.f, 1.f), XorStr("flWeaponColorEnemy"));
 		SetupColor(flSkeletonColor[ENEMY], Color(1.f, 1.f, 1.f, 0.383648f), XorStr("flSkeletonColorEnemy"));
 		SetupColor(flBulletTracerColor[ENEMY], Color(0.262252f, 0.323914f, 0.534591f, 0.452830f), XorStr("flBulletTracerColorEnemy"));
-		SetupColor(flFlagsColor[ENEMY], 9, Color(1.f, 1.f, 1.f, 1.f), XorStr("flFlagsColorEnemy"));
+		SetupColor(flFlagsColor[ENEMY], 9, Color(255, 255, 255, 255), XorStr("flFlagsColorEnemy"));
 		SetupBoolArray(bFlags[ENEMY], 9, false, XorStr("bFlagsEnemy"));
 
 		SetupColor(flNameColor[TEAM], Color(1.f, 1.f, 1.f, 1.f), XorStr("flNameColorTeam"));
@@ -346,8 +347,8 @@ void CConfig::Setup() {
 		SetupBool(bDrawServerHitboxOnAllEntities, false, XorStr("bDrawServerHitboxOnAllEntities"));
 
 		SetupBool(bNightmode, false, XorStr("bNightmode"));
-		SetupColor(flNightmodeColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flNightmodeColor"));
-		SetupColor(flPropColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flPropColor"));
+		SetupColor(flNightmodeColor, Color(255, 255, 255, 255), XorStr("flNightmodeColor"));
+		SetupColor(flPropColor, Color(255, 255, 255, 255), XorStr("flPropColor"));
 
 		SetupInt(iSkybox, 0, XorStr("iSkybox"));
 		SetupColor(flSkyboxColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flSkyboxColor"));
@@ -458,15 +459,6 @@ void CConfig::Setup() {
 	}
 }
 
-void CConfig::SetupColor(float colColor[4], float colDefault[4], std::string szName) {
-
-	for (size_t i = 0; i < 4; i++) {
-
-		colColor[i] = colDefault[i] / 255.f;
-		floats.push_back(new ConfigValue<float>(szCategory, std::format("{}{}", szName, i == 0 ? "R" : i == 1 ? "G" : i == 2 ? "B" : "A"), &colColor[i]));
-	}
-}
-
 void CConfig::SetupColor(float colColor[4], Color colDefault, std::string szName) {
 
 	for (size_t i = 0; i < 4; i++) {
@@ -483,7 +475,7 @@ void CConfig::SetupColor(float (*colColor)[4], int iLength, Color colDefault, st
 		for (size_t i = 0; i < 4; i++) {
 
 			colColor[j][i] = colDefault[i] / 255.f;
-			floats.push_back(new ConfigValue<float>(szCategory, std::format("{}{}{}", szName, j, i == 0 ? "R" : i == 1 ? "G" : i == 2 ? "B" : "A"), colColor[i]));
+			floats.push_back(new ConfigValue<float>(szCategory, std::format("{}{}{}", szName, j, i == 0 ? "R" : i == 1 ? "G" : i == 2 ? "B" : "A"), &colColor[j][i]));
 		}
 	}
 }
@@ -703,7 +695,7 @@ void SaveThread() {
 	floatsThread.join();
 	boolsThread.join();
 	stringsThread.join();
-
+	
 	Config2->RefreshConfigs();
 	Config2->bSaving = false;
 }

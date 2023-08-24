@@ -85,6 +85,7 @@ bool ApplyGlove(CBaseCombatWeapon* glove, short item_definition_index, int paint
 
 	glove->GetFallbackPaintKit() = paint_kit;
 	glove->GetModelIndex() = model_index;
+	glove->SetModelIndex(model_index);
 	glove->GetEntityQuality() = entity_quality;
 	glove->GetFallbackWear() = fallback_wear;
 
@@ -236,7 +237,7 @@ void CSkinChanger::Dump()
 	}
 }
 
-void CSkinChanger::AgentChanger(EStage stage)
+void CSkinChanger::AgentChanger(CBaseEntity* pLocal, EStage stage)
 {
 	if (!bEnableSkinChanger)
 		return;
@@ -244,22 +245,25 @@ void CSkinChanger::AgentChanger(EStage stage)
 	if (!iSkinId[36])
 		return;
 
+	//pLocal->SetModelIndex(i::ModelInfo->GetModelIndex(agentList.at(iSkinId[36]).szModelName.c_str()));
+
+	//return;
 	static int originalIdx = 0;
 
-	if (!g::pLocal)
+	if (!pLocal)
 	{
 		originalIdx = 0;
 		return;
 	}
 
-	//if (const auto model = C::Get<std::vector<std::string>>(Vars.vecSkinsImgPaths).at(36).c_str())
-	//{
-	//	if (stage == FRAME_RENDER_START)
-	//		originalIdx = g::pLocal->GetModelIndex();
+	if (const auto model = agentList.at(iSkinId[36]).szModelName.c_str())
+	{
+		if (stage == FRAME_RENDER_START)
+			originalIdx = i::ModelInfo->GetModelIndex(pLocal->GetModel()->szName);
 
-	//	const auto idx = stage == FRAME_RENDER_END && originalIdx ? originalIdx : I::ModelInfo->GetModelIndex(model);
-	//	g::pLocal->SetModelIndex(idx);
-	//}
+		const auto idx = stage == FRAME_RENDER_END && originalIdx ? originalIdx : i::ModelInfo->GetModelIndex(model);
+		pLocal->SetModelIndex(idx);
+	}
 }
 
 void HandleGloves()
@@ -267,10 +271,12 @@ void HandleGloves()
 	if (!iGloveModel)
 		return;
 
-	if (g::pLocal == nullptr)
+	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
+
+	if (pLocal == nullptr)
 		return;
 
-	CBaseHandle* wearables = g::pLocal->GetWearablesHandle();
+	CBaseHandle* wearables = pLocal->GetWearablesHandle();
 	if (!wearables)
 		return;
 
@@ -288,7 +294,7 @@ void HandleGloves()
 		}
 	}
 
-	if (!g::pLocal->IsAlive())
+	if (!pLocal->IsAlive())
 	{
 		if (glove)
 		{
@@ -312,9 +318,33 @@ void HandleGloves()
 	{
 		ApplyGlove(glove, skinChanger.GetGloveIdFromMenu(iGloveModel), iSkinId[35], i::ModelInfo->GetModelIndex(mapGloveList.at(skinChanger.GetGloveIdFromMenu(iGloveModel))), 0, flSkinWear[35]);
 		
-		glove->GetItemIDHigh() = -1;
-		glove->GetFallbackSeed() = 0;
-		glove->GetFallbackStatTrak() = -1;
+		uint64_t uMask = UINT32_MAX;
+		uint32_t uLowId = uMask & skinChanger.GetGloveIdFromMenu(iGloveModel);
+		uint32_t uHighId = skinChanger.GetGloveIdFromMenu(iGloveModel) >> 32;
+
+		glove->GetItemIDLow() = uLowId;
+		glove->GetItemIDHigh() = uHighId;
+		glove->GetAccountID() = pLocal->GetPlayerInfo().nXuidLow;
+
+		if (EconItemDefinition* def = skinChanger.m_pItemSchematic->getItemDefinitionInterface(skinChanger.GetGloveIdFromMenu(iGloveModel)); def)
+			if (CBaseEntity* pViewModel = static_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(pLocal->GetViewModel())); pViewModel)
+				if (const char* szViewmodel = def->getPlayerDisplayModel(); szViewmodel)
+					if (CBaseHandle pWorldModelHandle = glove->GetRefEHandle(); pWorldModelHandle)
+						if (CBaseCombatWeapon* pWorldModel = (CBaseCombatWeapon*)(i::EntityList->GetClientEntityFromHandle(pWorldModelHandle)); pWorldModel)
+							if (const char* szWorldModel = def->getWorldDisplayModel(); szWorldModel)
+								glove->SetModelIndex(i::ModelInfo->GetModelIndex(szWorldModel));
+
+		static auto uEquipSig = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 10 53 8B 5D 08 57 8B F9"));
+		static auto uInitializeAttributesSig = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 0C 53 56 8B F1 8B 86"));
+
+		((int(__thiscall*)(void*, void*))(uEquipSig))(glove, pLocal);
+
+		pLocal->GetBodyID() = 1;
+
+		((int(__thiscall*)(void*))(uInitializeAttributesSig))(glove);
+
+		i::LeafSystem->CreateRenderableHandle(glove, true, 0, RENDERABLE_MODEL_UNKNOWN_TYPE);
+
 		glove->GetClientNetworkable()->PreDataUpdate(DATA_UPDATE_CREATED);
 	}
 }

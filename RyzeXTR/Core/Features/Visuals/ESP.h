@@ -15,6 +15,8 @@ namespace visual {
 	inline static float vecDormantColor[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
 	inline std::array<Vector, 65> vecDormatPosition{};
 
+	void DrawWeaponInfo();
+
 	void VisualRender();
 	void CoolHackKeyBindList();
 
@@ -30,7 +32,8 @@ namespace visual {
 	void DrawRadioInformation();
 	void OutOfFov(CBaseEntity*);
 	void WorldLightning(Color);
-	void CustomHud();
+	const char* GetWeaponChar(std::string input);
+    void CustomHud();
 	void Hat();
 	void AutoPeekCircle();
 

@@ -908,6 +908,7 @@ public:
 	ADD_NETVAR(IsClientSideAnimation, bool, "CBaseAnimating->m_bClientSideAnimation");
 	ADD_NETVAR(GetCycle, float, "CBaseAnimating->m_flCycle");
 	ADD_NETVAR(GetModelScale, float, "CBaseAnimating->m_flModelScale");
+	ADD_NETVAR(GetBodyID, int, "CBaseAnimating->m_nBody");
 
 	//ADD_PNETVAROFFSET(GetStudioHdr, CStudioHdr, "CBaseAnimating->m_hLightingOrigin", 0x8);
 	ADD_NETVAROFFSET(GetCustomBlendingRuleMask, int, "CBaseAnimating->m_nBody", 0x4);
@@ -998,7 +999,7 @@ public:
 
 	bool PrecacheModel(const char* szModelName)
 	{
-		INetworkStringTable* m_pModelPrecacheTable = i::StringContainer->FindTable("modelprecache");
+		INetworkStringTable* m_pModelPrecacheTable = i::StringContainer->FindTable(XorStr("modelprecache"));
 
 		int idx = INVALID_STRING_INDEX;
 		if (m_pModelPrecacheTable)

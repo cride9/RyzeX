@@ -113,15 +113,15 @@ bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out)
 
 	const auto lerp = M::Lerp(NextOrigin, FirstInvalid->vecOrigin, flDelta );
 
-	matrix3x4_t ret[128];
-	memcpy(ret, FirstInvalid->pMatricies[VISUAL], sizeof(matrix3x4_t) * 128);
+	matrix3x4_t ret[256];
+	memcpy(ret, FirstInvalid->pMatricies[VISUAL], sizeof(matrix3x4_t) * 256);
 
-	for (size_t i{ }; i < 128; ++i) {
+	for (size_t i{ }; i < 256; ++i) {
 		const auto matrix_delta = Vector( FirstInvalid->pMatricies[VISUAL][ i ][ 0 ][ 3 ], FirstInvalid->pMatricies[VISUAL][ i ][ 1 ][ 3 ], FirstInvalid->pMatricies[VISUAL][ i ][ 2 ][ 3 ] ) - FirstInvalid->vecOrigin;
 		MatrixSetOrigin(matrix_delta + lerp, ret[i]);
 	}
 
-	memcpy(out, ret, sizeof(matrix3x4_t[128]));
+	memcpy(out, ret, sizeof(matrix3x4_t[256]));
 	return true;
 	return false;
 }
@@ -416,7 +416,15 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 	//		return false;
 
 	//}
-	else if (szModelName.find("arms") != std::string_view::npos) {
+	else if (szModelName.find("arms") != std::string_view::npos && !i::Input->bCameraInThirdPerson) {
+
+		//if ((szModelName.find("sleeve") != std::string_view::npos)) {
+
+		//	BeginChams(materials[ANIMATED], flWeaponAnimOverlayColor, false, flWeaponAnimOverlayXhair);
+		//	original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+
+		//	return true;
+		//}
 
 		bool ret = false;
 		if (bViewmodel) {
@@ -446,7 +454,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		}
 		return ret;
 	}
-	else if ((szModelName.find("weapons\\v_") != std::string_view::npos)) {
+	else if (szModelName.find("weapons\\v_") != std::string_view::npos && !i::Input->bCameraInThirdPerson) {
 
 		IMaterial* pViewModelMaterial = i::MaterialSystem->FindMaterial(szModelName.data(), TEXTURE_GROUP_MODEL);
 

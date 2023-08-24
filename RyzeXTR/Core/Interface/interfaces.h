@@ -31,6 +31,7 @@
 #include "Interfaces/IItemSystem.h"
 #include "Interfaces/IVEngineEffects.h"
 #include "Interfaces/CNetworkStringTableContainer.h"
+#include "Interfaces/IClientLeafSystem.h"
 
 // Classes aka that I can't find as interface in the source kbxdbdxjk
 #include "Classes/CClientState.h"
@@ -72,6 +73,7 @@ namespace i {
 	inline ILocalize* Localize;
 	inline IVEffects* Effects;				// engine.dll -> VEngineEffects001
 	inline CNetworkStringTableContainer* StringContainer;
+	inline IClientLeafSystem* LeafSystem;
 
 	inline IDirect3DDevice9* DirectDevice;
 	inline IMoveHelper* MoveHelper;			// Runcommand parameter 

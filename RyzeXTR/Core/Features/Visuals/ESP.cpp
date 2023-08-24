@@ -48,50 +48,78 @@ void SafepointDebug(CBaseEntity* pEnt) {
 	//i::Surface->DrawFilledRect(points.x - 10, points.y - 10, points.x + 10, points.y + 10);
 }
 
-void DrawWeaponInfo( )
+void visual::DrawWeaponInfo( )
 {
 	if ( !g::pLocal || !g::pLocal->IsAlive( ) || !g::pLocal->GetWeapon( ))
 		return;
 	
+	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon();
+	if (!pWeapon)
+		return;
+
 	int x, y = 0;
 	i::EngineClient->GetScreenSize( x, y );
+
+	Vector vecViewAngle;
+	i::EngineClient->GetViewAngles(vecViewAngle);
+
+	static float helperNumber = 0;
+	static float vecOriginalValueX = x / 2 + x / 9.6f;
+	static float vecOriginalValueY = y / 2 - y / 19.2f;
+
+	static Vector vecBeforeViewAngle = Vector(0, 0, 0);
+	static float flLengthBefore = 0;
+	static float flHeightBefore = 0;
 
 	Vector vecTransformedOrigin = Vector( 0, 0, 0 );
 	if (i::DebugOverlay->ScreenPosition( g::pLocal->GetBonePosition( 32 ).value( ), vecTransformedOrigin ))
 		return;
 
-	static float flLengthBefore = 0.0f;
-	static float flHeightBefore = 0.0f;
-	if (!vecTransformedOrigin.IsZero( ))
-	{
-		flLengthBefore += M::NormalizeYaw( vecTransformedOrigin.y ) * 5;
-		flHeightBefore -= M::NormalizeYaw( vecTransformedOrigin.x ) * 5;
-
-		if (flLengthBefore > 0.0f)
-			flLengthBefore -= std::abs( vecTransformedOrigin.x + 200 + flLengthBefore - vecTransformedOrigin.x ) / 20;
-
-		if (flLengthBefore < 0.0f)
-			flLengthBefore += std::abs( vecTransformedOrigin.x + 200 + flLengthBefore - vecTransformedOrigin.x ) / 20;
-
-
-		if (flHeightBefore > 0.0f)
-			flHeightBefore -= std::abs( vecTransformedOrigin.y - 100 + flHeightBefore - vecTransformedOrigin.y ) / 20;
-
-		if (flHeightBefore < 0.0f)
-			flHeightBefore += std::abs( vecTransformedOrigin.y - 100 + flHeightBefore - vecTransformedOrigin.y ) / 20;
+	Vector vecDifference = Vector(vecViewAngle.x - vecBeforeViewAngle.x, vecViewAngle.y - vecBeforeViewAngle.y, vecViewAngle.z - vecBeforeViewAngle.z);
+	if (vecDifference.y != 0) {
+		flLengthBefore += M::NormalizeYaw(vecDifference.y) * 5;
 	}
 
-	static int xDelta = ( x / 2 ) + ( x / 12 );
-	static int yDelta = ( y / 2 ) - ( y / 16 ) + ( x / 50 );
-	Vector vecBeforeViewAngle = Vector( 0, 0, 0 );
-	static float flAnimationNumber = 0;
-	flAnimationNumber += i::GlobalVars->flAbsFrameTime;
-	float vecCurrentValueX = xDelta + flLengthBefore + 200.0f;
-	float vecCurrentValueY = yDelta - 100.0f - ( std::sin( flAnimationNumber * 2 ) * 30 ) + flHeightBefore;
+	if (vecDifference.x != 0) {
+		flHeightBefore -= M::NormalizeYaw(vecDifference.x) * 5;
+	}
 
-	drawlist::AddLine( Vector2D( vecTransformedOrigin.x, vecTransformedOrigin.y ), Vector2D( vecCurrentValueX, vecCurrentValueY ), Color(255, 255, 255, 255) );
-	//drawlist::AddRect( Vector2D( xDelta, yAnimated ), Vector2D( xDelta + 250, yAnimated - 200 ), DRAWFLAGS::DRAWFLAGS_FILLED, Color( 12, 12, 12, 255 ) );
-	drawlist::AddRect( Vector2D( vecCurrentValueX, vecCurrentValueY ), Vector2D( vecCurrentValueX + 250, vecCurrentValueY - 200 ), DRAWFLAGS::DRAWFLAGS_OUTLINE, RYZEXCOLOR );
+	if (flLengthBefore > 0) {
+		flLengthBefore -= std::fabsf(vecOriginalValueX + flLengthBefore - vecOriginalValueX) / 20;
+	}
+
+	if (flLengthBefore < 0) {
+		flLengthBefore += std::fabsf(vecOriginalValueX + flLengthBefore - vecOriginalValueX) / 20;
+	}
+
+	if (flHeightBefore > 0) {
+		flHeightBefore -= std::fabsf(vecOriginalValueY + flHeightBefore - vecOriginalValueY) / 20;
+	}
+
+	if (flHeightBefore < 0) {
+		flHeightBefore += std::fabsf(vecOriginalValueY + flHeightBefore - vecOriginalValueY) / 20;
+	}
+	
+	helperNumber += i::GlobalVars->flAbsFrameTime;
+	float vecCurrentValueX = vecOriginalValueX + flLengthBefore;
+	float vecCurrentValueY = vecOriginalValueY - (std::sin(helperNumber * 2) * 30) + flHeightBefore;
+
+	drawlist::AddLine(Vector2D(vecTransformedOrigin.x, vecTransformedOrigin.y), Vector2D(vecCurrentValueX, vecCurrentValueY), Color(7, 0, 13, 255));
+	drawlist::AddRect(Vector2D(vecCurrentValueX, vecCurrentValueY - (y / 19.2f) / 2), Vector2D(vecCurrentValueX + x / 9.6f, vecCurrentValueY + (y / 19.2f) / 2), DRAWFLAGS_FILLED, Color(7, 0, 13, 255));
+	
+	CCSWeaponInfo* pData = pWeapon->GetCSWpnData();
+
+	static std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+	std::string text = "";
+	wchar_t* localizeName = i::Localize->Find(pData->szHudName);
+	if (localizeName)
+		text = converter.to_bytes(localizeName);
+
+	drawlist::AddText(Vector2D(vecCurrentValueX + (x / 9.6f) / 10, vecCurrentValueY - (y / 19.2f) / 2), 0xA1, true, Color(255, 255, 255, 255), GetWeaponChar(text));
+	drawlist::AddText(Vector2D(vecCurrentValueX + (x / 9.6f) / 10 + 20, vecCurrentValueY - (y / 19.2f) / 2), g::fonts::FlagESP, false, Color(255, 255, 255, 255), std::format("Speed: {} - {}", pData->flMaxSpeed[0], pData->flMaxSpeed[1]));
+	drawlist::AddText(Vector2D(vecCurrentValueX + (x / 9.6f) / 10 + 20, vecCurrentValueY - (y / 19.2f) / 2 + 12), g::fonts::FlagESP, false, Color(255, 255, 255, 255), std::format("Damage: {}", pData->iDamage));
+	drawlist::AddText(Vector2D(vecCurrentValueX + (x / 9.6f) / 10 + 20, vecCurrentValueY - (y / 19.2f) / 2 + 24), g::fonts::FlagESP, false, Color(255, 255, 255, 255), std::format("Ammo: {}", pWeapon->GetAmmo()));
+	vecBeforeViewAngle = vecViewAngle;
 }
 
 void HitboxVisualization() {
@@ -107,7 +135,8 @@ using namespace cfg::visual;
 
 void visual::VisualRender() {
 
-	DrawWeaponInfo( );
+	//DrawWeaponInfo( );
+	WorldCrosshair();
 
 	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
 
@@ -135,7 +164,6 @@ void visual::VisualRender() {
 			iHealth[i] = pEnt->GetHealth();
 
 		//SafepointDebug(pEnt);
-		WorldCrosshair();
 		//HitboxVisualization();
 
 		Vector vecAbsOrigin = Vector(0, 0, 0);
@@ -1103,59 +1131,59 @@ void visual::WorldLightning(Color color) {
 }
 
 // no please dont even ask that
-char GetWeaponChar(std::string input) {
+const char* visual::GetWeaponChar(std::string input) {
 
 	if (input == "USP-S")
-		return 'A';
+		return "A";
 	if (input == "Glock-18")
-		return 'C';
+		return "C";
 	if (input == "Dual Berettas")
-		return 'S';
+		return "S";
 	if (input == "P250" || input == "Zeus x27")
-		return 'U';
+		return "U";
 	if (input == "CZ75-Auto")
-		return 'D';
+		return "D";
 	if (input == "R8 Revolver")
-		return 'F';
+		return "F";
 	if (input == "MAC-10")
-		return 'L';
+		return "L";
 	if (input == "MP7")
-		return 'X';
+		return "X";
 	if (input == "UMP-45")
-		return 'Q';
+		return "Q";
 	if (input == "P90")
-		return 'M';
+		return "M";
 
 
 	if (input == "SSG 08")
-		return 'N';
+		return "N";
 	if (input == "AWP")
-		return 'R';
+		return "R";
 	if (input == "G3SG1")
-		return 'I';
+		return "I";
 	if (input == "SCAR-20")
-		return 'O';
+		return "O";
 	if (input == "Desert Eagle")
-		return 'F';
+		return "F";
 	if (input == "Knife")
-		return 'h';
+		return "h";
 
 	if (input == "Molotov" || input == "Incendiary Grenade")
-		return 'G';
+		return "G";
 
 	if (input == "High Explosive Grenade")
-		return 'H';
+		return "H";
 
 	if (input == "Smoke Grenade")
-		return 'P';
+		return "P";
 
 	if (input == "Defuse Kit")
-		return 'f';
+		return "f";
 
 	if (input == "Medi-Shot")
-		return 'b';
+		return "b";
 
-	return '<';
+	return "<";
 }
 
 void visual::CustomHud() {
@@ -1548,6 +1576,7 @@ void visual::AutoPeekCircle() {
 	const float flStep = 0.02f;
 
 	for (int i = 1; i <= iInnerRadius; ++i) {
+
 		const float flDistanceFromCenter = static_cast<float>(iOuterRadius * flAlpha - i * flStep);
 		const int a = static_cast<int>(255 * (1 - static_cast<float>(i) / iInnerRadius));
 
