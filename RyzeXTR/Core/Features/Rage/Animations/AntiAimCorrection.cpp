@@ -21,7 +21,23 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	if (pEntity->GetPlayerInfo().bFakePlayer)
 		return;
 #endif
+
+	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pRecord->iEntIndex);
+
+	static float flFakePitch[65];
+
 	const int iEntityID = pEntity->EntIndex();
+
+	if (fabsf(pEntity->AnimState()->flEyePitch) == 180.f)
+		flFakePitch[iEntityID] = pEntity->AnimState()->flEyePitch;
+	else if (pRecord->bDidShot) flFakePitch[iEntityID] = NULL;
+
+	if (fabsf(flFakePitch[iEntityID]) == 180.f)
+		pEntity->GetEyePosition() = Vector(89.f, pEntity->AnimState()->flEyeYaw, 0.f);
+
+	float flHitPercentage = static_cast<float>(pLog->iHitAmount) / static_cast<float>(pLog->iShotAmount);
+	if (arrMissedShots[iEntityID] == 0 && flHitPercentage < 0.2f)
+		arrMissedShots[iEntityID] = 1;
 
 	int iCurrentBrute = arrMissedShots[iEntityID] % 2;
 
@@ -67,7 +83,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	else if (pRecord->iResolveSide == VISUAL)
 		SetYaw(pRecord, RIGHT);
 
-	SetYaw(pRecord, pPrevious->iResolveSide == LEFT ? pPrevious->iResolveSide + iCurrentBrute : pPrevious->iResolveSide - iCurrentBrute);
+	SetYaw(pRecord, pPrevious->iResolveSide == LEFT ? pPrevious->iResolveSide + iCurrentBrute : pPrevious->iResolveSide == RIGHT ? pPrevious->iResolveSide - iCurrentBrute : RIGHT);
 }
 
 void Animations::ResolverLogic() {
@@ -122,7 +138,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
 		) ) );
-		refCurrentData.pRecord->iHitAmount++;
+		pLog->iHitAmount++;
 		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, iHitDmg));
 		refCurrentData.ClearTarget();
 		return;
@@ -146,7 +162,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
 		)));
-		refCurrentData.pRecord->iHitAmount++;
+		pLog->iHitAmount++;
 		visual::vecDamageIndicator.push_back(std::make_pair(bBulletImpact, iHitDmg));
 		refCurrentData.ClearTarget();
 		return;

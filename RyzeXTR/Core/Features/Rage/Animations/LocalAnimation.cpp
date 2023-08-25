@@ -59,7 +59,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 
 	g_LocalAnimations->StoreAnimationRecord(pLocal);
 
-	if (!bSendPacket) 
+	if (!bSendPacket)
 		return;
 
 	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
@@ -454,7 +454,7 @@ void C_LocalAnimations::StoreAnimationRecord(CBaseEntity* pLocal)
 	m_AnimRecord.m_vecVelocity = pLocal->GetVelocity();
 	m_AnimRecord.m_flDuckAmount = pLocal->GetDuckAmount();
 	m_AnimRecord.m_flDuckSpeed = pLocal->GetDuckSpeed();
-	m_AnimRecord.m_angRealAngles = g::pCmd->angViewPoint;
+	m_AnimRecord.m_angRealAngles = antiaim::bHideFlick ? vecViewAngle : g::pCmd->angViewPoint;
 	m_AnimRecord.m_angFakeAngles = vecViewAngle;
 	m_AnimRecord.m_angAimPunch = pLocal->GetAimPunch();
 	m_AnimRecord.m_nButtons = g::pCmd->iButtons;

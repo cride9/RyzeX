@@ -114,7 +114,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	pVerifiedCmd->userCmd = *pCmd;
 	pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
 
-	if (bSendPacket)
+	if (bSendPacket && !antiaim::bHideFlick)
 		g_LocalAnimations->vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
 
 	g_LocalAnimations->OnCreateMove(bSendPacket, pLocal);

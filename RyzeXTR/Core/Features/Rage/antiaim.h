@@ -37,6 +37,7 @@ namespace antiaim {
 
 	inline bool needMicromovement = false;
 	inline bool flickJitter = false;
+	inline bool bHideFlick = false;
 
 	inline bool shotInvert = false;
 	void AntiAim(CUserCmd*, bool&);
@@ -47,13 +48,6 @@ namespace antiaim {
 		LBYUPDATE_Standing,
 		LBYUPDATE_Moving
 	};
-	inline float NextLBYUpdateTime = -1.f;
-	inline float m_flNextLBYUpdate = -1.f, m_flLastLBYChange = -1.f;
-	// update count
-	inline int iCountUpdates = 0;
-	bool NextLBYUpdate( CUserCmd* cmd );
-	void ForceResync( CUserCmd* m_pCmd, int m_iLbyChange );
-	void Update( CUserCmd* m_pCmd );
 
 	bool ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket);
 	
@@ -64,6 +58,8 @@ namespace antiaim {
 	int ClosestToLocal();
 	int ClosesToCrosshair();
 	void AtTarget(CUserCmd*, Vector&);
+
+	bool LBYUpdate(CBaseEntity* pLocal);
 
 	void DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE);
 }

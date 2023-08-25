@@ -12,6 +12,7 @@ float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, c
 	FireBulletData_t data = { };
 	data.vecPosition = vecEyePosition;
 	data.vecDirection = ( vecPoint - vecEyePosition).Normalized( );
+	data.iPenetrateCount = 3;
 
 	if (!SimulateFireBullet( pLocal, pWeapon, data, pRecord) )
 		return -1.0f;

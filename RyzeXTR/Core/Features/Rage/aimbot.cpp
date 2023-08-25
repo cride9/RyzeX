@@ -1,12 +1,16 @@
 #include "aimbot.h"
 #include "Animations/EnemyAnimations.h"
 #include "../../Lua/Lua.h"
+#include "../../Interface/Classes/CCSGameRulesProxy.h"
 
 void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 	static CConVar* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
 
 	if (!cfg::rage::bEnable || (!IPT::HandleInput(cfg::rage::iAimbotKey) && cfg::rage::iAimbotKey != 0))
+		return ResetAimbotData();
+
+	if ((*GameRules)->m_bFreezePeriod())
 		return ResetAimbotData();
 
 	/* Run R8 Revolver cock */
@@ -69,10 +73,11 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	pCmd->angViewPoint = vecAimAngle;
 	if (!cfg::rage::bSilentAim) i::EngineClient->SetViewAngles(vecAimAngle);
 
-	aimData.pRecord->iShotAmount++;
+	lagcomp.GetLog(aimData.pRecord->iEntIndex).iShotAmount++;
 	pCmd->iButtons |= IN_ATTACK;
 	aimData.iTickcount = pCmd->iTickCount;
-	pCmd->iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
+	if (!(cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)))
+		pCmd->iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
 
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
 	bShouldSendPacket = true;
@@ -87,8 +92,8 @@ void CAimBot::ResetAimbotData() {
 
 void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 
-	if (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey))
-		bShouldSendPacket = false;
+	if (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey) && bShouldSendPacket)
+		bShouldSendPacket = bSendPacket = false;
 	
 	if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey))
 		bShouldSendPacket = false;
@@ -97,7 +102,7 @@ void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 		bSendPacket = true;
 
 	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::bIsShiftingTicks)
-		bSendPacket = exploits::iShiftAmount == 0;
+		bSendPacket = false;
 
 	bShouldSendPacket = false;
 }
@@ -111,6 +116,9 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		/* Invalid data check */
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
+
+		if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey))
+			it->iLastValid = 0;
 
 		float flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)
@@ -169,7 +177,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 						continue;
 
 					/* If we resolved with 70% accuracy skip safepoint */
-					if (static_cast<float>(pRecord->iHitAmount) / static_cast<float>(pRecord->iShotAmount) < 0.7f || pRecord->iShotAmount < 3) {
+					if (static_cast<float>(it->iHitAmount) / static_cast<float>(it->iShotAmount) < 0.7f || it->iShotAmount < 3) {
 						if (bShouldSafe) {
 
 							// OPTIMIZATION: skip baim hitbox center, they're most likely safe ( edit: they are in fact safe everytime )
@@ -241,6 +249,11 @@ void CAimBot::AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd) {
 
 	if (weapon_accuracy_nospread->GetInt() == 1)
 		return;
+
+	if (exploits::bIsShiftingTicks) {
+		pCmd->flForwardMove = pCmd->flSideMove =0.f;
+		return;
+	}
 
 	float flMultiplier = 0.28f;
 	switch (curConfig.iAutostopValue) {

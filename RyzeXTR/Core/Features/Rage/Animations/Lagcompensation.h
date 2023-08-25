@@ -168,8 +168,6 @@ public:
 		int iEntIndex{};
 		int iChoked{};
 		int iResolveSide = 0;
-		int iShotAmount{};
-		int iHitAmount{};
 	};
 
 	enum EResolverMode
@@ -221,6 +219,9 @@ public:
 		int iLastValid = 0;
 		int iLastResolve{};
 
+		int iShotAmount{};
+		int iHitAmount{};
+
 		float flExploitTime;
 
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
@@ -230,6 +231,9 @@ public:
 
 			pEntity = nullptr;
 			bLeftDormancy = true;
+
+			iShotAmount = 0;
+			iHitAmount = 0;
 
 			flExploitTime = 0.f;
 			iLastValid = 0;

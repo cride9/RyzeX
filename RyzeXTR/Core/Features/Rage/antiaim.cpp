@@ -33,7 +33,7 @@ void HandleJitter(AATYPE type) {
 	}
 }
 
-bool LBYUpdate(CBaseEntity* pLocal)
+bool antiaim::LBYUpdate(CBaseEntity* pLocal)
 {
 	static float NextUpdate = 0;
 	auto* AnimState = pLocal->AnimState();
@@ -47,11 +47,11 @@ bool LBYUpdate(CBaseEntity* pLocal)
 	}
 
 	if (AnimState->flVelocityLenght2D > 0.1f)
-		NextUpdate = TICKS_TO_TIME(networking.GetCorrectedTickbase()) + 0.22f;
+		NextUpdate = TICKS_TO_TIME(networking.GetServerTick()) + 0.22f;
 
-	if (NextUpdate < TICKS_TO_TIME(networking.GetCorrectedTickbase()))
+	if (NextUpdate < TICKS_TO_TIME(networking.GetServerTick()))
 	{
-		NextUpdate = TICKS_TO_TIME(networking.GetCorrectedTickbase()) + 1.1f;
+		NextUpdate = TICKS_TO_TIME(networking.GetServerTick()) + 1.1f;
 		return true;
 	}
 	return false;
@@ -60,6 +60,7 @@ bool LBYUpdate(CBaseEntity* pLocal)
 void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 	using namespace cfg::antiaim;
+	bHideFlick = false;
 
 	HandleJitter(type);
 	bool bInverted = IPT::HandleInput(iInverterBind);
@@ -147,13 +148,14 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 		needMicromovement = false;
 		if (LBYUpdate(g::pLocal)) {
-
+			bHideFlick = true;
 			bSendPacket = false;
-			pCmd->angViewPoint.y -= (120 * bInvertValue);
+			pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y - (120 * bInvertValue));
+
 		}
 		else if (!bSendPacket) {
 			// 95 = unhittable
-			pCmd->angViewPoint.y += (95 * bInvertValue);
+			pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + (95 * bInvertValue));
 		}
 		break;
 
@@ -191,7 +193,7 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive()) 
 		return;
 
-	if ((*GameRules)->m_bFreezePeriod()) 
+	if ((*GameRules)->m_bFreezePeriod())
 		return;
 	
 	// shooting checks
@@ -207,114 +209,12 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 	if (pCmd->iButtons & IN_USE || g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP || g::pLocal->GetFlags() & FL_FROZEN) 
 		return;
 
-	//// Update lower body yaw
-	//Update( pCmd );
-
 	if (!(g::pLocal->GetFlags() & FL_ONGROUND) && cfg::antiaim::bEnabled[INAIR])
 		DoAntiaim(pCmd, bSendPacket, INAIR);
 	else if (g::pLocal->GetVelocity().Length2D() > 5.f && cfg::antiaim::bEnabled[MOVING])
 		DoAntiaim(pCmd, bSendPacket, MOVING);
 	else if (cfg::antiaim::bEnabled[STANDING])
 		DoAntiaim(pCmd, bSendPacket, STANDING);
-}
-
-float GetCorrectedCurrentTime( CUserCmd* cmd )
-{
-	const INetChannelInfo* v1 = static_cast< INetChannelInfo* > ( i::EngineClient->GetNetChannelInfo( ) );
-
-	const float v3 = v1->GetAvgLatency( INetChannelInfo::LOCALPLAYER );
-	const float v4 = v1->GetAvgLatency( INetChannelInfo::GENERIC );
-	int corrected_tickcount = cmd->iTickCount;
-	return v3 + v4 + TICKS_TO_TIME( 1 ) + TICKS_TO_TIME( corrected_tickcount );
-}
-
-bool antiaim::NextLBYUpdate( CUserCmd* cmd )
-{
-	if ( !( g::pLocal->GetFlags( ) & FL_ONGROUND ) )
-		return false;
-
-	const float CurrentTime = GetCorrectedCurrentTime( cmd );
-
-	return m_flNextLBYUpdate - CurrentTime <= i::GlobalVars->flIntervalPerTick;
-}
-
-void antiaim::ForceResync( CUserCmd* m_pCmd, int m_iLbyChange )
-{
-	if ( !g::pLocal )
-		return;
-
-	CAnimState* m_pAnimationState = g::pLocal->AnimState( );
-	if ( !m_pAnimationState )
-		return;
-
-	bool m_bCurrentlyInducedMovement = m_pCmd->flForwardMove >= 1.5f || m_pCmd->flForwardMove <= -1.5f || m_pCmd->flSideMove >= 1.5f || m_pCmd->flSideMove <= -1.5f;
-
-	if ( m_pAnimationState->flVelocityLenght2D > 0.1f || std::fabsf( m_pAnimationState->flJumpFallVelocity ) > 100.f )
-	{
-		NextLBYUpdateTime = m_iLbyChange + 0.22f;
-	}
-	else
-	{
-		NextLBYUpdateTime = m_iLbyChange + 1.1f;
-	}
-}
-
-static bool m_bOutOfSync;
-static int m_nLastTickState;
-static int m_nJustUpdated;
-static float m_flLastTickLBY;
-
-void antiaim::Update( CUserCmd* m_pCmd )
-{
-	float m_flCurrentTime = GetCorrectedCurrentTime( m_pCmd );
-	m_nLastTickState = m_nJustUpdated;
-	m_nJustUpdated = LBYUpdateType::LBYUPDATE_None;
-
-	if ( !g::pLocal )
-		return;
-
-	CAnimState* m_pAnimationState = g::pLocal->AnimState( );
-	if ( !m_pAnimationState )
-		return;
-
-	bool m_bCurrentlyInducedMovement = m_pCmd->flForwardMove >= 1.5f || m_pCmd->flForwardMove <= -1.5f || m_pCmd->flSideMove >= 1.5f || m_pCmd->flSideMove <= -1.5f;
-
-	m_bOutOfSync = false;
-
-	if ( m_pAnimationState->flVelocityLenght2D > 0.1f || std::fabsf( m_pAnimationState->flJumpFallVelocity ) || m_bCurrentlyInducedMovement )
-	{
-		m_nJustUpdated = LBYUpdateType::LBYUPDATE_Moving;
-		m_flNextLBYUpdate = m_flCurrentTime + 0.22f; // updated becouse movement
-
-		// reset counter
-		iCountUpdates = NULL;
-	}
-	else
-	{
-		if ( g::pLocal->GetLowerBodyYaw( ) != m_flLastTickLBY )
-		{
-			m_flLastLBYChange = m_flCurrentTime - i::GlobalVars->flIntervalPerTick; // @SetupVelocity hititn p
-			m_bOutOfSync = m_nLastTickState != LBYUpdateType::LBYUPDATE_Standing;
-		}
-		if ( m_flCurrentTime > m_flNextLBYUpdate )
-		{
-			float m_flGoalFeetYaw = M::NormalizeYaw( m_pAnimationState->flGoalFeetYaw );
-			float m_flEyeYaw = M::NormalizeYaw( m_pCmd->angViewPoint.y );
-			float m_flGoalFeetYawToEyeYawDelta = std::fabsf( m_flGoalFeetYaw - m_flEyeYaw );
-
-			if ( m_flGoalFeetYawToEyeYawDelta > 35.f )
-			{
-				m_nJustUpdated = LBYUpdateType::LBYUPDATE_Standing; // server will update it so np
-				m_flNextLBYUpdate = m_flCurrentTime + 1.1f;
-
-				// we updated so let's increment our countr
-				iCountUpdates++;
-			}
-		}
-	}
-	m_flLastTickLBY = g::pLocal->GetLowerBodyYaw( );
-
-	ForceResync( m_pCmd, m_flLastLBYChange );
 }
 
 bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 

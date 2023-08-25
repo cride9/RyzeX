@@ -1628,34 +1628,42 @@ void misc::BlockBot(CUserCmd* pCmd) {
 }
 
 void misc::ClanTag() {
-    static bool bShouldPrint = true;
-    INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
 
-    if (!pNetChannel)
-        return;
+	static bool bShouldPrint = true;
+	INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
 
-    if (!bShouldPrint && !cfg::misc::bClantag)
-        return;
+	if (!pNetChannel)
+		return;
 
-    static const float kIntervals = 0.4f / i::GlobalVars->flIntervalPerTick;
-    static const int kAnimationSteps = 17;
+	if (!bShouldPrint && !cfg::misc::bClantag)
+		return;
 
-    int iTicks = TIME_TO_TICKS(pNetChannel->GetAvgLatency(FLOW_OUTGOING)) + i::GlobalVars->iTickCount;
-    int iMainTime = static_cast<int>(iTicks / kIntervals) % kAnimationSteps;
+	//std::vector<std::string> vecClantagString = util::AnimateText("RyzeXTR");
 
-	static const char* clanTagSteps[ kAnimationSteps ] = {
-		XorStr( "R" ), XorStr( "TR" ), XorStr( "XTR" ), XorStr( "eXTR" ), XorStr( "zeXTR" ), XorStr( "yzeXTR" ),
-		XorStr( "RyzeXTR" ), XorStr( "RyzeXTR" ), XorStr( "RyzeXTR" ), XorStr( "RyzeXTR" ),
-		XorStr( "RyzeXT" ), XorStr( "RyzeX" ), XorStr( "Ryze" ), XorStr( "Ryz" ), XorStr( "Ry" ), XorStr( "R" ), XorStr( "" )
-	};
+	static float flTime = 1;
+	int iTicks = TIME_TO_TICKS(pNetChannel->GetAvgLatency(FLOW_OUTGOING)) + (float)i::GlobalVars->iTickCount;
+	float intervals = 0.4f / i::GlobalVars->flIntervalPerTick;
+	int iMainTime = (int)(iTicks / intervals) % 17; // 17
 
-    if (cfg::misc::bClantag) {
-        bShouldPrint = true;
-        util::SetClan(clanTagSteps[iMainTime]);
-    } else {
-        bShouldPrint = false;
-        util::SetClan(" ");
-    }
+	if (iMainTime != flTime)
+	{
+		if (cfg::misc::bClantag) {
+
+			static const char* clanTagSteps[17] = {
+			XorStr("R"), XorStr("TR"), XorStr("XTR"), XorStr("eXTR"), XorStr("zeXTR"), XorStr("yzeXTR"),
+			XorStr("RyzeXTR"), XorStr("RyzeXTR"), XorStr("RyzeXTR"), XorStr("RyzeXTR"),
+			XorStr("RyzeXT"), XorStr("RyzeX"), XorStr("Ryze"), XorStr("Ryz"), XorStr("Ry"), XorStr("R"), XorStr("")
+			};
+
+			bShouldPrint = true;
+			util::SetClan(clanTagSteps[iMainTime]);
+		}
+		else {
+			bShouldPrint = false;
+			util::SetClan(" ");
+		}
+	}
+	flTime = iMainTime;
 }
 
 void misc::Killsay(IGameEvent* pEvent) {
