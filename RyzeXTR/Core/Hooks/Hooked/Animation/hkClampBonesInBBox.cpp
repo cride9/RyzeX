@@ -26,13 +26,12 @@ void __fastcall h::hkClampBonesInBBox(CBaseEntity* pEntity, void* edx, matrix3x4
 
 	static auto original = detour::clampBonesInBBox.GetOriginal<decltype(&hkClampBonesInBBox)>();
 
-	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEntity->EntIndex());
-	if (!g::pLocal || !pLog || !pEntity->IsEnemy(g::pLocal) || pLog->pRecord.empty())
+	if (!g::pLocal || (!pEntity->IsEnemy(g::pLocal) && g::pLocal != pEntity))
 		return original(pEntity, edx, pMatrix, iBoneMask);
 
 	float flCurtime = i::GlobalVars->flCurrentTime;
 
-	i::GlobalVars->flCurrentTime = pLog->pRecord.front().flSimulationTime;
+	i::GlobalVars->flCurrentTime = pEntity->GetSimulationTime();
 
 	original( pEntity, edx, pMatrix, iBoneMask);
 

@@ -77,7 +77,8 @@ public:
 	void ResolverLogic();
 	float GetVelocityLengthXY(CBaseEntity* pEntity);
 	void SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw);
-	void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
+    float GetLocalCycleIncrement(CBaseEntity* pEntity, float flPlaybackrate);
+    void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
 
 	/* PASTED FUNTIONS */
 	void RebuiltLayer6(CAnimState*, Lagcompensation::LagRecord_t* pEntity, Lagcompensation::LagRecord_t::LayerData_t* pLayer);

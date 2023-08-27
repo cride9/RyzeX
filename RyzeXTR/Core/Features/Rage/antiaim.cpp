@@ -46,7 +46,7 @@ bool antiaim::LBYUpdate(CBaseEntity* pLocal)
 		return false;
 	}
 
-	if (AnimState->flVelocityLenght2D > 0.1f)
+	if (AnimState->flVelocityLenght2D > 0.1f) 
 		NextUpdate = TICKS_TO_TIME(networking.GetServerTick()) + 0.22f;
 
 	if (NextUpdate < TICKS_TO_TIME(networking.GetServerTick()))
@@ -131,7 +131,7 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 	float flDesyncValue = 0.f;
 	static int iChangeOnTick = 0;
-	needMicromovement = true;
+	needMicromovement = iDesyncType[type];
 	switch (iDesyncType[type]) {
 
 	case STATIC:

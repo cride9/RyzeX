@@ -404,10 +404,10 @@ void CConfig::Setup() {
 		SetupInt(iScopeLength, 5, XorStr("iScopeLength"));
 
 		SetupBool(bAutobuy, false, XorStr("bAutobuy"));
-		SetupInt(iPistols, 5, XorStr("iPistols"));
-		SetupInt(iSnipers, 5, XorStr("iSnipers"));
+		SetupInt(iPistols, 0, XorStr("iPistols"));
+		SetupInt(iSnipers, 0, XorStr("iSnipers"));
 		SetupBoolArray(bEquipments, 3, false, XorStr("bEquipments"));
-		SetupBoolArray(bGrenades,3,  false, XorStr("bGrenades"));
+		SetupBoolArray(bGrenades, 5,  false, XorStr("bGrenades"));
 
 		SetupBool(bFakePing, false, XorStr("bFakePing"));
 		SetupFloat(flFakePingFactor, 200.f, XorStr("flFakePingFactor"));

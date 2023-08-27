@@ -10,6 +10,8 @@ void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudio
 		return original( entityPointer, edx, hdr, pos, q, transform, mask, computed);
 
 	auto backup = hdr->vecBoneFlags;
+	float flCurtime = i::GlobalVars->flCurrentTime;
+	i::GlobalVars->flCurrentTime = pEnt->GetSimulationTime();
 
 	for (auto i = 0; i < hdr->vecBoneFlags.Count(); i++)
 		hdr->vecBoneFlags.Element(i) &= ~BONE_ALWAYS_PROCEDURAL;
@@ -17,4 +19,5 @@ void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudio
 	original(entityPointer, edx, hdr, pos, q, transform, mask, computed);
 
 	hdr->vecBoneFlags = backup;
+	i::GlobalVars->flCurrentTime = flCurtime;
 }

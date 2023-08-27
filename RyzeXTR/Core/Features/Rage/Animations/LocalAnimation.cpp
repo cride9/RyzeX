@@ -757,7 +757,7 @@ void C_LocalAnimations::TransformateMatricies()
 		else
 			angle = 1;
 
-		for (int i = 0; i < 128; i++) {
+		for (int i = 0; i < MAXSTUDIOBONES; i++) {
 
 			LocalData_t.FakeData.arrMatrix[i][angle][0] = 0.1;
 			LocalData_t.FakeData.arrMatrix[i][angle][1] = 0.1;

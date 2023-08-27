@@ -76,7 +76,7 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	lagcomp.GetLog(aimData.pRecord->iEntIndex).iShotAmount++;
 	pCmd->iButtons |= IN_ATTACK;
 	aimData.iTickcount = pCmd->iTickCount;
-	if (!(cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)))
+	if (!(cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) && aimData.iBacktrackTicks > 0)
 		pCmd->iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
 
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
@@ -91,9 +91,6 @@ void CAimBot::ResetAimbotData() {
 }
 
 void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
-
-	if (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey) && bShouldSendPacket)
-		bShouldSendPacket = bSendPacket = false;
 	
 	if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey))
 		bShouldSendPacket = false;
@@ -109,6 +106,8 @@ void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 
 Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal) {
 
+	static CConVar* ax = i::ConVar->FindVar("cl_lagcompensation");
+
 	std::vector<Hitscan_t> vecHitscan{};
 	/* Loop through our valid entity logs */
 	for (Lagcompensation::AnimationInfo_t* it : vecIn) {
@@ -117,7 +116,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
 
-		if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey))
+		if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) || !ax->GetInt())
 			it->iLastValid = 0;
 
 		float flTransformedDamage = curConfig.iMinimumDamage;

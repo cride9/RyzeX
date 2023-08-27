@@ -4,6 +4,7 @@
 #include "../../Misc/Playerlist.h"
 #include "../../Networking/networking.h"
 #include "../aimbot.h"
+#include "../../Visuals/drawlist.h"
 
 float flOldLowerbodyYaw[65];
 float flOldPlaybackrateYaw[65];
@@ -208,6 +209,7 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 		Matrix[1][3] += vecOriginDelta.y;
 		Matrix[2][3] += vecOriginDelta.z;
 	}
+
 	vecLastOrigin[pEnt->EntIndex()] = pEnt->GetAbsOrigin();
 }
 
@@ -906,26 +908,19 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	pRecord->flDesyncDelta = flAimMatrixWidthRange * pEntity->AnimState()->flMaxBodyYaw;
 
 	pEntity->GetPoseParameters(pRecord->flPoses);
+	GetSideLayersForResolver(pEntity, pRecord);
 
 	if (playerList::arrPlayers[pEntity->EntIndex()].bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerList::arrPlayers[pEntity->EntIndex()].flOverrideYaw);
 	else
 		Resolver(pEntity, pRecord, pPrevious);
 
-	//if (pPrevious)
-	//	pEntity->GetEyeAngles().z = M::NormalizeYaw(pRecord->vecEyeAngles.y - pPrevious->vecEyeAngles.y);
-
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
 	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
-
-	//static CConVar* cl_lagcompensation = i::ConVar->FindVar(XorStr("cl_lagcompensation"));
-	//if (cl_lagcompensation->GetInt() == 0)
-	//	lagcomp.ExtrapolatePlayer(pEntity, pRecord, pPrevious);
 
 	if (cfg::rage::bEnable) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
 		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
-		//GetSideLayersForResolver(pEntity, pRecord);
 	}
 
 	pEntity->GetVelocity() = vecBackupVelocity;
@@ -1011,7 +1006,7 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	pEntity->GetLastSkipFrameCount() = 0;
 
 	g::bSettingUpBones[pEntity->EntIndex()] = true;
-	pEntity->SetupBones(pMatrix, 256, nBoneMask, 0.0f);
+	pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, nBoneMask, 0.0f);
 	g::bSettingUpBones[pEntity->EntIndex()] = false;
 
 	pEntity->GetLastSkipFrameCount() = iLastSkipFrameCount;
@@ -1117,12 +1112,13 @@ void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation:
 
 	// save animation data
 	CAnimState pBackupState;
+	float arrBackupPoses[24];
+	CAnimationLayer arrBackupLayers[13];
+
+	pEntity->GetAnimationLayers(arrBackupLayers);
+	pEntity->GetPoseParameters(arrBackupPoses);
 	memcpy(&pBackupState, pEntity->AnimState(), sizeof(CAnimState));
 	{
-		// center.
-		// Apply current record with fixed values to get the best result out from the client function
-		pRecord->Apply(pEntity, true);
-
 		// Set the yaw that we wan't to get
 		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y);
 
@@ -1139,48 +1135,35 @@ void Animations::GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation:
 
 		// Save the layerdata
 		pRecord->LayerData[CENTER] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE]);
-
-		// Restore the values to not mess with our client animations by calling layer6 too many times
-		pRecord->Restore(pEntity);
 	}
 
 	{
-		// Right.
-		pRecord->Apply(pEntity, true);
-
-		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pEntity->AnimState()->GetMaxDesync());
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + pRecord->flDesyncDelta);
 
 		UpdateClientSideAnimations(pEntity, pRecord);
 
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 
-		//pEntity->SetUpMovement();
-		RebuiltLayer6(pEntity->AnimState(), pRecord, &pRecord->LayerData[RIGHT]);
-
-		//pRecord->LayerData[RIGHT] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[6]);
-
-		pRecord->Restore(pEntity);
+		pEntity->SetUpMovement();
+		pRecord->LayerData[RIGHT] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE]);
 	}
 
 	{
-		// Left.
-		pRecord->Apply(pEntity, true);
-
-		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pEntity->AnimState()->GetMaxDesync());
+		pEntity->AnimState()->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y - pRecord->flDesyncDelta);
 
 		UpdateClientSideAnimations(pEntity, pRecord);
 
 		memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 
-		//pEntity->SetUpMovement();
-		RebuiltLayer6(pEntity->AnimState(), pRecord, &pRecord->LayerData[LEFT]);
-
-		//pRecord->LayerData[LEFT] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[6]);
-
-		pRecord->Restore(pEntity);
+		pEntity->SetUpMovement();
+		pRecord->LayerData[LEFT] = Lagcompensation::LagRecord_t::LayerData_t(pEntity->GetAnimationOverlays()[ANIMATION_LAYER_MOVEMENT_MOVE]);
 	}
 	memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
-	pRecord->Restore(pEntity);
+	pEntity->SetAnimationLayers(arrBackupLayers);
+	pEntity->SetPoseParameters(arrBackupPoses);
+
+	UpdateClientSideAnimations(pEntity, pRecord);
+	memcpy(pEntity->AnimState(), &pBackupState, sizeof(CAnimState));
 }
 
 void Animations::GenerateFreestandMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {

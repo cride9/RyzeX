@@ -103,7 +103,7 @@ int CBaseEntity::GetBoneByHash(const uint32_t uBoneHash) const
 	return BONE_INVALID;
 }
 
-Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float& flRadius, mstudiobbox_t* pStudioBox)
+Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t* matrix, float& flRadius, mstudiobbox_t* pStudioBox)
 {
 	if (hitbox >= HITBOX_MAX)
 		return Vector(0, 0, 0);
@@ -133,7 +133,7 @@ Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float
 	return Vector(0, 0, 0);
 }
 
-Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], Vector& vecMins, Vector& vecMaxs, float& flRadius)
+Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t* matrix, Vector& vecMins, Vector& vecMaxs, float& flRadius)
 {
 	if (hitbox >= HITBOX_MAX)
 		return Vector(0, 0, 0);
@@ -160,7 +160,7 @@ Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], Vecto
 	return Vector(0, 0, 0);
 }
 
-Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t matrix[128])
+Vector CBaseEntity::GetHitboxPosition(int hitbox, matrix3x4_t* matrix)
 {
 	if (hitbox >= HITBOX_MAX)
 		return Vector(0, 0, 0);
@@ -407,6 +407,9 @@ bool CBaseEntity::IsTargetingLocal(CBaseEntity* pLocal)
 
 bool CBaseEntity::CanShoot(CBaseCombatWeapon* pBaseWeapon, int iTickbase)
 {
+	if (!pBaseWeapon)
+		return false;
+
 	if (iTickbase == -1)
 		iTickbase = this == g::pLocal ? networking.GetCorrectedTickbase() : this->GetTickBase();
 	const float flServerTime = TICKS_TO_TIME(iTickbase);
@@ -545,8 +548,8 @@ bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int bon
 		target->SetAbsAngles(absAngles);
 	}
 
-	Vector pos[128]{};
-	__declspec(align(16)) Quaternion     q[128];
+	Vector pos[MAXSTUDIOBONES]{};
+	__declspec(align(16)) Quaternion     q[MAXSTUDIOBONES];
 	uint8_t boneComputed[0x100];
 	std::memset(boneComputed, 0, 0x100);
 
@@ -581,9 +584,9 @@ bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float curren
 	g::bSettingUpBones[target->EntIndex()] = false;
 
 	return bReturnValue;
-	//alignas(16) matrix3x4_t bone_out[128];
+	//alignas(16) matrix3x4_t bone_out[MAXSTUDIOBONES];
 	//const auto ret = HandleBoneSetup(target, bone_out, boneMask, currentTime);
-	//memcpy(pBoneToWorldOut, bone_out, sizeof(matrix3x4_t[128]));
+	//memcpy(pBoneToWorldOut, bone_out, sizeof(matrix3x4_t[MAXSTUDIOBONES]));
 	//return ret;
 }
 

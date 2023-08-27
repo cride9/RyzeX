@@ -10,6 +10,23 @@
 #include <format>
 #include "../../../Lua/Lua.h"
 
+/* LMAO ye adding back again this one thanks exlo again */
+float Animations::GetLocalCycleIncrement(CBaseEntity* pEntity, float flPlaybackrate)
+{
+	float flMoveCycleRate = flPlaybackrate ? flPlaybackrate : pEntity->GetAnimationOverlays()[6].flPlaybackRate;
+	float flVelocityLengthXY = pEntity->AnimState()->flVelocityLenght2D <= 1.f ? 1.f : pEntity->AnimState()->flVelocityLenght2D;
+	if (flVelocityLengthXY > 0.f)
+	{
+		float flSequenceCycleRate = pEntity->GetSequenceCycleRate(pEntity->GetModelPtr(), pEntity->GetAnimationOverlays()[6].nSequence);
+		float flSequenceGroundSpeed = fmax(pEntity->GetSequenceMoveDist(pEntity->GetModelPtr(), pEntity->GetAnimationOverlays()[6].nSequence) / (1.0f / flSequenceCycleRate), 0.001f);
+
+		float flSpeedMultiplier = flSequenceCycleRate * (flVelocityLengthXY / flSequenceGroundSpeed) * (1.0f - (pEntity->AnimState()->flWalkToRunTransition * 0.15f));
+		flMoveCycleRate /= flSpeedMultiplier;
+	}
+
+	float flLocalCycleIncrement = (flMoveCycleRate * pEntity->AnimState()->flLastUpdateIncrement);
+	return flLocalCycleIncrement * 1000000.0f;
+}
 
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
@@ -41,27 +58,28 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 
 	int iCurrentBrute = arrMissedShots[iEntityID] % 2;
 
-	if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND) {
+	if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
 
-		float flVelocityDelta = fabsf(pRecord->flWalkToRunTransition - pPrevious->flWalkToRunTransition);
-		/* Constant speed check lmao */
-		if (flVelocityDelta < 0.1f && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
+		float flFromServerPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate);
 
-			/* Get playbackrate delta */
-			float flPlaybackrateDelta = (pRecord->arrLayers[6].flPlaybackRate - pPrevious->arrLayers[6].flPlaybackRate) * 10000.f;
+		const float fCenterPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[CENTER].flPlaybackRate);
+		const float fRightPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[RIGHT].flPlaybackRate);
+		const float fLeftPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[LEFT].flPlaybackRate);
 
-			/* At constant speed, if the playbackrate is increased suddenly by that many that means he's inverted */
-			/* Based on previous logs & playbackrate caches LEFT side invert has a larger number */
-			if (flPlaybackrateDelta > 3.f)
-				SetYaw(pRecord, LEFT);
+		// differences.
+		const float fDifferenceCenterPlaybackrate = fabsf(flFromServerPlaybackrate - fCenterPlaybackrate);
+		const float fDifferenceRightPlaybackrate = fabsf(flFromServerPlaybackrate - fRightPlaybackrate);
+		const float fDifferenceLeftPlaybackrate = fabsf(flFromServerPlaybackrate - fLeftPlaybackrate);
 
-			else if (flPlaybackrateDelta < 3.f)
+		if (GetVelocityLengthXY(pEntity) > 0.f)
+		{
+			if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
+				SetYaw(pRecord, CENTER);
+			else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
 				SetYaw(pRecord, RIGHT);
+			else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
+				SetYaw(pRecord, LEFT);
 		}
-
-		/* Playbackrate increases with flWalkToRunTransition */
-		else if (pRecord->flWalkToRunTransition > pPrevious->flWalkToRunTransition && pRecord->arrLayers[6].flPlaybackRate < pPrevious->arrLayers[6].flPlaybackRate)
-			SetYaw(pRecord, RIGHT);
 	}
 	/* Don't resolve onshot */
 	else if (pRecord->bDidShot)
@@ -318,7 +336,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 
 void SetResolveMatrix(Lagcompensation::LagRecord_t* pRecord, int iType) {
 
-	//memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[iType], sizeof(matrix3x4_t) * 128);
+	//memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[iType], sizeof(matrix3x4_t) * MAXSTUDIOBONES);
 	pRecord->iResolveSide = iType;
 }
 

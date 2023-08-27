@@ -232,16 +232,16 @@ void misc::ServerHitboxes() {
 		if ( !pEntity || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || !pEntity->IsPlayer( ) || !pEntity->EntIndex( ) )
 			continue;
 
-		if (!cfg::misc::bDrawServerHitboxOnAllEntities && !cfg::misc::bDrawServerHitbox)
-			continue;
+		//if (!cfg::misc::bDrawServerHitboxOnAllEntities && !cfg::misc::bDrawServerHitbox)
+		//	continue;
 
-		if (!cfg::misc::bDrawServerHitboxOnAllEntities && pEntity != g::pLocal)
-			continue;
+		//if (!cfg::misc::bDrawServerHitboxOnAllEntities && pEntity != g::pLocal)
+		//	continue;
 
-		if (!cfg::misc::bDrawServerHitbox && pEntity == g::pLocal)
-			continue;
+		//if (!cfg::misc::bDrawServerHitbox && pEntity == g::pLocal)
+		//	continue;
 
-		pTEntity = UTIL_PlayerByIndex(cfg::misc::bDrawServerHitboxOnAllEntities ? pEntity->EntIndex() : g::pLocal->EntIndex() );
+		pTEntity = UTIL_PlayerByIndex(pEntity->EntIndex());
 		
 		if (pTEntity)
 		{
@@ -901,7 +901,7 @@ void misc::MovementFix(CUserCmd* pCmd, Vector& oldang) {
 	aWishDir.Clamp();
 
 	Vector vWishF, vWishR;
-	M::AngleVectors(aWishDir, &vWishF, &vWishR, nullptr);
+	M::AngleVectors(aWishDir, &vWishF, &vWishR, nullptr);	
 
 	vWishF[2] = 0;
 	vWishR[2] = 0;
@@ -921,8 +921,8 @@ void misc::MovementFix(CUserCmd* pCmd, Vector& oldang) {
 	float x = (d * v - b * w) / flDivide;
 	float y = (a * w - c * v) / flDivide;
 
-	pCmd->flForwardMove = x + (flMoveDelta * pCmd->angViewPoint.z);
-	pCmd->flSideMove = y + (flMoveDelta * pCmd->angViewPoint.z);
+	pCmd->flForwardMove = std::clamp(x + (flMoveDelta * pCmd->angViewPoint.z), -450.f, 450.f);
+	pCmd->flSideMove = std::clamp(y + (flMoveDelta * pCmd->angViewPoint.z), -450.f, 450.f);
 
 }
 
@@ -1079,7 +1079,7 @@ void misc::FakeLag(bool& bSendPacket) {
 	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::iFakelag || !cfg::antiaim::bFakelag) {
 		bSendPacket = true;
 		return;
-	}
+	} 
 
 	if ( IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck) {
 		bSendPacket = i::ClientState->nChokedCommands >= ((*GameRules)->m_bIsValveDS() ? 6 : 14);
@@ -1140,7 +1140,6 @@ void misc::FakeLag(bool& bSendPacket) {
 	else
 		iCurrentChoke = cfg::antiaim::iFakelag;
 
-	//if (!exploits::bShouldRecharge && exploits::iTicksToStore != 0 && !exploits::bIsShiftingTicks)
 	iMax = ((cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) || (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey))) ? 1 : iMax;
 	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
 	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;

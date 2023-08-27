@@ -773,11 +773,13 @@ public:
 
 	CStudioHdr* GetModelPtr( )
 	{
+		static uint8_t* sig = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 51 53 8B D9 56 57 8D B3"));
+
 		if (CStudioHdr* pStudioHdr = this->GetStudioHdr(); pStudioHdr == nullptr)
 		{
 			using LockStudioHdr_t = void(__thiscall*)(decltype(this));
-			if (this->GetModel() != nullptr)
-				reinterpret_cast<LockStudioHdr_t>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 51 53 8B D9 56 57 8D B3")));
+			if (this->GetModel() != nullptr && sig != nullptr)
+				reinterpret_cast<LockStudioHdr_t>(sig);
 			else
 				return nullptr;
 		}
@@ -785,15 +787,6 @@ public:
 			return pStudioHdr;
 
 		return nullptr;
-
-		/*
-		using LockStudioHdr_t = void( __thiscall* )( decltype( this ) );
-
-		if ( !GetStudioHdr( ) )
-			reinterpret_cast< LockStudioHdr_t >( util::FindSignature( "client.dll", "55 8B EC 51 53 8B D9 56 57 8D B3" ) );
-
-		return GetStudioHdr( );
-		*/
 	}
 
 	// normal netvars
@@ -1092,9 +1085,9 @@ public:
 	int						GetBoneByHash(const uint32_t uBoneHash) const;
 	std::optional<Vector>	GetHitboxPosition(const int iHitbox);									// current matrix
 	std::optional<Vector>	GetHitboxPosition(const int iHitbox, Vector& vecMins, Vector& vecMaxs, float& flRadius);
-	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128]);					// selected matrix
-	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], float& flRadius, mstudiobbox_t* pStudioBox = nullptr);// selected matrix + radius
-	Vector					GetHitboxPosition(int hitbox, matrix3x4_t matrix[128], Vector& vecMins, Vector& vecMaxs, float& flRadius);
+	Vector					GetHitboxPosition(int hitbox, matrix3x4_t* matrix);					// selected matrix
+	Vector					GetHitboxPosition(int hitbox, matrix3x4_t* matrix, float& flRadius, mstudiobbox_t* pStudioBox = nullptr);// selected matrix + radius
+	Vector					GetHitboxPosition(int hitbox, matrix3x4_t* matrix, Vector& vecMins, Vector& vecMaxs, float& flRadius);
 	std::optional<Vector>	GetHitGroupPosition(const int iHitGroup);
 	void					ModifyEyePosition(const CAnimState* pAnimState, Vector* vecPosition) const;
 	void					PostThink();
