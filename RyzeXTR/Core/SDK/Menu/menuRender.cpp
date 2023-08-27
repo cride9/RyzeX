@@ -1210,25 +1210,28 @@ void menu::Config(ImVec2 savedCursorPosition) {
                             ImGui::Keybind( szKeybindText.c_str( ), &keybind.iValue );
                         }
                         // FIX ME
-                        /*else if (item.iType == LuaImplementation::MENUITEM_COMBOBOX)
+                        else if (item.iType == LuaImplementation::MENUITEM_COMBOBOX)
                         {
                             LuaImplementation::ComboMenuItem_t& combo = reinterpret_cast< LuaImplementation::ComboMenuItem_t& >( item );
-                            ImGui::Combo( combo.szLabel.c_str( ), &combo.iValue, combo.vecComboboxLabels.data()->c_str() );
+                            ImGui::ComboLUA( combo.szLabel.c_str( ), &combo.iValue, combo.vecComboboxLabels );
                         }
                         else if (item.iType == LuaImplementation::MENUITEM_MULTICOMBOBOX)
                         {
                             LuaImplementation::MultiComboMenuItem_t& multi_combo = reinterpret_cast< LuaImplementation::MultiComboMenuItem_t& >( item );
-                            ImGui::MultiComboBox( multi_combo.szLabel.c_str( ), multi_combo.vecComboboxLabels.data()->c_str(), vecValues, multi_combo.vecComboboxLabels.size() );
-                        }*/
+
+                            std::vector< bool* > vecValues;
+                            for (bool& val : multi_combo.vecMultiComboValues)
+                                vecValues.push_back( &val );
+
+                            ImGui::MultiComboBoxLUA( multi_combo.szLabel.c_str( ), multi_combo.vecComboboxLabels, vecValues );
+                        }
                         else if (item.iType == LuaImplementation::MENUITEM_COLORPICKER)
                         {
                             LuaImplementation::ColorPickerMenuItem_t& color_picker = reinterpret_cast< LuaImplementation::ColorPickerMenuItem_t& >( item );
 
                             ImGui::Text( color_picker.szLabel.c_str( ) );
-                            std::string szColorPickerText = color_picker.szLabel + XorStr( "##bind" );
-                            float flColor[ 4 ] = {color_picker.cValue.Get<COLOR_R>( ) / 255.f, color_picker.cValue.Get<COLOR_G>( ) / 255.f, color_picker.cValue.Get<COLOR_B>( ) / 255.f , color_picker.cValue.Get<COLOR_A>( ) / 255.f};
-                            ImGui::ColorEdit4( szColorPickerText.c_str( ), flColor, true, true );
-                            color_picker.cValue = Color( flColor[ 0 ] * 255.f, flColor[ 1 ] * 255.f, flColor[ 2 ] * 255.f, flColor[ 3 ] * 255.f );
+                            std::string szColorPickerText = color_picker.szLabel + XorStr( "##picker" );
+                            ImGui::ColorEdit4( szColorPickerText.c_str( ), color_picker.cValue, true, true );
                         }
                         else if (item.iType == LuaImplementation::MENUITEM_BUTTON)
                         {

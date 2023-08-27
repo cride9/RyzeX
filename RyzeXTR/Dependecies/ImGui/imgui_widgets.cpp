@@ -2160,6 +2160,34 @@ bool ImGui::Combo(const char* label, int* current_item, bool (*items_getter)(voi
     return value_changed;
 }
 
+bool ImGui::MultiComboBoxLUA( const char* szLabel, std::vector< std::string > szDisplayName, std::vector<bool*> v ) {
+
+    if (v.size( ) != szDisplayName.size( ) || !v.size( ))
+        return false;
+
+    std::string preview = "";
+    for (size_t i = 0; i < v.size(); i++) {
+        if (&v[ i ]) {
+            preview += szDisplayName[ i ];
+            preview += ", ";
+        }
+    }
+    if (preview.size( ) >= 2) {
+
+        preview.pop_back( );
+        preview.pop_back( );
+    }
+
+    if (ImGui::BeginCombo( szLabel, preview != "" ? preview.c_str( ) : "None", ImGuiComboFlags_NoArrowButton )) {
+
+        for (size_t i = 0; i < v.size(); i++)
+            ImGui::Selectable( szDisplayName[ i ].c_str(), v[ i ], ImGuiSelectableFlags_DontClosePopups );
+
+        ImGui::EndCombo( );
+    }
+    return true;
+}
+
 bool ImGui::MultiComboBox(const char* label, const char* items[], bool* selectableItems, int size) {
 
 	std::string preview = "";
@@ -2209,6 +2237,21 @@ bool ImGui::MultiComboBox(const char* label, const char* items[], bool* selectab
         ImGui::EndCombo();
     }
     return true;
+}
+
+static auto vector_getter = []( void* vec, int idx, const char** out_text )
+    {
+        auto& vector = *static_cast< std::vector< std::string >* >( vec );
+        if (idx < 0 || idx >= static_cast< int >( vector.size( ) )) { return false; }
+        *out_text = vector.at( idx ).c_str( );
+        return true;
+    };
+
+// copy of the combo underneath with a different name, couldn't be bothered to check if the other one was being used :kekw:
+bool ImGui::ComboLUA( const char* label, int* current_item, std::vector<std::string>& values, int height_in_items )
+{
+    const bool value_changed = Combo( label, current_item, vector_getter, static_cast< void* >( &values ), values.size( ), height_in_items );
+    return value_changed;
 }
 
 // Combo box helper allowing to pass an array of strings.

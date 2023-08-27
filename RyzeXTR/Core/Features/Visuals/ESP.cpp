@@ -459,7 +459,7 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 	}*/
 
 #if _DEBUG
-	if (/*Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()*/true) {
+	if (Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex()); pLog && pLog->pEntity && !pLog->pRecord.empty()) {
 
 		
 		static auto something = [](int right, int top, int& spacing, std::string print) {
@@ -475,12 +475,12 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 		//	return;
 
 		//auto pRecord = &pLog->pRecord.front();
-		//something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x8) + 0x24)).c_str());
-		//something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x44) + 0x24)).c_str());
+		////something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x8) + 0x24)).c_str());
+		////something(right, top, spacing, std::format("{}", *(float*)(*(DWORD*)((DWORD)(*(void**)((DWORD)(pEnt)+0x24))+0x44) + 0x24)).c_str());
 
-		//something(right, top, spacing, std::format("Guess: {}", pRecord->flGuessedYaw).c_str());
+		////something(right, top, spacing, std::format("Guess: {}", pRecord->flGuessedYaw).c_str());
 		//// from the server.
-		//auto flFromServerPlaybackrate = pRecord->pLayers[6].flPlaybackRate;
+		//auto flFromServerPlaybackrate = pRecord->arrLayers[6].flPlaybackRate;
 
 		//// resolver calculations.
 		//const float fCenterPlaybackrate = pRecord->LayerData[CENTER].flPlaybackRate;
@@ -1767,6 +1767,6 @@ void visual::HandleDamageIndicator() {
 		if (i::DebugOverlay->ScreenPosition(it.first, vecScreenPosition))
 			continue;
 
-		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[1], cfg::misc::flDamageIndicator[2], animationMap.at(it.second).second), g::fonts::FlagESP, true, std::to_string(it.second).c_str());
+		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[1], cfg::misc::flDamageIndicator[2], animationMap.at(it.second).second), g::fonts::FlagESP, true, it.second == 0 ? M::RandomInt(0, 1 ) == 1 ? XorStr( "Missed" ) : XorStr( "This fucker is serversiding" ) : std::to_string( it.second ).c_str( ) );
 	}
 }

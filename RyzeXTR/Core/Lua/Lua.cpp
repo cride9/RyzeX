@@ -1022,7 +1022,7 @@ namespace LUAModules
 			return &pMultiCombo;
 		}
 
-		LuaImplementation::ColorPickerMenuItem_t* AddColorPicker( std::string szLabel, std::string szVarName, sol::optional< Color > cDefaultValue, sol::this_state L )
+		LuaImplementation::ColorPickerMenuItem_t* AddColorPicker( std::string szLabel, std::string szVarName, Color cDefaultValue, sol::this_state L )
 		{
 			std::string szCurrentScriptName = helpers::GetCurrentLuaFilename( L );
 			int current_line = helpers::GetCurrentLine( L );
@@ -1050,7 +1050,10 @@ namespace LUAModules
 			pColorPicker.bVisible = true;
 			pColorPicker.szLabel = szLabel;
 			pColorPicker.szVarName = szVarName;
-			pColorPicker.cValue = cDefaultValue.value_or( Color(255, 255, 255, 255) );
+			pColorPicker.cValue[ 0 ] = cDefaultValue[ 0 ];
+			pColorPicker.cValue[ 1 ] = cDefaultValue[ 1 ];
+			pColorPicker.cValue[ 2 ] = cDefaultValue[ 2 ];
+			pColorPicker.cValue[ 3 ] = cDefaultValue[ 3 ];
 
 			return &pColorPicker;
 		}

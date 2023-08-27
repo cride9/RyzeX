@@ -62,7 +62,7 @@ void h::SetupHooks() {
 	HookSignature(detour::verifyReturnAddress, CLIENT_DLL, "55 8B EC 56 8B F1 33 C0 57 8B 7D 08 8B 8E", &hkVerifyReturnAddress);
 	HookSignature(detour::animationState, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3", &hkUpdateAnimationState);
 	//HookSignature(detour::baseInterpolatePart1, CLIENT_DLL, "55 8B EC 51 8B 45 14 56", &hkBaseInterpolatePart1);
-	HookSignature(detour::setupMovement, CLIENT_DLL, "55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B ? ? ? ? ? 8B F1", &hkSetUpMovement);
+	//HookSignature(detour::setupMovement, CLIENT_DLL, "55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B ? ? ? ? ? 8B F1", &hkSetUpMovement);
 	HookSignature(detour::extraBoneProcessing, CLIENT_DLL, "55 8B EC 83 E4 F8 81 EC ? ? ? ? 53 56 8B F1 57 89 74 24 1C", &hkDoExtraBoneProcessing);
 	HookSignature(detour::processInterpolatedList, CLIENT_DLL, "0F B7 05 ? ? ? ? 3D FF FF 00 00 74 3F 56 57", &hkProcessInterpolatedList);
 

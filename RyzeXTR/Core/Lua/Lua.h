@@ -176,7 +176,7 @@ namespace LuaImplementation {
 		float flMinValue = 0;
 		float flMaxValue = 0;
 
-		Color cValue = Color(255, 255, 255, 255);
+		float cValue[ 4 ] = {255.f};
 
 		std::vector< std::string > vecComboboxLabels; // using this for both combo and multi combo box
 		std::deque< bool > vecMultiComboValues;
@@ -285,8 +285,8 @@ namespace LuaImplementation {
 
 	class ColorPickerMenuItem_t : public BaseMenuItem_t {
 	public:
-		Color Get( ) { return Color( this->cValue[ 0 ] * 255, this->cValue[ 1 ] * 255, this->cValue[ 2 ] * 255, this->cValue[ 3 ] * 255 ); }
-		void Set( Color value ) { Color( this->cValue[ 0 ] * 255, this->cValue[ 1 ] * 255, this->cValue[ 2 ] * 255, this->cValue[ 3 ] * 255 ) = value; }
+		Color Get( ) { return Color( this->cValue[ 0 ], this->cValue[ 1 ], this->cValue[ 2 ], this->cValue[ 3 ] ); }
+		void Set( Color value ) { Color( this->cValue[ 0 ], this->cValue[ 1 ], this->cValue[ 2 ], this->cValue[ 3 ] ) = value; }
 	};
 
 	class ButtonMenuItem_t : public BaseMenuItem_t {

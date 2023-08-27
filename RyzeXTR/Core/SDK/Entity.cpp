@@ -25,7 +25,7 @@ int CBaseEntity::GetSequenceActivity(int iSequence)
 
 void CBaseEntity::SetUpMovement() {
 
-	if (!this->AnimState())
+	if (!this || !this->AnimState())
 		return;
 
 	using SetUpMovementFn = void(__thiscall*)(CAnimState*);
