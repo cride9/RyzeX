@@ -1767,6 +1767,6 @@ void visual::HandleDamageIndicator() {
 		if (i::DebugOverlay->ScreenPosition(it.first, vecScreenPosition))
 			continue;
 
-		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[1], cfg::misc::flDamageIndicator[2], animationMap.at(it.second).second), g::fonts::FlagESP, true, it.second == 0 ? M::RandomInt(0, 1 ) == 1 ? XorStr( "Missed" ) : XorStr( "This fucker is serversiding" ) : std::to_string( it.second ).c_str( ) );
+		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[1], cfg::misc::flDamageIndicator[2], animationMap.at(it.second).second), g::fonts::FlagESP, true, it.second == 0 ? XorStr( "Missed" ) : std::to_string( it.second ).c_str( ) );
 	}
 }

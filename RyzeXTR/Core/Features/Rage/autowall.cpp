@@ -382,7 +382,7 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 			return true;
 		}
 
-		// calling handlebulletpenetration here reduces our penetration ñounter, and if it returns true, we can't shoot through it
+		// calling handlebulletpenetration here reduces our penetration ï¿½ounter, and if it returns true, we can't shoot through it
 		if ( !HandleBulletPenetration( pLocal, pWeaponData, pEnterSurfaceData, data, pRecord) )
 			break;
 	}
@@ -467,15 +467,15 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* p
 		if (pRecord->pMatricies[iSafeSide]->GetOrigin() == Vector(0,0,0))
 			continue;  // Skip this hitbox if any matrix origin is invalid
 
-		Vector vecStart = vecEyePosition;
-		Vector vecEnd = vecShootposition;
-
 		mstudiobbox_t* studioBox = pRecord->pEntity->StudioHitbox(iHitbox);
 		if (!studioBox)
 			continue;  // Skip this hitbox if it's invalid
 
+		if (!bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord, EMatrixType(iSafeSide)))
+			continue;
+
 		// Increment iSafePoint based on the collidepoint results
-		iSafePoint += autowall.bCollidePoint(vecStart, vecEnd, studioBox, pRecord->pMatricies[iSafeSide]);
+		iSafePoint += autowall.bCollidePoint(vecEyePosition, vecShootposition, studioBox, pRecord->pMatricies[iSafeSide]);
 	}
 	return iSafePoint;
 }

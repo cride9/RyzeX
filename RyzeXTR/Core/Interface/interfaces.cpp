@@ -73,6 +73,10 @@ void i::SetupInterfaces() {
 	if (GameRules == nullptr)
 		throw std::runtime_error(XorStr("Failed to get IGameRules"));
 
+	MemAlloc = *static_cast<IMemAlloc**>(MEM::GetExportAddress(MEM::GetModuleBaseHandle(XorStr(L"tier0.dll")), XorStr("g_pMemAlloc")));
+	if (MemAlloc == nullptr)
+		throw std::runtime_error(XorStr("Failed to get IMemAlloc"));
+
 	//ItemSystem = util::GetAbsoluteAddress<decltype(ItemSystem)>(util::FindSignature(CLIENT_DLL, "E8 ? ? ? ? 0F B7 0F") + 1);
 	//if (ItemSystem == nullptr)
 	//	throw std::runtime_error("Failed to get ItemSystem");

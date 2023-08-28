@@ -7,6 +7,7 @@
 #include "../../SDK/Draw.h"
 #include "../../Features/Visuals/drawlist.h"
 #include "../../Features/../Lua/Lua.h"
+#include "../../Features/Misc/Vizualizer.h"
 
 void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPanel, bool forceRepaint, bool allowForce) {
 
@@ -60,6 +61,8 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		visual::AutoPeekCircle();
 		visual::HandleDamageIndicator();
 		visual::DrawList();
+		vizualizer::DrawInformation();
+
 		//D::SwapDrawData( );
 	}
 

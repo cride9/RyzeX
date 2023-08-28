@@ -35,7 +35,7 @@ struct Hitscan_t {
 
 		flAnimationVelocity = _record->flAnimationVelocity;
 		flDesyncDelta = _record->flDesyncDelta;
-		flDamage = data.flCurrentDamage;
+		flDamage = static_cast<int>(data.flCurrentDamage);
 
 		iHitbox = data.enterTrace.iHitbox;
 		iHitgroup = data.enterTrace.iHitGroup;

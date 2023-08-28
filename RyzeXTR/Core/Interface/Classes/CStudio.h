@@ -162,7 +162,7 @@ struct mstudiobone_t
 
 	// default values
 	Vector		vecPosition;
-	Quaternion	qWorld;
+	Quaternion_t qWorld;
 	RadianEuler radRotation;
 
 	// compression scale
@@ -170,7 +170,7 @@ struct mstudiobone_t
 	Vector		vecEulerScale;
 
 	matrix3x4_t matPoseToBone;
-	Quaternion	qAlignment;
+	Quaternion_t qAlignment;
 	int			iFlags;
 	int			iProcedureType;
 	int			nProcedureIndex;	// procedural rule

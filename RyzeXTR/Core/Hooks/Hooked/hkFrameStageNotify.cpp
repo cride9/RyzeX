@@ -116,8 +116,9 @@ void hkPreFrameStageNotify(EStage curStage) {
 		if (exploits::bIsShiftingTicks)
 			g_LocalAnimations->SetupInterpolation(pLocal, false);
 
+#ifdef _DEBUG
 		misc::ServerHitboxes();
-
+#endif
 		misc::BulletImpactFrameStage(pLocal);
 		break;
 

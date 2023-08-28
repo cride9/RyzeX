@@ -23,6 +23,11 @@ namespace cfg {
 
 	inline int m_iKeyStates[ 256 ] = { 0 };
 
+	namespace vizualizer {
+
+		inline float flDivider = 1.f;
+	}
+
 	namespace rage {
 
 		inline bool bEnable = false;

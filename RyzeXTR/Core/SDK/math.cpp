@@ -218,6 +218,22 @@ void M::AngleMatrix( const Vector& ang, const Vector& pos, matrix3x4_t& out ) {
 	out.SetOrigin( pos );
 }
 
+matrix3x4_t M::ToMatrix(const Vector& vecSomething, const Vector& vecOrigin)
+{
+	float flPitchSin, flPitchCos, flYawSin, flYawCos, flRollSin, flRollCos;
+	DirectX::XMScalarSinCos(&flPitchSin, &flPitchCos, M_DEG2RAD(vecSomething.x));
+	DirectX::XMScalarSinCos(&flYawSin, &flYawCos, M_DEG2RAD(vecSomething.y));
+	DirectX::XMScalarSinCos(&flRollSin, &flRollCos, M_DEG2RAD(vecSomething.z));
+
+	return
+	{
+		(flPitchCos * flYawCos), (flRollSin * flPitchSin * flYawCos + flRollCos * -flYawSin), (flRollCos * flPitchSin * flYawCos + -flRollSin * -flYawSin), vecOrigin.x,
+		(flPitchCos * flYawSin), (flRollSin * flPitchSin * flYawSin + flRollCos * flYawCos), (flRollCos * flPitchSin * flYawSin + -flRollSin * flYawCos), vecOrigin.y,
+		(-flPitchSin), (flRollSin * flPitchCos), (flRollCos * flPitchCos), vecOrigin.z
+	};
+}
+
+
 void M::AngleMatrix(const Vector& angView, matrix3x4_t& matOutput, const Vector& vecOrigin)
 {
 	float sp, sy, sr, cp, cy, cr;

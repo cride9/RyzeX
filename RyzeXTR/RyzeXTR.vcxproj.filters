@@ -96,6 +96,8 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkProcessInterpolatedList.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkInPrediction.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetUpMovement.cpp" />
+    <ClCompile Include="Core\Features\Misc\Vizualizer.cpp" />
+    <ClCompile Include="Core\Features\Rage\Animations\Setupbones.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
@@ -318,6 +320,10 @@
     <ClInclude Include="Dependecies\lua\embedding\lualib.h" />
     <ClInclude Include="Core\Features\Visuals\drawlist.h" />
     <ClInclude Include="Core\Interface\Interfaces\IClientLeafSystem.h" />
+    <ClInclude Include="Core\Features\Misc\Vizualizer.h" />
+    <ClInclude Include="Core\Features\Rage\Animations\Setupbones.h" />
+    <ClInclude Include="Core\SDK\DataTyes\BoneMargeCache.h" />
+    <ClInclude Include="Core\Interface\Interfaces\MemAlloc.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependecies\freetype\win32\freetype.lib" />

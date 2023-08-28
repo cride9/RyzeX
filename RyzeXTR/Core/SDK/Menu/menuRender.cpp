@@ -871,6 +871,8 @@ void menu::Misc(ImVec2 savedCursorPosition) {
             ImGui::ListBox(("##Radio"), &iRadioStation, arrRadios, IM_ARRAYSIZE(arrRadios));
             ImGui::PopItemWidth();
         }
+
+		ImGui::SliderFloat("Divider", &cfg::vizualizer::flDivider, 0.1, 10.f, "%.3f");
     }
     ImGui::EndChild();
 }

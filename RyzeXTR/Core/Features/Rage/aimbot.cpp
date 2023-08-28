@@ -76,7 +76,7 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	lagcomp.GetLog(aimData.pRecord->iEntIndex).iShotAmount++;
 	pCmd->iButtons |= IN_ATTACK;
 	aimData.iTickcount = pCmd->iTickCount;
-	if (!(cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) && aimData.iBacktrackTicks > 0)
+	if (!(cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)))
 		pCmd->iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
 
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
@@ -127,7 +127,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		for (int i = 0; i <= it->iLastValid; i++) {
 
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at(i);
-			if (pRecord->bBreakingLagcompensation || !pRecord->bValid && pRecord != &it->pRecord.front())
+			if (pRecord->bBreakingLagcompensation || !pRecord->bValid && pRecord != &it->pRecord.front() || !pRecord->IsValid())
 				continue;
 
 			bool bFarAway = pRecord->vecOrigin.DistTo(vecEyePosition) >= 16384.f;
@@ -157,19 +157,13 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint && !bFarAway);
 				// OPTIMIZATION: first element in the vector is always the hitbox center
 				bool bFirstElement = true;
-				for (size_t j = 0; j < vecWorldPoints.size(); j++) {
+				for (Vector& vecHitboxPoint : vecWorldPoints) {
 
-					Vector& vecHitboxPoint = vecWorldPoints.at(j);
-
-					/* 7/13/2023: Check if this point is meant to hit that hitbox or not, else don't scan // @cride9 */
-					if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecHitboxPoint, iHitbox, pRecord))
-						continue;
-					
 					/* Only backtrack safe entities */
 					int iCollidePoints = 0;
 
 					// OPTIMIZATION: calculate safe points once and save it later in a variable. It will return if not safe, but when safe we already scanned safety
-					if (iCollidePoints = autowall.SafePoint(vecEyePosition, pRecord, vecHitboxPoint, iHitbox); iCollidePoints < 2 && i )
+					if (iCollidePoints = autowall.SafePoint(vecEyePosition, pRecord, vecHitboxPoint, iHitbox); !iCollidePoints || (iCollidePoints < 3 && i))
 						continue;
 
 					if (playerList::arrPlayers[pRecord->iEntIndex].bSafePoint && iCollidePoints < 3)
@@ -201,6 +195,10 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData);
 					if (flDamage >= flTransformedDamage) {
 
+						pRecord->ApplyMatrix(pRecord->pEntity, pRecord->iResolveSide == RIGHT ? LEFT : RIGHT);
+						if (autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData) < flTransformedDamage)
+							continue;
+
 						/* Push back this shit */
 						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint)));
 
@@ -223,7 +221,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 	aimData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
 	aimData.bSafe = refRecord.bSafe;
-	aimData.flDamage = refRecord.flDamage;
+	aimData.flDamage = static_cast<int>(refRecord.flDamage);
 	aimData.iHitbox = refRecord.iHitbox;
 	aimData.iHitGroup = refRecord.iHitgroup;
 	aimData.vecTargetShootPosition = refRecord.vecPoint;

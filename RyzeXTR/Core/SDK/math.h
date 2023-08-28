@@ -43,6 +43,7 @@ namespace M
 	void	AngleVectors(const Vector& angView, Vector* pForward, Vector* pRight = nullptr, Vector* pUp = nullptr);
 	/* convert angles to matrix */
 	void	AngleMatrix( const Vector& ang, const Vector& pos, matrix3x4_t& out );
+    matrix3x4_t ToMatrix(const Vector& vecSomething, const Vector& vecOrigin);
 	/* convert angles to matrix */
 	void	AngleMatrix(const Vector& angView, matrix3x4_t& matOutput, const Vector& vecOrigin = Vector(0.0f, 0.0f, 0.0f));
 	/* convert angle to screen pixels by sensivity, pitch and yaw */

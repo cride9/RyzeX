@@ -9,6 +9,13 @@
 #include "Animstate.h"
 #include <optional>
 #include "../XorStr.h"
+#include "../SDK/DataTyes/BoneMargeCache.h"
+#include "../SDK/DataTyes/BitVec.h"
+
+using BoneVector_t = Vector;
+using BoneQuaternion_t = Quaternion_t;
+using BoneQuaternionAligned_t = QuaternionAligned_t;
+using CBoneBitList = CBitVec<MAXSTUDIOBONES>;
 
 enum InvalidatePhysicsBits_t
 {
@@ -499,29 +506,22 @@ class IKContext
 {
 public:
 
-	void Init( CStudioHdr* hdr, Vector& angles, Vector& origin, float curtime, int framecount, int boneMask ) {
-		static const auto ik_init_address = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 08 8B 45 08 56 57 8B F9 8D 8F"));
-		reinterpret_cast< void( __thiscall* )( IKContext*, CStudioHdr*, Vector&, Vector&, float, int, int ) >( ik_init_address )( this, hdr, angles, origin, curtime, framecount, boneMask );
+	void Init(const CStudioHdr* pInitialStudioHdr, const Vector& angInitialView, const Vector& vecInitialPosition, float flInitialTime, int nInitialFrameCount, int nInitialBoneMask)
+	{
+		static auto fnInit = reinterpret_cast<void(__thiscall*)(IKContext*, const CStudioHdr*, const Vector&, const Vector&, float, int, int)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 08 8B 45 08 56 57 8B F9 8D")));
+		fnInit(this, pInitialStudioHdr, angInitialView, vecInitialPosition, flInitialTime, nInitialFrameCount, nInitialBoneMask);
 	}
 
-	void UpdateTargets( Vector* pos, Quaternion* q, matrix3x4_t* bone_array, byte* computed ) {
-		static const auto update_targets_address = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 81 EC ? ? ? ? 33 D2 89"));
-		reinterpret_cast< void( __thiscall* )( IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte* ) >( update_targets_address )( this, pos, q, bone_array, computed );
+	void UpdateTargets(BoneVector_t* arrPositions, BoneQuaternion_t* arrRotations, matrix3x4a_t* arrBonesToWorld, CBoneBitList& arrBonesComputed)
+	{
+		static auto fnUpdateTargets = reinterpret_cast<void(__thiscall*)(IKContext*, BoneVector_t*, BoneQuaternion_t*, matrix3x4a_t*, CBoneBitList&)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 81 EC ? ? ? ? 33 D2 89")));
+		fnUpdateTargets(this, arrPositions, arrRotations, arrBonesToWorld, arrBonesComputed);
 	}
 
-	void SolveDependencies( Vector* pos, Quaternion* q, matrix3x4_t* bone_array, byte* computed ) {
-		
-		static const auto solve_dependencies_address = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81"));
-
-		using Fn = void(__thiscall*)(IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte*);
-		static auto fn = reinterpret_cast<Fn>(solve_dependencies_address);
-
-		if (!fn)
-			return;
-
-		fn(this, pos, q, bone_array, computed);
-
-		// reinterpret_cast< void( __thiscall* )( IKContext*, Vector*, Quaternion*, matrix3x4_t*, byte* ) >( solve_dependencies_address )( this, pos, q, bone_array, computed );
+	void SolveDependencies(BoneVector_t* arrPositions, BoneQuaternion_t* arrRotations, matrix3x4a_t* arrBonesToWorld, CBoneBitList& arrBonesComputed)
+	{
+		static auto fnSolveDependencies = reinterpret_cast<void(__thiscall*)(IKContext*, BoneVector_t*, BoneQuaternion_t*, matrix3x4a_t*, CBoneBitList&)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81")));
+		fnSolveDependencies(this, arrPositions, arrRotations, arrBonesToWorld, arrBonesComputed);
 	}
 
 	void ClearTargets( )
@@ -537,6 +537,30 @@ public:
 				++v56;
 			} while ( v56 < *( int* )( ( DWORD )this + 4080 ) );
 		}
+	}
+
+	void AddDependencies(mstudioseqdesc_t& sequenceDescription, int iSequence, float flCycle, const float* arrPoseParameters, float flWeight = 1.0f)
+	{
+		static auto fnAddDependencies = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 81 EC ? ? ? ? 53 56 57 8B F9 0F"));
+		std::uintptr_t uAddDependencies = reinterpret_cast<std::uintptr_t>(fnAddDependencies); // @todo: clang compiles direct (E8) call instead of indirect (FF 15) without this
+		std::uintptr_t uSequenceDescription = reinterpret_cast<std::uintptr_t>(&sequenceDescription); // clang mess with registers without this
+
+		__asm
+		{
+			mov ecx, this
+			movss xmm3, flCycle
+			push flWeight
+			push arrPoseParameters
+			push iSequence
+			push uSequenceDescription
+			call uAddDependencies
+		}
+	}
+
+	void CopyTo(IKContext* pOther, const unsigned short* arrRemapping)
+	{
+		static auto fnCopyTo = reinterpret_cast<void(__thiscall*)(IKContext*, IKContext*, const unsigned short*)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 24 8B 45 08 57 8B F9 89 7D F4 85 C0")));
+		fnCopyTo(this, pOther, arrRemapping);
 	}
 };
 
@@ -593,6 +617,7 @@ public:
 	ADD_NETVAR(m_bStrafing, bool, "CCSPlayer->m_bStrafing");
 	ADD_NETVAR(GetMoveState, int, "CCSPlayer->m_iMoveState");
 	ADD_NETVAR(GetDuckOverride, bool, "CCSPlayer->m_bDuckOverride");
+	ADD_NETVAR(HealthShotBoost, float, "CCSPlayer->m_flHealthShotBoostExpirationTime");
 
 	// pointer offset variables
 	ADD_PNETVAROFFSET(GetViewAngles, Vector, "CBasePlayer->deadflag", 0x4);
@@ -764,12 +789,9 @@ public:
 		util::CallVFunc<o_fn>( this, 192, curtime );
 	}
 
-	IKContext* GetIKContext( ) {
-		return *( IKContext** )( reinterpret_cast< uintptr_t >( this ) + 9836 + 0x4 );
-	}
-	IKContext*& GetIKContext2( ) {
-		return *( IKContext** )( reinterpret_cast< uintptr_t >( this ) + 0x2670 );
-	}
+	//IKContext*& GetIKContext( ) {
+	//	return *( IKContext** )( reinterpret_cast< uintptr_t >( this ) + 9836 + 0x4 );
+	//}
 
 	CStudioHdr* GetModelPtr( )
 	{
@@ -871,6 +893,7 @@ public:
 
 	ADD_NETVAR( vecMaxs, Vector, "CBaseEntity->m_vecMaxs" );
 	ADD_NETVAR( vecMins, Vector, "CBaseEntity->m_vecMins" );
+	ADD_NETVAROFFSET(GetMoveParentHandle, CBaseHandle, "CBaseEntity->m_flFadeScale", 0xC); // @ida C_BaseEntity::m_pMoveParent: (C_BaseEntity::UnlinkFromHierarchy) client.dll -> ["83 BF ? ? ? ? ? 74 2F 8B" + 0x2] @xref: "C_BaseEntity::UnlinkFromHierarchy(): Entity has a child with the wrong parent!\n"
 
 	ADD_NETVAR(GetNextAttack, float, "CBaseCombatCharacter->m_flNextAttack");
 	ADD_NETVAR(GetActiveWeaponHandle, CBaseHandle, "CBaseCombatCharacter->m_hActiveWeapon");
@@ -903,6 +926,10 @@ public:
 	ADD_NETVAR(GetModelScale, float, "CBaseAnimating->m_flModelScale");
 	ADD_NETVAR(GetBodyID, int, "CBaseAnimating->m_nBody");
 
+	//ADD_NETVAR(GetEncodedControllerArray, std::array<float, MAXSTUDIOBONECTRLS>, "CBaseAnimating->m_flEncodedController");
+
+	ADD_NETVAROFFSET(GetIKContext, IKContext*, "CBaseAnimating->m_vecForce", -0x14);
+
 	//ADD_PNETVAROFFSET(GetStudioHdr, CStudioHdr, "CBaseAnimating->m_hLightingOrigin", 0x8);
 	ADD_NETVAROFFSET(GetCustomBlendingRuleMask, int, "CBaseAnimating->m_nBody", 0x4);
 	ADD_NETVAROFFSET(GetAnimationLODFlags, unsigned int, "CBaseAnimating->m_nBody", 0x8);
@@ -911,6 +938,34 @@ public:
 
 	ADD_NETVAROFFSET( GetPrevBoneMask, int, "CBaseAnimating->m_nForceBone", 0x10 );
 	ADD_NETVAROFFSET( GetAccumulatedBoneMask, int, "CBaseAnimating->m_nForceBone", 0x14 );
+	ADD_NETVAROFFSET(GetBoneMergeCache, CBoneMergeCache*, "CBaseAnimating->m_hLightingOrigin", -0x38); // @ida C_BaseAnimating::m_pBoneMergeCache: (C_BaseAnimating::CalcBoneMerge) client.dll -> ["89 86 ? ? ? ? E8 ? ? ? ? FF 75 08" + 0x2]
+
+	ADD_NETVAROFFSET( GetHoldPlayerAnimations, int, "CBaseWeaponWorldModel->m_hCombatWeaponParent", 0x4 );
+
+	std::array<float, MAXSTUDIOBONECTRLS>& GetEncodedControllerArray() {
+
+		static int _m_flEncodedController = n::netvars[fnv::HashConst("CBaseAnimating->m_flEncodedController")].uOffset;
+		return *(std::array<float, MAXSTUDIOBONECTRLS>*)((uintptr_t)this + _m_flEncodedController);
+	}
+
+	/// @returns: true if this world model holds player animations, false otherwise
+	[[nodiscard]] __forceinline bool IsHoldPlayerAnimations()
+	{
+		// @ida CBaseWeaponWorldModel::HoldsPlayerAnimations(): server.dll -> "57 8B F9 83 BF ? ? ? ? ? 75 6D"
+
+		if (this->GetHoldPlayerAnimations() == 0)
+		{
+			const CStudioHdr* pStudioHdr = this->GetModelPtr();
+			int iCount = pStudioHdr->pStudioHdr->nLocalSequences;
+			if (pStudioHdr->pVirtualModel)
+				iCount = pStudioHdr->pVirtualModel->vecSequence.Count();
+
+			this->GetHoldPlayerAnimations() = (pStudioHdr != nullptr && iCount > 2) ? 1 : 2;
+		}
+
+		return (this->GetHoldPlayerAnimations() == 1);
+	}
+
 	//ADD_NETVAROFFSET(GetRecentModelBoneCounter, unsigned long, "CBaseAnimating->m_nForceBone", 0x4);
 	//ADD_NETVAROFFSET(GetLastSetupBonesTime, unsigned long, "CBaseAnimating->m_nForceBone", -0x20);
 
@@ -954,6 +1009,12 @@ public:
 
 		using StandardBlendingRules_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, Quaternion*, float, int );
 		return util::GetVFunc< StandardBlendingRules_t >( this, 206 )( this, hdr, pos, q, time, mask );
+	}
+
+	bool UpdateDispatchLayer(CAnimationLayer* pLayer, CStudioHdr* pWeaponStudioHdr, int iSequence)
+	{
+		// @ida C_BaseAnimatingOverlay::UpdateDispatchLayer(): client.dll | server.dll -> "55 8B EC 56 57 8B 7D 0C 8B D1"
+		return util::CallVFunc<bool>(this, 247U, pLayer, pWeaponStudioHdr, iSequence);
 	}
 
 	void ClampBonesInBBox(matrix3x4_t* bones, int boneMask) {

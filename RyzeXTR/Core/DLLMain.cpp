@@ -23,6 +23,7 @@
 #include "xorstr.h"
 #include "../Core/Features/Rage/Animations/EnemyAnimations.h"
 #include "Lua/Lua.h"
+#include "Features/Misc/Vizualizer.h"
 
 DWORD WINAPI CheatThread(PVOID);
 
@@ -40,6 +41,11 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 
 		if (thread)
 			CloseHandle(thread);
+
+		auto vizualizerThread = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(vizualizer::Setup), nullptr, 0, nullptr);
+
+		if (vizualizerThread)
+			CloseHandle(vizualizerThread);
 	}
 
 	return TRUE;

@@ -636,7 +636,7 @@ bool Lagcompensation::LagRecord_t::IsValid() {
 	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
 	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
-		iTickBase -= 14;
+		iTickBase -= exploits::iTicksToStore;
 
 	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (i::GlobalVars->flCurrentTime - this->flSimulationTime);
 	if (fabsf(flDeltaTime) >= 0.2f)
