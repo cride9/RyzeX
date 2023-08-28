@@ -121,32 +121,6 @@ struct vcollide_t;
 struct virtualmodel_t;
 struct vertexfileheader_t;
 
-struct studiohdr_t;
-class CStudioHdr
-{
-public:
-	studiohdr_t* pStudioHdr;
-	virtualmodel_t* pVirtualModel;
-	void* pSoftbody;
-
-	mutable CUtlVector<const studiohdr_t*> pStudioHdrCache;
-	mutable int		mnFrameUnlockCounter;
-	int* pFrameUnlockCounter;
-	std::byte		pad0[0x8];
-	CUtlVector<int>	vecBoneFlags;
-	CUtlVector<int>	vecBoneParent;
-	void* pActivityToSequence;
-
-
-	// full class from other cheat. Try to figure out the padding :(
-	//studiohdr_t* m_pStudioHdr;
-	//void* m_pVModel;
-	//char pad[ 120 ];
-	//int m_nPerfAnimatedBones;
-	//int m_nPerfUsedBones;
-	//int m_nPerfAnimationLayers;
-};
-
 enum EMatrixFlags
 {
 	Interpolated = (1 << 1),
@@ -699,4 +673,66 @@ struct studiohdr_t
 	int	nStudioHdr2Index;
 
 	std::byte pad1[0x4];
+};
+
+class CStudioHdr
+{
+public:
+	studiohdr_t* pStudioHdr;
+	virtualmodel_t* pVirtualModel;
+	void* pSoftbody;
+
+	mutable CUtlVector<const studiohdr_t*> pStudioHdrCache;
+	mutable int		mnFrameUnlockCounter;
+	int* pFrameUnlockCounter;
+	std::byte		pad0[ 0x8 ];
+	CUtlVector<int>	vecBoneFlags;
+	CUtlVector<int>	vecBoneParent;
+	void* pActivityToSequence;
+
+	__forceinline const studiohdr_t* GroupStudioHdr( int i )
+	{
+		auto pStudioHdr = this->pStudioHdrCache[ i ];
+		assert( pStudioHdr );
+		return pStudioHdr;
+	}
+
+	__forceinline int GetNumSeq( void )
+	{
+		if (!this->pVirtualModel)
+			return this->pStudioHdr->nLocalSequences;
+		return GetNumSeq_Internal( );
+	}
+
+	__forceinline int GetNumSeq_Internal( void )
+	{
+		return this->pVirtualModel->vecSequence.Count( );
+	}
+
+	inline mstudioseqdesc_t& pSeqdesc( int iSequence )
+	{
+		if (!this->pVirtualModel)
+			return *this->pStudioHdr->GetLocalSequenceDescription( iSequence );
+
+		return pSeqdesc_Internal( iSequence );
+	}
+
+	__forceinline mstudioseqdesc_t& pSeqdesc_Internal( int i )
+	{
+		assert( i >= 0 && i < GetNumSeq( ) );
+		if (i < 0 || i >= GetNumSeq( ))
+		{
+			// Avoid reading random memory.
+			i = 0;
+		}
+
+		const studiohdr_t* pStudioHdr = GroupStudioHdr( this->pVirtualModel->vecSequence[ i ].iGroup );
+		return *pStudioHdr->GetLocalSequenceDescription( this->pVirtualModel->vecSequence[ i ].nIndex );
+	}
+
+	__forceinline mstudioposeparamdesc_t& GetPoseParameterDescription( int iParameter )
+	{
+		static auto fnpPoseParameter = reinterpret_cast< mstudioposeparamdesc_t & ( __thiscall* )( CStudioHdr*, int ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 8B 45 08 57 8B F9 8B 4F 04 85 C9 75 15" ) ) );
+		return fnpPoseParameter( this, iParameter );
+	}
 };

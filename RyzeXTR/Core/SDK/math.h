@@ -43,7 +43,6 @@ namespace M
 	void	AngleVectors(const Vector& angView, Vector* pForward, Vector* pRight = nullptr, Vector* pUp = nullptr);
 	/* convert angles to matrix */
 	void	AngleMatrix( const Vector& ang, const Vector& pos, matrix3x4_t& out );
-    matrix3x4_t ToMatrix(const Vector& vecSomething, const Vector& vecOrigin);
 	/* convert angles to matrix */
 	void	AngleMatrix(const Vector& angView, matrix3x4_t& matOutput, const Vector& vecOrigin = Vector(0.0f, 0.0f, 0.0f));
 	/* convert angle to screen pixels by sensivity, pitch and yaw */
@@ -122,6 +121,21 @@ namespace M
 	float Approach(float, float, float);
 	Vector Approach(Vector target, Vector value, float speed);
 	float ApproachAngle(float, float, float);
+
+	inline matrix3x4_t ToMatrix( const Vector& vecIn, const Vector& vecOrigin )
+	{
+		float flPitchSin, flPitchCos, flYawSin, flYawCos, flRollSin, flRollCos;
+		DirectX::XMScalarSinCos( &flPitchSin, &flPitchCos, M_DEG2RAD( vecIn.x ) );
+		DirectX::XMScalarSinCos( &flYawSin, &flYawCos, M_DEG2RAD( vecIn.y ) );
+		DirectX::XMScalarSinCos( &flRollSin, &flRollCos, M_DEG2RAD( vecIn.z ) );
+
+		return
+		{
+			( flPitchCos * flYawCos ), ( flRollSin * flPitchSin * flYawCos + flRollCos * -flYawSin ), ( flRollCos * flPitchSin * flYawCos + -flRollSin * -flYawSin ), vecOrigin.x,
+			( flPitchCos * flYawSin ), ( flRollSin * flPitchSin * flYawSin + flRollCos * flYawCos ), ( flRollCos * flPitchSin * flYawSin + -flRollSin * flYawCos ), vecOrigin.y,
+			( -flPitchSin ), ( flRollSin * flPitchCos ), ( flRollCos * flPitchCos ), vecOrigin.z
+		};
+	}
 
 	// Exports
 	inline RandomSeedFn				RandomSeed;

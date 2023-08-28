@@ -5,6 +5,7 @@
 #include "../../Networking/networking.h"
 #include "../aimbot.h"
 #include "../../Visuals/drawlist.h"
+#include "Setupbones.h"
 
 float flOldLowerbodyYaw[65];
 float flOldPlaybackrateYaw[65];
@@ -1006,7 +1007,8 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	pEntity->GetLastSkipFrameCount() = 0;
 
 	g::bSettingUpBones[pEntity->EntIndex()] = true;
-	pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, nBoneMask, 0.0f);
+	setupbones.SetupBones(pEntity, pMatrix, MAXSTUDIOBONES, nBoneMask );
+	//pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, nBoneMask, 0.0f);
 	g::bSettingUpBones[pEntity->EntIndex()] = false;
 
 	pEntity->GetLastSkipFrameCount() = iLastSkipFrameCount;

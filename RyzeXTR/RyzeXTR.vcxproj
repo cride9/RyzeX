@@ -257,7 +257,6 @@
     <ClInclude Include="Core\Interface\Interfaces\IClientLeafSystem.h" />
     <ClInclude Include="Core\Interface\Interfaces\IVEngineEffects.h" />
     <ClInclude Include="Core\Interface\Interfaces\MemAlloc.h" />
-    <ClInclude Include="Core\SDK\DataTyes\BoneMargeCache.h" />
     <ClInclude Include="Core\SDK\Draw.h" />
     <ClInclude Include="Core\xorstr.h" />
     <ClInclude Include="Core\Hooks\hooks.h" />

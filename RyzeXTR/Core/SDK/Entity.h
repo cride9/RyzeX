@@ -9,13 +9,15 @@
 #include "Animstate.h"
 #include <optional>
 #include "../XorStr.h"
-#include "../SDK/DataTyes/BoneMargeCache.h"
 #include "../SDK/DataTyes/BitVec.h"
 
-using BoneVector_t = Vector;
-using BoneQuaternion_t = Quaternion_t;
-using BoneQuaternionAligned_t = QuaternionAligned_t;
 using CBoneBitList = CBitVec<MAXSTUDIOBONES>;
+
+enum EModelScaleType : int
+{
+	HIERARCHICAL_MODEL_SCALE = 0,
+	NONHIERARCHICAL_MODEL_SCALE
+};
 
 enum InvalidatePhysicsBits_t
 {
@@ -502,48 +504,121 @@ public:
 	return reinterpret_cast<type*>(uint32_t(this) + offset);		\
 }
 
+typedef Vector				BoneVector;
+typedef Quaternion_t		BoneQuaternion;
+typedef QuaternionAligned_t	BoneQuaternionAligned;
+
+#pragma pack(push, 4)
+class CIKTarget
+{
+public:
+	int iChain; // 0x0000
+	int nType; // 0x0004
+
+	struct
+	{
+		char* szAttachmentName; // 0x0008
+		Vector vecPosition; // 0x000C
+		Quaternion quatView; // 0x0018
+	} offset; // accumulated offset from ideal footplant location
+
+	struct
+	{
+		Vector vecPosition; // 0x0028
+		Quaternion quatView; // 0x0034
+	} ideal;
+
+	struct
+	{
+		float flLatched; // 0x0044
+		float flRelease; // 0x0048
+		float flHeight; // 0x004C
+		float flFloor; // 0x0050
+		float flRadius; // 0x0054
+		float flTime; // 0x0058
+		float flWeight; // 0x005C
+		Vector vecPosition; // 0x0060
+		Quaternion quatView; // 0x006C
+		bool bOnWorld; // 0x007C
+	} est; // estimate contact position
+
+	struct
+	{
+		float flHipToFoot; // 0x0080 // distance from hip
+		float flHipToKnee; // 0x0084 // distance from hip to knee
+		float flKneeToFoot; // 0x0088 // distance from knee to foot
+		Vector vecHip; // 0x008C // location of hip
+		Vector vecClosest; // 0x0098 // closest valid location from hip to foot that the foot can move to
+		Vector vecKnee; // 0x00A4 // pre-ik location of knee
+		Vector vecFarthest; // 0x00B0 // farthest valid location from hip to foot that the foot can move to
+		Vector vecLowest; // 0x00BC // lowest position directly below hip that the foot can drop to
+	} trace;
+
+	struct
+	{
+		bool bNeedsLatch; // 0x00C8
+		bool bHasLatch; // 0x00C9
+		float flInfluence; // 0x00CC
+		int nFrameCount; // 0x00D0
+		int iOwner; // 0x00D4
+		Vector vecAbsOrigin; // 0x00D8
+		Vector angAbsView; // 0x00E4
+		Vector vecPosition; // 0x00F0
+		Quaternion quatView; // 0x00FC
+		Vector vecDeltaPosition; // 0x0010C
+		Quaternion quatDeltaView; // 0x0118
+		Vector vecDebouncePosition; // 0x0128
+		Quaternion quatDebounceView; // 0x0134
+	} latched; // internally latched footset, position
+
+	struct
+	{
+		float flTime; // 0x0144
+		float flErrorTime; // 0x148
+		float flRamp; // 0x014C
+		bool bInError; // 0x0150
+	} error;
+};
+
 class IKContext
 {
 public:
-
-	void Init(const CStudioHdr* pInitialStudioHdr, const Vector& angInitialView, const Vector& vecInitialPosition, float flInitialTime, int nInitialFrameCount, int nInitialBoneMask)
+	IKContext( )
 	{
-		static auto fnInit = reinterpret_cast<void(__thiscall*)(IKContext*, const CStudioHdr*, const Vector&, const Vector&, float, int, int)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 08 8B 45 08 56 57 8B F9 8D")));
-		fnInit(this, pInitialStudioHdr, angInitialView, vecInitialPosition, flInitialTime, nInitialFrameCount, nInitialBoneMask);
+		// @note: there is legit debug break
+		// @ida CIKContext::CIKContext(): server.dll -> "53 8B D9 F6 C3"
+		static auto fnConstructor = reinterpret_cast< void( __thiscall* )( IKContext* ) >( MEM::GetAbsoluteAddress( MEM::FindPattern( CLIENT_DLL, XorStr( "E8 ? ? ? ? A1 ? ? ? ? FF 75 18" ) ) + 0x1 ) );
+		fnConstructor( this );
 	}
 
-	void UpdateTargets(BoneVector_t* arrPositions, BoneQuaternion_t* arrRotations, matrix3x4a_t* arrBonesToWorld, CBoneBitList& arrBonesComputed)
+	~IKContext( )
 	{
-		static auto fnUpdateTargets = reinterpret_cast<void(__thiscall*)(IKContext*, BoneVector_t*, BoneQuaternion_t*, matrix3x4a_t*, CBoneBitList&)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 81 EC ? ? ? ? 33 D2 89")));
-		fnUpdateTargets(this, arrPositions, arrRotations, arrBonesToWorld, arrBonesComputed);
+		static auto fnDestructor = reinterpret_cast< void( __thiscall* )( IKContext* ) >( MEM::GetAbsoluteAddress( MEM::FindPattern( CLIENT_DLL, XorStr( "E8 ? ? ? ? 8B 44 24 14 85 C0 74 0B" ) ) + 0x1 ) );
+		fnDestructor( this );
 	}
 
-	void SolveDependencies(BoneVector_t* arrPositions, BoneQuaternion_t* arrRotations, matrix3x4a_t* arrBonesToWorld, CBoneBitList& arrBonesComputed)
+
+	void* operator new( const std::size_t nSize )
 	{
-		static auto fnSolveDependencies = reinterpret_cast<void(__thiscall*)(IKContext*, BoneVector_t*, BoneQuaternion_t*, matrix3x4a_t*, CBoneBitList&)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81")));
-		fnSolveDependencies(this, arrPositions, arrRotations, arrBonesToWorld, arrBonesComputed);
+		return i::MemAlloc->Alloc( nSize );
 	}
 
-	void ClearTargets( )
+	void operator delete( void* pMemory )
 	{
-		auto v56 = 0;
-		if ( *( int* )( ( DWORD )this + 4080 ) > 0 )
-		{
-			auto v57 = ( int* )( ( DWORD )this + 208 );
-			do
-			{
-				*v57 = -9999;
-				v57 += 85;
-				++v56;
-			} while ( v56 < *( int* )( ( DWORD )this + 4080 ) );
-		}
+		i::MemAlloc->Free( pMemory );
 	}
 
-	void AddDependencies(mstudioseqdesc_t& sequenceDescription, int iSequence, float flCycle, const float* arrPoseParameters, float flWeight = 1.0f)
+	void Init( const CStudioHdr* pInitialStudioHdr, const Vector& angInitialView, const Vector& vecInitialPosition, float flInitialTime, int nInitialFrameCount, int nInitialBoneMask )
 	{
-		static auto fnAddDependencies = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 81 EC ? ? ? ? 53 56 57 8B F9 0F"));
-		std::uintptr_t uAddDependencies = reinterpret_cast<std::uintptr_t>(fnAddDependencies); // @todo: clang compiles direct (E8) call instead of indirect (FF 15) without this
-		std::uintptr_t uSequenceDescription = reinterpret_cast<std::uintptr_t>(&sequenceDescription); // clang mess with registers without this
+		static auto fnInit = reinterpret_cast< void( __thiscall* )( IKContext*, const CStudioHdr*, const Vector&, const Vector&, float, int, int ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 EC 08 8B 45 08 56 57 8B F9 8D" ) ) );
+		fnInit( this, pInitialStudioHdr, angInitialView, vecInitialPosition, flInitialTime, nInitialFrameCount, nInitialBoneMask );
+	}
+
+	void AddDependencies( mstudioseqdesc_t& sequenceDescription, int iSequence, float flCycle, const float* arrPoseParameters, float flWeight = 1.0f )
+	{
+		static auto fnAddDependencies = MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 81 EC ? ? ? ? 53 56 57 8B F9 0F" ) );
+		std::uintptr_t uAddDependencies = reinterpret_cast< std::uintptr_t >( fnAddDependencies ); // @todo: clang compiles direct (E8) call instead of indirect (FF 15) without this
+		std::uintptr_t uSequenceDescription = reinterpret_cast< std::uintptr_t >( &sequenceDescription ); // clang mess with registers without this
 
 		__asm
 		{
@@ -557,14 +632,110 @@ public:
 		}
 	}
 
-	void CopyTo(IKContext* pOther, const unsigned short* arrRemapping)
+	void UpdateTargets( BoneVector* arrPositions, BoneQuaternion* arrRotations, matrix3x4a_t* arrBonesToWorld, CBoneBitList& arrBonesComputed )
 	{
-		static auto fnCopyTo = reinterpret_cast<void(__thiscall*)(IKContext*, IKContext*, const unsigned short*)>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 24 8B 45 08 57 8B F9 89 7D F4 85 C0")));
-		fnCopyTo(this, pOther, arrRemapping);
+		static auto fnUpdateTargets = reinterpret_cast< void( __thiscall* )( IKContext*, BoneVector*, BoneQuaternion*, matrix3x4a_t*, CBoneBitList& ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 E4 F0 81 EC ? ? ? ? 33 D2 89" ) ) );
+		fnUpdateTargets( this, arrPositions, arrRotations, arrBonesToWorld, arrBonesComputed );
 	}
+
+	void SolveDependencies( BoneVector* arrPositions, BoneQuaternion* arrRotations, matrix3x4a_t* arrBonesToWorld, CBoneBitList& arrBonesComputed )
+	{
+		static auto fnSolveDependencies = reinterpret_cast< void( __thiscall* )( IKContext*, BoneVector*, BoneQuaternion*, matrix3x4a_t*, CBoneBitList& ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 E4 F0 81 EC ? ? ? ? 8B 81" ) ) );
+		fnSolveDependencies( this, arrPositions, arrRotations, arrBonesToWorld, arrBonesComputed );
+	}
+
+	void CopyTo( IKContext* pOther, const unsigned short* arrRemapping )
+	{
+		static auto fnCopyTo = reinterpret_cast< void( __thiscall* )( IKContext*, IKContext*, const unsigned short* ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 EC 24 8B 45 08 57 8B F9 89 7D F4 85 C0" ) ) );
+		fnCopyTo( this, pOther, arrRemapping );
+	}
+
+private:
+	CUtlVectorFixed<CIKTarget, 12> arrTargets; // 0x0000
+	const CStudioHdr* pStudioHdr; // 0x0FF8
+	std::byte pad0[ 0x34 ]; // 0x0FFC
+	matrix3x4a_t matRootTransform; // 0x1030 // @ida: server.dll -> ["8D 97 ? ? ? ? E8 ? ? ? ? 8B 4D" + 0x2]
+	int nFrameCount; // 0x1060
+	float flTime; // 0x1064
+	int nBoneMask; // 0x1068
+	std::byte pad1[ 0x4 ]; // 0x106C
 };
 
+// explicitly delete class heap allocator and deallocator, to prevent attempts on using class at heap memory
+#define Q_CLASS_NO_ALLOC()								\
+void* operator new(const std::size_t nSize) = delete;	\
+void operator delete(void* pMemory) = delete;
+
+class CBoneSetup
+{
+public:
+	CBoneSetup( const CStudioHdr* pStudioHdr, const int nBoneMask, const float* arrPoseParameters, void* pPoseDebugger = nullptr ) :
+		pStudioHdr( pStudioHdr ), nBoneMask( nBoneMask ), pPoseParameters( arrPoseParameters ), pPoseDebugger( pPoseDebugger ) { }
+
+	Q_CLASS_NO_ALLOC( )
+
+		void InitPose( BoneVector* arrBonesPosition, BoneQuaternionAligned* arrBonesRotation ) const
+	{
+		for (int i = 0; i < pStudioHdr->pStudioHdr->nBones; i++)
+		{
+			if (const mstudiobone_t* pBone = pStudioHdr->pStudioHdr->GetBone( i ); pBone->iFlags & nBoneMask)
+			{
+				arrBonesPosition[ i ] = pBone->vecPosition;
+				arrBonesRotation[ i ] = pBone->qWorld;
+			}
+		}
+	}
+
+	void AccumulatePose( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, int nSequence, float flCycle, float flWeight, float flTime, IKContext* pIKContext )
+	{
+		static auto fnAccumulatePose = reinterpret_cast< void( __thiscall* )( CBoneSetup*, BoneVector*, BoneQuaternion*, int, float, float, float, IKContext* ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? A1" ) ) );
+		fnAccumulatePose( this, arrBonesPosition, arrBonesRotation, nSequence, flCycle, flWeight, flTime, pIKContext );
+	}
+
+	void CalcAutoplaySequences( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, float flRealTime, IKContext* pIKContext )
+	{
+		static auto fnCalcAutoplaySequences = MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 EC 10 53 56 57 8B 7D 10" ) );
+		std::uintptr_t uCalcAutoplaySequences = reinterpret_cast< std::uintptr_t >( fnCalcAutoplaySequences ); // @todo: clang compiles direct (E8) call instead of indirect (FF 15) without this
+
+		__asm
+		{
+			mov ecx, this
+			movss xmm3, flRealTime
+			push pIKContext
+			push arrBonesRotation
+			push arrBonesPosition
+			call uCalcAutoplaySequences
+		}
+	}
+
+	// blend together two bone positions and rotations
+	void CalcBoneAdjustment( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, const float* arrEncodedControllers ) const
+	{
+		static auto fnCalcBoneAdj = MEM::FindPattern( CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 81 EC ? ? ? ? 8B C1 89" ) );
+
+		__asm
+		{
+			mov eax, this
+			mov ecx, [ eax + pStudioHdr ]
+			mov edx, arrBonesPosition
+			push[ eax + nBoneMask ]
+			push arrEncodedControllers
+			push arrBonesRotation
+			call fnCalcBoneAdj
+			add esp, 0Ch
+		}
+	}
+
+public:
+	const CStudioHdr* pStudioHdr; // 0x00
+	int nBoneMask; // 0x04
+	const float* pPoseParameters; // 0x08
+	void* pPoseDebugger; // 0x0C
+};
+#pragma pack(pop)
+
 class CWeaponCSBase;
+class CBoneMergeCache;
 class CBaseEntity : public IClientEntity{
 
 public:
@@ -665,6 +836,15 @@ public:
 		PlayerInfo_t pInfo;
 		i::EngineClient->GetPlayerInfo(this->EntIndex(), &pInfo);
 		return pInfo;
+	}
+
+	float GetModelHierarchyScale( )
+	{
+		if (this->GetModelScaleType( ) == HIERARCHICAL_MODEL_SCALE)
+			return this->GetModelScale( );
+
+		const CStudioHdr* pStudioHdr = this->GetModelPtr( );
+		return ( pStudioHdr != nullptr && pStudioHdr->pStudioHdr->nBones == 1 ) ? this->GetModelScale( ) : 1.0f;
 	}
 
 	void InvalidatePhysicsRecursive(int32_t flags) {
@@ -924,6 +1104,7 @@ public:
 	ADD_NETVAR(IsClientSideAnimation, bool, "CBaseAnimating->m_bClientSideAnimation");
 	ADD_NETVAR(GetCycle, float, "CBaseAnimating->m_flCycle");
 	ADD_NETVAR(GetModelScale, float, "CBaseAnimating->m_flModelScale");
+	ADD_NETVAR( GetModelScaleType, int, "CBaseAnimating->m_ScaleType" );
 	ADD_NETVAR(GetBodyID, int, "CBaseAnimating->m_nBody");
 
 	//ADD_NETVAR(GetEncodedControllerArray, std::array<float, MAXSTUDIOBONECTRLS>, "CBaseAnimating->m_flEncodedController");
@@ -938,7 +1119,7 @@ public:
 
 	ADD_NETVAROFFSET( GetPrevBoneMask, int, "CBaseAnimating->m_nForceBone", 0x10 );
 	ADD_NETVAROFFSET( GetAccumulatedBoneMask, int, "CBaseAnimating->m_nForceBone", 0x14 );
-	ADD_NETVAROFFSET(GetBoneMergeCache, CBoneMergeCache*, "CBaseAnimating->m_hLightingOrigin", -0x38); // @ida C_BaseAnimating::m_pBoneMergeCache: (C_BaseAnimating::CalcBoneMerge) client.dll -> ["89 86 ? ? ? ? E8 ? ? ? ? FF 75 08" + 0x2]
+	ADD_NETVAROFFSET( GetBoneMergeCache, CBoneMergeCache*, "CBaseAnimating->m_hLightingOrigin", -0x38 ); // @ida C_BaseAnimating::m_pBoneMergeCache: (C_BaseAnimating::CalcBoneMerge) client.dll -> ["89 86 ? ? ? ? E8 ? ? ? ? FF 75 08" + 0x2]
 
 	ADD_NETVAROFFSET( GetHoldPlayerAnimations, int, "CBaseWeaponWorldModel->m_hCombatWeaponParent", 0x4 );
 
@@ -1166,7 +1347,9 @@ public:
 	bool					InitializeAsClientEntity(const char* pszModelName, bool bRenderWithViewModels);
 	bool					IsFakeducking();
 
-	/*    
+	float SetPoseParameter( CStudioHdr* pStudioHdr, int iParameter, float flValue );
+
+	/*
 	N_ADD_VARIABLE(int, GetSequence, "CBaseAnimating->m_nSequence");
     N_ADD_PVARIABLE_OFFSET(CBoneAccessor, GetBoneAccessor, "CBaseAnimating->m_nForceBone", 0x1C);
     N_ADD_VARIABLE(int, GetHitboxSet, "CBaseAnimating->m_nHitboxSet");
@@ -1615,4 +1798,112 @@ public:
 	virtual void	OnPickedUp(void* pNewOwner);
 	virtual void	Drop(const Vector& vecVelocity);
 	virtual bool IsRemoveable(void);
+};
+
+class CBoneMergeCache
+{
+public:
+	CBoneMergeCache( )
+	{
+		Init( nullptr );
+	}
+
+	void* operator new( const std::size_t nSize )
+	{
+		return i::MemAlloc->Alloc( nSize );
+	}
+
+	void operator delete( void* pMemory )
+	{
+		i::MemAlloc->Free( pMemory );
+	}
+
+	void Init( CBaseEntity* pInitialOwner )
+	{
+		// @ida CBoneMergeCache::Init(): server.dll -> ABS["E8 ? ? ? ? 8B 4C 24 10 83 B9" + 0x1]
+		static auto fnInit = reinterpret_cast< void( __thiscall* )( CBoneMergeCache*, CBaseEntity* ) >( MEM::GetAbsoluteAddress( MEM::FindPattern( CLIENT_DLL, XorStr( "E8 ? ? ? ? FF 75 08 8B 8E" ) ) + 0x1 ) );
+		fnInit( this, pInitialOwner );
+	}
+
+	// update the lookups that let it merge bones quickly
+	void UpdateCache( )
+	{
+		// @ida CBoneMergeCache::UpdateCache(): server.dll -> "55 8B EC 83 EC 10 53 8B D9 57"
+		static auto fnUpdateCache = reinterpret_cast< void( __thiscall* )( CBoneMergeCache* ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 EC 14 53 56 57 8B F9 8B 37" ) ) );
+		fnUpdateCache( this );
+	}
+
+	// copy the transform from all bones in the followed entity that have names that match our bones
+	//void BuildMatricesWithBoneMerge(const CStudioHdr* pStudioHdr, const QAngle_t& angView, const Vector_t& vecOrigin, const Vector_t arrBonesPosition[MAXSTUDIOBONES], const Quaternion_t arrBonesRotation[MAXSTUDIOBONES], Matrix3x4_t arrBonesToWorld[MAXSTUDIOBONES], CBaseAnimating* pParent, CBoneCache* pParentCache, int nBoneMask);
+
+	void MergeMatchingPoseParams( )
+	{
+		// @ida CBoneMergeCache::MergeMatchingPoseParams() [inlined]: server.dll -> "89 44 24 14 E8 ? ? ? ? 8B 44"
+
+		UpdateCache( );
+
+		// if this is set, then all the other cache data is set
+		if (pOwnerHdr == nullptr || vecMergedBones.Count( ) == 0)
+			return;
+
+		// set follower pose params using mapped indices from owner
+		for (int i = 0; i < MAXSTUDIOPOSEPARAM; i++)
+		{
+			if (arrOwnerToFollowPoseParamMapping[ i ] != -1)
+			{
+				// [side change] using hdr members instead of getting them one more time as game does
+				assert( pFollowHdr != nullptr );
+
+				pOwner->SetPoseParameter( pOwnerHdr, arrOwnerToFollowPoseParamMapping[ i ], pFollow->GetPoseParameter( )[ i ] );
+			}
+		}
+	}
+
+	void CopyFromFollow( const BoneVector* arrFollowPositions, const BoneQuaternion* arrFollowRotations, int nBoneMask, BoneVector* arrMyPositions, BoneQuaternion* arrMyRotations )
+	{
+		// @ida CBoneMergeCache::CopyFromFollow(): server.dll -> ABS["E8 ? ? ? ? 8B 44 24 08 83 B8" + 0x1]
+		static auto fnCopyFromFollow = reinterpret_cast< void( __thiscall* )( CBoneMergeCache*, const BoneVector*, const BoneQuaternion*, int, BoneVector*, BoneQuaternion* ) >( MEM::GetAbsoluteAddress( MEM::FindPattern( CLIENT_DLL, XorStr( "E8 ? ? ? ? F3 0F 10 45 ? 8D 84 24" ) ) + 0x1 ) );
+		fnCopyFromFollow( this, arrFollowPositions, arrFollowRotations, nBoneMask, arrMyPositions, arrMyRotations );
+	}
+
+	void CopyToFollow( const BoneVector* arrMyPositions, const BoneQuaternion* arrMyRotations, int nBoneMask, BoneVector* arrFollowPositions, BoneQuaternion* arrFollowRotations )
+	{
+		// @ida CBoneMergeCache::CopyToFollow(): server.dll -> ABS["E8 ? ? ? ? 8B 4C 24 10 8B 81 ? ? ? ? 8D 4C 24 60" + 0x1]
+		static auto fnCopyToFollow = reinterpret_cast< void( __thiscall* )( CBoneMergeCache*, const BoneVector*, const BoneQuaternion*, int, BoneVector*, BoneQuaternion* ) >( MEM::GetAbsoluteAddress( MEM::FindPattern( CLIENT_DLL, XorStr( "E8 ? ? ? ? 8B 87 ? ? ? ? 8D 8C 24 ? ? ? ? 8B 7C 24 18" ) ) + 0x1 ) );
+		fnCopyToFollow( this, arrMyPositions, arrMyRotations, nBoneMask, arrFollowPositions, arrFollowRotations );
+	}
+
+	/// @returns: true if the specified bone is one that got merged, false otherwise
+	//[[nodiscard]] int IsBoneMerged(int iBone) const;
+
+	void ForceCacheClear( )
+	{
+		bForceCacheClear = true;
+		UpdateCache( );
+	}
+
+public:
+	class CMergedBone
+	{
+	public:
+		unsigned short iMyBone; // index of merge cache's owner's bone
+		unsigned short iParentBone; // index of follow's matching bone
+	};
+
+	CBaseEntity* pOwner; // 0x0000 // this is the entity that we're keeping the cache updated for
+
+	// all the cache data is based off these. when they change, the cache data is regenerated. these are either all valid pointers or all null
+	CBaseEntity* pFollow; // 0x0004
+	CStudioHdr* pFollowHdr; // 0x0008
+	const studiohdr_t* pFollowRenderHdr; // 0x000C
+	CStudioHdr* pOwnerHdr; // 0x10
+	const studiohdr_t* pOwnerRenderHdr; // 0x0014
+	int nCopiedFrameCount; // 0x0018 // keeps track if this entity is part of a reverse bonemerge
+	int nFollowBoneSetupMask; // 0x001C // this is the mask we need to use to set up bones on the followed entity to do the bone merge
+
+	int arrOwnerToFollowPoseParamMapping[ MAXSTUDIOPOSEPARAM ]; // 0x0020 // this is an array of pose param indices on the follower to pose param indices on the owner
+	CUtlVector<CMergedBone> vecMergedBones; // 0x0080
+	std::byte pad0[ 0xC ]; // CVarBitVec vecBoneMergeBits; // 0x0094
+	unsigned short arrRawIndexMapping[ MAXSTUDIOBONES ]; // 0x00A0
+	bool bForceCacheClear; // 0x02A0
 };

@@ -15,7 +15,7 @@ public:
 
 	[[nodiscard]] std::uint32_t operator[](std::size_t nIndex) const
 	{
-		Q_ASSERT(nIndex < N); // bit index is out of range
+		assert(nIndex < N); // bit index is out of range
 		return (arrUInts[nIndex >> BITS_PER_INT_LOG2] & (1U << (nIndex & (BITS_PER_INT - 1U))));
 	}
 
@@ -31,25 +31,25 @@ public:
 
 	__forceinline void Set(const std::size_t nBit)
 	{
-		Q_ASSERT(nBit < N); // bit index is out of range
+		assert(nBit < N); // bit index is out of range
 		arrUInts[nBit >> BITS_PER_INT_LOG2] |= (1U << (nBit & (BITS_PER_INT - 1U)));
 	}
 
 	__forceinline void Clear(const std::size_t nBit)
 	{
-		Q_ASSERT(nBit < N); // bit index is out of range
+		assert(nBit < N); // bit index is out of range
 		arrUInts[nBit >> BITS_PER_INT_LOG2] &= ~(1U << (nBit & (BITS_PER_INT - 1U)));
 	}
 
 	[[nodiscard]] __forceinline std::uint32_t Get(const std::size_t nBit) const
 	{
-		Q_ASSERT(nBit < N); // bit index is out of range
+		assert(nBit < N); // bit index is out of range
 		return (arrUInts[nBit >> BITS_PER_INT_LOG2] & (1U << (nBit & (BITS_PER_INT - 1U))));
 	}
 
 	[[nodiscard]] __forceinline bool IsBitSet(const std::size_t nBit) const
 	{
-		Q_ASSERT(nBit < N); // bit index is out of range
+		assert(nBit < N); // bit index is out of range
 		return (arrUInts[nBit >> BITS_PER_INT_LOG2] & (1U << (nBit & (BITS_PER_INT - 1U)))) != 0U;
 	}
 

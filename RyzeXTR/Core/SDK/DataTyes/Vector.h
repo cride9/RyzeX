@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <../lua/embedding/sol/sol.hpp>
 
-
 class Vector2D
 {
 public:

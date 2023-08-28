@@ -515,68 +515,6 @@ float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
 //	return vecReturn.Length( );
 //}
 
-bool HandleBoneSetup( CBaseEntity* target, matrix3x4_t* pBoneToWorldOut, int boneMask, float currentTime)
-{
-	auto hdr = target->GetStudioHdr();
-	if (!hdr)
-		return false;
-
-	const auto oldBones = target->GetBoneAccessor().matBones;
-	const auto& o_abs = target->GetAbsAngles();
-	const auto& o_origin = target->GetAbsOrigin();
-
-	CAnimationLayer layers[13];
-
-	target->GetAnimationLayers(layers);
-	float poses[24];
-	target->GetPoseParameters(poses);
-
-	matrix3x4_t baseMatrix;
-	M::AngleMatrix(target->GetAbsAngles(), target->GetAbsOrigin(), baseMatrix);
-
-	target->GetEffects() |= 0x008;
-
-	IKContext* IK_context = target->GetIKContext();
-	if (IK_context)
-	{
-		auto absAngles = const_cast<Vector&>(target->GetAbsAngles());
-
-		IK_context->ClearTargets();
-		IK_context->Init(hdr, absAngles, target->GetVecOrigin(),
-			currentTime, i::GlobalVars->iFrameCount, BONE_USED_BY_HITBOX | BONE_USED_BY_VERTEX_LOD0 | BONE_USED_BY_VERTEX_LOD1 | BONE_USED_BY_VERTEX_LOD2
-			| BONE_USED_BY_VERTEX_LOD3 | BONE_USED_BY_VERTEX_LOD4 | BONE_USED_BY_VERTEX_LOD5 | BONE_USED_BY_VERTEX_LOD6 | BONE_USED_BY_VERTEX_LOD7);
-		target->SetAbsAngles(absAngles);
-	}
-
-	Vector pos[MAXSTUDIOBONES]{};
-	__declspec(align(16)) Quaternion     q[MAXSTUDIOBONES];
-	uint8_t boneComputed[0x100];
-	std::memset(boneComputed, 0, 0x100);
-
-	target->GetBoneAccessor().matBones = pBoneToWorldOut;
-	target->StandardBlendingRules(hdr, pos, q, currentTime, boneMask);
-
-	if (IK_context)
-	{
-		target->UpdateIKLocks(currentTime);
-		IK_context->UpdateTargets(pos, q, pBoneToWorldOut, boneComputed);
-		target->CalculateIKLocks(currentTime);
-		IK_context->SolveDependencies(pos, q, pBoneToWorldOut, boneComputed);
-	}
-
-	target->BuildTransformations(hdr, pos, q, baseMatrix, boneMask, boneComputed);
-
-	target->GetEffects() &= ~0x008;
-
-	target->SetAnimationLayers(layers);
-	target->SetPoseParameters(poses);
-	target->SetAbsOrigin(o_origin);
-	target->SetAbsAngles(o_abs);
-	target->GetBoneAccessor().matBones = oldBones;
-
-	return true;
-}
-
 bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut)
 {
 	g::bSettingUpBones[target->EntIndex()] = true;

@@ -152,6 +152,26 @@ struct matrix3x4_t
 		return &arrData[0][0];
 	}
 
+	__forceinline matrix3x4_t ConcatTransforms( matrix3x4_t in ) const
+	{
+		matrix3x4_t out;
+
+		out[ 0 ][ 0 ] = arrData[ 0 ][ 0 ] * in[ 0 ][ 0 ] + arrData[ 0 ][ 1 ] * in[ 1 ][ 0 ] + arrData[ 0 ][ 2 ] * in[ 2 ][ 0 ];
+		out[ 0 ][ 1 ] = arrData[ 0 ][ 0 ] * in[ 0 ][ 1 ] + arrData[ 0 ][ 1 ] * in[ 1 ][ 1 ] + arrData[ 0 ][ 2 ] * in[ 2 ][ 1 ];
+		out[ 0 ][ 2 ] = arrData[ 0 ][ 0 ] * in[ 0 ][ 2 ] + arrData[ 0 ][ 1 ] * in[ 1 ][ 2 ] + arrData[ 0 ][ 2 ] * in[ 2 ][ 2 ];
+		out[ 0 ][ 3 ] = arrData[ 0 ][ 0 ] * in[ 0 ][ 3 ] + arrData[ 0 ][ 1 ] * in[ 1 ][ 3 ] + arrData[ 0 ][ 2 ] * in[ 2 ][ 3 ] + arrData[ 0 ][ 3 ];
+		out[ 1 ][ 0 ] = arrData[ 1 ][ 0 ] * in[ 0 ][ 0 ] + arrData[ 1 ][ 1 ] * in[ 1 ][ 0 ] + arrData[ 1 ][ 2 ] * in[ 2 ][ 0 ];
+		out[ 1 ][ 1 ] = arrData[ 1 ][ 0 ] * in[ 0 ][ 1 ] + arrData[ 1 ][ 1 ] * in[ 1 ][ 1 ] + arrData[ 1 ][ 2 ] * in[ 2 ][ 1 ];
+		out[ 1 ][ 2 ] = arrData[ 1 ][ 0 ] * in[ 0 ][ 2 ] + arrData[ 1 ][ 1 ] * in[ 1 ][ 2 ] + arrData[ 1 ][ 2 ] * in[ 2 ][ 2 ];
+		out[ 1 ][ 3 ] = arrData[ 1 ][ 0 ] * in[ 0 ][ 3 ] + arrData[ 1 ][ 1 ] * in[ 1 ][ 3 ] + arrData[ 1 ][ 2 ] * in[ 2 ][ 3 ] + arrData[ 1 ][ 3 ];
+		out[ 2 ][ 0 ] = arrData[ 2 ][ 0 ] * in[ 0 ][ 0 ] + arrData[ 2 ][ 1 ] * in[ 1 ][ 0 ] + arrData[ 2 ][ 2 ] * in[ 2 ][ 0 ];
+		out[ 2 ][ 1 ] = arrData[ 2 ][ 0 ] * in[ 0 ][ 1 ] + arrData[ 2 ][ 1 ] * in[ 1 ][ 1 ] + arrData[ 2 ][ 2 ] * in[ 2 ][ 1 ];
+		out[ 2 ][ 2 ] = arrData[ 2 ][ 0 ] * in[ 0 ][ 2 ] + arrData[ 2 ][ 1 ] * in[ 1 ][ 2 ] + arrData[ 2 ][ 2 ] * in[ 2 ][ 2 ];
+		out[ 2 ][ 3 ] = arrData[ 2 ][ 0 ] * in[ 0 ][ 3 ] + arrData[ 2 ][ 1 ] * in[ 1 ][ 3 ] + arrData[ 2 ][ 2 ] * in[ 2 ][ 3 ] + arrData[ 2 ][ 3 ];
+
+		return out;
+	}
+
 	float arrData[3][4] = { };
 };
 

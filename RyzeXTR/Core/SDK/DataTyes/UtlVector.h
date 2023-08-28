@@ -177,3 +177,15 @@ protected:
 	int iSize;
 	T* pElements;
 };
+
+//a array class with a fixed allocation scheme
+template< class T, size_t MAX_SIZE >
+class CUtlVectorFixed : public CUtlVector< T, CUtlMemoryFixed<T, MAX_SIZE > >
+{
+	typedef CUtlVector< T, CUtlMemoryFixed<T, MAX_SIZE > > BaseClass;
+public:
+
+	// constructor, destructor
+	CUtlVectorFixed( int growSize, int initSize ) : BaseClass( growSize, initSize ) {}
+	CUtlVectorFixed( T* pMemory, int numElements ) : BaseClass( pMemory, numElements ) {}
+};
