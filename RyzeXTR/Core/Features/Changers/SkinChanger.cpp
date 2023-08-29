@@ -122,7 +122,7 @@ void CSkinChanger::Dump()
 	for (const auto& node : m_pItemSchematic->alternateIcons) // https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/game/shared/econ/econ_item_schema.cpp#L325-L329
 	{
 		if (const auto encoded = node.key; (encoded & 3) == 0)
-			kitsWeapons.emplace_back(int((encoded & 0xFFFF) >> 2), encoded >> 16); // , node.value.simpleName.data()
+			kitsWeapons.emplace_back(static_cast<short>((encoded & 0xFFFF) >> 2), static_cast<short>(encoded >> 16)); // , node.value.simpleName.data()
 	}
 
 	std::sort(kitsWeapons.begin(), kitsWeapons.end(), [](const auto& a, const auto& b) { return a.first < b.first; });

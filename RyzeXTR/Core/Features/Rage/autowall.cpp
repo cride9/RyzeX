@@ -432,7 +432,7 @@ bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSou
 }
 
 #pragma runtime_checks( "", off )
-bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4_t* aMatrix) {
+bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4a_t* aMatrix) {
 	if (!pHitbox)
 		return false;
 
@@ -442,7 +442,7 @@ bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstu
 	trace.bStartSolid = false;
 
 	// Define a typedef for the ClipRayToHitbox function prototype
-	using ClipRayToHitbox_t = int(__fastcall*)(const Ray_t&, mstudiobbox_t*, matrix3x4_t&, Trace_t*);
+	using ClipRayToHitbox_t = int(__fastcall*)(const Ray_t&, mstudiobbox_t*, matrix3x4a_t&, Trace_t*);
 
 	// Example pattern: "55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F"
 	static auto clipRayToHitbox = reinterpret_cast<ClipRayToHitbox_t>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 F3 ? ? ? ? 81 ? ? ? ? ? 0F")));

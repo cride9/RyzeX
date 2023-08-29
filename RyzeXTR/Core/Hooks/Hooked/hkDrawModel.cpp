@@ -3,7 +3,7 @@
 #include "../../Features/Visuals/chams.h"
 #include "../../Features/Misc/misc.h"
 
-void __fastcall h::hkDrawModel(IStudioRender* thisptr, int edx, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags) {
+void __fastcall h::hkDrawModel(IStudioRender* thisptr, int edx, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4a_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags) {
 
 	static auto original = detour::drawModel.GetOriginal<decltype(&h::hkDrawModel)>();
 

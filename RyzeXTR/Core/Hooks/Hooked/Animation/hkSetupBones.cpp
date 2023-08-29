@@ -3,8 +3,9 @@
 #include "../../../globals.h"
 #include "../../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../../Features/Rage/Animations/EnemyAnimations.h"
+#include "../../../Features/Rage/Animations/Setupbones.h"
 
-bool __fastcall h::hkSetupBones(IClientRenderable* ecx, void* edx, matrix3x4_t* matrix, int maxbones, int bonemask, float curtime) {
+bool __fastcall h::hkSetupBones(IClientRenderable* ecx, void* edx, matrix3x4a_t* matrix, int maxbones, int bonemask, float curtime) {
 
 	static auto original = detour::setupBones.GetOriginal<decltype(&h::hkSetupBones)>();
 
@@ -17,7 +18,7 @@ bool __fastcall h::hkSetupBones(IClientRenderable* ecx, void* edx, matrix3x4_t* 
 	if (g::bSettingUpBones[pEnt->EntIndex()])
 		return original( ecx, edx, matrix, maxbones, bonemask, curtime);
 
-	if (matrix) 
+	if (matrix)  
 		bResult = ((pEnt == g::pLocal) ? g_LocalAnimations->CopyCachedMatrix(matrix, maxbones) : anims.CopyCachedMatrix(pEnt, matrix, maxbones));
 
 	return bResult;

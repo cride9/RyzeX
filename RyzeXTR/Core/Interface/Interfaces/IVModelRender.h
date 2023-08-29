@@ -10,8 +10,8 @@ struct ModelRenderInfo_t
 	std::byte				pad0[0x4];
 	IClientRenderable* pRenderable;
 	const Model_t* pModel;
-	const matrix3x4_t* pModelToWorld;
-	const matrix3x4_t* pLightingOffset;
+	const matrix3x4a_t* pModelToWorld;
+	const matrix3x4a_t* pLightingOffset;
 	const Vector* pLightingOrigin;
 	int						iFlags;
 	int						nEntityIndex;
@@ -47,7 +47,7 @@ struct DrawModelState_t
 	studiohdr_t* pStudioHdr;
 	studiohwdata_t* pStudioHWData;
 	IClientRenderable* pRenderable;
-	const matrix3x4_t* pModelToWorld;
+	const matrix3x4a_t* pModelToWorld;
 	StudioDecalHandle_t* pDecals;
 	int						iDrawFlags;
 	int						iLOD;

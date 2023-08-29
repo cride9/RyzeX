@@ -119,7 +119,7 @@ class CBoneAccessor
 {
 public:
 	const CBaseAnimating*	pAnimating;		//0x00
-	matrix3x4_t*			matBones;		//0x04
+	matrix3x4a_t*			matBones;		//0x04
 	int						nReadableBones;	//0x08
 	int						nWritableBones;	//0x0C
 }; // Size: 0x10

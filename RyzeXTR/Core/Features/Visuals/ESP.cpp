@@ -617,6 +617,9 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 
 	auto skeleton_position = [=](const size_t idx)
 	{
+		if (idx > MAXSTUDIOBONES)
+			return Vector(0, 0, 0);
+
 		auto child = (pEntity == g::pLocal) ? pEntity->GetCachedBoneData().Base()[idx].GetOrigin() : pLog->pCachedMatrix[idx].GetOrigin();
 		return child;
 	};
@@ -686,6 +689,9 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 
 		auto upper = skeleton_position(6 + 1) - chestbone;
 		auto breast = chestbone + upper - (upper / 3);
+
+		if (child == Vector(0, 0, 0) || parent == Vector(0, 0, 0) || chestbone == Vector(0, 0, 0) || upper == Vector(0, 0, 0))
+			continue;
 
 		auto deltachild = child - breast;
 		auto deltaparent = parent - breast;

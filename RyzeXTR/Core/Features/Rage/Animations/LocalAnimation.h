@@ -30,7 +30,7 @@ struct animationData_t {
 	std::array<float, MAXSTUDIOPOSEPARAM> arrPoses = { };
 
 	Vector vecMatrixOrigin = Vector(0, 0, 0);
-	std::array < matrix3x4_t, MAXSTUDIOBONES > arrMatrix = { };
+	std::array < matrix3x4a_t, MAXSTUDIOBONES > arrMatrix = { };
 
 	CAnimState pAnimationState;
 };
@@ -41,15 +41,15 @@ public:
 	virtual void OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal);
 	virtual void BeforePrediction(CBaseEntity* pLocal);
 	virtual void StoreAnimationRecord(CBaseEntity* pLocal);
-	virtual void ModifyEyePosition(Vector& vecInputEyePos, matrix3x4_t* aMatrix);
-	virtual void SetupPlayerBones(matrix3x4_t* aMatrix, int nMask, CBaseEntity* pLocal);
+	virtual void ModifyEyePosition(Vector& vecInputEyePos, matrix3x4a_t* aMatrix);
+	virtual void SetupPlayerBones(matrix3x4a_t* aMatrix, int nMask, CBaseEntity* pLocal);
 	virtual void InterpolateMatricies();
 	virtual void DoAnimationEvent(int nButtons, CBaseEntity* pLocal, bool bIsFakeAnimations = false);
 	virtual void SimulateStrafe(int nButtons, CBaseEntity* pLocal);
 	virtual void UpdateDesyncAnimations(CBaseEntity* pLocal);
 	virtual void TransformateMatricies();
 	virtual void CleanSnapshots();
-	virtual bool CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount);
+	virtual bool CopyCachedMatrix(matrix3x4a_t* aInMatrix, int nBoneCount);
 	virtual void SetupShootPosition(CBaseEntity* pLocal);
 	virtual void CopyPlayerAnimationData(bool bFake, CBaseEntity* pLocal);
 	virtual void AnimationBreaker(CBaseEntity*);
@@ -64,11 +64,11 @@ public:
 		return LocalData_t.vecShootPosition;
 	}
 	virtual void ResetData();
-	virtual std::array < matrix3x4_t, MAXSTUDIOBONES > GetDesyncMatrix()
+	virtual std::array < matrix3x4a_t, MAXSTUDIOBONES > GetDesyncMatrix()
 	{
 		return LocalData_t.FakeData.arrMatrix;
 	}
-	virtual std::array < matrix3x4_t, MAXSTUDIOBONES > GetRealMatrix()
+	virtual std::array < matrix3x4a_t, MAXSTUDIOBONES > GetRealMatrix()
 	{
 		return LocalData_t.RealData.arrMatrix;
 	}
@@ -94,7 +94,7 @@ private:
 
 		struct
 		{
-			std::array < matrix3x4_t, MAXSTUDIOBONES > arrMatrix = { };
+			std::array < matrix3x4a_t, MAXSTUDIOBONES > arrMatrix = { };
 			std::array < CAnimationLayer, ANIMATION_LAYER_COUNT > arrLayers = { };
 			std::array < float, MAXSTUDIOPOSEPARAM > arrPoses = { };
 			CAnimState pAnimationState;

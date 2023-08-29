@@ -341,7 +341,7 @@ public:
 	virtual int						GetBody() = 0;
 	virtual void					GetColorModulation(float* pColor) = 0;
 	virtual bool					LODTest() = 0;
-	virtual bool					SetupBones(matrix3x4_t* matBoneToWorldOut, int nMaxBones, int fBoneMask, float flCurrentTime) = 0;
+	virtual bool					SetupBones(matrix3x4a_t* matBoneToWorldOut, int nMaxBones, int fBoneMask, float flCurrentTime) = 0;
 	virtual void					SetupWeights(const matrix3x4_t* matBoneToWorld, int nFlexWeightCount, float* flFlexWeights, float* flFlexDelayedWeights) = 0;
 	virtual void					DoAnimationEvents() = 0;
 	virtual void*					GetPVSNotifyInterface() = 0;
@@ -826,9 +826,9 @@ public:
 		return *(std::array<int, 64>*)((uint32_t(this) + 0x2E08));
 	}
 
-	CUtlVector <matrix3x4_t>& GetCachedBoneData() {
+	CUtlVector <matrix3x4a_t>& GetCachedBoneData() {
 
-		return *(CUtlVector <matrix3x4_t>*)(uintptr_t(this) + 0x2914);
+		return *(CUtlVector <matrix3x4a_t>*)(uintptr_t(this) + 0x2914);
 	}
 
 	PlayerInfo_t& GetPlayerInfo() {
@@ -919,15 +919,15 @@ public:
 		memcpy(&this->GetPoseParameter(), flPoseParameter, 24 * sizeof(float));
 	}
 
-	void GetBoneCache(matrix3x4_t* matrix) {
+	void GetBoneCache(matrix3x4a_t* matrix) {
 
 		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count() || !IsBoneCacheValid())
 			return;
 
-		memcpy(matrix, this->GetCachedBoneData().Base(), this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
+		memcpy(matrix, this->GetCachedBoneData().Base(), this->GetCachedBoneData().Count() * sizeof(matrix3x4a_t));
 	}
 
-	void SetBoneCache(matrix3x4_t* matrix) {
+	void SetBoneCache(matrix3x4a_t* matrix) {
 
 		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count() || !IsBoneCacheValid())
 			return;
@@ -938,7 +938,7 @@ public:
 		if (!matrix->GetOrigin().IsValid())
 			return;
 
-		memcpy(this->GetCachedBoneData().Base(), matrix, this->GetCachedBoneData().Count() * sizeof(matrix3x4_t));
+		memcpy(this->GetCachedBoneData().Base(), matrix, this->GetCachedBoneData().Count() * sizeof(matrix3x4a_t));
 	}
 
 	bool IsBoneCacheValid() {
@@ -1180,9 +1180,9 @@ public:
 		arrPose.at(2U) = (flYaw + 180.f) / 360.f;
 	}
 	
-	void BuildTransformations( CStudioHdr* hdr, Vector* pos, Quaternion* q, const matrix3x4_t& transform, int mask, uint8_t* computed ) {
+	void BuildTransformations( CStudioHdr* hdr, Vector* pos, Quaternion* q, const matrix3x4a_t& transform, int mask, uint8_t* computed ) {
 
-		using BuildTransformations_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, Quaternion*, matrix3x4_t const&, int, uint8_t* );
+		using BuildTransformations_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, Quaternion*, matrix3x4a_t const&, int, uint8_t* );
 		return util::GetVFunc< BuildTransformations_t >( this, 190 )( this, hdr, pos, q, transform, mask, computed );
 	}
 
@@ -1198,9 +1198,9 @@ public:
 		return util::CallVFunc<bool>(this, 247U, pLayer, pWeaponStudioHdr, iSequence);
 	}
 
-	void ClampBonesInBBox(matrix3x4_t* bones, int boneMask) {
+	void ClampBonesInBBox(matrix3x4a_t* bones, int boneMask) {
 
-		using ClampBonesInBBox_t = void(__thiscall*)(decltype(this), matrix3x4_t*, int);
+		using ClampBonesInBBox_t = void(__thiscall*)(decltype(this), matrix3x4a_t*, int);
 		static auto oClampBonesInBBox = reinterpret_cast<ClampBonesInBBox_t>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38")));
 		return oClampBonesInBBox(this, bones, boneMask);
 		//return util::GetVFunc< ClampBonesInBBox_t >(this, 206)(this, pMatrix, iMask);
@@ -1339,7 +1339,7 @@ public:
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecEnd, bool bSmokeCheck = false);
 	bool					IsBreakable();
 	mstudiobbox_t*			StudioHitbox(int iHitbox);
-	bool					SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut );
+	bool					SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4a_t* pBoneToWorldOut );
 	void					InvalidateBoneCache();
 	float					GetSequenceCycleRate(CStudioHdr*, int);
 	float					GetSequenceMoveDist(CStudioHdr*, int);
@@ -1832,9 +1832,6 @@ public:
 		static auto fnUpdateCache = reinterpret_cast< void( __thiscall* )( CBoneMergeCache* ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 EC 14 53 56 57 8B F9 8B 37" ) ) );
 		fnUpdateCache( this );
 	}
-
-	// copy the transform from all bones in the followed entity that have names that match our bones
-	//void BuildMatricesWithBoneMerge(const CStudioHdr* pStudioHdr, const QAngle_t& angView, const Vector_t& vecOrigin, const Vector_t arrBonesPosition[MAXSTUDIOBONES], const Quaternion_t arrBonesRotation[MAXSTUDIOBONES], Matrix3x4_t arrBonesToWorld[MAXSTUDIOBONES], CBaseAnimating* pParent, CBoneCache* pParentCache, int nBoneMask);
 
 	void MergeMatchingPoseParams( )
 	{

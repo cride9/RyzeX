@@ -84,7 +84,7 @@ struct rageBotData_t
 {
 	Lagcompensation::LagRecord_t* pRecord{};
 	CBaseEntity* pAimbotTarget{};
-	matrix3x4_t* pTargetMatrix{};
+	matrix3x4a_t* pTargetMatrix{};
 	Vector vecLocalShootPosition{};
 	Vector vecTargetShootPosition{};
 

@@ -1,7 +1,7 @@
 #include "../../hooks.h"
 #include "../../../SDK/Entity.h"
 
-void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudioHdr* hdr, Vector* pos, Quaternion* q, const matrix3x4_t& transform, int mask, uint8_t* computed) {
+void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudioHdr* hdr, Vector* pos, Quaternion* q, const matrix3x4a_t& transform, int mask, uint8_t* computed) {
 
 	static auto original = detour::buildTransform.GetOriginal<decltype(&h::hkBuildTransformation)>();
 

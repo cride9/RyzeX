@@ -85,7 +85,7 @@ public:
 	void GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious = nullptr);
 	float BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
 	void RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog);
-	void SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* pMatrix, int nFlags);
+	void SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags);
 	float FindMatchingPlaybackRate(float flTarget, std::array<float, 120>& arrPlaybackRates);
 	void FindDesyncSide(Lagcompensation::LagRecord_t* pRecord);
 	void GetSideLayersForResolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord);
@@ -93,7 +93,7 @@ public:
 
 	/* resolver */
 	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);
-	bool CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount);
+	bool CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4a_t* pMatrix, int nBoneCount);
 	void TransformateMatrix(CBaseEntity* pPlayer);
 	void SetUpMovement(Lagcompensation::LagRecord_t* pRecord, CAnimState* pState, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
 	void InterpolateMatricies(CBaseEntity* pEntity = nullptr);

@@ -14,9 +14,9 @@ struct Quaternion_t
 
 	/// @param[in] vecOrigin [optional] translation for converted matrix
 	/// @returns: matrix converted from quaternion
-	[[nodiscard]] matrix3x4_t ToMatrix(const Vector& vecOrigin = { }) const
+	[[nodiscard]] matrix3x4a_t ToMatrix(const Vector& vecOrigin = { }) const
 	{
-		matrix3x4_t matOut;
+		matrix3x4a_t matOut;
 
 #ifdef _DEBUG // precalculate common multiplications
 		const float x2 = this->x + this->x, y2 = this->y + this->y, z2 = this->z + this->z;
@@ -143,7 +143,7 @@ struct mstudiobone_t
 	Vector		vecPositionScale;
 	Vector		vecEulerScale;
 
-	matrix3x4_t matPoseToBone;
+	matrix3x4a_t matPoseToBone;
 	Quaternion_t qAlignment;
 	int			iFlags;
 	int			iProcedureType;

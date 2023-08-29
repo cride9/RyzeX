@@ -609,7 +609,7 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, EMatrixType
 	return pEntity->InvalidateBoneCache();
 }
 
-void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4_t* pMatrix) {
+void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4a_t* pMatrix) {
 
 	if (!pMatrix)
 		return;

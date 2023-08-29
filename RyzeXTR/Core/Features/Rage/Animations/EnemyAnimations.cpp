@@ -95,7 +95,7 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 
 		UpdateClientSideAnimations(pEntity, pRecord);
 
-		matrix3x4_t* aMatrix = pRecord->pMatricies[nRotationSide];
+		matrix3x4a_t* aMatrix = pRecord->pMatricies[nRotationSide];
 
 		SetupPlayerMatrix(pEntity, pRecord, aMatrix, BoneUsedByHitbox);
 
@@ -146,7 +146,7 @@ float Animations::BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 	return M::NormalizeAngle(flFootYaw);
 }
 
-bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int nBoneCount) {
+bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4a_t* pMatrix, int nBoneCount) {
 
 	if (!g::pLocal || g::bUpdatingSkins)
 		return false;
@@ -156,7 +156,7 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4_t* pMatrix, int n
 	if (!pLog)
 		return false;
 
-	std::memcpy(pMatrix, pLog->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
+	std::memcpy(pMatrix, pLog->pCachedMatrix.data(), sizeof(matrix3x4a_t) * nBoneCount);
 	return true;
 }
 
@@ -186,9 +186,9 @@ void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 		pPlayer->SetBoneCache(pPlayerData->pCachedMatrix.data());
 
 		// build attachments
-		std::memcpy(pPlayer->GetBoneAccessor().matBones, pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
+		std::memcpy(pPlayer->GetBoneAccessor().matBones, pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4a_t) * nBoneCount);
 		pPlayer->SetupBones_AttachmentHelper();
-		std::memcpy(pPlayer->GetBoneAccessor().matBones, pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
+		std::memcpy(pPlayer->GetBoneAccessor().matBones, pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4a_t) * nBoneCount);
 	}
 }
 
@@ -917,7 +917,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 		Resolver(pEntity, pRecord, pPrevious);
 
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
-	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4_t)* MAXSTUDIOBONES);
+	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4a_t)* MAXSTUDIOBONES);
 
 	if (cfg::rage::bEnable) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
@@ -942,7 +942,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	i::GlobalVars->iFrameCount = iFrameCount;
 }
 
-void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4_t* pMatrix, int nFlags) {
+void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags) {
 
 	pEntity->SetAnimationLayers(pRecord->arrLayers);
 
@@ -1007,8 +1007,8 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	pEntity->GetLastSkipFrameCount() = 0;
 
 	g::bSettingUpBones[pEntity->EntIndex()] = true;
-	setupbones.SetupBones(pEntity, pMatrix, MAXSTUDIOBONES, nBoneMask );
-	//pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, nBoneMask, 0.0f);
+	//setupbones.SetupBones(pEntity, pMatrix, MAXSTUDIOBONES, nBoneMask );
+	pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, nBoneMask, 0.0f);
 	g::bSettingUpBones[pEntity->EntIndex()] = false;
 
 	pEntity->GetLastSkipFrameCount() = iLastSkipFrameCount;

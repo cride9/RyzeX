@@ -336,7 +336,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 
 void SetResolveMatrix(Lagcompensation::LagRecord_t* pRecord, int iType) {
 
-	//memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[iType], sizeof(matrix3x4_t) * MAXSTUDIOBONES);
+	//memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[iType], sizeof(matrix3x4a_t) * MAXSTUDIOBONES);
 	pRecord->iResolveSide = iType;
 }
 

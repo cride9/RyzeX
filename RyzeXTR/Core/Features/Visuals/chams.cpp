@@ -72,14 +72,14 @@ IMaterial* chams::CreateMaterial(std::string_view szName, std::string_view szSha
 	return pReturn;
 }
 
-void MatrixSetOrigin( Vector pos, matrix3x4_t& matrix )
+void MatrixSetOrigin( Vector pos, matrix3x4a_t& matrix )
 {
 	matrix[ 0 ][ 3 ] = pos.x;
 	matrix[ 1 ][ 3 ] = pos.y;
 	matrix[ 2 ][ 3 ] = pos.z;
 }
 
-bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out) 
+bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4a_t* out)
 {
 	if (!pEntity)
 		return false;
@@ -113,15 +113,15 @@ bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4_t* out)
 
 	const auto lerp = M::Lerp(NextOrigin, FirstInvalid->vecOrigin, flDelta );
 
-	matrix3x4_t ret[256];
-	memcpy(ret, FirstInvalid->pMatricies[VISUAL], sizeof(matrix3x4_t) * 256);
+	matrix3x4a_t ret[256];
+	memcpy(ret, FirstInvalid->pMatricies[VISUAL], sizeof(matrix3x4a_t) * 256);
 
 	for (size_t i{ }; i < 256; ++i) {
 		const auto matrix_delta = Vector( FirstInvalid->pMatricies[VISUAL][ i ][ 0 ][ 3 ], FirstInvalid->pMatricies[VISUAL][ i ][ 1 ][ 3 ], FirstInvalid->pMatricies[VISUAL][ i ][ 2 ][ 3 ] ) - FirstInvalid->vecOrigin;
 		MatrixSetOrigin(matrix_delta + lerp, ret[i]);
 	}
 
-	memcpy(out, ret, sizeof(matrix3x4_t[256]));
+	memcpy(out, ret, sizeof(matrix3x4a_t[256]));
 	return true;
 	return false;
 }
@@ -178,7 +178,7 @@ static void chams::PrepareMaterial() {
 		materials[ANIMATED]->IncrementReferenceCount();
 }
 using namespace cfg::model;
-bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags) {
+bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4a_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags) {
 
 	static auto original = detour::drawModel.GetOriginal<decltype(&h::hkDrawModel)>();
 
@@ -222,7 +222,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 				return true;
 			}
 
-			matrix3x4_t* desyncMatrix = g_LocalAnimations->GetDesyncMatrix().data();
+			matrix3x4a_t* desyncMatrix = g_LocalAnimations->GetDesyncMatrix().data();
 
 			if (bDesyncChams) {
 

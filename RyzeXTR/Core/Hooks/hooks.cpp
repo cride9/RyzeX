@@ -53,7 +53,7 @@ void h::SetupHooks() {
 	HookSignature(detour::physicsSimulate, CLIENT_DLL, "56 8B F1 8B 8E ? ? ? ? 83 F9 FF 74 23", &hkPhysicsSimulate);
 	HookSignature(detour::interpolateEntites, CLIENT_DLL, "55 8B EC 83 EC 1C 8B 0D ? ? ? ? 53 56 57", &hkInterpolateServerEntites);
 	//HookSignature(detour::isFollowingEntity, CLIENT_DLL, "F6 ? ? ? ? ? ? 74 31 80", &hkIsFollowingEntity);
-	HookSignature(detour::clampBonesInBBox, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38", &hkClampBonesInBBox);
+	//HookSignature(detour::clampBonesInBBox, CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 70 56 57 8B F9 89 7C 24 38", &hkClampBonesInBBox);
 	HookSignature(detour::getColorModulation, MATERIALSYSTEM_DLL, "55 8B EC 83 EC ? 56 8B F1 8A 46", &hkGetColorModulation);
 	HookSignature(detour::getAlphaModulation, MATERIALSYSTEM_DLL, "56 8B F1 8A 46 20 C0 E8 02 A8 01 75 0B 6A 00 6A 00 6A 00 E8 ? ? ? ? 80 7E 22 05 76 0E", &hkGetAlphaModulation);
 	HookSignature(detour::setText, CLIENT_DLL, "55 8B EC 8B 45 08 85 C0 53", &hkSetText);

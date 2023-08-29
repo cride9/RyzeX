@@ -76,8 +76,7 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	lagcomp.GetLog(aimData.pRecord->iEntIndex).iShotAmount++;
 	pCmd->iButtons |= IN_ATTACK;
 	aimData.iTickcount = pCmd->iTickCount;
-	if (!(cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)))
-		pCmd->iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
+	pCmd->iTickCount = TIME_TO_TICKS(aimData.flTargetSimulation + lagcomp.GetClientInterpAmount());
 
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
 	bShouldSendPacket = true;
@@ -116,8 +115,8 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
 
-		if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) || !ax->GetInt())
-			it->iLastValid = 0;
+		//if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) || !ax->GetInt())
+		//	it->iLastValid = 0;
 
 		float flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)
@@ -297,7 +296,7 @@ void CAimBot::AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd) {
 
 bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecAimPosition, Lagcompensation::LagRecord_t* pRecord) {
 
-	matrix3x4_t* pMatrix = pRecord->pMatricies[RESOLVE];
+	matrix3x4a_t* pMatrix = pRecord->pMatricies[RESOLVE];
 
 	if (curConfig.iHitchance <= 1)
 		return true;

@@ -151,7 +151,7 @@ void Studio_BuildMatrices( const CStudioHdr* pStudioHdr, const Vector& angView, 
 	for (int i = 0; i < nChainLength; i++)
 		arrChain[ nChainLength - i - 1 ] = i;
 
-	matrix3x4_t matRotation = M::ToMatrix( angView, vecOrigin );
+	matrix3x4a_t matRotation = M::ToMatrix( angView, vecOrigin );
 
 	if (flScale < 1.0f - FLT_EPSILON || flScale > 1.0f + FLT_EPSILON)
 	{
@@ -177,7 +177,7 @@ void Studio_BuildMatrices( const CStudioHdr* pStudioHdr, const Vector& angView, 
 
 		if (pStudioHdr->vecBoneFlags[ iChain ] & nBoneMask)
 		{
-			matrix3x4_t matBone = arrBonesRotation[ iChain ].ToMatrix( arrBonesPosition[ iChain ] );
+			matrix3x4a_t matBone = arrBonesRotation[ iChain ].ToMatrix( arrBonesPosition[ iChain ] );
 
 			const int iParentBone = pStudioHdr->vecBoneParent[ iChain ];
 			arrBonesToWorld[ iChain ] = ( iParentBone == -1 ? matRotation.ConcatTransforms( matBone ) : arrBonesToWorld[ iParentBone ].ConcatTransforms( matBone ) );
@@ -185,10 +185,12 @@ void Studio_BuildMatrices( const CStudioHdr* pStudioHdr, const Vector& angView, 
 	}
 }
 
-bool CSetupBones::SetupBones( CBaseEntity* pPlayer, matrix3x4_t* arrBonesToWorld, int iMaxBones, int nBoneMask )
+bool CSetupBones::SetupBones( CBaseEntity* pPlayer, matrix3x4a_t* arrBonesToWorld, int iMaxBones, int nBoneMask )
 {
 	if ( !pPlayer || !pPlayer->IsAlive() )
 		return false;
+
+	CMDLCacheCriticalSection mdlCacheCriticalSection(i::MDLCache);
 
 	CStudioHdr* pStudioHdr = pPlayer->GetModelPtr( );
 	if (pStudioHdr == nullptr)	
@@ -220,7 +222,7 @@ bool CSetupBones::SetupBones( CBaseEntity* pPlayer, matrix3x4_t* arrBonesToWorld
 	nAccumulatedBoneMask = nBoneMask;
 	pPlayer->GetLastSetupBonesTime( ) = i::GlobalVars->flCurrentTime;
 
-	matrix3x4_t* pBones = boneAccessor.matBones;
+	matrix3x4a_t* pBones = boneAccessor.matBones;
 
 	if (arrBonesToWorld)
 		boneAccessor.matBones = arrBonesToWorld;
@@ -247,9 +249,9 @@ bool CSetupBones::SetupBones( CBaseEntity* pPlayer, matrix3x4_t* arrBonesToWorld
 
 		GetSkeleton( pPlayer, pStudioHdr, arrBonesPosition, arrBonesRotation, boneAccessor.nWritableBones );
 
-		pIKContext->UpdateTargets( arrBonesPosition, arrBonesRotation, reinterpret_cast<matrix3x4a_t*>( boneAccessor.matBones ), arrBonesComputed );
+		pIKContext->UpdateTargets( arrBonesPosition, arrBonesRotation, boneAccessor.matBones, arrBonesComputed );
 		pPlayer->CalculateIKLocks( i::GlobalVars->flCurrentTime );
-		pIKContext->SolveDependencies( arrBonesPosition, arrBonesRotation, reinterpret_cast< matrix3x4a_t* >( boneAccessor.matBones ), arrBonesComputed );
+		pIKContext->SolveDependencies( arrBonesPosition, arrBonesRotation, boneAccessor.matBones, arrBonesComputed );
 	}
 	else
 		GetSkeleton( pPlayer, pStudioHdr, arrBonesPosition, arrBonesRotation, boneAccessor.nWritableBones );
@@ -267,7 +269,7 @@ bool CSetupBones::SetupBones( CBaseEntity* pPlayer, matrix3x4_t* arrBonesToWorld
 		pPlayer->GetBoneMergeCache( ) = pBoneMergeCache;
 	}
 
-	Studio_BuildMatrices( pStudioHdr, angAbsView, vecAbsOrigin, arrBonesPosition, arrBonesRotation, pPlayer->GetModelHierarchyScale( ), reinterpret_cast<matrix3x4a_t*>( boneAccessor.matBones ), boneAccessor.nWritableBones, arrBonesComputed );
+	Studio_BuildMatrices( pStudioHdr, angAbsView, vecAbsOrigin, arrBonesPosition, arrBonesRotation, pPlayer->GetModelHierarchyScale( ), boneAccessor.matBones, boneAccessor.nWritableBones, arrBonesComputed );
 	nEFlags &= ~EFL_SETTING_UP_BONES;
 
 	if (nBoneMask & BONE_USED_BY_ATTACHMENT)
@@ -276,7 +278,7 @@ bool CSetupBones::SetupBones( CBaseEntity* pPlayer, matrix3x4_t* arrBonesToWorld
 	pPlayer->ClampBonesInBBox( boneAccessor.matBones, boneAccessor.nWritableBones );
 
 	if (arrBonesToWorld)
-		std::memcpy( arrBonesToWorld, boneAccessor.matBones, sizeof( matrix3x4_t ) * MAXSTUDIOBONES );
+		std::memcpy( arrBonesToWorld, boneAccessor.matBones, sizeof( matrix3x4a_t ) * MAXSTUDIOBONES );
 
 	boneAccessor.matBones = pBones;
 }	

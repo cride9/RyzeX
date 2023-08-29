@@ -122,7 +122,7 @@ enum EMATERIAL : int {
 namespace chams {
 
 	IMaterial* CreateMaterial(std::string_view szName, std::string_view szShader, std::string_view szBaseTexture = "vgui/white", std::string_view szEnvMap = "", bool bIgnorez = false, bool bWireframe = false, std::string_view szProxies = "");
-	bool DrawChams(CBaseEntity*, DrawModelResults_t*, const DrawModelInfo_t&, matrix3x4_t*, float*, float*, const Vector&, int);
+	bool DrawChams(CBaseEntity*, DrawModelResults_t*, const DrawModelInfo_t&, matrix3x4a_t*, float*, float*, const Vector&, int);
 	bool DrawChamsMDL(IMatRenderContext*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4_t*);
 	void PrepareMaterial();
 

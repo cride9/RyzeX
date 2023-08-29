@@ -22,7 +22,7 @@ void ___thiscall C_CSPlayer::BuildTransformations (DWORD this, int studioHdr, in
 }
 */
 
-void __fastcall h::hkClampBonesInBBox(CBaseEntity* pEntity, void* edx, matrix3x4_t* pMatrix, int iBoneMask) {
+void __fastcall h::hkClampBonesInBBox(CBaseEntity* pEntity, void* edx, matrix3x4a_t* pMatrix, int iBoneMask) {
 
 	static auto original = detour::clampBonesInBBox.GetOriginal<decltype(&hkClampBonesInBBox)>();
 

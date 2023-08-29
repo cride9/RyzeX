@@ -69,7 +69,7 @@ public:
 		util::CallVFunc<void>(this, 28U, flAlpha);
 	}
 
-	void DrawModel(DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags)
+	void DrawModel(DrawModelResults_t* pResults, const DrawModelInfo_t& info, matrix3x4a_t* pBoneToWorld, float* flFlexWeights, float* flFlexDelayedWeights, const Vector& vecModelOrigin, int nFlags)
 	{
 		util::CallVFunc<void>(this, 29U, pResults, &info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, &vecModelOrigin, nFlags);
 	}

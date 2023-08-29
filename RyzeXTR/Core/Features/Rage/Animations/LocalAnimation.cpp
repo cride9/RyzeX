@@ -574,7 +574,7 @@ void C_LocalAnimations::SetupShootPosition(CBaseEntity* pLocal)
 	pLocal->SetAbsOrigin(std::get < 0 >(m_Backup));
 	pLocal->GetEyeAngles() = std::get < 1 >(m_Backup);
 }
-void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask, CBaseEntity* pLocal)
+void C_LocalAnimations::SetupPlayerBones(matrix3x4a_t* aMatrix, int nMask, CBaseEntity* pLocal)
 {
 	// save globals
 	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
@@ -676,7 +676,7 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4_t* aMatrix, int nMask, CBaseE
 	i::GlobalVars->iTickCount = std::get < 6 >(m_Globals);
 }
 
-void C_LocalAnimations::ModifyEyePosition(Vector& vecInputEyePos, matrix3x4_t* aMatrix)
+void C_LocalAnimations::ModifyEyePosition(Vector& vecInputEyePos, matrix3x4a_t* aMatrix)
 {
 	Vector vecHeadPos = Vector
 	(
@@ -709,8 +709,8 @@ void C_LocalAnimations::InterpolateMatricies()
 	g_LocalAnimations->TransformateMatricies();
 
 	// copy bones
-	std::memcpy(pLocal->GetCachedBoneData().Base(), LocalData_t.RealData.arrMatrix.data(), sizeof(matrix3x4_t) * pLocal->GetCachedBoneData().Count());
-	std::memcpy(pLocal->GetBoneAccessor().matBones, LocalData_t.RealData.arrMatrix.data(), sizeof(matrix3x4_t) * pLocal->GetCachedBoneData().Count());
+	std::memcpy(pLocal->GetCachedBoneData().Base(), LocalData_t.RealData.arrMatrix.data(), sizeof(matrix3x4a_t) * pLocal->GetCachedBoneData().Count());
+	std::memcpy(pLocal->GetBoneAccessor().matBones, LocalData_t.RealData.arrMatrix.data(), sizeof(matrix3x4a_t) * pLocal->GetCachedBoneData().Count());
 
 	//pLocal->GetBoneAccessor().matBones = m_LocalData.m_Real.m_Matrix.data();
 
@@ -784,9 +784,9 @@ void C_LocalAnimations::TransformateMatricies()
 
 	LocalData_t.RealData.vecMatrixOrigin = pLocal->GetAbsOrigin();
 }
-bool C_LocalAnimations::CopyCachedMatrix(matrix3x4_t* aInMatrix, int nBoneCount)
+bool C_LocalAnimations::CopyCachedMatrix(matrix3x4a_t* aInMatrix, int nBoneCount)
 {
-	std::memcpy(aInMatrix, LocalData_t.RealData.arrMatrix.data(), sizeof(matrix3x4_t) * nBoneCount);
+	std::memcpy(aInMatrix, LocalData_t.RealData.arrMatrix.data(), sizeof(matrix3x4a_t) * nBoneCount);
 	return true;
 }
 void C_LocalAnimations::CleanSnapshots()

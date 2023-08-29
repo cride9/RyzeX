@@ -1,6 +1,8 @@
 #pragma once
 // used: vector
 #include "vector.h"
+#include <xmmintrin.h>
+#include <intrin.h>
 
 using matrix3x3_t = float[3][3];
 struct matrix3x4_t
@@ -175,15 +177,66 @@ struct matrix3x4_t
 	float arrData[3][4] = { };
 };
 
-__declspec(align(16)) class matrix3x4a_t : public matrix3x4_t
+class alignas(16) matrix3x4a_t : public matrix3x4_t
 {
 public:
-	matrix3x4a_t& operator=(const matrix3x4_t& matSource)
+	matrix3x4a_t() = default;
+
+	constexpr matrix3x4a_t(
+		const float m00, const float m01, const float m02, const float m03,
+		const float m10, const float m11, const float m12, const float m13,
+		const float m20, const float m21, const float m22, const float m23)
 	{
-		std::copy_n(matSource.Base(), sizeof(float) * 3U * 4U, this->Base());
+		arrData[0][0] = m00; arrData[0][1] = m01; arrData[0][2] = m02; arrData[0][3] = m03;
+		arrData[1][0] = m10; arrData[1][1] = m11; arrData[1][2] = m12; arrData[1][3] = m13;
+		arrData[2][0] = m20; arrData[2][1] = m21; arrData[2][2] = m22; arrData[2][3] = m23;
+	}
+
+	constexpr matrix3x4a_t(const matrix3x4_t& matSource)
+	{
+		*this = matSource;
+	}
+
+	constexpr matrix3x4a_t& operator=(const matrix3x4_t& matSource)
+	{
+		arrData[0][0] = matSource.arrData[0][0]; arrData[0][1] = matSource.arrData[0][1]; arrData[0][2] = matSource.arrData[0][2]; arrData[0][3] = matSource.arrData[0][3];
+		arrData[1][0] = matSource.arrData[1][0]; arrData[1][1] = matSource.arrData[1][1]; arrData[1][2] = matSource.arrData[1][2]; arrData[1][3] = matSource.arrData[1][3];
+		arrData[2][0] = matSource.arrData[2][0]; arrData[2][1] = matSource.arrData[2][1]; arrData[2][2] = matSource.arrData[2][2]; arrData[2][3] = matSource.arrData[2][3];
 		return *this;
 	}
+
+	/// concatenate transformations of two aligned matrices into one
+	/// @returns: aligned matrix with concatenated transformations
+	[[nodiscard]] matrix3x4a_t ConcatTransforms(const matrix3x4a_t& matOther) const
+	{
+		matrix3x4a_t matOutput;
+		assert((reinterpret_cast<std::uintptr_t>(this) & 15U) == 0 && (reinterpret_cast<std::uintptr_t>(&matOther) & 15U) == 0 && (reinterpret_cast<std::uintptr_t>(&matOutput) & 15U) == 0); // matrices aren't aligned
+
+		__m128 thisRow0 = _mm_load_ps(this->arrData[0]);
+		__m128 thisRow1 = _mm_load_ps(this->arrData[1]);
+		__m128 thisRow2 = _mm_load_ps(this->arrData[2]);
+
+		__m128 otherRow0 = _mm_load_ps(matOther.arrData[0]);
+		__m128 otherRow1 = _mm_load_ps(matOther.arrData[1]);
+		__m128 otherRow2 = _mm_load_ps(matOther.arrData[2]);
+
+		__m128 outRow0 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
+		__m128 outRow1 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
+		__m128 outRow2 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
+
+		// add in translation vector
+		constexpr std::uint32_t arrComponentMask[4] = { 0x0, 0x0, 0x0, 0xFFFFFFFF };
+		outRow0 = _mm_add_ps(outRow0, _mm_and_ps(thisRow0, std::bit_cast<__m128>(arrComponentMask)));
+		outRow1 = _mm_add_ps(outRow1, _mm_and_ps(thisRow1, std::bit_cast<__m128>(arrComponentMask)));
+		outRow2 = _mm_add_ps(outRow2, _mm_and_ps(thisRow2, std::bit_cast<__m128>(arrComponentMask)));
+
+		_mm_store_ps(matOutput.arrData[0], outRow0);
+		_mm_store_ps(matOutput.arrData[1], outRow1);
+		_mm_store_ps(matOutput.arrData[2], outRow2);
+		return matOutput;
+	}
 };
+static_assert(alignof(matrix3x4a_t) == 16);
 
 struct ViewMatrix_t
 {

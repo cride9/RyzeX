@@ -141,14 +141,14 @@ namespace h {
 	void __cdecl		hkClMove(float, bool);
 	void __fastcall		hkOverrideView(void*, void*, CViewSetup*);
 	void __fastcall		hkLockCursor(ISurface*, int);
-	void __fastcall		hkDrawModel(IStudioRender*, int, DrawModelResults_t*, const DrawModelInfo_t&, matrix3x4_t*, float*, float*, const Vector&, int);
+	void __fastcall		hkDrawModel(IStudioRender*, int, DrawModelResults_t*, const DrawModelInfo_t&, matrix3x4a_t*, float*, float*, const Vector&, int);
 	int  __fastcall		hkListLeavesInBox(void*, int, const Vector&, const Vector&, unsigned short*, int);
 	void __fastcall		hkRunCommand(void*, void*, CBaseEntity*, CUserCmd*, IMoveHelper*);
 	float __fastcall	hkGetViewModelFov(void*, void*);
 	bool __fastcall		hkWriteUserCmdDeltaToBuffer(void*, void*, int, bf_write*, int, int, bool);
 	bool __fastcall		hkFireEvent( void*, void*, IGameEvent* );
 	int __fastcall		hkDoPostScreenEffect(void*, int, CViewSetup*);
-	void __fastcall		hkClampBonesInBBox(CBaseEntity*, void*, matrix3x4_t*, int);
+	void __fastcall		hkClampBonesInBBox(CBaseEntity*, void*, matrix3x4a_t*, int);
 	void __fastcall		hkGetColorModulation(void*, void*, float*, float*, float*);
 	float __fastcall	hkGetAlphaModulation(void*, void*);
 	void __fastcall		hkSetText(void* ecx, void* edx, const char* tokenName);
@@ -173,14 +173,14 @@ namespace h {
 	// animation hooks
 	bool __fastcall		hkShouldSkipAnimationFrame(void*, void*);
 	void __fastcall		hkDoProceduralFootPlant(void*, void*, void*, void*, void*, void*);
-	void __fastcall		hkBuildTransformation(void*, void*, CStudioHdr*, Vector*, Quaternion*, const matrix3x4_t&, int, uint8_t*);
+	void __fastcall		hkBuildTransformation(void*, void*, CStudioHdr*, Vector*, Quaternion*, const matrix3x4a_t&, int, uint8_t*);
 	void __fastcall		hkCheckForSequenceChange(void*, void*, void*, int, bool, bool);
 	bool __fastcall		hkIsHltv(void*, void*);
 	void __fastcall		hkStandardBlendingRules(void*, void*, void*, void*, void*, float, int);
 	void __fastcall		hkCalculateView(void*, void*, Vector&, Vector&, float&, float&, float&);
 	void __fastcall		hkModifyEyePosition(void*, void*, Vector&);
 	void __fastcall		hkUpdateClientSideAnimations(void*, void*);
-	bool __fastcall		hkSetupBones(IClientRenderable*, void*, matrix3x4_t*, int, int, float);
+	bool __fastcall		hkSetupBones(IClientRenderable*, void*, matrix3x4a_t*, int, int, float);
 	void __fastcall		hkPhysicsSimulate(CBaseEntity*, void*);
 	void __fastcall		hkInterpolateServerEntites(void*, void*);
 	bool __fastcall		hkIsFollowingEntity(void*, void*);

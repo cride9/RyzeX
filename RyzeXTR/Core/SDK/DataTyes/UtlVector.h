@@ -185,6 +185,8 @@ class CUtlVectorFixed : public CUtlVector< T, CUtlMemoryFixed<T, MAX_SIZE > >
 	typedef CUtlVector< T, CUtlMemoryFixed<T, MAX_SIZE > > BaseClass;
 public:
 
+	CUtlVectorFixed() = default;
+
 	// constructor, destructor
 	CUtlVectorFixed( int growSize, int initSize ) : BaseClass( growSize, initSize ) {}
 	CUtlVectorFixed( T* pMemory, int numElements ) : BaseClass( pMemory, numElements ) {}

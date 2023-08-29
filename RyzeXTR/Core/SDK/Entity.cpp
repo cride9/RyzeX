@@ -78,7 +78,7 @@ std::optional<Vector> CBaseEntity::GetBonePosition(int iBone)
 {
 	assert(iBone > BONE_INVALID && iBone < MAXSTUDIOBONES); // given invalid bone index for getboneposition
 
-	std::array<matrix3x4_t, MAXSTUDIOBONES> arrBonesToWorld = { };
+	std::array<matrix3x4a_t, MAXSTUDIOBONES> arrBonesToWorld = { };
 
 	if (this->SetupBones(arrBonesToWorld.data(), arrBonesToWorld.size(), BONE_USED_BY_ANYTHING, 0.f))
 		return arrBonesToWorld.at(iBone).at(3);
@@ -191,7 +191,7 @@ std::optional<Vector> CBaseEntity::GetHitboxPosition(const int iHitbox)
 {
 	assert(iHitbox > HITBOX_INVALID && iHitbox < HITBOX_MAX); // given invalid hitbox index for gethitboxposition
 
-	std::array<matrix3x4_t, MAXSTUDIOBONES> arrBonesToWorld = { };
+	std::array<matrix3x4a_t, MAXSTUDIOBONES> arrBonesToWorld = { };
 
 	if (const auto pModel = this->GetModel(); pModel != nullptr)
 	{
@@ -219,7 +219,7 @@ std::optional<Vector> CBaseEntity::GetHitboxPosition(const int iHitbox, Vector& 
 {
 	assert(iHitbox > HITBOX_INVALID && iHitbox < HITBOX_MAX); // given invalid hitbox index for gethitboxposition
 
-	std::array<matrix3x4_t, MAXSTUDIOBONES> arrBonesToWorld = { };
+	std::array<matrix3x4a_t, MAXSTUDIOBONES> arrBonesToWorld = { };
 
 	if (const auto pModel = this->GetModel(); pModel != nullptr)
 	{
@@ -248,7 +248,7 @@ std::optional<Vector> CBaseEntity::GetHitGroupPosition(const int iHitGroup)
 {
 	assert(iHitGroup >= HITGROUP_GENERIC && iHitGroup <= HITGROUP_GEAR); // given invalid hitbox index for gethitgroupposition
 
-	std::array<matrix3x4_t, MAXSTUDIOBONES> arrBonesToWorld = { };
+	std::array<matrix3x4a_t, MAXSTUDIOBONES> arrBonesToWorld = { };
 
 	if (const auto pModel = this->GetModel(); pModel != nullptr)
 	{
@@ -515,7 +515,7 @@ float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
 //	return vecReturn.Length( );
 //}
 
-bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4_t* pBoneToWorldOut)
+bool CBaseEntity::SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4a_t* pBoneToWorldOut)
 {
 	g::bSettingUpBones[target->EntIndex()] = true;
 	bool bReturnValue = target->SetupBones(pBoneToWorldOut, MAXSTUDIOBONES, boneMask, 0.f);

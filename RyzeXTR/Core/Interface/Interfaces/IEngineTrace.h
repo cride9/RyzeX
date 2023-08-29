@@ -276,7 +276,7 @@ struct Ray_t
 	VectorAligned		vecDelta;
 	VectorAligned		vecStartOffset;
 	VectorAligned		vecExtents;
-	const matrix3x4_t* matWorldAxisTransform;
+	const matrix3x4a_t* matWorldAxisTransform;
 	bool				bIsRay;
 	bool				bIsSwept;
 };
