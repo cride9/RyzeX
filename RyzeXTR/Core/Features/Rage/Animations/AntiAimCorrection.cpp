@@ -50,8 +50,8 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	else if (pRecord->bDidShot) flFakePitch[iEntityID] = NULL;
 
 	if (fabsf(flFakePitch[iEntityID]) == 180.f)
-		pEntity->GetEyePosition() = Vector(89.f, pEntity->AnimState()->flEyeYaw, 0.f);
-
+		pEntity->GetEyePosition(false) = Vector(89.f, pEntity->AnimState()->flEyeYaw, 0.f);
+		
 	float flHitPercentage = static_cast<float>(pLog->iHitAmount) / static_cast<float>(pLog->iShotAmount);
 	if (arrMissedShots[iEntityID] == 0 && flHitPercentage < 0.2f)
 		arrMissedShots[iEntityID] = 1;

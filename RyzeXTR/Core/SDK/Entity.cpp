@@ -302,9 +302,17 @@ void CBaseEntity::ModifyEyePosition(const CAnimState* pAnimState, Vector* vecPos
 	if (!pAnimState->bHitGroundAnimation && pAnimState->flDuckAmount == 0.f && pGroundEntity != nullptr)
 		return;
 
-	if (const auto headPosition = pBaseEntity->GetBonePosition(pBaseEntity->GetBoneByHash(fnv::HashConst("head_0"))); headPosition.has_value())
+	matrix3x4_t* pMatrix = pBaseEntity->GetCachedBoneData().Base();
+	Vector vecHeadPos = Vector
+	(
+		pMatrix[8][0][3],
+		pMatrix[8][1][3],
+		pMatrix[8][2][3] + 1.7f
+	);
+
+	if (const auto headPosition = vecHeadPos; headPosition != Vector(0, 0, 0))
 	{
-		Vector vecHead = headPosition.value();
+		Vector vecHead = headPosition;
 		vecHead.z += 1.7f;
 
 		if (vecHead.z < vecPosition->z)
