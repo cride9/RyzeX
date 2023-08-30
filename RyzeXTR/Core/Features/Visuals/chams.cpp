@@ -217,12 +217,12 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			if (cfg::misc::iThirdPersonDistance == 0) {
 
 				i::StudioRender->SetAlphaModulation(0.f);
-				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				//original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				return true;
 			}
 
-			matrix3x4a_t* desyncMatrix = g_LocalAnimations->GetDesyncMatrix().data();
+			matrix3x4a_t* desyncMatrix = localAnim->GetDesyncMatrix().data();
 
 			if (bDesyncChams) {
 
@@ -230,12 +230,12 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					EndChams();
 					if (cfg::model::bBlend && pEnt->IsScoped())
 						i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f); 
-					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 
 				if (desyncMatrix && !desyncMatrix->GetOrigin().IsZero()) {
 					BeginChams(materials[bDesyncType], flDesyncChamsCol, false, bDesyncChamsXhair);
-					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, localAnim->GetDesyncMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 			}
 			if (bChams[2]) {
@@ -244,46 +244,46 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 					BeginChams(materials[iType[2]], ChamsColorXQZ[2], true, bXhairXQZ[2]);
 					if (cfg::model::bBlend && pEnt->IsScoped())
 						i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
-					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[iType[2]], ChamsColor[2], false, bXhair[2]);
 				if (cfg::model::bBlend && pEnt->IsScoped())
 					i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
-				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			else {
 
 				EndChams();
 				if (cfg::model::bBlend && pEnt->IsScoped())
 					i::StudioRender->SetAlphaModulation(cfg::model::flBlend * 0.01f);
-				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (bOverlay[2]) {
 
 				if (bOverlayXQZ[2]) {
 					BeginChams(materials[GLOW], OverlayColor[2], true, bOverlayXhairXQZ[2]);
-					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[GLOW], OverlayColor[2], false, bOverlayXhairXQZ[2]);
-				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (bThinOverlay[2]) {
 
 				if (bThinOverlayXQZ[2]) {
 					BeginChams(materials[THINGLOW], ThinOverlayColor[2], true, bThinOverlayXhairXQZ[2]);
-					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[THINGLOW], ThinOverlayColor[2], false, bThinOverlayXhairXQZ[2]);
-				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			if (bAnimOverlay[2]) {
 
 				if (bAnimOverlayXQZ[2]) {
 					BeginChams(materials[ANIMATED], AnimOverlayColor[2], true, bAnimOverlayXhairXQZ[2]);
-					original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 				}
 				BeginChams(materials[ANIMATED], AnimOverlayColor[2], false, bAnimOverlayXhairXQZ[2]);
-				original(i::StudioRender, 0, pResults, info, g_LocalAnimations->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				original(i::StudioRender, 0, pResults, info, localAnim->GetRealMatrix().data(), flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 			}
 			return true;
 		}

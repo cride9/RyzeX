@@ -40,7 +40,7 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		return ResetAimbotData();
 
 	/* Get our extrapolated shooting position */
-	vecEyePosition = g_LocalAnimations->GetShootPosition();
+	vecEyePosition = localAnim->GetShootPosition();
 
 	/* Scan stored entities & safepoint */
 	Vector vecShootPosition = ScanHitboxes(vecTargets, pLocal);

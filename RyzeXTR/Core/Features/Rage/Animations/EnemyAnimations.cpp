@@ -163,7 +163,7 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4a_t* pMatrix, int 
 void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
 
 	if (!exploits::bIsShiftingTicks)
-		g_LocalAnimations->InterpolateMatricies();
+		localAnim->InterpolateMatricies();
 	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++)
 	{
 		CBaseEntity* pPlayer = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));

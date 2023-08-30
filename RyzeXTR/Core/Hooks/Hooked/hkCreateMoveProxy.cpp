@@ -61,8 +61,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	{
 		misc::BoostMovement(pCmd);
 		g::vecEyePosition = pLocal->GetEyePosition(false);
-		g_LocalAnimations->CopyPlayerAnimationData(false, pLocal);
-		g_LocalAnimations->SetupShootPosition(pLocal );
+		localAnim->CopyPlayerAnimationData(false, pLocal);
+		localAnim->SetupShootPosition(pLocal );
 
 		antiaim::AntiAim(pCmd, bSendPacket);
 
@@ -115,9 +115,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	pVerifiedCmd->uHashCRC = pCmd->GetChecksum();
 
 	if (bSendPacket && !antiaim::bHideFlick)
-		g_LocalAnimations->vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
+		localAnim->vecViewAngle = pVerifiedCmd->userCmd.angViewPoint;
 
-	g_LocalAnimations->OnCreateMove(bSendPacket, pLocal);
+	localAnim->OnCreateMove(bSendPacket, pLocal);
 	lagcomp.FinishLagcompensation(pLocal);
 	anims.ResolverLogic();
 }

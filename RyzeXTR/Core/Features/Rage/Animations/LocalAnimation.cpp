@@ -57,7 +57,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 	if (!pLocal->IsAlive())
 		return;
 
-	g_LocalAnimations->StoreAnimationRecord(pLocal);
+	localAnim->StoreAnimationRecord(pLocal);
 
 	if (!bSendPacket)
 		return;
@@ -102,7 +102,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 	std::tuple < Vector, bool > m_ShotData = std::make_tuple < Vector, bool >(Vector(0, 0, 0), false);
 
 	/* copy data */
-	g_LocalAnimations->CopyPlayerAnimationData(false, pLocal);
+	localAnim->CopyPlayerAnimationData(false, pLocal);
 
 	/* UpdatePlayerAnimations */
 	for (int nSimulationTick = 1; nSimulationTick <= LocalData_t.iSimulationTick; nSimulationTick++)
@@ -131,8 +131,8 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 			pLocal->GetMoveType() = m_Record->iMoveType;
 
 			/* fix localplayer strafe and sequences */
-			g_LocalAnimations->SimulateStrafe(m_Record->m_nButtons, pLocal);
-			g_LocalAnimations->DoAnimationEvent(m_Record->m_nButtons, pLocal);
+			localAnim->SimulateStrafe(m_Record->m_nButtons, pLocal);
+			localAnim->DoAnimationEvent(m_Record->m_nButtons, pLocal);
 
 			/* set shot angle */
 			if (nSimulationTick == LocalData_t.iSimulationTick)
@@ -183,8 +183,8 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 
 	AnimationBreaker(pLocal);
 
-	g_LocalAnimations->SetupPlayerBones(LocalData_t.RealData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);
-	g_LocalAnimations->UpdateDesyncAnimations(pLocal);
+	localAnim->SetupPlayerBones(LocalData_t.RealData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);
+	localAnim->UpdateDesyncAnimations(pLocal);
 
 	/* restore globals */
 	i::GlobalVars->flCurrentTime = std::get < 0 >(m_Globals);
@@ -290,8 +290,8 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 			pLocal->GetMoveType() = m_Record->iMoveType;
 
 			/* fix localplayer strafe and sequences */
-			g_LocalAnimations->SimulateStrafe(m_Record->m_nButtons, pLocal);
-			g_LocalAnimations->DoAnimationEvent(m_Record->m_nButtons, pLocal, true);
+			localAnim->SimulateStrafe(m_Record->m_nButtons, pLocal);
+			localAnim->DoAnimationEvent(m_Record->m_nButtons, pLocal, true);
 
 			/* set shot angle */
 			if (nSimulationTick == LocalData_t.iSimulationTick)
@@ -358,7 +358,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 	LocalData_t.flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(pAnimationState.flGoalFeetYaw)));
 
 	AnimationBreaker(pLocal);
-	g_LocalAnimations->SetupPlayerBones(LocalData_t.FakeData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);
+	localAnim->SetupPlayerBones(LocalData_t.FakeData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);
 
 	std::memcpy(pLocal->AnimState(), &pAnimationState, sizeof(CAnimState));
 	std::memcpy(pLocal->GetAnimationOverlays(), LocalData_t.FakeData.arrLayers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);
@@ -560,13 +560,13 @@ void C_LocalAnimations::SetupShootPosition(CBaseEntity* pLocal)
 			pLocal->GetPoseParameter()[12] = std::clamp(M::AngleDiff(M::NormalizeAngle(m_flThirdpersonRecoil), 0.0f), 0.0f, 1.0f);
 
 			/* build matrix */
-			g_LocalAnimations->SetupPlayerBones(LocalData_t.ShootData_t.arrMatrix.data(), BONE_USED_BY_HITBOX, pLocal);
+			localAnim->SetupPlayerBones(LocalData_t.ShootData_t.arrMatrix.data(), BONE_USED_BY_HITBOX, pLocal);
 
 			/* reset body pitch */
 			pLocal->GetPoseParameter()[12] = m_flOldBodyPitch;
 
 			/* CAnimState::ModifyEyePosition rebuild */
-			g_LocalAnimations->ModifyEyePosition(LocalData_t.vecShootPosition, LocalData_t.ShootData_t.arrMatrix.data());
+			localAnim->ModifyEyePosition(LocalData_t.vecShootPosition, LocalData_t.ShootData_t.arrMatrix.data());
 		}
 	}
 
@@ -706,7 +706,7 @@ void C_LocalAnimations::InterpolateMatricies()
 			continue;
 
 	// correct matrix
-	g_LocalAnimations->TransformateMatricies();
+	localAnim->TransformateMatricies();
 
 	// copy bones
 	std::memcpy(pLocal->GetCachedBoneData().Base(), LocalData_t.RealData.arrMatrix.data(), sizeof(matrix3x4a_t) * pLocal->GetCachedBoneData().Count());

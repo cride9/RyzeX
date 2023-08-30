@@ -351,7 +351,7 @@ void CConfig::Setup() {
 		SetupColor(flPropColor, Color(255, 255, 255, 255), XorStr("flPropColor"));
 
 		SetupInt(iSkybox, 0, XorStr("iSkybox"));
-		SetupColor(flSkyboxColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flSkyboxColor"));
+		SetupColor(flSkyboxColor, Color(255, 255, 255, 255), XorStr("flSkyboxColor"));
 
 		SetupBool(bOverrideLampColors, false, XorStr("bOverrideLampColors"));
 		SetupColor(flLampColors, Color(1.f, 1.f, 1.f, 1.f), XorStr("flLampColors"));

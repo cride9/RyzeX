@@ -127,7 +127,7 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	p::Destroy();
 
 	delete Config2;
-	delete g_LocalAnimations;
+	delete localAnim;
 
 #if NDEBUG || ALPHA
 

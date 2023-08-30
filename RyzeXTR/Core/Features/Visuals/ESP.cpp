@@ -622,7 +622,7 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 	};
 	auto skeleton_position_desync = [=](const size_t idx)
 	{
-		auto child = g_LocalAnimations->GetDesyncMatrix()[idx].GetOrigin();
+		auto child = localAnim->GetDesyncMatrix()[idx].GetOrigin();
 		return child;
 	};
 
@@ -1612,7 +1612,7 @@ void visual::Hat() {
 
 	if (g::pLocal && i::Input->bCameraInThirdPerson) {
 
-		Vector vecHeadPosition = g_LocalAnimations->GetRealMatrix().at(BONE_HEAD).at(3);
+		Vector vecHeadPosition = localAnim->GetRealMatrix().at(BONE_HEAD).at(3);
 
 		float flStep = (2 * M_PI) / 18.f;
 		float flRadius = 9;

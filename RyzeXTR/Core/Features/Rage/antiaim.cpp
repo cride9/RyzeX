@@ -270,7 +270,7 @@ bool antiaim::FreeStandingDistance(CUserCmd* pCmd, Vector& vecCMDViewAngle) {
 	static float flBestThreat = 0.f;
 
 	Vector vecEyePosition = g::pLocal->GetVecOrigin() + g::pLocal->GetViewOffset();
-	Vector vecHeadPosition = g::pLocal->GetHitboxPosition(HITBOX_HEAD, g_LocalAnimations->GetDesyncMatrix().data());
+	Vector vecHeadPosition = g::pLocal->GetHitboxPosition(HITBOX_HEAD, localAnim->GetDesyncMatrix().data());
 
 	auto& vecOrigin = g::pLocal->GetAbsOrigin();
 

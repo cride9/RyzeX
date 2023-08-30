@@ -155,11 +155,12 @@ XorStr("cs_baggage_skybox_"),
 	}
 
 	static CConVar* sv_skyname = i::ConVar->FindVar(XorStr("sv_skyname"));
-	if (szSkyboxes[0] == "")
-		szSkyboxes[0] = sv_skyname->GetString();
-
 	static std::string szBackup;
-	if (szBackup.c_str() != szSkyboxes[cfg::misc::iSkybox] || bRefreshNewGame) {
+	if (cfg::misc::iSkybox == 0) {
+
+		util::SetSkybox(sv_skyname->GetString());
+	}
+	else if (szBackup.c_str() != szSkyboxes[cfg::misc::iSkybox] || bRefreshNewGame) {
 
 		util::SetSkybox(szSkyboxes[cfg::misc::iSkybox].c_str());
 		szBackup = szSkyboxes[cfg::misc::iSkybox];
@@ -616,7 +617,7 @@ void misc::PreserveKillfeed(IGameEvent* pEvent) { // need menu element
 	}
 	else if (szEventName.find(roundStart) != std::string_view::npos) {
 
-		g_LocalAnimations->ResetData();
+		localAnim->ResetData();
 		for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
 			visual::vecDormatPosition[i] = Vector(0, 0, 0);
 		}

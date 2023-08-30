@@ -114,7 +114,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 		if (exploits::bIsShiftingTicks)
-			g_LocalAnimations->SetupInterpolation(pLocal, false);
+			localAnim->SetupInterpolation(pLocal, false);
 
 #ifdef _DEBUG
 		//misc::ServerHitboxes();
@@ -165,7 +165,7 @@ void hkPostFrameStageNotify(EStage curStage) {
 
 	case FRAME_RENDER_START:
 		if (exploits::bIsShiftingTicks)
-			g_LocalAnimations->SetupInterpolation(pLocal, true);
+			localAnim->SetupInterpolation(pLocal, true);
 		break;
 
 	default:

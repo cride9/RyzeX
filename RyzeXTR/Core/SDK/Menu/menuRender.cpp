@@ -872,7 +872,7 @@ void menu::Misc(ImVec2 savedCursorPosition) {
             ImGui::PopItemWidth();
         }
 
-		ImGui::SliderFloat("Divider", &cfg::vizualizer::flDivider, 0.1, 10.f, "%.3f");
+		//ImGui::SliderFloat("Divider", &cfg::vizualizer::flDivider, 0.1, 10.f, "%.3f");
     }
     ImGui::EndChild();
 }

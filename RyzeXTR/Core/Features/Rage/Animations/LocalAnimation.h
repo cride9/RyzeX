@@ -102,4 +102,4 @@ private:
 
 	} LocalData_t;
 };
-inline C_LocalAnimations* g_LocalAnimations = new C_LocalAnimations();
+inline C_LocalAnimations* localAnim = new C_LocalAnimations();

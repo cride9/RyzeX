@@ -50,7 +50,7 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	if (!pLocal->IsAlive() || i::MoveHelper == nullptr)
 		return;
 
-	g_LocalAnimations->BeforePrediction(pLocal);
+	localAnim->BeforePrediction(pLocal);
 	if (CBaseCombatWeapon* pWeapon = pLocal->GetWeapon(); pWeapon) {
 
 		pWeapon->UpdateAccuracyPenalty();
