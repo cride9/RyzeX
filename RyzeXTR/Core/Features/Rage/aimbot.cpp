@@ -66,7 +66,7 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	AutoStop(pLocal, pCmd);
 
 	/* Wait til we can shoot */
-	if (!aimData.bCanShoot || !pLocal->CanShoot(pWeapon, pLocal->GetTickBase() - exploits::iShiftAmount)) 
+	if (!aimData.bCanShoot || !pLocal->CanShoot(pWeapon))
 		return ResetAimbotData();
 	
 	/* Shoot entity when we can & have enough hitchance */

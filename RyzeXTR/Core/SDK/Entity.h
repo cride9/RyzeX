@@ -650,6 +650,21 @@ public:
 		fnCopyTo( this, pOther, arrRemapping );
 	}
 
+	void ClearTargets()
+	{
+		auto v56 = 0;
+		if (*(int*)((DWORD)this + 4080) > 0)
+		{
+			auto v57 = (int*)((DWORD)this + 208);
+			do
+			{
+				*v57 = -9999;
+				v57 += 85;
+				++v56;
+			} while (v56 < *(int*)((DWORD)this + 4080));
+		}
+	}
+
 private:
 	CUtlVectorFixed<CIKTarget, 12> arrTargets; // 0x0000
 	const CStudioHdr* pStudioHdr; // 0x0FF8
@@ -1180,15 +1195,15 @@ public:
 		arrPose.at(2U) = (flYaw + 180.f) / 360.f;
 	}
 	
-	void BuildTransformations( CStudioHdr* hdr, Vector* pos, Quaternion* q, const matrix3x4a_t& transform, int mask, uint8_t* computed ) {
+	void BuildTransformations( CStudioHdr* hdr, Vector* pos, BoneQuaternion* q, const matrix3x4a_t& transform, int mask, CBoneBitList& computed ) {
 
-		using BuildTransformations_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, Quaternion*, matrix3x4a_t const&, int, uint8_t* );
+		using BuildTransformations_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, BoneQuaternion*, matrix3x4a_t const&, int, CBoneBitList& );
 		return util::GetVFunc< BuildTransformations_t >( this, 190 )( this, hdr, pos, q, transform, mask, computed );
 	}
 
-	void StandardBlendingRules( CStudioHdr* hdr, Vector* pos, Quaternion* q, float time, int mask ) {
+	void StandardBlendingRules( CStudioHdr* hdr, Vector* pos, BoneQuaternion* q, float time, int mask ) {
 
-		using StandardBlendingRules_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, Quaternion*, float, int );
+		using StandardBlendingRules_t = void( __thiscall* )( decltype( this ), CStudioHdr*, Vector*, BoneQuaternion*, float, int );
 		return util::GetVFunc< StandardBlendingRules_t >( this, 206 )( this, hdr, pos, q, time, mask );
 	}
 
@@ -1339,7 +1354,7 @@ public:
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecEnd, bool bSmokeCheck = false);
 	bool					IsBreakable();
 	mstudiobbox_t*			StudioHitbox(int iHitbox);
-	bool					SetupBonesFix( CBaseEntity* target, int boneMask, float currentTime, matrix3x4a_t* pBoneToWorldOut );
+	bool					SetupBonesFix( int boneMask, float currentTime, matrix3x4a_t* pBoneToWorldOut );
 	void					InvalidateBoneCache();
 	float					GetSequenceCycleRate(CStudioHdr*, int);
 	float					GetSequenceMoveDist(CStudioHdr*, int);

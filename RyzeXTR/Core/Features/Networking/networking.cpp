@@ -150,7 +150,7 @@ int CNetworking::GetCorrectedTickbase() {
 	if (!g::pLocal)
 		return 0; 
 
-	return g::pLocal->GetTickBase() - exploits::iTicksToStore;
+	return g::pLocal->GetTickBase();
 	//return pCompressData[iLastCommandNumber % 150].nTickbase - exploits::iShiftAmount;
 }
 
