@@ -207,34 +207,34 @@ public:
 
 	/// concatenate transformations of two aligned matrices into one
 	/// @returns: aligned matrix with concatenated transformations
-	[[nodiscard]] matrix3x4a_t ConcatTransforms(const matrix3x4a_t& matOther) const
-	{
-		matrix3x4a_t matOutput;
-		assert((reinterpret_cast<std::uintptr_t>(this) & 15U) == 0 && (reinterpret_cast<std::uintptr_t>(&matOther) & 15U) == 0 && (reinterpret_cast<std::uintptr_t>(&matOutput) & 15U) == 0); // matrices aren't aligned
+	//[[nodiscard]] matrix3x4a_t ConcatTransforms(const matrix3x4a_t& matOther) const
+	//{
+	//	matrix3x4a_t matOutput;
+	//	assert((reinterpret_cast<std::uintptr_t>(this) & 15U) == 0 && (reinterpret_cast<std::uintptr_t>(&matOther) & 15U) == 0 && (reinterpret_cast<std::uintptr_t>(&matOutput) & 15U) == 0); // matrices aren't aligned
 
-		__m128 thisRow0 = _mm_load_ps(this->arrData[0]);
-		__m128 thisRow1 = _mm_load_ps(this->arrData[1]);
-		__m128 thisRow2 = _mm_load_ps(this->arrData[2]);
+	//	__m128 thisRow0 = _mm_load_ps(this->arrData[0]);
+	//	__m128 thisRow1 = _mm_load_ps(this->arrData[1]);
+	//	__m128 thisRow2 = _mm_load_ps(this->arrData[2]);
 
-		__m128 otherRow0 = _mm_load_ps(matOther.arrData[0]);
-		__m128 otherRow1 = _mm_load_ps(matOther.arrData[1]);
-		__m128 otherRow2 = _mm_load_ps(matOther.arrData[2]);
+	//	__m128 otherRow0 = _mm_load_ps(matOther.arrData[0]);
+	//	__m128 otherRow1 = _mm_load_ps(matOther.arrData[1]);
+	//	__m128 otherRow2 = _mm_load_ps(matOther.arrData[2]);
 
-		__m128 outRow0 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
-		__m128 outRow1 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
-		__m128 outRow2 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
+	//	__m128 outRow0 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow0, thisRow0, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
+	//	__m128 outRow1 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow1, thisRow1, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
+	//	__m128 outRow2 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(0, 0, 0, 0)), otherRow0), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(1, 1, 1, 1)), otherRow1), _mm_mul_ps(_mm_shuffle_ps(thisRow2, thisRow2, _MM_SHUFFLE(2, 2, 2, 2)), otherRow2)));
 
-		// add in translation vector
-		constexpr std::uint32_t arrComponentMask[4] = { 0x0, 0x0, 0x0, 0xFFFFFFFF };
-		outRow0 = _mm_add_ps(outRow0, _mm_and_ps(thisRow0, std::bit_cast<__m128>(arrComponentMask)));
-		outRow1 = _mm_add_ps(outRow1, _mm_and_ps(thisRow1, std::bit_cast<__m128>(arrComponentMask)));
-		outRow2 = _mm_add_ps(outRow2, _mm_and_ps(thisRow2, std::bit_cast<__m128>(arrComponentMask)));
+	//	// add in translation vector
+	//	constexpr std::uint32_t arrComponentMask[4] = { 0x0, 0x0, 0x0, 0xFFFFFFFF };
+	//	outRow0 = _mm_add_ps(outRow0, _mm_and_ps(thisRow0, std::bit_cast<__m128>(arrComponentMask)));
+	//	outRow1 = _mm_add_ps(outRow1, _mm_and_ps(thisRow1, std::bit_cast<__m128>(arrComponentMask)));
+	//	outRow2 = _mm_add_ps(outRow2, _mm_and_ps(thisRow2, std::bit_cast<__m128>(arrComponentMask)));
 
-		_mm_store_ps(matOutput.arrData[0], outRow0);
-		_mm_store_ps(matOutput.arrData[1], outRow1);
-		_mm_store_ps(matOutput.arrData[2], outRow2);
-		return matOutput;
-	}
+	//	_mm_store_ps(matOutput.arrData[0], outRow0);
+	//	_mm_store_ps(matOutput.arrData[1], outRow1);
+	//	_mm_store_ps(matOutput.arrData[2], outRow2);
+	//	return matOutput;
+	//}
 };
 static_assert(alignof(matrix3x4a_t) == 16);
 

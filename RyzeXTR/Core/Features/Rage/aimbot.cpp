@@ -66,7 +66,7 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	AutoStop(pLocal, pCmd);
 
 	/* Wait til we can shoot */
-	if (!aimData.bCanShoot || !pLocal->CanShoot(pWeapon)) 
+	if (!aimData.bCanShoot || !pLocal->CanShoot(pWeapon, pLocal->GetTickBase() - exploits::iShiftAmount)) 
 		return ResetAimbotData();
 	
 	/* Shoot entity when we can & have enough hitchance */
@@ -90,7 +90,7 @@ void CAimBot::ResetAimbotData() {
 }
 
 void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
-	
+
 	if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey))
 		bShouldSendPacket = false;
 		
@@ -100,7 +100,11 @@ void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::bIsShiftingTicks)
 		bSendPacket = false;
 
+	if (exploits::bForcePacket)
+		bSendPacket = true;
+
 	bShouldSendPacket = false;
+	exploits::bForcePacket = false;
 }
 
 Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal) {
@@ -114,9 +118,6 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		/* Invalid data check */
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
-
-		//if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) || !ax->GetInt())
-		//	it->iLastValid = 0;
 
 		float flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)

@@ -59,6 +59,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	bool bShooting = false;
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
+		misc::BoostMovement(pCmd);
 		g::vecEyePosition = pLocal->GetEyePosition(false);
 		g_LocalAnimations->CopyPlayerAnimationData(false, pLocal);
 		g_LocalAnimations->SetupShootPosition(pLocal );

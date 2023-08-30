@@ -194,19 +194,6 @@ void Lagcompensation::FrameStageNotify() noexcept {
 		anims.RebuildEnemyAnimations(pEntity, &pLog->pRecord.front(), pLog);
 
 		pLog->bLeftDormancy = false;
-
-		//for (auto j = 0u; j < pPlayerLogs[i].pRecord.size(); j++) {
-
-		//	Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);
-		//	if (!pCurrentRecord->bValid || pCurrentRecord->bBreakingLagcompensation || pRecord.flSimulationTime <= pLog->flExploitTime)
-		//		continue;
-
-		//	if (pCurrentRecord->bValid = lagcomp.IsValidRecord(pCurrentRecord->flSimulationTime))
-		//		pPlayerLogs[i].iLastValid = j;
-
-		//	if (pRecord.bBreakingLagcompensation)
-		//		pCurrentRecord->bBreakingLagcompensation = true;
-		//}
 	}
 }
 
@@ -533,9 +520,6 @@ bool Lagcompensation::IsValidRecord(float mflSimulationTime, float flRange)
 	const float flLerpTime = GetClientInterpAmount();
 	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
-	//if ((cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) || (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey))) && exploits::iTicksToStore > 0)
-	//	iTickBase -= 14;
-
 	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (i::GlobalVars->flCurrentTime - mflSimulationTime);
 	if (fabsf(flDeltaTime) >= flRange)
 		return false;
@@ -621,7 +605,7 @@ void Lagcompensation::LagRecord_t::ApplyMatrix(CBaseEntity* pEntity, matrix3x4a_
 
 bool Lagcompensation::LagRecord_t::IsValid() {
 
-	if (!this->bValid || this->bBreakingLagcompensation || !i::EngineClient->GetNetChannelInfo())
+	if (/*!this->bValid ||*/ this->bBreakingLagcompensation || !i::EngineClient->GetNetChannelInfo())
 		return false;
 
 	if (this->flSimulationTime < this->flOldSimulationTime)
@@ -635,14 +619,11 @@ bool Lagcompensation::LagRecord_t::IsValid() {
 	const float flLerpTime = GetClientInterpAmount();
 	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
-	if (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey) && exploits::iTicksToStore > 0)
-		iTickBase -= exploits::iTicksToStore;
-
-	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (i::GlobalVars->flCurrentTime - this->flSimulationTime);
+	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (TICKS_TO_TIME(networking.GetServerTick()) - this->flSimulationTime);
 	if (fabsf(flDeltaTime) >= 0.2f)
 		return false;
 
-	int nDeadTime = static_cast<int>(static_cast<float>(TICKS_TO_TIME(i::GlobalVars->iTickCount + TIME_TO_TICKS(flLatency))) - 0.2f);
+	int nDeadTime = static_cast<int>(static_cast<float>(TICKS_TO_TIME(networking.GetServerTick())) - 0.2f);
 	if (TIME_TO_TICKS(this->flSimulationTime + flLerpTime) < nDeadTime)
 		return false;
 

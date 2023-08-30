@@ -117,7 +117,7 @@ void hkPreFrameStageNotify(EStage curStage) {
 			g_LocalAnimations->SetupInterpolation(pLocal, false);
 
 #ifdef _DEBUG
-		misc::ServerHitboxes();
+		//misc::ServerHitboxes();
 #endif
 		misc::BulletImpactFrameStage(pLocal);
 		break;

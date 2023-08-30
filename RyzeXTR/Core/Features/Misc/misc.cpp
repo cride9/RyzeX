@@ -108,6 +108,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 	LeftHandKnife();
 	FogOptions();
 	PreserveKillfeed(nullptr);
+
 	g::pLocal->GetModelScale() = cfg::misc::bSkinnyBoy ? cfg::misc::iSkinnyBoy * 0.01f : 1.f;
 	if (cfg::misc::bInfiniteDuck)
 		pCmd->iButtons |= IN_BULLRUSH;
@@ -2082,4 +2083,44 @@ void misc::RemoveShadows() {
 	static CConVar* r_shadows = i::ConVar->FindVar("r_shadows");
 	if (r_shadows)
 		r_shadows->SetValue(cfg::misc::bRemovals[6] ? 0 : 1);
+}
+
+void misc::BoostMovement(CUserCmd* pCmd) {
+
+	if (!exploits::bIsShiftingTicks)
+		return;
+
+	float& flForwardMove = pCmd->flForwardMove;
+	float& flSideMove = pCmd->flSideMove;
+	int& nButtons = pCmd->iButtons;
+
+	if (flForwardMove > 5.0f) {
+		nButtons |= IN_FORWARD;
+		nButtons &= ~IN_BACK;
+
+		flForwardMove = 450.0f;
+	}
+	else if (flForwardMove < -5.0f) {
+		nButtons |= IN_BACK;
+		nButtons &= ~IN_FORWARD;
+
+		flForwardMove = -450.0f;
+	}
+
+	if (flSideMove > 5.0f) {
+
+		nButtons |= IN_MOVERIGHT;
+		nButtons &= ~IN_MOVELEFT;
+
+		flSideMove = 450.0f;
+	}
+	else if (flSideMove < -5.0f) {
+
+		nButtons |= IN_MOVELEFT;
+		nButtons &= ~IN_MOVERIGHT;
+
+		flSideMove = -450.0f;
+	}
+
+	nButtons &= ~IN_SPEED;
 }

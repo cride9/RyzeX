@@ -78,6 +78,7 @@ namespace misc {
 	void BuyBot(IGameEvent*);
 	void BulletTracer(IGameEvent*);
 	void BlockBot(CUserCmd*);
+	void BoostMovement(CUserCmd*);
 
 	void CustomBombText(const char*);
 	std::string GetHitgroupName(int iHitgroup);

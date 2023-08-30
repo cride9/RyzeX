@@ -201,7 +201,7 @@ void visual::VisualRender() {
 			if (!bEnable[ENEMY])
 				continue;
 
-			if (bSkeleton[ENEMY]) SkeletonEsp(pEnt, flSkeletonColor[ENEMY]);
+			//if (bSkeleton[ENEMY]) SkeletonEsp(pEnt, flSkeletonColor[ENEMY]);
 			if (bName[ENEMY]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, pEnt->IsDormant() ? vecDormantColor : Color(flNameColor[ENEMY]));
 			if (bBox[ENEMY]) BoxEsp(left, top.y, right, bot.y, pEnt->IsDormant() ? vecDormantColor : Color(flBoxColor[ENEMY]));
 			if (bHealth[ENEMY]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), pEnt->IsDormant() ? vecDormantColor : Color(flHealthColorStart[ENEMY]), pEnt->IsDormant() ? vecDormantColor : Color(flHealthColorEnd[ENEMY]), i);
@@ -217,7 +217,7 @@ void visual::VisualRender() {
 				if (!bEnable[LOCAL])
 					continue;
 
-				if (bSkeleton[LOCAL]) SkeletonEsp(pEnt, flSkeletonColor[LOCAL]);
+				//if (bSkeleton[LOCAL]) SkeletonEsp(pEnt, flSkeletonColor[LOCAL]);
 				if (bName[LOCAL]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[LOCAL]));
 				if (bBox[LOCAL]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[LOCAL]));
 				if (bHealth[LOCAL]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[LOCAL]), Color(flHealthColorEnd[LOCAL]), i);
@@ -232,7 +232,7 @@ void visual::VisualRender() {
 				continue;
 
 			// Teammate
-			if (bSkeleton[TEAM]) SkeletonEsp(pEnt, flSkeletonColor[TEAM]);
+			//if (bSkeleton[TEAM]) SkeletonEsp(pEnt, flSkeletonColor[TEAM]);
 			if (bName[TEAM]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[TEAM]));
 			if (bBox[TEAM]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[TEAM]));
 			if (bHealth[TEAM]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[TEAM]), Color(flHealthColorEnd[TEAM]), i);
@@ -617,9 +617,6 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 
 	auto skeleton_position = [=](const size_t idx)
 	{
-		if (idx > MAXSTUDIOBONES)
-			return Vector(0, 0, 0);
-
 		auto child = (pEntity == g::pLocal) ? pEntity->GetCachedBoneData().Base()[idx].GetOrigin() : pLog->pCachedMatrix[idx].GetOrigin();
 		return child;
 	};
