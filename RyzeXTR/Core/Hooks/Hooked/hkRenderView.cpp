@@ -5,6 +5,9 @@ void __fastcall h::hkRenderView(void* ecx, void* edx, CViewSetup& view, CViewSet
 
 	static auto original = detour::renderView.GetOriginal<decltype(&h::hkRenderView)>();
 
+	if (!g::pLocal || !g::pLocal->IsAlive())
+		return original(ecx, edx, view, hudViewSetup, nClearFlags, whatToDraw);
+
 	if (cfg::misc::bOnScopeViewmodel)
 		whatToDraw |= 1 << 0/*RENDERVIEW_DRAWVIEWMODEL*/;
 

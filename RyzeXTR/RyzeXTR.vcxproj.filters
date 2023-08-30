@@ -98,6 +98,7 @@
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetUpMovement.cpp" />
     <ClCompile Include="Core\Features\Misc\Vizualizer.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Setupbones.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />

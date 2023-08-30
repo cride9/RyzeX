@@ -35,7 +35,7 @@ void h::SetupHooks() {
 	HookTable(detour::writeUserCmd, i::ClientDll, table::writeUserCmd, &hkWriteUserCmdDeltaToBuffer);
 	HookTable(detour::doPostScreenEffects, i::ClientMode, table::doPostScreenEffects, &hkDoPostScreenEffect);
 	HookTable(detour::inPrediction, i::Prediction, table::inPrediction, &hkInPrediction);
-	HookTable(detour::renderView, (**reinterpret_cast<void***>(MEM::FindPattern(CLIENT_DLL, XorStr("8B 0D ? ? ? ? FF 75 0C 8B 45 08")) + 0x2)), 6, &hkRenderView);
+	//HookTable(detour::renderView, (**reinterpret_cast<void***>(MEM::FindPattern(CLIENT_DLL, XorStr("8B 0D ? ? ? ? FF 75 0C 8B 45 08")) + 0x2)), 6, &hkRenderView);
 	//HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 
 	// Signature hooks
@@ -65,6 +65,7 @@ void h::SetupHooks() {
 	//HookSignature(detour::setupMovement, CLIENT_DLL, "55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B ? ? ? ? ? 8B F1", &hkSetUpMovement);
 	HookSignature(detour::extraBoneProcessing, CLIENT_DLL, "55 8B EC 83 E4 F8 81 EC ? ? ? ? 53 56 8B F1 57 89 74 24 1C", &hkDoExtraBoneProcessing);
 	HookSignature(detour::processInterpolatedList, CLIENT_DLL, "0F B7 05 ? ? ? ? 3D FF FF 00 00 74 3F 56 57", &hkProcessInterpolatedList);
+	HookSignature(detour::drawViewmodel, CLIENT_DLL, "55 8B EC 51 57 E8", &hkShouldDrawViewmodel);
 
 	menu::DestroyDirectX();
 

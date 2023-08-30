@@ -92,6 +92,7 @@ struct rageBotData_t
 	int	iTickcount{};
 	int	iHitbox{};
 	int	iHitGroup{};
+	int iEntityIndex{};
 
 	bool bBacktrack{};
 	bool bCanShoot{};
@@ -113,6 +114,7 @@ struct rageBotData_t
 		iHealth = _pRecord->pEntity->GetHealth();
 		vecLocalShootPosition = vecEyePosition;
 		bBacktrack = _bBacktrack;
+		iEntityIndex = _pRecord->iEntIndex;
 	}
 
 	void ClearTarget() {

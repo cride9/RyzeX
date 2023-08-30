@@ -50,7 +50,7 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 	else if (pRecord->bDidShot) flFakePitch[iEntityID] = NULL;
 
 	if (fabsf(flFakePitch[iEntityID]) == 180.f)
-		pEntity->GetEyePosition(false) = Vector(89.f, pEntity->AnimState()->flEyeYaw, 0.f);
+		pEntity->GetEyeAngles() = Vector(89.f, pEntity->AnimState()->flEyeYaw, 0.f);
 		
 	float flHitPercentage = static_cast<float>(pLog->iHitAmount) / static_cast<float>(pLog->iShotAmount);
 	if (arrMissedShots[iEntityID] == 0 && flHitPercentage < 0.2f)
@@ -115,9 +115,17 @@ void Animations::ResolverLogic() {
 	// make pointers and references for easier handling
 	auto& refCurrentData = aimbot.GetHitLogData();
 	CBaseEntity* pTarget = refCurrentData.pAimbotTarget;
-	auto* pLog = &lagcomp.GetLog(refCurrentData.pAimbotTarget->EntIndex());
-	if (!pLog)
+
+	if (i::EntityList->GetClientEntity(refCurrentData.iEntityIndex) == nullptr) {
+		refCurrentData.ClearTarget();
 		return;
+	}
+
+	auto* pLog = &lagcomp.GetLog(refCurrentData.pAimbotTarget->EntIndex());
+	if (!pLog) {
+		refCurrentData.ClearTarget();
+		return;
+	}
 
 	// get player name and info
 	PlayerInfo_t info;

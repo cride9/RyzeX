@@ -93,7 +93,6 @@ namespace playerList {
 			if (thisPlayer.iTeamID != TEAM_UNASSIGNED)
 				vecOut.push_back(thisPlayer);
 
-		std::sort(vecOut.begin(), vecOut.end());
 		return vecOut;
 	}
 

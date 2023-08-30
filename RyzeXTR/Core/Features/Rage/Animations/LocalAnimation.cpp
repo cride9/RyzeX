@@ -358,7 +358,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 	LocalData_t.flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(pAnimationState.flGoalFeetYaw)));
 
 	AnimationBreaker(pLocal);
-	g_LocalAnimations->SetupPlayerBones(LocalData_t.FakeData.arrMatrix.data(), 0, pLocal);
+	g_LocalAnimations->SetupPlayerBones(LocalData_t.FakeData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);
 
 	std::memcpy(pLocal->AnimState(), &pAnimationState, sizeof(CAnimState));
 	std::memcpy(pLocal->GetAnimationOverlays(), LocalData_t.FakeData.arrLayers.data(), sizeof(CAnimationLayer) * ANIMATION_LAYER_COUNT);

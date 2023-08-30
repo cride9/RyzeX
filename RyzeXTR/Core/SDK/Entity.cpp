@@ -529,6 +529,8 @@ bool HandleBoneSetup(CBaseEntity* target, matrix3x4a_t* pBoneToWorldOut, int bon
 	if (!hdr)
 		return false;
 
+	CMDLCacheCriticalSection mdlCacheCriticalSection(i::MDLCache);
+
 	const auto oldBones = target->GetBoneAccessor().matBones;
 	const auto& o_abs = target->GetAbsAngles();
 	const auto& o_origin = target->GetAbsOrigin();
@@ -571,6 +573,7 @@ bool HandleBoneSetup(CBaseEntity* target, matrix3x4a_t* pBoneToWorldOut, int bon
 	}
 
 	target->BuildTransformations(hdr, pos, q, baseMatrix, boneMask, boneComputed);
+	//target->ClampBonesInBBox(pBoneToWorldOut, boneMask);
 
 	target->GetEffects() &= ~0x008;
 
