@@ -989,7 +989,7 @@ void misc::ThirdPerson() {
 
 	if (!i::Input->bCameraInThirdPerson)
 		flKurvaAnyad = 0.f;
-
+	
 	// camera should be in thirdperson.
 	if (IPT::HandleInput(cfg::misc::iThirdPersonKey) && cfg::misc::bThirdPerson)
 	{
@@ -1649,15 +1649,26 @@ void misc::ClanTag() {
 	if (iMainTime != flTime)
 	{
 		if (cfg::misc::bClantag) {
+			
+			if (cfg::misc::szCustomClantagBuffer.length() > 0)
+			{
+				const char* clanTagSteps = cfg::misc::szCustomClantagBuffer.c_str();
+				bShouldPrint = true;
+				util::SetClan(clanTagSteps);
+			}
+			else
+			{
+				const char* clanTagSteps[17] = {
+					XorStr("R"), XorStr("TR"), XorStr("XTR"), XorStr("eXTR"), XorStr("zeXTR"), XorStr("yzeXTR"),
+					XorStr("RyzeXTR"), XorStr("RyzeXTR"), XorStr("RyzeXTR"), XorStr("RyzeXTR"),
+					XorStr("RyzeXT"), XorStr("RyzeX"), XorStr("Ryze"), XorStr("Ryz"), XorStr("Ry"), XorStr("R"), XorStr("")
+				};
+				bShouldPrint = true;
+				util::SetClan(clanTagSteps[iMainTime]);
+			}
+			
 
-			static const char* clanTagSteps[17] = {
-			XorStr("R"), XorStr("TR"), XorStr("XTR"), XorStr("eXTR"), XorStr("zeXTR"), XorStr("yzeXTR"),
-			XorStr("RyzeXTR"), XorStr("RyzeXTR"), XorStr("RyzeXTR"), XorStr("RyzeXTR"),
-			XorStr("RyzeXT"), XorStr("RyzeX"), XorStr("Ryze"), XorStr("Ryz"), XorStr("Ry"), XorStr("R"), XorStr("")
-			};
-
-			bShouldPrint = true;
-			util::SetClan(clanTagSteps[iMainTime]);
+			
 		}
 		else {
 			bShouldPrint = false;
