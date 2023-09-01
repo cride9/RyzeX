@@ -266,6 +266,8 @@ namespace cfg {
 		inline bool bBlockbot = false;
 		inline int iBlockbotKey = 0;
 		inline bool bClantag = false;
+
+		inline std::string szCustomClantagBuffer = "";
 		inline bool bInvertKnife = false;//
 
 		inline bool bDrawServerHitbox = false;
