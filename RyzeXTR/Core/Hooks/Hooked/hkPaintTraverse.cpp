@@ -27,21 +27,21 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		//	i::Surface->DrawT(1200, 700, Color(255, 255, 255), g::fonts::DebugFont, true, std::to_string(reinterpret_cast<uintptr_t>(g::pLocal->GetClientRenderable())).c_str());
 		//}
 
-#if RELEASE
-		//misc::Print("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
-		if (g::bStartWelcome)
-			visual::WelcomeUser("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
-#endif
-#if _DEBUG
-		//misc::Print("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
-		if (g::bStartWelcome)
-			visual::WelcomeUser("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
-#endif
-#if ALPHA
-		//misc::Print("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
-		if (g::bStartWelcome)
-			visual::WelcomeUser("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
-#endif
+//#if RELEASE
+//		//misc::Print("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
+//		if (g::bStartWelcome)
+//			visual::WelcomeUser("[USER] Built date: " __DATE__ " at " __TIME__ "\n");
+//#endif
+//#if _DEBUG
+//		//misc::Print("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
+//		if (g::bStartWelcome)
+//			visual::WelcomeUser("[DEVELOPER] Built date: " __DATE__ " at " __TIME__ "\n");
+//#endif
+//#if ALPHA
+//		//misc::Print("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
+//		if (g::bStartWelcome)
+//			visual::WelcomeUser("[ALPHA] Built date: " __DATE__ " at " __TIME__ "\n");
+//#endif
 
 		LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_DRAW ] );
 

@@ -666,7 +666,7 @@ namespace LUAModules
 
 		void DrawString( Vector2D vecPosition, bool bCenter, Color col, std::string szText )
 		{
-			drawlist::AddText( vecPosition, g::fonts::SkeetFont, bCenter, col, szText );
+			drawlist::AddText( vecPosition, g::fonts::FlagESP, bCenter, col, szText );
 		}
 
 		//void DrawFilledTriangle( vec2_t vecPos1, vec2_t vecPos2, vec2_t vecPos3, color sColor ) {
@@ -1091,6 +1091,11 @@ namespace LUAModules
 
 	namespace Variables 
 	{
+		bool IsActive(std::string szVar, sol::this_state L)
+		{
+			return IPT::HandleInput(Config2->FindInt(szVar));
+		}
+
 		bool& GetBool(std::string szVar, sol::this_state L)
 		{
 			return Config2->FindBool(szVar);
@@ -1935,6 +1940,7 @@ void LuaImplementation::CreateLuaState( )
 	/* Vars */ 
 	{
 		auto Vars = lua.create_table( );
+		Vars[ XorStr( "IsActive" ) ] = LUAModules::Variables::IsActive;
 		Vars[ XorStr( "GetBool" ) ] = LUAModules::Variables::GetBool;
 		Vars[ XorStr( "GetFloat" ) ] = LUAModules::Variables::GetFloat;
 		Vars[ XorStr( "GetInt" ) ] = LUAModules::Variables::GetInt;

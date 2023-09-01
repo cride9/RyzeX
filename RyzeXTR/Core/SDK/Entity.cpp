@@ -529,7 +529,7 @@ bool CBaseEntity::HandleBoneSetup(matrix3x4a_t* pBoneToWorldOut, int nBoneMask, 
 		return false;
 
 	CStudioHdr* pStudioHdr = this->GetStudioHdr();
-	if (!pStudioHdr)
+	if (!pStudioHdr || !pStudioHdr->pVirtualModel)
 		return false;
 
 	CMDLCacheCriticalSection mdlCacheCriticalSection(i::MDLCache);
@@ -576,6 +576,7 @@ bool CBaseEntity::HandleBoneSetup(matrix3x4a_t* pBoneToWorldOut, int nBoneMask, 
 	}
 
 	this->BuildTransformations(pStudioHdr, pos, q, matBaseMatrix, nBoneMask, boneComputed);
+	this->ClampBonesInBBox(pBoneToWorldOut, nBoneMask);
 
 	this->GetEffects() &= ~EF_NOINTERP;
 
