@@ -1649,11 +1649,11 @@ void misc::ClanTag() {
 	if (iMainTime != flTime)
 	{
 		if (cfg::misc::bClantag) {
-			
+			bShouldPrint = true;
 			if (cfg::misc::szCustomClantagBuffer.length() > 0)
 			{
 				const char* clanTagSteps = cfg::misc::szCustomClantagBuffer.c_str();
-				bShouldPrint = true;
+
 				util::SetClan(clanTagSteps);
 			}
 			else
@@ -1663,7 +1663,7 @@ void misc::ClanTag() {
 					XorStr("RyzeXTR"), XorStr("RyzeXTR"), XorStr("RyzeXTR"), XorStr("RyzeXTR"),
 					XorStr("RyzeXT"), XorStr("RyzeX"), XorStr("Ryze"), XorStr("Ryz"), XorStr("Ry"), XorStr("R"), XorStr("")
 				};
-				bShouldPrint = true;
+				
 				util::SetClan(clanTagSteps[iMainTime]);
 			}
 			
