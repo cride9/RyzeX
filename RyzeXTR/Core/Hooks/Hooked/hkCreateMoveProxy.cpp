@@ -48,9 +48,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (i::ClientState->nChokedCommands >= 14 || exploits::bIsCurrentlyCharging)
 		bSendPacket = true;
 
-	if (i::ClientState->iDeltaTick > 0)
-		i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
-
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
 	// Run lua callbacks
@@ -59,6 +56,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	bool bShooting = false;
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
+		if (i::ClientState->iDeltaTick > 0 && !exploits::bIsShiftingTicks)
+			i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
+		
 		misc::BoostMovement(pCmd);
 		g::vecEyePosition = pLocal->GetEyePosition(false);
 		localAnim->CopyPlayerAnimationData(false, pLocal);

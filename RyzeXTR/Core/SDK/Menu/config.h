@@ -34,6 +34,7 @@ namespace cfg {
 		inline int iAimbotKey = 0;
 		inline int iAimbotFov = 180;
 		inline bool bSilentAim = false;
+		inline bool bLimitScan = false;
 
 		inline bool bDoubletap = false;
 		inline int  iDoubletapKey;

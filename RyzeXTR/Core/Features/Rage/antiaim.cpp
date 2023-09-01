@@ -47,11 +47,11 @@ bool antiaim::LBYUpdate(CBaseEntity* pLocal)
 	}
 
 	if (AnimState->flVelocityLenght2D > 0.1f) 
-		NextUpdate = TICKS_TO_TIME(networking.GetServerTick()) + 0.22f;
+		NextUpdate = TICKS_TO_TIME(pLocal->GetTickBase()) + 0.22f;
 
-	if (NextUpdate < TICKS_TO_TIME(networking.GetServerTick()))
+	if (NextUpdate < TICKS_TO_TIME(pLocal->GetTickBase()))
 	{
-		NextUpdate = TICKS_TO_TIME(networking.GetServerTick()) + 1.1f;
+		NextUpdate = TICKS_TO_TIME(pLocal->GetTickBase()) + 1.1f;
 		return true;
 	}
 	return false;

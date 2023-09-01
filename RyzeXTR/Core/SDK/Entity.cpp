@@ -523,76 +523,69 @@ float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
 //	return vecReturn.Length( );
 //}
 
-bool HandleBoneSetup(CBaseEntity* target, matrix3x4a_t* pBoneToWorldOut, int boneMask, float currentTime)
+bool CBaseEntity::HandleBoneSetup(matrix3x4a_t* pBoneToWorldOut, int nBoneMask, float flCurrentTime)
 {
-	auto hdr = target->GetStudioHdr();
-	if (!hdr)
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+		return false;
+
+	CStudioHdr* pStudioHdr = this->GetStudioHdr();
+	if (!pStudioHdr)
 		return false;
 
 	CMDLCacheCriticalSection mdlCacheCriticalSection(i::MDLCache);
 
-	const auto oldBones = target->GetBoneAccessor().matBones;
-	const auto& o_abs = target->GetAbsAngles();
-	const auto& o_origin = target->GetAbsOrigin();
+	matrix3x4a_t* const matOldBones = this->GetBoneAccessor().matBones;
+	const Vector vecOldAngles = this->GetAbsAngles();
+	const Vector vecOldOrigin = this->GetAbsOrigin();
 
-	CAnimationLayer layers[13];
-	target->GetAnimationLayers(layers);
-	float poses[24];
-	target->GetPoseParameters(poses);
+	CAnimationLayer arrLayers[13];
+	float arrPoses[24];
 
-	matrix3x4_t baseMatrix;
-	M::AngleMatrix(target->GetAbsAngles(), target->GetAbsOrigin(), baseMatrix);
+	this->GetAnimationLayers(arrLayers);
+	this->GetPoseParameters(arrPoses);
 
-	target->GetEffects() |= 0x008;
+	matrix3x4_t matBaseMatrix;
+	M::AngleMatrix(this->GetAbsAngles(), this->GetAbsOrigin(), matBaseMatrix);
 
-	IKContext* IK_context = target->GetIKContext();
+	this->GetEffects() |= EF_NOINTERP;
+
+	IKContext* IK_context = this->GetIKContext();
 	if (IK_context)
 	{
-		auto absAngles = const_cast<Vector&>(target->GetAbsAngles());
+		Vector vecAbsAngles = const_cast<Vector&>(this->GetAbsAngles());
 
 		IK_context->ClearTargets();
-		IK_context->Init(hdr, absAngles, target->GetVecOrigin(),
-			currentTime, i::GlobalVars->iFrameCount, BONE_USED_BY_HITBOX | BONE_USED_BY_VERTEX_LOD0 | BONE_USED_BY_VERTEX_LOD1 | BONE_USED_BY_VERTEX_LOD2
-			| BONE_USED_BY_VERTEX_LOD3 | BONE_USED_BY_VERTEX_LOD4 | BONE_USED_BY_VERTEX_LOD5 | BONE_USED_BY_VERTEX_LOD6 | BONE_USED_BY_VERTEX_LOD7);
-		target->SetAbsAngles(absAngles);
+		IK_context->Init(pStudioHdr, vecAbsAngles, this->GetVecOrigin(), flCurrentTime, i::GlobalVars->iFrameCount, BONE_USED_BY_HITBOX | BONE_USED_BY_VERTEX_MASK);
+
+		this->SetAbsAngles(vecAbsAngles);
 	}
 
 	Vector pos[256]{};
 	BoneQuaternion q[256];
 	CBoneBitList boneComputed;
 
-	target->GetBoneAccessor().matBones = pBoneToWorldOut;
-	target->StandardBlendingRules(hdr, pos, q, currentTime, boneMask);
+	this->GetBoneAccessor().matBones = pBoneToWorldOut;
+	this->StandardBlendingRules(pStudioHdr, pos, q, flCurrentTime, nBoneMask);
 
 	if (IK_context)
 	{
-		target->UpdateIKLocks(currentTime);
+		this->UpdateIKLocks(flCurrentTime);
 		IK_context->UpdateTargets(pos, q, pBoneToWorldOut, boneComputed);
-		target->CalculateIKLocks(currentTime);
+		this->CalculateIKLocks(flCurrentTime);
 		IK_context->SolveDependencies(pos, q, pBoneToWorldOut, boneComputed);
 	}
 
-	target->BuildTransformations(hdr, pos, q, baseMatrix, boneMask, boneComputed);
-	//target->ClampBonesInBBox(pBoneToWorldOut, boneMask);
+	this->BuildTransformations(pStudioHdr, pos, q, matBaseMatrix, nBoneMask, boneComputed);
 
-	target->GetEffects() &= ~0x008;
+	this->GetEffects() &= ~EF_NOINTERP;
 
-	target->SetAnimationLayers(layers);
-	target->SetPoseParameters(poses);
-	target->SetAbsOrigin(o_origin);
-	target->SetAbsAngles(o_abs);
-	target->GetBoneAccessor().matBones = oldBones;
+	this->SetAnimationLayers(arrLayers);
+	this->SetPoseParameters(arrPoses);
+	this->SetAbsOrigin(vecOldOrigin);
+	this->SetAbsAngles(vecOldAngles);
+	this->GetBoneAccessor().matBones = matOldBones;
 
 	return true;
-}
-
-bool CBaseEntity::SetupBonesFix( int boneMask, float currentTime, matrix3x4a_t* pBoneToWorldOut)
-{
-	return HandleBoneSetup(this, pBoneToWorldOut, boneMask, currentTime);
-	//alignas(16) matrix3x4_t bone_out[MAXSTUDIOBONES];
-	//const auto ret = HandleBoneSetup(target, bone_out, boneMask, currentTime);
-	//memcpy(pBoneToWorldOut, bone_out, sizeof(matrix3x4_t[MAXSTUDIOBONES]));
-	//return ret;
 }
 
 bool CBaseEntity::IsBreakable()

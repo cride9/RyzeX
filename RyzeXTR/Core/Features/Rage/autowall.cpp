@@ -12,7 +12,7 @@ float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, c
 	FireBulletData_t data = { };
 	data.vecPosition = vecEyePosition;
 	data.vecDirection = ( vecPoint - vecEyePosition).Normalized( );
-	data.iPenetrateCount = 3;
+	data.iPenetrateCount = 4;
 
 	if (!SimulateFireBullet( pLocal, pWeapon, data, pRecord) )
 		return -1.0f;
@@ -458,6 +458,9 @@ bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstu
 int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox) {
 	// If we don't have a record how would we safepoint men
 	if (!pRecord)
+		return 0;
+
+	if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord))
 		return 0;
 
 	// Safepoint count

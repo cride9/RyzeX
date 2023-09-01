@@ -41,7 +41,7 @@ struct Hitscan_t {
 		iHitgroup = data.enterTrace.iHitGroup;
 	}
 
-	Lagcompensation::LagRecord_t* pRecord{};
+	Lagcompensation::LagRecord_t* pRecord = nullptr;
 
 	Vector vecPoint{};
 
@@ -198,14 +198,19 @@ private:
 	weaponConfig_t curConfig;
 	Vector vecEyePosition;
 
+
+
 	bool HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy);
-	void GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon);
-	weaponConfig_t GetWeaponConfiguration(short iItemDefinitionIndex);
-	Vector ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal);
-	void AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd);
 	bool HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecPosition, Lagcompensation::LagRecord_t* pRecord);
+	
+	void GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon);
+	void AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd);
+
+	weaponConfig_t GetWeaponConfiguration(short iItemDefinitionIndex);
+
+	Vector ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal);
+
 	std::vector<Lagcompensation::AnimationInfo_t*> GetTargetableEntities(CBaseEntity* pLocal);
 	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE, bool = false);
-
 };
 inline CAimBot aimbot;

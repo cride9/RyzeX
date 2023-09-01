@@ -358,6 +358,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 	LocalData_t.flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(pAnimationState.flGoalFeetYaw)));
 
 	AnimationBreaker(pLocal);
+	
 	localAnim->SetupPlayerBones(LocalData_t.FakeData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);
 
 	std::memcpy(pLocal->AnimState(), &pAnimationState, sizeof(CAnimState));

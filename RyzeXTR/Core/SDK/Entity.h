@@ -1352,9 +1352,9 @@ public:
 	bool					IsTargetingLocal(CBaseEntity* pLocal);
 	bool					CanShoot(CBaseCombatWeapon* pBaseWeapon, int iTickbase = -1);
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecEnd, bool bSmokeCheck = false);
+	bool					HandleBoneSetup(matrix3x4a_t* pBoneToWorldOut, int boneMask, float currentTime);
 	bool					IsBreakable();
 	mstudiobbox_t*			StudioHitbox(int iHitbox);
-	bool					SetupBonesFix( int boneMask, float currentTime, matrix3x4a_t* pBoneToWorldOut );
 	void					InvalidateBoneCache();
 	float					GetSequenceCycleRate(CStudioHdr*, int);
 	float					GetSequenceMoveDist(CStudioHdr*, int);

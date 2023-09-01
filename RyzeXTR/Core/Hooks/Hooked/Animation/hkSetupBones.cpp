@@ -16,7 +16,7 @@ bool __fastcall h::hkSetupBones(IClientRenderable* ecx, void* edx, matrix3x4a_t*
 		return original( ecx, edx, matrix, maxbones, bonemask, curtime);
 
 	if (g::bSettingUpBones[pEnt->EntIndex()])
-		return pEnt->SetupBonesFix(bonemask, curtime, matrix);
+		return pEnt->HandleBoneSetup(matrix, bonemask, curtime);
 
 	if (matrix)  
 		bResult = (pEnt == g::pLocal ? localAnim->CopyCachedMatrix(matrix, maxbones) : anims.CopyCachedMatrix(pEnt, matrix, maxbones));

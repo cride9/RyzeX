@@ -182,6 +182,9 @@ void menu::Rage(ImVec2 savedCursorPosition) {
 
         ImGui::Checkbox(("Override"), &bOverride);
         ImGui::Keybind(("Overridekey"), &iOverrideBind);
+
+        ImGui::Text(("Optimization:"));
+        ImGui::Checkbox(("Limit scan"), &bLimitScan);
     }
     ImGui::EndChild();
 

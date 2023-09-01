@@ -250,14 +250,9 @@ void Lagcompensation::SetInterpolationFlags()
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity() || pEntity == g::pLocal)
+		if (!pEntity || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity() || g::pLocal == pEntity)
 			continue;
 
-		/*VarMapping_t* pVarMap = pEntity->GetVarMap();
-		if (pVarMap) 
-			for (size_t i = 0; i < pVarMap->m_nInterpolatedEntries; i++) 
-				pVarMap->m_Entries[i].m_bNeedsToInterpolate = false;*/
-		
 		void* m_VarMap = *(void**)((DWORD)(pEntity)+0x24);
 		if (m_VarMap)
 		{
