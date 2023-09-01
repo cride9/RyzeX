@@ -342,6 +342,7 @@ void CConfig::Setup() {
 		SetupBool(bBlockbot, false, XorStr("bBlockbot"));
 		SetupInt(iBlockbotKey, 0, XorStr("iBlockbotKey"));
 		SetupBool(bClantag, false, XorStr("bClantag"));
+		SetupString(szCustomClantagBuffer, "", XorStr("szCustomClantagBuffer"));
 		SetupBool(bInvertKnife, false, XorStr("bInvertKnife"));
 
 		SetupBool(bDrawServerHitbox, false, XorStr("bDrawServerHitbox"));

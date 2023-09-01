@@ -2,7 +2,8 @@
 #include "../../Features/Rage/antiaim.h"
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Lua/Lua.h"
-
+#include <iostream>
+#include <string>
 void menu::HandleMenuElements() noexcept {
 
     ImGui::Begin(("##main"), NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoResize*/);
@@ -770,8 +771,15 @@ void menu::Misc(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Infinite duck"), &bInfiniteDuck);
         ImGui::Checkbox(("Blockbot"), &bBlockbot);
         ImGui::Keybind(("##iBlockbotKey"), &iBlockbotKey);
-
+        
         ImGui::Checkbox(("Clantag"), &bClantag);
+        if (bClantag) {
+            char CustomClantagBuffer[32]{};
+            strcpy(CustomClantagBuffer, szCustomClantagBuffer.c_str());
+            ImGui::InputText(("Custom clantag"), CustomClantagBuffer, sizeof(CustomClantagBuffer));
+            szCustomClantagBuffer = CustomClantagBuffer;
+        }
+        
         ImGui::Checkbox(("Invert knife"), &bInvertKnife);
 		ImGui::Checkbox(("Persistent kill feed"), &bPreserveKillfeed);
 		ImGui::Checkbox(("Animation Breaker"), &cfg::antiaim::bSlideWalk);
