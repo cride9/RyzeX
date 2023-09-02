@@ -983,12 +983,7 @@ void menu::Skins(ImVec2 savedCursorPosition) {
                 }
             }
 
-			static std::vector<const char*> vecAgentList{};
-			if (vecAgentList.empty())
-				for (const AgentObject_t& it : skinChanger.agentList)
-					vecAgentList.push_back(it.szDisplayName.c_str());
-
-			ImGui::Combo("Agents", &iSkinId[36], vecAgentList.data(), vecAgentList.size());
+			
         }
     }
     ImGui::EndChild();
@@ -1051,10 +1046,20 @@ void menu::Skins(ImVec2 savedCursorPosition) {
         ImGui::Combo("Knife", &iKnifeModel, arrKnifeModels, IM_ARRAYSIZE(arrKnifeModels));
         skinChanger.bShouldFullUpdate = iSelectedKnifeModel != iKnifeModel ? true : skinChanger.bShouldFullUpdate;
 
+        //Moved agent chabger to a diff tab so it will show even in spectator
+        static std::vector<const char*> vecAgentList{};
+        if (vecAgentList.empty())
+            for (const AgentObject_t& it : skinChanger.agentList)
+                vecAgentList.push_back(it.szDisplayName.c_str());
+
+        ImGui::Combo("Agents", &iSkinId[36], vecAgentList.data(), vecAgentList.size());
+
         int iSelectedGloveModel = iGloveModel;
         ImGui::Combo("Glove", &iGloveModel, arrGloveModels, IM_ARRAYSIZE(arrGloveModels));
         skinChanger.bShouldFullUpdate = iSelectedGloveModel != iGloveModel ? true : skinChanger.bShouldFullUpdate;
 
+        
+        
         static std::vector<const char*> vecGloveNames[9];
         static  std::vector<int> vecPaintKit[9];
 
@@ -1091,6 +1096,8 @@ void menu::Skins(ImVec2 savedCursorPosition) {
 
             ImGui::PopItemWidth();
         }
+
+
     }
     ImGui::EndChild();
 }
