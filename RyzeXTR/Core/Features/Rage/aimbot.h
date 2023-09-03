@@ -206,7 +206,7 @@ private:
 	bool HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecPosition, Lagcompensation::LagRecord_t* pRecord);
 	
 	void GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon);
-	void AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd);
+	bool AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal, CUserCmd* pCmd, bool bSkipCheck);
 
 	weaponConfig_t GetWeaponConfiguration(short iItemDefinitionIndex);
 

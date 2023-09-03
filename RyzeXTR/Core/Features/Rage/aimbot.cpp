@@ -44,6 +44,9 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 	/* Scan stored entities & safepoint */
 	Vector vecShootPosition = ScanHitboxes(vecTargets, pLocal);
+	
+	/* Run predicted autostop */
+	bool bSkipPostStop = AutoStop(vecTargets, pLocal, pCmd, false);
 
 	if (aimData.pRecord == nullptr || vecShootPosition == Vector(0, 0, 0))
 		return ResetAimbotData();
@@ -60,10 +63,13 @@ void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
 
 	/* Calculate the aim angle with vectorAngles */
 	Vector vecAimAngle = (M::VectorAngles(vecShootPosition - vecEyePosition) -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
+	
+	/* Run normal autostop */
+	if (!bSkipPostStop)
+		AutoStop(vecTargets, pLocal, pCmd, true);
 
 	/* Calculate current hitchance & accuracy boost */
 	aimData.bCanShoot = HitChance(pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord);
-	AutoStop(pLocal, pCmd);
 
 	/* Wait til we can shoot */
 	if (!aimData.bCanShoot || !pLocal->CanShoot(pWeapon))
@@ -245,27 +251,42 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	return Vector(0, 0, 0);
 }
 
-void CAimBot::AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd) {
+bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal, CUserCmd* pCmd, bool bSkipCheck) {
 
 	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar(XorStr("weapon_accuracy_nospread"));
 	if (!curConfig.bAutostop)
-		return;
+		return false;
 
 	if (aimData.bCanShoot && !curConfig.bConditions[CONDITION_BETWEEN_SHOTS])
-		return;
+		return false;
 
 	if (!pLocal->CanShoot(curConfig.pWeapon) && !curConfig.bConditions[CONDITION_BETWEEN_SHOTS])
-		return;
+		return false;
 
 	if ((pCmd->iButtons & IN_JUMP || !(pLocal->GetFlags() & FL_ONGROUND)) && !curConfig.bConditions[CONDITION_INAIR])
-		return;
+		return false;
 
 	if (weapon_accuracy_nospread->GetInt() == 1)
-		return;
+		return false;
 
 	if (exploits::bIsShiftingTicks) {
 		pCmd->flForwardMove = pCmd->flSideMove =0.f;
-		return;
+		return false;
+	}
+
+	if (!bSkipCheck) {
+
+		float flDamage = -1.f;
+		for (Lagcompensation::AnimationInfo_t* it : vecIn) {
+
+			Vector vecHitboxPosition = vecIn.front()->pEntity->GetHitboxPosition(HITBOX_STOMACH, vecIn.front()->pRecord.front().pMatricies[RESOLVE]);
+			flDamage = autowall.GetDamage(pLocal, vecEyePosition + (pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 1)), vecHitboxPosition, curConfig.pWeapon, &vecIn.front()->pRecord.front());
+
+			if (flDamage >= 1.f)
+				break;
+		}
+		if (flDamage < 1.f)
+			return false;
 	}
 
 	float flMultiplier = 0.28f;
@@ -288,7 +309,7 @@ void CAimBot::AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd) {
 	Vector vecRealView;
 
 	if (flIdealSpeed > vecVelocity.Length2D())
-		return;
+		return false;
 
 	M::VectorAngles(vecVelocity, vecDirection);
 	i::EngineClient->GetViewAngles(vecRealView);
@@ -309,6 +330,8 @@ void CAimBot::AutoStop(CBaseEntity* pLocal, CUserCmd* pCmd) {
 
 	pCmd->flForwardMove = flNegativeForwardDirection.x;
 	pCmd->flSideMove = flNegativeSideDirection.y;
+
+	return true;
 }
 
 bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecAimPosition, Lagcompensation::LagRecord_t* pRecord) {

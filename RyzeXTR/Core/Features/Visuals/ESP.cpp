@@ -1754,7 +1754,7 @@ void visual::HandleDamageIndicator() {
 		std::pair<Vector, int>& it = vecDamageIndicator.at(i);
 
 		if (!animationMap.contains(it.second))
-			animationMap.emplace(it.second, std::make_pair(i::GlobalVars->flCurrentTime, 1));
+			animationMap.emplace(it.second, std::make_pair(i::GlobalVars->flCurrentTime, 1.f));
 
 		it.first += Vector(0, 0, 0.2f);
 		animationMap.at(it.second).second = std::clamp(animationMap.at(it.second).second - (1.f / 255.f), 0.f, 1.f);
