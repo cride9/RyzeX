@@ -121,7 +121,14 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 		float flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)
-			flTransformedDamage = max(it->pEntity->GetHealth(), 20) + (curConfig.iMinimumDamage - 100);
+			flTransformedDamage = max(it->pEntity->GetHealth(), 8) + (curConfig.iMinimumDamage - 100);
+
+		/* Retarded fix for retarded people who uses hp+5 mindmg and trying to baim */
+		if (cfg::rage::bForceBaim && IPT::HandleInput(cfg::rage::iForceBaimKey) && 
+			curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_AWP && 
+			curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_TASER && 
+			flTransformedDamage > curConfig.pWeapon->GetCSWpnData()->iDamage)
+			flTransformedDamage = curConfig.pWeapon->GetCSWpnData()->iDamage;
 
 		/* Go through every valid data */
 		for (int i = 0; i <= it->iLastValid; i++) {
@@ -137,7 +144,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 			pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
 			for (int& iHitbox : curConfig.vecHitboxes[NORMAL]) {
 
-				if (flTransformedDamage >= 98 && curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_AWP && iHitbox != HITBOX_HEAD)
+				if (flTransformedDamage >= 98 && (curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_AWP && curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_TASER) && iHitbox != HITBOX_HEAD)
 					continue;
 
 				bool bShouldMultiPoint = std::find(curConfig.vecHitboxes[MULTIPOINT].begin(), curConfig.vecHitboxes[MULTIPOINT].end(), iHitbox) != curConfig.vecHitboxes[MULTIPOINT].end();

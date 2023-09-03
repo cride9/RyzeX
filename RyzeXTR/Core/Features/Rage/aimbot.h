@@ -82,6 +82,8 @@ struct Hitscan_t {
 
 struct rageBotData_t
 {
+	rageBotData_t() { pRecord, pAimbotTarget, pTargetMatrix = nullptr; }
+
 	Lagcompensation::LagRecord_t* pRecord{};
 	CBaseEntity* pAimbotTarget{};
 	matrix3x4a_t* pTargetMatrix{};

@@ -16,6 +16,7 @@
 #include "../SDK/Menu/config.h"
 #include <../lua/embedding/sol/sol.hpp>
 #include "../xorstr.h"
+#include "../SDK/InputSystem.h"
 
 inline std::mutex LUACallbackMutex;
 
@@ -227,7 +228,7 @@ namespace LuaImplementation {
 
 	class KeybindMenuItem_t : public BaseMenuItem_t {
 	public:
-		bool IsActive( ) { return this->bIsKeybindActive; }
+		bool IsActive( ) { return IPT::HandleInput(this->iValue)/*this->bIsKeybindActive*/; }
 
 		int Get( ) { return this->iValue; }
 		void Set( int value ) { this->iValue = value; }

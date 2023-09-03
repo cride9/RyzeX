@@ -165,7 +165,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.pRecord->flResolveDelta
 		) ) );
 		pLog->iHitAmount++;
-		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, iHitDmg));
+		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, static_cast<int>(iHitDmg)));
 		refCurrentData.ClearTarget();
 		return;
 	}
@@ -189,7 +189,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.pRecord->flResolveDelta
 		)));
 		pLog->iHitAmount++;
-		visual::vecDamageIndicator.push_back(std::make_pair(bBulletImpact, iHitDmg));
+		visual::vecDamageIndicator.push_back(std::make_pair(bBulletImpact, static_cast<int>(iHitDmg)));
 		refCurrentData.ClearTarget();
 		return;
 	}
