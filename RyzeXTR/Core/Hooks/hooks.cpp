@@ -38,6 +38,8 @@ void h::SetupHooks() {
 	//HookTable(detour::renderView, (**reinterpret_cast<void***>(MEM::FindPattern(CLIENT_DLL, XorStr("8B 0D ? ? ? ? FF 75 0C 8B 45 08")) + 0x2)), 6, &hkRenderView);
 	//HookTable(detour::fireEvent, i::GameEvent, table::fireEvent, &hkFireEvent);
 
+	HookTable( detour::traceRay, i::EngineTrace, table::traceRay, &hkTraceRay );
+
 	// Signature hooks
 	HookSignature(detour::clMove, ENGINE_DLL, "55 8B EC 81 EC ? ? ? ? 53 56 8A F9", &hkClMove);
 	HookSignature(detour::buildTransform, CLIENT_DLL, "55 8B EC 83 E4 F0 81 ? ? ? ? ? 56 57 8B F9 8B ? ? ? ? ? 89 7C 24 28", &hkBuildTransformation);

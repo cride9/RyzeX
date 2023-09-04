@@ -46,6 +46,8 @@ namespace table {
 	inline constexpr auto doPostScreenEffects = 44;		// fixing keyvalues error while fakelaging
 
 	inline constexpr auto inPrediction = 14;
+
+	inline constexpr auto traceRay = 5;
 }
 
 namespace detour {
@@ -111,6 +113,9 @@ namespace detour {
 	inline CDetourHook inPrediction;
 	inline CDetourHook setupMovement;
 	inline CDetourHook drawViewmodel;
+	
+	// traceray
+	inline CDetourHook traceRay;
 }
 
 namespace h {
@@ -194,6 +199,8 @@ namespace h {
 	void __fastcall		hkProcessInterpolatedList(CBaseEntity* pEntity, uintptr_t edx);
 	bool __fastcall		hkInPrediction(void* ecx, void* edx);
 
+	void __fastcall		hkTraceRay( void*, void*, const Ray_t&, unsigned int, ITraceFilter*, Trace_t* );
+
 	long CALLBACK        hkWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 	inline LPVOID oldpacketStart;
@@ -206,6 +213,7 @@ namespace h {
 	void HookEntites();
 
 	inline WNDPROC pOriginalWNDProc;
+
 	// Original CSGO window proc
 }
 
