@@ -110,9 +110,9 @@ void CConfig::Setup() {
 		PushCategory(XorStr("AntiAim"));
 
 		SetupIntArray(iEnabledJitters.data(), 3, 0, XorStr("iEnabledJitters"));
-		//for (size_t i = 0; i < 64; i++)
-		//	SetupIntArray(vecJitterWays.data()[i].data(), 3, 0, std::format("{}{}", XorStr("vecJitterWays"), i));
-		
+		for (size_t i = 0; i < 3; i++) for (size_t j = 0; j < 64; j++)
+		SetupInt(vecJitterWays[i][j], 0, std::format("iJitterWays{}{}", i, j));
+
 		SetupBoolArray(bEnabled, 3, false, XorStr("bEnabled"));
 		SetupIntArray(iPitch, 3, 0, XorStr("iPitch"));
 		SetupIntArray(iYawBase, 3, 0, XorStr("iYawBase"));
@@ -458,19 +458,21 @@ void CConfig::Setup() {
 		SetupColor(colSkins4, 37, Color(1.f, 1.f, 1.f, 1.f), XorStr("colSkins4"));
 
 		SetupStringArray(szSkinNametag, 37, "", XorStr("szSkinNametag"));
-	} 
 
-	// scripts
-	PushCategory( XorStr( "Scripts" ) );
-	//SetupStringArray( cfg::vecScripts.data(), cfg::vecScripts.size(), "", XorStr( "szScripts" ) );
-	SetupStringArray( cfg::szScripts, 64, "", XorStr( "szScripts" ) );
+		// scripts
+		PushCategory( XorStr( "Scripts" ) );
+		//SetupStringArray( cfg::vecScripts.data(), cfg::vecScripts.size(), "", XorStr( "szScripts" ) );
+		SetupStringArray( cfg::szScripts, 64, "", XorStr( "szScripts" ) );
+	}
+
+	bInitialized = true;
 }
 
 void CConfig::SetupColor(float colColor[4], Color colDefault, std::string szName) {
 
 	for (size_t i = 0; i < 4; i++) {
 
-		colColor[i] = colDefault[i] / 255.f;
+		colColor[i] = bInitialized ? colColor[i] : (colDefault[i] / 255.f);
 		floats.push_back(new ConfigValue<float>(szCategory, std::format("{}{}", szName, i == 0 ? "R" : i == 1 ? "G" : i == 2 ? "B" : "A"), &colColor[i]));
 	}
 }
@@ -481,7 +483,7 @@ void CConfig::SetupColor(float (*colColor)[4], int iLength, Color colDefault, st
 	{
 		for (size_t i = 0; i < 4; i++) {
 
-			colColor[j][i] = colDefault[i] / 255.f;
+			colColor[j][i] = bInitialized ? colColor[j][i] : (colDefault[i] / 255.f);
 			floats.push_back(new ConfigValue<float>(szCategory, std::format("{}{}{}", szName, j, i == 0 ? "R" : i == 1 ? "G" : i == 2 ? "B" : "A"), &colColor[j][i]));
 		}
 	}
@@ -491,7 +493,7 @@ void CConfig::SetupIntArray(int* arrArray, int iLength, int* iDefault, std::stri
 
 	for (size_t i = 0; i < iLength; i++) {
 
-		arrArray[i] = iDefault[i];
+		arrArray[i] = bInitialized ? arrArray[i] : iDefault[i];
 		ints.push_back(new ConfigValue<int>(szCategory, std::format("{}{}", szName, i), &arrArray[i]));
 	}
 }
@@ -500,7 +502,7 @@ void CConfig::SetupIntArray(int* arrArray, int iLength, int iDefault, std::strin
 
 	for (size_t i = 0; i < iLength; i++) {
 
-		arrArray[i] = iDefault;
+		arrArray[i] = bInitialized ? arrArray[i] : iDefault;
 		ints.push_back(new ConfigValue<int>(szCategory, std::format("{}{}", szName, i), &arrArray[i]));
 	}
 }
@@ -509,7 +511,7 @@ void CConfig::SetupFloatArray(float* arrArray, int iLength, float* iDefault, std
 
 	for (size_t i = 0; i < iLength; i++) {
 
-		arrArray[i] = iDefault[i];
+		arrArray[i] = bInitialized ? arrArray[i] : iDefault[i];
 		floats.push_back(new ConfigValue<float>(szCategory, std::format("{}{}", szName, i), &arrArray[i]));
 	}
 }
@@ -518,7 +520,7 @@ void CConfig::SetupFloatArray(float* arrArray, int iLength, float iDefault, std:
 
 	for (size_t i = 0; i < iLength; i++) {
 
-		arrArray[i] = iDefault;
+		arrArray[i] = bInitialized ? arrArray[i] : iDefault;
 		floats.push_back(new ConfigValue<float>(szCategory, std::format("{}{}", szName, i), &arrArray[i]));
 	}
 }
@@ -527,7 +529,7 @@ void CConfig::SetupBoolArray(bool* arrArray, int iLength, bool* iDefault, std::s
 
 	for (size_t i = 0; i < iLength; i++) {
 
-		arrArray[i] = iDefault[i];
+		arrArray[i] = bInitialized ? arrArray[i] : iDefault[i];
 		bools.push_back(new ConfigValue<bool>(szCategory, std::format("{}{}", szName, i), &arrArray[i]));
 	}
 }
@@ -536,32 +538,32 @@ void CConfig::SetupBoolArray(bool* arrArray, int iLength, bool iDefault, std::st
 
 	for (size_t i = 0; i < iLength; i++) {
 
-		arrArray[i] = iDefault;
+		arrArray[i] = bInitialized ? arrArray[i] : iDefault;
 		bools.push_back(new ConfigValue<bool>(szCategory, std::format("{}{}", szName, i), &arrArray[i]));
 	}
 }
 
 void CConfig::SetupInt(int& iValue, int iDefault, std::string szName) {
 
-	iValue = iDefault;
+	iValue = bInitialized ? iValue : iDefault;
 	ints.push_back(new ConfigValue<int>(szCategory, szName, &iValue));
 }
 
 void CConfig::SetupFloat(float& iValue, float iDefault, std::string szName) {
 
-	iValue = iDefault;
+	iValue = bInitialized ? iValue : iDefault;
 	floats.push_back(new ConfigValue<float>(szCategory, szName, &iValue));
 }
 
 void CConfig::SetupBool(bool& bValue, bool bDefault, std::string szName) {
 
-	bValue = bDefault;
+	bValue = bInitialized ? bValue : bDefault;
 	bools.push_back(new ConfigValue<bool>(szCategory, szName, &bValue));
 }
 
 void CConfig::SetupString(std::string& szValue, std::string szDefault, std::string szName) {
 
-	szValue = szDefault;
+	szValue = bInitialized ? szValue : szDefault;
 	strings.push_back(new ConfigValue<std::string>(szCategory, szName, &szValue));
 }
 
@@ -569,7 +571,7 @@ void CConfig::SetupStringArray(std::string* szValue, int iLength, std::string sz
 
 	for (size_t i = 0; i < iLength; i++) {
 
-		szValue[i] = szDefault;
+		szValue[i] = bInitialized ? szValue[i] : szDefault;
 		strings.push_back(new ConfigValue<std::string>(szCategory, std::format( "{}{}", szName, i ), &szValue[i]));
 	}
 }
@@ -648,6 +650,9 @@ void CConfig::Save(std::string ConfigName)
 	//std::thread save(saveStuff);
 	//save.join();
 
+	if (bInitialized)
+		Setup();
+
 	cfgName = ConfigName;
 	auto handle = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(SaveThread), nullptr, 0, nullptr);
 	CloseHandle(handle);
@@ -657,7 +662,7 @@ void CConfig::Save(std::string ConfigName)
 
 void SaveThread() {
 
-	Config2->bSaving = true;
+	pConfig->bSaving = true;
 
 	static TCHAR path[MAX_PATH];
 	std::string folder, file;
@@ -672,22 +677,22 @@ void SaveThread() {
 
 	// Define lambda functions for saving each type of value
 	auto saveInts = [&]() {
-		for (auto value : Config2->ints)
+		for (auto value : pConfig->ints)
 			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
 	};
 
 	auto saveFloats = [&]() {
-		for (auto value : Config2->floats)
+		for (auto value : pConfig->floats)
 			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
 	};
 
 	auto saveBools = [&]() {
-		for (auto value : Config2->bools)
+		for (auto value : pConfig->bools)
 			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
 	};
 
 	auto saveStrings = [&]() {
-		for (auto value : Config2->strings)
+		for (auto value : pConfig->strings)
 			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), reinterpret_cast<std::string*>(value->value)->c_str(), file.c_str());
 	};
 
@@ -703,8 +708,8 @@ void SaveThread() {
 	boolsThread.join();
 	stringsThread.join();
 	
-	Config2->RefreshConfigs();
-	Config2->bSaving = false;
+	pConfig->RefreshConfigs();
+	pConfig->bSaving = false;
 }
 
 void CConfig::Load(std::string ConfigName)
@@ -828,4 +833,4 @@ void CConfig::DeleteConfig(std::string ConfigName) {
 		}
 	}
 }
-CConfig* Config2 = new CConfig();
+CConfig* pConfig = new CConfig();

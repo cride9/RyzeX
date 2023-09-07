@@ -166,9 +166,9 @@ bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vect
 		Vector vecStart = vecPosition + vecDirection * flDistance;
 
 		if ( !iStartContents )
-			iStartContents = i::EngineTrace->GetPointContents( vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX, nullptr );
+			iStartContents = i::EngineTrace->GetPointContents_WorldOnly( vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX/*, nullptr*/ );
 
-		const int iCurrentContents = i::EngineTrace->GetPointContents( vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX, nullptr );
+		const int iCurrentContents = i::EngineTrace->GetPointContents_WorldOnly( vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX/*, nullptr*/ );
 
 		if ( !( iCurrentContents & MASK_SHOT_HULL ) || ( iCurrentContents & CONTENTS_HITBOX && iCurrentContents != iStartContents ) )
 		{
@@ -255,7 +255,7 @@ bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInf
 		return false;
 
 	Trace_t exitTrace = { };
-	if ( !TraceToExit( data.enterTrace, exitTrace, data.enterTrace.vecEnd, data.vecDirection, pLocal, pRecord) && !( i::EngineTrace->GetPointContents( data.enterTrace.vecEnd, MASK_SHOT_HULL, nullptr ) & MASK_SHOT_HULL ) )
+	if ( !TraceToExit( data.enterTrace, exitTrace, data.enterTrace.vecEnd, data.vecDirection, pLocal, pRecord) && !( i::EngineTrace->GetPointContents_WorldOnly( data.enterTrace.vecEnd, MASK_SHOT_HULL/*, nullptr*/ ) & MASK_SHOT_HULL ) )
 		return false;
 
 	const surfacedata_t* pExitSurfaceData = i::PhysicsProps->GetSurfaceData( exitTrace.surface.nSurfaceProps );
@@ -456,26 +456,31 @@ bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstu
 #pragma runtime_checks( "", restore )
 
 int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox) {
+
 	// If we don't have a record how would we safepoint men
 	if (!pRecord)
 		return 0;
 
-	if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord))
-		return 0;
+	mstudiobbox_t* studioBox = pRecord->pEntity->StudioHitbox(iHitbox);
+	if (!studioBox)
+		return 0;  // Skip this hitbox if it's invalid
+
+	if (iHitbox == HITBOX_HEAD)
+		if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord))
+			return 0;
 
 	// Safepoint count
 	int iSafePoint = 0;
 	for ( int iSafeSide = EMatrixType::LEFT; iSafeSide <= EMatrixType::CENTER; iSafeSide++) {
+
 	   // Check matrix origins for this hitbox
 		if (pRecord->pMatricies[iSafeSide]->GetOrigin() == Vector(0,0,0))
 			continue;  // Skip this hitbox if any matrix origin is invalid
 
-		mstudiobbox_t* studioBox = pRecord->pEntity->StudioHitbox(iHitbox);
-		if (!studioBox)
-			continue;  // Skip this hitbox if it's invalid
-
-		if (!bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord, EMatrixType(iSafeSide)))
+		if (pRecord->iResolveSide == iSafeSide) {
+			iSafePoint++;
 			continue;
+		}
 
 		// Increment iSafePoint based on the collidepoint results
 		iSafePoint += autowall.bCollidePoint(vecEyePosition, vecShootposition, studioBox, pRecord->pMatricies[iSafeSide]);
@@ -490,13 +495,18 @@ bool CAutoWall::bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector&
 	Ray_t traceRay = Ray_t(vecEyePosition, vecEnd);
 
 	// Apply bone cache for accurate tracing
-	pRecord->ApplyMatrix(pRecord->pEntity, iMatrix);
+	if (RESOLVE != iMatrix)
+		pRecord->ApplyMatrix(pRecord->pEntity, iMatrix);
+
+	// get collideable
+	ICollideable* pCollideable = i::EngineTrace->GetCollideable(pRecord->pEntity);
 
 	// trace a ray to the entity
-	i::EngineTrace->ClipRayToCollideable(traceRay, MASK_SHOT, pRecord->pEntity->GetCollideable(), &traceData);
+	i::EngineTrace->ClipRayToCollideable(traceRay, MASK_SHOT, pCollideable, &traceData);
 
 	// Restore
-	pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
+	if (RESOLVE != iMatrix)
+		pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
 
 	// check if trace did hit the desired hitbox and not other
 	// example: aiming for head -> its behind his chest -> return chest == head

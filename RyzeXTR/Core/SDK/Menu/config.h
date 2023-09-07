@@ -495,5 +495,6 @@ public:
 	void RefreshSounds( );
 
 	bool bSaving = false;
+	bool bInitialized = false;
 };
-extern CConfig* Config2;
+extern CConfig* pConfig;

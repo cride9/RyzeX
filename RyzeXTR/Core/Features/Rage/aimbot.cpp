@@ -125,11 +125,14 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (it->iLastValid >= it->pRecord.size())
 			continue;
 
+		if (ax->GetInt() == 0)
+			it->iLastValid = 0;
+
 		float flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)
 			flTransformedDamage = max(it->pEntity->GetHealth(), 8) + (curConfig.iMinimumDamage - 100);
 
-		/* Retarded fix for retarded people who uses hp+5 mindmg and trying to baim */
+		/* Retarded fix for retarded people who uses 100 mindmg and trying to baim */
 		if (cfg::rage::bForceBaim && IPT::HandleInput(cfg::rage::iForceBaimKey) && 
 			curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_AWP && 
 			curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_TASER && 
@@ -170,17 +173,16 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 						continue;
 				}
 
-				// OPTIMIZATION: don't create points on body when we're forcing safe point
 				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint);
 				// OPTIMIZATION: first element in the vector is always the hitbox center
 				bool bFirstElement = true;
 				for (Vector& vecHitboxPoint : vecWorldPoints) {
 
 					/* Only backtrack safe entities */
-					int iCollidePoints = 0;
+					int iCollidePoints = (iHitbox != HITBOX_HEAD && bFirstElement) ? 3 : autowall.SafePoint(vecEyePosition, pRecord, vecHitboxPoint, iHitbox);
 
 					// OPTIMIZATION: calculate safe points once and save it later in a variable. It will return if not safe, but when safe we already scanned safety
-					if (iCollidePoints = autowall.SafePoint(vecEyePosition, pRecord, vecHitboxPoint, iHitbox); !iCollidePoints || (iCollidePoints < 3 && i))
+					if (!iCollidePoints || (iCollidePoints < 3 && i))
 						continue;
 
 					if (playerList::arrPlayers[pRecord->iEntIndex].bSafePoint && iCollidePoints < 3)
@@ -188,20 +190,16 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 					/* If we resolved with 70% accuracy skip safepoint */
 					if (static_cast<float>(it->iHitAmount) / static_cast<float>(it->iShotAmount) < 0.7f || it->iShotAmount < 3) {
+
 						if (bShouldSafe) {
+							if (iCollidePoints < 2) {
+								bFirstElement = false;
+								continue;
+							}
 
-							// OPTIMIZATION: skip baim hitbox center, they're most likely safe ( edit: they are in fact safe everytime )
-							if (!bFirstElement || iHitbox == HITBOX_HEAD) {
-
-								if (iCollidePoints < 2) {
-									bFirstElement = false;
-									continue;
-								}
-
-								if (bShouldForceSafePoint && iCollidePoints < 3) {
-									bFirstElement = false;
-									continue;
-								}
+							if (bShouldForceSafePoint && iCollidePoints < 3) {
+								bFirstElement = false;
+								continue;
 							}
 						}
 					}
@@ -212,9 +210,13 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData);
 					if (flDamage >= flTransformedDamage) {
 
-						pRecord->ApplyMatrix(pRecord->pEntity, pRecord->iResolveSide == RIGHT ? LEFT : RIGHT);
-						if (autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData) < flTransformedDamage)
-							continue;
+						/* Don't do underdamage if wrong resolve, wait for the other resolve side to be visible with enough damage LMAO */
+						if (iCollidePoints == 3 && iHitbox == HITBOX_HEAD) {
+
+							pRecord->ApplyMatrix(pRecord->pEntity, pRecord->iResolveSide == RIGHT ? LEFT : RIGHT);
+							if (autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData) < flTransformedDamage)
+								continue;
+						}
 
 						/* Push back this shit */
 						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint)));
@@ -418,17 +420,17 @@ bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosi
 		if (autowall.bCollidePoint(vecShootPosition, vecEnd, aimData.pRecord->pEntity->StudioHitbox(aimData.iHitbox), pMatrix))
 			iHits++;
 
-		if (autowall.bTraceMeantForHitbox(vecShootPosition, vecEnd, aimData.iHitbox, pRecord))
-			iAccuracyHits++;
+		//if (autowall.bTraceMeantForHitbox(vecShootPosition, vecEnd, aimData.iHitbox, pRecord))
+		//	iAccuracyHits++;
 	}
 
 	int flFinalHitchance = static_cast<int>(iHits / (static_cast<float>(iAccuracry) / 100.f));
-	int flFinalAccuracyBoost = static_cast<int>(static_cast<float>(iAccuracyHits) / (iAccuracry / 100.f));
+	//int flFinalAccuracyBoost = static_cast<int>(static_cast<float>(iAccuracyHits) / (iAccuracry / 100.f));
 
 	/* Hitchance * accuracyboost% = how much shot MUST hit head */
-	int flHitchanceAccuracy = static_cast<int>(curConfig.iHitchance * (static_cast<float>(curConfig.iAccuracyBoost) / 100.f));
-	if (flFinalAccuracyBoost < flHitchanceAccuracy)
-		return false;
+	//int flHitchanceAccuracy = static_cast<int>(curConfig.iHitchance * (static_cast<float>(curConfig.iAccuracyBoost) / 100.f));
+	//if (flFinalAccuracyBoost < flHitchanceAccuracy)
+	//	return false;
 
 	if (flFinalHitchance >= curConfig.iHitchance) {
 		aimData.flHitchance = flFinalHitchance;

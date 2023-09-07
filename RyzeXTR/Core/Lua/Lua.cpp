@@ -1093,47 +1093,47 @@ namespace LUAModules
 	{
 		bool IsActive(std::string szVar, sol::this_state L)
 		{
-			return IPT::HandleInput(Config2->FindInt(szVar));
+			return IPT::HandleInput(pConfig->FindInt(szVar));
 		}
 
 		bool& GetBool(std::string szVar, sol::this_state L)
 		{
-			return Config2->FindBool(szVar);
+			return pConfig->FindBool(szVar);
 		}
 
 		float& GetFloat(std::string szVar, sol::this_state L)
 		{
-			return Config2->FindFloat(szVar);
+			return pConfig->FindFloat(szVar);
 		}
 
 		int& GetInt(std::string szVar, sol::this_state L)
 		{
-			return Config2->FindInt(szVar);
+			return pConfig->FindInt(szVar);
 		}
 
 		std::string& GetString(std::string szVar, sol::this_state L)
 		{
-			return Config2->FindString(szVar);
+			return pConfig->FindString(szVar);
 		}
 
 		void SetBool(std::string szVar, bool bValue, sol::this_state L)
 		{
-			Config2->FindBool(szVar) = bValue;
+			pConfig->FindBool(szVar) = bValue;
 		}
 
 		void SetFloat(std::string szVar, float flValue, sol::this_state L)
 		{
-			Config2->FindFloat(szVar) = flValue;
+			pConfig->FindFloat(szVar) = flValue;
 		}
 
 		void SetInt(std::string szVar, int iValue, sol::this_state L)
 		{
-			Config2->FindInt(szVar) = iValue;
+			pConfig->FindInt(szVar) = iValue;
 		}
 
 		void SetString(std::string szVar, std::string szValue, sol::this_state L)
 		{
-			Config2->FindString(szVar) = szValue;
+			pConfig->FindString(szVar) = szValue;
 		}
 	}
 

@@ -610,15 +610,19 @@ bool Lagcompensation::LagRecord_t::IsValid() {
 
 	static CConVar* sv_maxunlag = i::ConVar->FindVar("sv_maxunlag");
 
-	int iTickBase = g::pLocal->GetTickBase() - exploits::iTicksToStore;
 	const float flLerpTime = GetClientInterpAmount();
 	float flLatency = NetChannelInfo->GetLatency(FLOW_INCOMING) + NetChannelInfo->GetLatency(FLOW_OUTGOING);
 
-	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (TICKS_TO_TIME(iTickBase) - this->flSimulationTime);
+	float flDeltaTime = fminf(flLatency + flLerpTime, sv_maxunlag->GetFloat()) - (TICKS_TO_TIME(g::pLocal->GetTickBase()) - this->flSimulationTime);
 	if (fabsf(flDeltaTime) >= 0.2f)
 		return false;
 
+	// idk if lagcomp counts with the servertick or current time
 	int nDeadTime = static_cast<int>(static_cast<float>(TICKS_TO_TIME(networking.GetServerTick())) - 0.2f);
+	if (TIME_TO_TICKS(this->flSimulationTime + flLerpTime) < nDeadTime)
+		return false;
+
+	nDeadTime = static_cast<int>(i::GlobalVars->flCurrentTime - 0.2f);
 	if (TIME_TO_TICKS(this->flSimulationTime + flLerpTime) < nDeadTime)
 		return false;
 

@@ -862,14 +862,14 @@ void menu::Misc(ImVec2 savedCursorPosition) {
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
             static int soundItemCurrent1 = -1;
             static std::string soundItem;
-            if (ImGui::ListBoxVector(("##soundFiles"), &soundItemCurrent1, Config2->vecSoundFileNames, 5)) {
+            if (ImGui::ListBoxVector(("##soundFiles"), &soundItemCurrent1, pConfig->vecSoundFileNames, 5)) {
 
-                soundItem = Config2->vecSoundFileNames[soundItemCurrent1];
-                cfg::misc::szWavPath = std::filesystem::path(Config2->SoundPath.c_str() + soundItem).string();
+                soundItem = pConfig->vecSoundFileNames[soundItemCurrent1];
+                cfg::misc::szWavPath = std::filesystem::path(pConfig->SoundPath.c_str() + soundItem).string();
             }
 
             if (ImGui::Button(("Refresh"), ImVec2(ImGui::GetContentRegionAvail().x, 20), true, true))
-                Config2->RefreshSounds();
+                pConfig->RefreshSounds();
             ImGui::PopItemWidth();
         }
 
@@ -1143,15 +1143,15 @@ void menu::Config(ImVec2 savedCursorPosition) {
         {
             static std::string selectedConfig = "";
             ImGui::PushItemWidth( ImGui::GetContentRegionAvail( ).x );
-            if (ImGui::ListBoxVector( ( "##configs" ), &cfg::configID, Config2->vecConfigs, 15 )) {
-                selectedConfig = Config2->vecConfigs[ cfg::configID ];
+            if (ImGui::ListBoxVector( ( "##configs" ), &cfg::configID, pConfig->vecConfigs, 15 )) {
+                selectedConfig = pConfig->vecConfigs[ cfg::configID ];
             }
 
             static char buf[ 255 ]{};
             ImGui::InputText( ( "##Config name" ), buf, sizeof( buf ) );
 
             if (ImGui::Button( ( "Refresh" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
-                Config2->RefreshConfigs( );
+                pConfig->RefreshConfigs( );
             }
 
             ImGui::Spacing( );
@@ -1169,25 +1169,26 @@ void menu::Config(ImVec2 savedCursorPosition) {
             ImGui::Spacing( );
             if (ImGui::Button( ( "Create" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
 
-                Config2->Save( buf );
-                Config2->RefreshConfigs( );
+                pConfig->Save( buf );
+                pConfig->RefreshConfigs( );
             }
 
             ImGui::Spacing( );
             if (ImGui::Button( ( "Delete" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
 
-                Config2->DeleteConfig( selectedConfig );
-                Config2->RefreshConfigs( );
+                pConfig->DeleteConfig( selectedConfig );
+                pConfig->RefreshConfigs( );
             }
             ImGui::Spacing( );
             if (ImGui::Button( ( "Reset" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
 
-                Config2->Setup( );
+                pConfig->bInitialized = false;
+                pConfig->Setup( );
             }
             ImGui::Spacing( );
             if (ImGui::Button( ( "Open config location" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
 
-                ShellExecuteA( NULL, ( "open" ), Config2->ConfigPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );;
+                ShellExecuteA( NULL, ( "open" ), pConfig->ConfigPath.c_str( ), NULL, NULL, SW_SHOWNORMAL );;
             }
             ImGui::Spacing( );
             if (ImGui::Button( ( "Unload" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
@@ -1480,6 +1481,7 @@ void menu::SaveWarning(bool& saved, bool type) noexcept {
             static ImVec2 buttonSize = ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2);
             if (ImGui::Button(("Yes"), buttonSize, true, false)) {
                 saved = false;
+//<<<<<<< Updated upstream
                 
                 if (type)
                 {
@@ -1502,11 +1504,11 @@ void menu::SaveWarning(bool& saved, bool type) noexcept {
                         LuaImplementation::vecScriptsToSave.clear( );
                     }
                     
-                    Config2->Save( Config2->vecConfigs[ cfg::configID ] );
+                    pConfig->Save(pConfig->vecConfigs[ cfg::configID ] );
                 }
                 else
                 {
-                    Config2->Load( Config2->vecConfigs[ cfg::configID ] );
+                    pConfig->Load(pConfig->vecConfigs[ cfg::configID ] );
 
                     for (std::string& scriptPath : cfg::szScripts)
                     {
@@ -1518,6 +1520,9 @@ void menu::SaveWarning(bool& saved, bool type) noexcept {
                     
                     LuaImplementation::LoadScriptsFromConfig( );
                 }
+//=======
+//                type ? pConfig->Save(pConfig->vecConfigs[cfg::configID]) : pConfig->Load(pConfig->vecConfigs[cfg::configID]);
+//>>>>>>> Stashed changes
             }
             ImGui::SameLine();
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2);
