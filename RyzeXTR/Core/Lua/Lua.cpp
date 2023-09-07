@@ -2427,3 +2427,64 @@ void LuaImplementation::ScriptInfo_t::Unload( )
 
 	bLoaded = false;
 }
+
+void LuaImplementation::SaveScriptsToConfig( )
+{
+	for (LuaImplementation::ScriptInfo_t& script : vecScriptInfos)
+	{
+		if ( !script.bLoaded || script.bShouldUnload || script.szName.empty( ) || script.szPath.empty( ) )
+			continue;
+
+		// we want to save this lua to config
+		vecScriptsToSave.push_back( script.szPath );
+	}
+}
+
+void LuaImplementation::LoadScriptsFromConfig( )
+{
+	// no scripts
+	if (vecScriptInfos.empty())
+		return;
+
+	// a shitty config system requires a shitty solution, so let's just unload all scripts if we don't have any to load
+	if (vecScriptsToLoad.empty( ))
+	{
+		for (LuaImplementation::ScriptInfo_t& script : vecScriptInfos)
+		{
+			if (script.bLoaded)
+				script.Unload();
+		}
+		return;
+	}
+
+	for (size_t i = 0u; i < vecScriptsToLoad.size(); i++)
+	{
+		// get refference to current script
+		LuaImplementation::ScriptInfo_t& script = vecScriptInfos[ i ];
+
+		// script has no path? This shouldn't happen but no need to attempt loading 0
+		// script is already loaded so ignore it
+		if ( script.szPath.empty( ) || script.bLoaded && script.szPath == vecScriptsToLoad[ i ] )
+			continue;
+		
+		// script is suppose to be unloaded or script is loaded, but we want to unload it
+		if (script.bShouldUnload || script.bLoaded && script.szPath != vecScriptsToLoad[ i ])
+			script.Unload( );
+			
+		// we want to save this lua to config
+		script.Load( );
+	}
+
+	// clear temporary load container
+	vecScriptsToLoad.clear( );
+}
+
+void LuaImplementation::SaveScriptVariablesToConfig( )
+{
+
+}
+
+void LuaImplementation::LoadScriptVariablesFromConfig( )
+{
+
+}

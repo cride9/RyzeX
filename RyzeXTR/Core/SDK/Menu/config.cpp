@@ -458,7 +458,12 @@ void CConfig::Setup() {
 		SetupColor(colSkins4, 37, Color(1.f, 1.f, 1.f, 1.f), XorStr("colSkins4"));
 
 		SetupStringArray(szSkinNametag, 37, "", XorStr("szSkinNametag"));
-	}
+	} 
+
+	// scripts
+	PushCategory( XorStr( "Scripts" ) );
+	//SetupStringArray( cfg::vecScripts.data(), cfg::vecScripts.size(), "", XorStr( "szScripts" ) );
+	SetupStringArray( cfg::szScripts, 64, "", XorStr( "szScripts" ) );
 }
 
 void CConfig::SetupColor(float colColor[4], Color colDefault, std::string szName) {
@@ -565,7 +570,7 @@ void CConfig::SetupStringArray(std::string* szValue, int iLength, std::string sz
 	for (size_t i = 0; i < iLength; i++) {
 
 		szValue[i] = szDefault;
-		strings.push_back(new ConfigValue<std::string>(szCategory, szName, &szValue[i]));
+		strings.push_back(new ConfigValue<std::string>(szCategory, std::format( "{}{}", szName, i ), &szValue[i]));
 	}
 }
 

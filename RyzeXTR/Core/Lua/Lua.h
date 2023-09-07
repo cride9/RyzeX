@@ -27,103 +27,6 @@ namespace LuaImplementation {
 
 	void DisableTables( sol::state& lua );
 
-	// Reference to variable helper
-	class ScriptVarReference_t 
-	{
-		//ConfigValue<std::any>* pValue;
-		void* pValue;
-	public:
-		ScriptVarReference_t( ) : pValue{ nullptr } { }
-		ScriptVarReference_t( void* pValue ) : pValue{ pValue } { }
-
-		// Get
-		//bool GetBool( ) 
-		//{
-		//	if (!pValue)
-		//		return false;
-
-		//	return *pValue->value;
-		//}
-
-		//int GetInt( ) 
-		//{
-		//	if (!pValue)
-		//		return 0;
-
-		//	return pValue->get< int >( );
-		//}
-
-		//float GetFloat( ) 
-		//{
-		//	if (!pValue)
-		//		return 0.f;
-
-		//	return pValue->get< float >( );
-		//}
-
-		//Color GetColor( ) 
-		//{
-		//	if (!pValue->value)
-		//		return color( 0, 0, 0, 0 );
-
-		//	return &pValue->value<Color>();
-		//}
-
-		//std::string GetString( ) 
-		//{
-		//	if (!pValue)
-		//		return "";
-
-		//	// they think they're funny
-		//	if (pValue->get_type( ) != vars::VarType_String)
-		//		return std::to_string( pValue->get< double >( ) );
-
-		//	return pValue->get_string( );
-		//}
-
-		//// Set
-		//void SetBool( bool value ) 
-		//{
-		//	if (!pValue)
-		//		return;
-
-		//	pValue->set< bool >( value );
-		//}
-
-		//void SetInt( int value ) 
-		//{
-		//	if (!pValue)
-		//		return;
-
-		//	pValue->set< int >( value );
-		//}
-
-		//void SetFloat( float value ) 
-		//{
-		//	if (!pValue)
-		//		return;
-
-		//	pValue->set< float >( value );
-		//}
-
-		//void SetColor( color value ) 
-		//{
-		//	if (!pValue)
-		//		return;
-
-		//	pValue->set_color( value );
-		//}
-
-		//void SetString( std::string value ) 
-		//{
-		//	if (!pValue)
-		//		return;
-
-		//	pValue->set_value_string( value );
-		//}
-
-	};
-
 	enum MENUITEMTYPE : int {
 		MENUITEM_INVALID = -1,
 		MENUITEM_CHECKBOX = 0,
@@ -525,6 +428,14 @@ namespace LuaImplementation {
 	/// Parse files and add script info
 	/// </summary>
 	void Parse( );
+
+	inline std::vector<std::string> vecScriptsToSave;
+	inline std::vector<std::string> vecScriptsToLoad;
+	void SaveScriptsToConfig( );
+	void LoadScriptsFromConfig( );
+
+	void SaveScriptVariablesToConfig( );
+	void LoadScriptVariablesFromConfig( );
 
 	/// <summary>
 	/// Save to config

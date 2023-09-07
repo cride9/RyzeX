@@ -9,6 +9,9 @@
 
 namespace cfg {
 
+	//inline std::vector< std::string > vecScripts;
+	inline std::string szScripts[ 64 ];
+
 	inline bool bDoUnload = false;
 
 	inline int configID = -1;

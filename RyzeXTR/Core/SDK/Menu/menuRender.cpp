@@ -1170,6 +1170,7 @@ void menu::Config(ImVec2 savedCursorPosition) {
             if (ImGui::Button( ( "Create" ), ImVec2( ImGui::GetContentRegionAvail( ).x, 20.f ), true, true )) {
 
                 Config2->Save( buf );
+                Config2->RefreshConfigs( );
             }
 
             ImGui::Spacing( );
@@ -1479,7 +1480,44 @@ void menu::SaveWarning(bool& saved, bool type) noexcept {
             static ImVec2 buttonSize = ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2);
             if (ImGui::Button(("Yes"), buttonSize, true, false)) {
                 saved = false;
-                type ? Config2->Save(Config2->vecConfigs[cfg::configID]) : Config2->Load(Config2->vecConfigs[cfg::configID]);
+                
+                if (type)
+                {
+                    // reset
+                    for (int i = 0; i < 64; i++)
+                        cfg::szScripts[ i ] = "";
+
+                    LuaImplementation::SaveScriptsToConfig( );
+                    
+                    if (!LuaImplementation::vecScriptsToSave.empty( ))
+                    {
+                        for (size_t i = 0u; i < LuaImplementation::vecScriptsToSave.size(); i++)
+                        {
+                            // get script path refference 
+                            const std::string& scriptPath = LuaImplementation::vecScriptsToSave[ i ];
+                            cfg::szScripts[ i ] = scriptPath;
+                        }
+
+                        // clear temporary save container
+                        LuaImplementation::vecScriptsToSave.clear( );
+                    }
+                    
+                    Config2->Save( Config2->vecConfigs[ cfg::configID ] );
+                }
+                else
+                {
+                    Config2->Load( Config2->vecConfigs[ cfg::configID ] );
+
+                    for (std::string& scriptPath : cfg::szScripts)
+                    {
+                        if (scriptPath.empty( ))
+                            continue;
+
+                        LuaImplementation::vecScriptsToLoad.push_back( scriptPath );
+                    }
+                    
+                    LuaImplementation::LoadScriptsFromConfig( );
+                }
             }
             ImGui::SameLine();
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2);
