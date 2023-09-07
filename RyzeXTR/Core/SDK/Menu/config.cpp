@@ -459,10 +459,52 @@ void CConfig::Setup() {
 
 		SetupStringArray(szSkinNametag, 37, "", XorStr("szSkinNametag"));
 
-		// scripts
+	}
+
+	// scripts
+	{
 		PushCategory( XorStr( "Scripts" ) );
-		//SetupStringArray( cfg::vecScripts.data(), cfg::vecScripts.size(), "", XorStr( "szScripts" ) );
-		SetupStringArray( cfg::szScripts, 64, "", XorStr( "szScripts" ) );
+		SetupStringArray( cfg::vecScripts.data( ), cfg::vecScripts.size( ), XorStr( "" ), XorStr( "szScripts" ) );
+
+		for (const LuaVariables_t& variable : cfg::vecScriptVariables)
+		{
+			switch (variable.nType)
+			{
+				case EVARIABLETYPES::VARIABLES_BOOL:
+				{
+					BoolObject_t pObject = std::any_cast< BoolObject_t >( variable.pObject );
+					SetupBool( pObject.bValue, false, pObject.strName );
+					break;
+				}
+				case EVARIABLETYPES::VARIABLES_BOOL_ARRAY:
+				{
+					BoolArrayObject_t pObject = std::any_cast< BoolArrayObject_t >( variable.pObject );
+					for (size_t i = 0u; i < pObject.deqValues.size( ); i++)
+						SetupBool( pObject.deqValues[ i ], false, pObject.strName + std::to_string( i ) );
+					break;
+				}
+				case EVARIABLETYPES::VARIABLES_INT:
+				{
+					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
+					SetupInt( pObject.iValue, 0, pObject.strName );
+					break;
+				}
+				case EVARIABLETYPES::VARIABLES_FLOAT:
+				{
+					FloatObject_t pObject = std::any_cast< FloatObject_t >( variable.pObject );
+					SetupFloat( pObject.flValue, 0.0f, pObject.strName );
+					break;
+				}
+				case EVARIABLETYPES::VARIABLES_COLOR:
+				{
+					ColorObject_t pObject = std::any_cast< ColorObject_t >( variable.pObject );
+					SetupColor( pObject.flValue, Color( 1.f, 1.f, 1.f, 1.f ), pObject.strName );
+					break;
+				}
+				default:
+					break;
+			}
+		}
 	}
 
 	bInitialized = true;

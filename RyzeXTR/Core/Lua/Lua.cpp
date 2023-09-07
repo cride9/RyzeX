@@ -2148,226 +2148,6 @@ void LuaImplementation::Parse( )
 
 }
 
-//void LuaImplementation::SaveToJson( nlohmann::json& j )
-//{
-//	j[ XorStr( "scripts" ) ] = { };
-//
-//	for (auto& script : m_vecScriptInfos) {
-//		// only save loaded scripts
-//		if (!script.bLoaded)
-//			continue;
-//
-//		auto& current_json = j[ XorStr( "scripts" ) ][ script.szName ];
-//		current_json = { };
-//
-//		// save menu items
-//		for (auto& item : script.vecMenuItems) {
-//			if (item.iType == MENUITEM_CHECKBOX) {
-//				LuaImplementation::CheckboxMenuItem_t& checkbox = reinterpret_cast< LuaImplementation::CheckboxMenuItem_t& >( item );
-//				current_json[ checkbox.szVarName ] = { };
-//				current_json[ checkbox.szVarName ][ XorStr( "type" ) ] = XorStr( "checkbox" );
-//				current_json[ checkbox.szVarName ][ XorStr( "value" ) ] = checkbox.bValue;
-//				//current_json [ checkbox.szVarName ][ "visible" ] = checkbox.bVisible;
-//			}
-//			else if (item.iType == MENUITEM_SLIDERINT) {
-//				LuaImplementation::SliderIntMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderIntMenuItem_t& >( item );
-//				current_json[ slider.szVarName ] = { };
-//				current_json[ slider.szVarName ][ XorStr( "type" ) ] = XorStr( "sliderint" );
-//				current_json[ slider.szVarName ][ XorStr( "value" ) ] = slider.iValue;
-//			}
-//			else if (item.iType == MENUITEM_SLIDERFLOAT) {
-//				LuaImplementation::SliderFloatMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderFloatMenuItem_t& >( item );
-//				current_json[ slider.szVarName ] = { };
-//				current_json[ slider.szVarName ][ XorStr( "type" ) ] = XorStr( "sliderfloat" );
-//				current_json[ slider.szVarName ][ XorStr( "value" ) ] = slider.flValue;
-//			}
-//			else if (item.iType == MENUITEM_KEYBIND) {
-//				LuaImplementation::KeybindMenuItem_t& keybind = reinterpret_cast< LuaImplementation::KeybindMenuItem_t& >( item );
-//				current_json[ keybind.szVarName ] = { };
-//				current_json[ keybind.szVarName ][ XorStr( "type" ) ] = XorStr( "keybind" );
-//				current_json[ keybind.szVarName ][ XorStr( "value" ) ] = keybind.iValue;
-//				current_json[ keybind.szVarName ][ XorStr( "value_key_mode" ) ] = keybind.iKeyMode;
-//			}
-//			else if (item.iType == MENUITEM_COMBOBOX) {
-//				LuaImplementation::ComboMenuItem_t& combo = reinterpret_cast< LuaImplementation::ComboMenuItem_t& >( item );
-//				current_json[ combo.szVarName ] = { };
-//				current_json[ combo.szVarName ][ XorStr( "type" ) ] = XorStr( "combobox" );
-//				current_json[ combo.szVarName ][ XorStr( "value" ) ] = combo.iValue;
-//			}
-//			else if (item.iType == MENUITEM_MULTICOMBOBOX) {
-//				LuaImplementation::MultiComboMenuItem_t& multi_combo = reinterpret_cast< LuaImplementation::MultiComboMenuItem_t& >( item );
-//				current_json[ multi_combo.szVarName ] = { };
-//				current_json[ multi_combo.szVarName ][ XorStr( "type" ) ] = XorStr( "multi_combobox" );
-//				current_json[ multi_combo.szVarName ][ XorStr( "values" ) ] = { };
-//				for (int i = 0; i < multi_combo.vecComboboxLabels.size( ) && i < multi_combo.vecMultiComboValues.size( ); i++) {
-//					current_json[ multi_combo.szVarName ][ XorStr( "values" ) ][ multi_combo.vecComboboxLabels[ i ] ] = multi_combo.vecMultiComboValues[ i ];
-//				}
-//			}
-//			else if (item.iType == MENUITEM_COLORPICKER) {
-//				LuaImplementation::ColorPickerMenuItem_t& colorpicker = reinterpret_cast< LuaImplementation::ColorPickerMenuItem_t& >( item );
-//				current_json[ colorpicker.szVarName ] = { };
-//				current_json[ colorpicker.szVarName ][ XorStr( "type" ) ] = XorStr( "colorpicker" );
-//				current_json[ colorpicker.szVarName ][ XorStr( "value" ) ] = ( unsigned int )colorpicker.cValue.GetU32( ); // we transform to u32 and back
-//			}
-//		}
-//	}
-//}
-//
-//void LuaImplementation::LoadFromJson( nlohmann::json j )
-//{
-//	if (j[ XorStr( "scripts" ) ].empty( )) {
-//		// unload every script
-//		for (auto& script : m_vecScriptInfos) {
-//			if (!script.bLoaded)
-//				continue;
-//
-//			script.Unload( );
-//		}
-//
-//		return;
-//	}
-//
-//	std::vector< std::string > vecLoadedScripts = { };
-//
-//	// here we loop through scripts
-//	// load wanted scripts
-//	// and load config
-//	for (auto& i : j[ XorStr( "scripts" ) ].items( ))
-//	{
-//		if (i.key( ).find( XorStr( ".lua" ) ) == std::string::npos)
-//			continue;
-//
-//		auto pScript = FindScriptByName( i.key( ) );
-//		if (!pScript)
-//			continue;
-//
-//		// load script
-//		vecLoadedScripts.push_back( i.key( ) );
-//		pScript->Load( );
-//
-//		// here we loop through menu items
-//		for (auto& j : i.value( ).items( ))
-//		{
-//			// make sure it has a type
-//			if (j.value( )[ XorStr( "type" ) ].empty( ) || !j.value( )[ XorStr( "type" ) ].is_string( ))
-//				continue;
-//
-//			// find matching menu item
-//			for (auto& menu_item : pScript->vecMenuItems) {
-//
-//				// matches variable name
-//				if (menu_item.szVarName == j.key( )) {
-//
-//					// matching type
-//					if (menu_item.iType == MENUITEM_CHECKBOX) {
-//						if (j.value( )[ XorStr( "type" ) ].get< std::string >( ) != XorStr( "checkbox" ))
-//							continue;
-//
-//						// load checkbox
-//						if (j.value( )[ XorStr( "value" ) ].empty( ) || !j.value( )[ XorStr( "value" ) ].is_boolean( ))
-//							continue;
-//
-//						LuaImplementation::CheckboxMenuItem_t& checkbox = reinterpret_cast< LuaImplementation::CheckboxMenuItem_t& >( menu_item );
-//						checkbox.bValue = j.value( )[ XorStr( "value" ) ].get< bool >( );
-//					}
-//					else if (menu_item.iType == MENUITEM_SLIDERINT) {
-//						if (j.value( )[ XorStr( "type" ) ].get< std::string >( ) != XorStr( "sliderint" ))
-//							continue;
-//
-//						// load sliderint
-//						if (j.value( )[ XorStr( "value" ) ].empty( ) || !j.value( )[ XorStr( "value" ) ].is_number_integer( ))
-//							continue;
-//
-//						LuaImplementation::SliderIntMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderIntMenuItem_t& >( menu_item );
-//						slider.iValue = j.value( )[ XorStr( "value" ) ].get< int >( );
-//					}
-//					else if (menu_item.iType == MENUITEM_SLIDERFLOAT) {
-//						if (j.value( )[ XorStr( "type" ) ].get< std::string >( ) != XorStr( "sliderfloat" ))
-//							continue;
-//
-//						// load sliderfloat
-//						if (j.value( )[ XorStr( "value" ) ].empty( ) /*|| !j.value( ) [ "value" ].is_number_float( )*/ || !j.value( )[ XorStr( "value" ) ].is_number( ))
-//							continue;
-//
-//						LuaImplementation::SliderFloatMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderFloatMenuItem_t& >( menu_item );
-//						slider.flValue = j.value( )[ XorStr( "value" ) ].get< float >( );
-//					}
-//					else if (menu_item.iType == MENUITEM_KEYBIND) {
-//						if (j.value( )[ XorStr( "type" ) ].get< std::string >( ) != XorStr( "keybind" ))
-//							continue;
-//
-//						// load keybind
-//						if (j.value( )[ XorStr( "value" ) ].empty( ) || !j.value( )[ XorStr( "value" ) ].is_number_integer( ))
-//							continue;
-//
-//						LuaImplementation::KeybindMenuItem_t& keybind = reinterpret_cast< LuaImplementation::KeybindMenuItem_t& >( menu_item );
-//						keybind.iValue = j.value( )[ XorStr( "value" ) ].get< int >( );
-//
-//						if (j.value( )[ XorStr( "value_key_mode" ) ].empty( ) || !j.value( )[ XorStr( "value_key_mode" ) ].is_number_integer( ))
-//							continue;
-//
-//						keybind.iKeyMode = j.value( )[ XorStr( "value_key_mode" ) ].get< int >( );
-//					}
-//					else if (menu_item.iType == MENUITEM_COMBOBOX) {
-//						if (j.value( )[ XorStr( "type" ) ].get< std::string >( ) != XorStr( "combobox" ))
-//							continue;
-//
-//						// load combobox
-//						if (j.value( )[ XorStr( "value" ) ].empty( ) || !j.value( )[ XorStr( "value" ) ].is_number_integer( ))
-//							continue;
-//
-//						LuaImplementation::ComboMenuItem_t& combo = reinterpret_cast< LuaImplementation::ComboMenuItem_t& >( menu_item );
-//						combo.iValue = j.value( )[ XorStr( "value" ) ].get< int >( );
-//					}
-//					else if (menu_item.iType == MENUITEM_MULTICOMBOBOX) {
-//						if (j.value( )[ XorStr( "type" ) ].get< std::string >( ) != XorStr( "multi_combobox" ))
-//							continue;
-//
-//						// load combobox
-//						if (j.value( )[ XorStr( "values" ) ].empty( ))
-//							continue;
-//
-//						LuaImplementation::MultiComboMenuItem_t& multi_combo = reinterpret_cast< LuaImplementation::MultiComboMenuItem_t& >( menu_item );
-//						for (auto& k : j.value( )[ XorStr( "values" ) ].items( )) {
-//							if (k.key( ).empty( ) || !k.value( ).is_boolean( ))
-//								continue;
-//
-//							multi_combo.SetByLabel( k.key( ), k.value( ).get< bool >( ) );
-//						}
-//					}
-//					else if (menu_item.iType == MENUITEM_COLORPICKER) {
-//						if (j.value( )[ XorStr( "type" ) ].get< std::string >( ) != XorStr( "colorpicker" ))
-//							continue;
-//
-//						// load colorpicker
-//						if (j.value( )[ XorStr( "value" ) ].empty( ) || !j.value( )[ XorStr( "value" ) ].is_number_unsigned( ))
-//							continue;
-//
-//						LuaImplementation::ColorPickerMenuItem_t& color_picker = reinterpret_cast< LuaImplementation::ColorPickerMenuItem_t& >( menu_item );
-//
-//						/*ImU32*/ unsigned int u32col = j.value( )[ XorStr( "value" ) ].get< /*ImU32*/ unsigned int >( );
-//						color_picker.cValue = color::FromU32( u32col );
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	// unload not loaded scripts
-//	for (auto& script : m_vecScriptInfos) {
-//		bool bLoaded = script.bLoaded;
-//		std::string szName = script.szName;
-//
-//		if (!bLoaded) {
-//			continue;
-//		}
-//
-//		if (std::find( vecLoadedScripts.begin( ), vecLoadedScripts.end( ), szName ) == vecLoadedScripts.end( )) {
-//			script.Unload( );
-//		}
-//	}
-//}
-
 bool LuaImplementation::ScriptInfo_t::Load( )
 {
 	if (bLoaded) {
@@ -2443,48 +2223,169 @@ void LuaImplementation::SaveScriptsToConfig( )
 void LuaImplementation::LoadScriptsFromConfig( )
 {
 	// no scripts
-	if (vecScriptInfos.empty())
+	if (vecScriptInfos.empty() || cfg::vecScripts.empty())
 		return;
 
-	// a shitty config system requires a shitty solution, so let's just unload all scripts if we don't have any to load
-	if (vecScriptsToLoad.empty( ))
-	{
-		for (LuaImplementation::ScriptInfo_t& script : vecScriptInfos)
-		{
-			if (script.bLoaded)
-				script.Unload();
-		}
-		return;
-	}
-
-	for (size_t i = 0u; i < vecScriptsToLoad.size(); i++)
+	for (size_t i = 0u; i < cfg::vecScripts.size(); i++)
 	{
 		// get refference to current script
 		LuaImplementation::ScriptInfo_t& script = vecScriptInfos[ i ];
 
 		// script has no path? This shouldn't happen but no need to attempt loading 0
 		// script is already loaded so ignore it
-		if ( script.szPath.empty( ) || script.bLoaded && script.szPath == vecScriptsToLoad[ i ] )
+		if ( script.szPath.empty( ) || script.bLoaded && script.szPath == cfg::vecScripts[ i ] )
 			continue;
 		
 		// script is suppose to be unloaded or script is loaded, but we want to unload it
-		if (script.bShouldUnload || script.bLoaded && script.szPath != vecScriptsToLoad[ i ])
+		if (script.bShouldUnload || script.bLoaded && script.szPath != cfg::vecScripts[ i ])
 			script.Unload( );
 			
 		// we want to save this lua to config
 		script.Load( );
 	}
 
-	// clear temporary load container
-	vecScriptsToLoad.clear( );
+	// clear container
+	cfg::vecScripts.clear( );
 }
 
 void LuaImplementation::SaveScriptVariablesToConfig( )
 {
+	for (LuaImplementation::ScriptInfo_t& script : vecScriptInfos)
+	{
+		// only save loaded scripts
+		if (!script.bLoaded)
+			continue;
 
+		// save menu items
+		for (auto& item : script.vecMenuItems) 
+		{
+			switch (item.iType)
+			{
+				case MENUITEM_CHECKBOX:
+				{
+					LuaImplementation::CheckboxMenuItem_t& checkbox = reinterpret_cast< LuaImplementation::CheckboxMenuItem_t& >( item );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_BOOL, std::make_any< BoolObject_t >( BoolObject_t{ checkbox.bValue, checkbox.szVarName } ) );
+					break;
+				}
+				case MENUITEM_SLIDERINT:
+				{
+					LuaImplementation::SliderIntMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderIntMenuItem_t& >( item );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ slider.iValue, slider.szVarName } ) );
+					break;
+				}
+				case MENUITEM_SLIDERFLOAT:
+				{
+					LuaImplementation::SliderFloatMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderFloatMenuItem_t& >( item );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_FLOAT, std::make_any< FloatObject_t >( FloatObject_t{ slider.flValue, slider.szVarName } ) );
+					break;
+				}
+				case MENUITEM_KEYBIND:
+				{
+					LuaImplementation::KeybindMenuItem_t& keybind = reinterpret_cast< LuaImplementation::KeybindMenuItem_t& >( item );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ keybind.iValue, keybind.szVarName } ) );
+					break;
+				}
+				case MENUITEM_COMBOBOX: 
+				{
+					LuaImplementation::ComboMenuItem_t& combo = reinterpret_cast< LuaImplementation::ComboMenuItem_t& >( item );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ combo.iValue, combo.szVarName } ) );
+					break;
+				}
+				case MENUITEM_MULTICOMBOBOX:
+				{
+					LuaImplementation::MultiComboMenuItem_t& multicombo = reinterpret_cast< LuaImplementation::MultiComboMenuItem_t& >( item );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_BOOL_ARRAY, std::make_any< BoolArrayObject_t >( BoolArrayObject_t{ multicombo.vecMultiComboValues, multicombo.szVarName } ) );
+					break;
+				}
+				case MENUITEM_COLORPICKER:
+				{
+					LuaImplementation::ColorPickerMenuItem_t& colorpicker = reinterpret_cast< LuaImplementation::ColorPickerMenuItem_t& >( item );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_COLOR, std::make_any< ColorObject_t >( ColorObject_t{ colorpicker.cValue[ 0 ], colorpicker.cValue[ 1 ], colorpicker.cValue[ 2 ], colorpicker.cValue[ 3 ], colorpicker.szVarName } ) );
+					break;
+				}
+				default:
+					break;
+			}
+		}
+	}
 }
 
 void LuaImplementation::LoadScriptVariablesFromConfig( )
 {
+	if ( cfg::vecScriptVariables.empty( ) )
+		return;
 
+	for (LuaImplementation::ScriptInfo_t& script : vecScriptInfos)
+	{
+		// only check loaded scripts
+		if (!script.bLoaded)
+			continue;
+
+		// check variables
+		for (size_t i = 0u; i < script.vecMenuItems.size( ); i++ )
+		{
+			// get refference to current item
+			auto& item = script.vecMenuItems[ i ];
+			LuaVariables_t& variable = cfg::vecScriptVariables[ i ];
+
+			switch (item.iType)
+			{
+				case MENUITEM_CHECKBOX:
+				{
+					LuaImplementation::CheckboxMenuItem_t& checkbox = reinterpret_cast< LuaImplementation::CheckboxMenuItem_t& >( item );
+					BoolObject_t pObject = std::any_cast< BoolObject_t >( variable.pObject );
+					checkbox.Set( pObject.bValue );
+					break;
+				}
+				case MENUITEM_SLIDERINT:
+				{
+					LuaImplementation::SliderIntMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderIntMenuItem_t& >( item );
+					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
+					slider.Set( pObject.iValue );
+					break;
+				}
+				case MENUITEM_SLIDERFLOAT:
+				{
+					LuaImplementation::SliderFloatMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderFloatMenuItem_t& >( item );
+					FloatObject_t pObject = std::any_cast< FloatObject_t >( variable.pObject );
+					slider.Set( pObject.flValue );
+					break;
+				}
+				case MENUITEM_KEYBIND:
+				{
+					LuaImplementation::KeybindMenuItem_t& keybind = reinterpret_cast< LuaImplementation::KeybindMenuItem_t& >( item );
+					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
+					keybind.Set( pObject.iValue );
+					break;
+				}
+				case MENUITEM_COMBOBOX:
+				{
+					LuaImplementation::ComboMenuItem_t& combo = reinterpret_cast< LuaImplementation::ComboMenuItem_t& >( item );
+					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
+					combo.Set( pObject.iValue );
+					break;
+				}
+				case MENUITEM_MULTICOMBOBOX:
+				{
+					LuaImplementation::MultiComboMenuItem_t& multicombo = reinterpret_cast< LuaImplementation::MultiComboMenuItem_t& >( item );
+					BoolArrayObject_t pObject = std::any_cast< BoolArrayObject_t >( variable.pObject );
+					for ( size_t i = 0u; i < multicombo.vecMultiComboValues.size( ); i++ )
+						multicombo.Set( i, pObject.deqValues[ i ] );
+					break;
+				}
+				case MENUITEM_COLORPICKER:
+				{
+					LuaImplementation::ColorPickerMenuItem_t& colorpicker = reinterpret_cast< LuaImplementation::ColorPickerMenuItem_t& >( item );
+					ColorObject_t pObject = std::any_cast< ColorObject_t >( variable.pObject );
+					colorpicker.Set( pObject.flValue );
+					break;
+				}
+				default:
+					break;
+			}
+		}
+	}
+
+	// clear container
+	cfg::vecScriptVariables.clear( );
 }

@@ -1481,48 +1481,34 @@ void menu::SaveWarning(bool& saved, bool type) noexcept {
             static ImVec2 buttonSize = ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2);
             if (ImGui::Button(("Yes"), buttonSize, true, false)) {
                 saved = false;
-//<<<<<<< Updated upstream
-                
+
                 if (type)
                 {
                     // reset
-                    for (int i = 0; i < 64; i++)
-                        cfg::szScripts[ i ] = "";
+                    cfg::vecScripts.clear( );
+                    cfg::vecScriptVariables.clear( );
 
                     LuaImplementation::SaveScriptsToConfig( );
                     
                     if (!LuaImplementation::vecScriptsToSave.empty( ))
                     {
-                        for (size_t i = 0u; i < LuaImplementation::vecScriptsToSave.size(); i++)
-                        {
-                            // get script path refference 
-                            const std::string& scriptPath = LuaImplementation::vecScriptsToSave[ i ];
-                            cfg::szScripts[ i ] = scriptPath;
-                        }
+                        for (const std::string& scriptPath : LuaImplementation::vecScriptsToSave)
+                            cfg::vecScripts.push_back( scriptPath );
 
                         // clear temporary save container
                         LuaImplementation::vecScriptsToSave.clear( );
                     }
                     
+                    LuaImplementation::SaveScriptVariablesToConfig( );
+
                     pConfig->Save(pConfig->vecConfigs[ cfg::configID ] );
                 }
                 else
                 {
                     pConfig->Load(pConfig->vecConfigs[ cfg::configID ] );
-
-                    for (std::string& scriptPath : cfg::szScripts)
-                    {
-                        if (scriptPath.empty( ))
-                            continue;
-
-                        LuaImplementation::vecScriptsToLoad.push_back( scriptPath );
-                    }
-                    
                     LuaImplementation::LoadScriptsFromConfig( );
+                    LuaImplementation::LoadScriptVariablesFromConfig( );
                 }
-//=======
-//                type ? pConfig->Save(pConfig->vecConfigs[cfg::configID]) : pConfig->Load(pConfig->vecConfigs[cfg::configID]);
-//>>>>>>> Stashed changes
             }
             ImGui::SameLine();
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 2);

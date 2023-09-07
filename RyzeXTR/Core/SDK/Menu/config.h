@@ -5,12 +5,63 @@
 #include <set>
 #include <unordered_map>
 #include <mutex>
+#include <any>
+#include <deque>
 #include "../DataTyes/Color.h"
+
+enum EVARIABLETYPES : int
+{
+	VARIABLES_BOOL,
+	VARIABLES_BOOL_ARRAY,
+	VARIABLES_INT,
+	VARIABLES_FLOAT,
+	VARIABLES_COLOR,
+	VARIABLES_MAX
+};
+
+struct LuaVariables_t
+{
+	LuaVariables_t( const EVARIABLETYPES nType, std::any&& pObject ) :
+		nType( nType ), pObject( std::move( pObject ) ) { }
+
+	EVARIABLETYPES nType = VARIABLES_MAX;
+	std::any pObject = { };
+};
+
+struct BoolObject_t
+{
+	bool bValue = false;
+	std::string strName = "";
+};
+
+struct BoolArrayObject_t
+{
+	std::deque<bool> deqValues = { };
+	std::string strName = "";
+};
+
+struct IntObject_t
+{
+	int iValue = 0;
+	std::string strName = "";
+};
+
+struct FloatObject_t
+{
+	float flValue = 0.0f;
+	std::string strName = "";
+};
+
+struct ColorObject_t
+{
+	float flValue[4] = { 255.f, 255.f, 255.f, 255.f };
+	std::string strName = "";
+};
 
 namespace cfg {
 
-	//inline std::vector< std::string > vecScripts;
-	inline std::string szScripts[ 64 ];
+	inline std::vector< std::string > vecScripts;
+	inline std::vector< LuaVariables_t > vecScriptVariables;
 
 	inline bool bDoUnload = false;
 

@@ -80,7 +80,7 @@ namespace LuaImplementation {
 		float flMinValue = 0;
 		float flMaxValue = 0;
 
-		float cValue[ 4 ] = {255.f};
+		float cValue[ 4 ] = {255.f, 255.f, 255.f, 255.f };
 
 		std::vector< std::string > vecComboboxLabels; // using this for both combo and multi combo box
 		std::deque< bool > vecMultiComboValues;
@@ -430,7 +430,6 @@ namespace LuaImplementation {
 	void Parse( );
 
 	inline std::vector<std::string> vecScriptsToSave;
-	inline std::vector<std::string> vecScriptsToLoad;
 	void SaveScriptsToConfig( );
 	void LoadScriptsFromConfig( );
 
