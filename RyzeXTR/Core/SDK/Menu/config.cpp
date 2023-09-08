@@ -473,32 +473,32 @@ void CConfig::Setup() {
 				case EVARIABLETYPES::VARIABLES_BOOL:
 				{
 					BoolObject_t pObject = std::any_cast< BoolObject_t >( variable.pObject );
-					SetupBool( pObject.bValue, false, pObject.strName );
+					SetupBool( pObject.bValue, false, variable.strName );
 					break;
 				}
 				case EVARIABLETYPES::VARIABLES_BOOL_ARRAY:
 				{
 					BoolArrayObject_t pObject = std::any_cast< BoolArrayObject_t >( variable.pObject );
 					for (size_t i = 0u; i < pObject.deqValues.size( ); i++)
-						SetupBool( pObject.deqValues[ i ], false, pObject.strName + std::to_string( i ) );
+						SetupBool( pObject.deqValues[ i ], false, variable.strName + std::to_string( i ) );
 					break;
 				}
 				case EVARIABLETYPES::VARIABLES_INT:
 				{
 					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
-					SetupInt( pObject.iValue, 0, pObject.strName );
+					SetupInt( pObject.iValue, 0, variable.strName );
 					break;
 				}
 				case EVARIABLETYPES::VARIABLES_FLOAT:
 				{
 					FloatObject_t pObject = std::any_cast< FloatObject_t >( variable.pObject );
-					SetupFloat( pObject.flValue, 0.0f, pObject.strName );
+					SetupFloat( pObject.flValue, 0.0f, variable.strName );
 					break;
 				}
 				case EVARIABLETYPES::VARIABLES_COLOR:
 				{
 					ColorObject_t pObject = std::any_cast< ColorObject_t >( variable.pObject );
-					SetupColor( pObject.flValue, Color( 1.f, 1.f, 1.f, 1.f ), pObject.strName );
+					SetupColor( pObject.flValue, Color( 1.f, 1.f, 1.f, 1.f ), variable.strName );
 					break;
 				}
 				default:
@@ -591,9 +591,9 @@ void CConfig::SetupInt(int& iValue, int iDefault, std::string szName) {
 	ints.push_back(new ConfigValue<int>(szCategory, szName, &iValue));
 }
 
-void CConfig::SetupFloat(float& iValue, float iDefault, std::string szName) {
+void CConfig::SetupFloat(float& iValue, float flDefault, std::string szName) {
 
-	iValue = bInitialized ? iValue : iDefault;
+	iValue = bInitialized ? iValue : flDefault;
 	floats.push_back(new ConfigValue<float>(szCategory, szName, &iValue));
 }
 

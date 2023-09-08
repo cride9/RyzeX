@@ -2264,43 +2264,43 @@ void LuaImplementation::SaveScriptVariablesToConfig( )
 				case MENUITEM_CHECKBOX:
 				{
 					LuaImplementation::CheckboxMenuItem_t& checkbox = reinterpret_cast< LuaImplementation::CheckboxMenuItem_t& >( item );
-					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_BOOL, std::make_any< BoolObject_t >( BoolObject_t{ checkbox.bValue, checkbox.szVarName } ) );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_BOOL, std::make_any< BoolObject_t >( BoolObject_t{ checkbox.bValue } ), checkbox.szVarName );
 					break;
 				}
 				case MENUITEM_SLIDERINT:
 				{
 					LuaImplementation::SliderIntMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderIntMenuItem_t& >( item );
-					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ slider.iValue, slider.szVarName } ) );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ slider.iValue } ), slider.szVarName );
 					break;
 				}
 				case MENUITEM_SLIDERFLOAT:
 				{
 					LuaImplementation::SliderFloatMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderFloatMenuItem_t& >( item );
-					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_FLOAT, std::make_any< FloatObject_t >( FloatObject_t{ slider.flValue, slider.szVarName } ) );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_FLOAT, std::make_any< FloatObject_t >( FloatObject_t{ slider.flValue } ), slider.szVarName );
 					break;
 				}
 				case MENUITEM_KEYBIND:
 				{
 					LuaImplementation::KeybindMenuItem_t& keybind = reinterpret_cast< LuaImplementation::KeybindMenuItem_t& >( item );
-					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ keybind.iValue, keybind.szVarName } ) );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ keybind.iValue } ), keybind.szVarName );
 					break;
 				}
 				case MENUITEM_COMBOBOX: 
 				{
 					LuaImplementation::ComboMenuItem_t& combo = reinterpret_cast< LuaImplementation::ComboMenuItem_t& >( item );
-					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ combo.iValue, combo.szVarName } ) );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_INT, std::make_any< IntObject_t >( IntObject_t{ combo.iValue } ), combo.szVarName );
 					break;
 				}
 				case MENUITEM_MULTICOMBOBOX:
 				{
 					LuaImplementation::MultiComboMenuItem_t& multicombo = reinterpret_cast< LuaImplementation::MultiComboMenuItem_t& >( item );
-					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_BOOL_ARRAY, std::make_any< BoolArrayObject_t >( BoolArrayObject_t{ multicombo.vecMultiComboValues, multicombo.szVarName } ) );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_BOOL_ARRAY, std::make_any< BoolArrayObject_t >( BoolArrayObject_t{ multicombo.vecMultiComboValues } ), multicombo.szVarName );
 					break;
 				}
 				case MENUITEM_COLORPICKER:
 				{
 					LuaImplementation::ColorPickerMenuItem_t& colorpicker = reinterpret_cast< LuaImplementation::ColorPickerMenuItem_t& >( item );
-					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_COLOR, std::make_any< ColorObject_t >( ColorObject_t{ colorpicker.cValue[ 0 ], colorpicker.cValue[ 1 ], colorpicker.cValue[ 2 ], colorpicker.cValue[ 3 ], colorpicker.szVarName } ) );
+					cfg::vecScriptVariables.emplace_back( EVARIABLETYPES::VARIABLES_COLOR, std::make_any< ColorObject_t >( ColorObject_t{ colorpicker.cValue[ 0 ], colorpicker.cValue[ 1 ], colorpicker.cValue[ 2 ], colorpicker.cValue[ 3 ] } ), colorpicker.szVarName );
 					break;
 				}
 				default:
@@ -2328,41 +2328,45 @@ void LuaImplementation::LoadScriptVariablesFromConfig( )
 			auto& item = script.vecMenuItems[ i ];
 			LuaVariables_t& variable = cfg::vecScriptVariables[ i ];
 
+			// the variable names does not match, so skip it
+			if (variable.strName != item.szVarName)
+				continue;
+
 			switch (item.iType)
 			{
 				case MENUITEM_CHECKBOX:
 				{
 					LuaImplementation::CheckboxMenuItem_t& checkbox = reinterpret_cast< LuaImplementation::CheckboxMenuItem_t& >( item );
 					BoolObject_t pObject = std::any_cast< BoolObject_t >( variable.pObject );
-					checkbox.Set( pObject.bValue );
+					checkbox.bValue = pObject.bValue;
 					break;
 				}
 				case MENUITEM_SLIDERINT:
 				{
 					LuaImplementation::SliderIntMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderIntMenuItem_t& >( item );
 					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
-					slider.Set( pObject.iValue );
+					slider.iValue = pObject.iValue;
 					break;
 				}
 				case MENUITEM_SLIDERFLOAT:
 				{
 					LuaImplementation::SliderFloatMenuItem_t& slider = reinterpret_cast< LuaImplementation::SliderFloatMenuItem_t& >( item );
 					FloatObject_t pObject = std::any_cast< FloatObject_t >( variable.pObject );
-					slider.Set( pObject.flValue );
+					slider.flValue = pObject.flValue;
 					break;
 				}
 				case MENUITEM_KEYBIND:
 				{
 					LuaImplementation::KeybindMenuItem_t& keybind = reinterpret_cast< LuaImplementation::KeybindMenuItem_t& >( item );
 					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
-					keybind.Set( pObject.iValue );
+					keybind.iValue = pObject.iValue;
 					break;
 				}
 				case MENUITEM_COMBOBOX:
 				{
 					LuaImplementation::ComboMenuItem_t& combo = reinterpret_cast< LuaImplementation::ComboMenuItem_t& >( item );
 					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
-					combo.Set( pObject.iValue );
+					combo.iValue = pObject.iValue;
 					break;
 				}
 				case MENUITEM_MULTICOMBOBOX:
@@ -2377,7 +2381,7 @@ void LuaImplementation::LoadScriptVariablesFromConfig( )
 				{
 					LuaImplementation::ColorPickerMenuItem_t& colorpicker = reinterpret_cast< LuaImplementation::ColorPickerMenuItem_t& >( item );
 					ColorObject_t pObject = std::any_cast< ColorObject_t >( variable.pObject );
-					colorpicker.Set( pObject.flValue );
+					std::memcpy( colorpicker.cValue, pObject.flValue, sizeof( colorpicker.cValue ) );
 					break;
 				}
 				default:

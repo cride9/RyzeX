@@ -21,41 +21,37 @@ enum EVARIABLETYPES : int
 
 struct LuaVariables_t
 {
-	LuaVariables_t( const EVARIABLETYPES nType, std::any&& pObject ) :
-		nType( nType ), pObject( std::move( pObject ) ) { }
+	LuaVariables_t( const EVARIABLETYPES nType, std::any&& pObject, std::string strName ) :
+		nType( nType ), pObject( std::move( pObject ) ), strName( strName ){ }
 
 	EVARIABLETYPES nType = VARIABLES_MAX;
 	std::any pObject = { };
+	std::string strName = "";
 };
 
 struct BoolObject_t
 {
 	bool bValue = false;
-	std::string strName = "";
 };
 
 struct BoolArrayObject_t
 {
 	std::deque<bool> deqValues = { };
-	std::string strName = "";
 };
 
 struct IntObject_t
 {
 	int iValue = 0;
-	std::string strName = "";
 };
 
 struct FloatObject_t
 {
 	float flValue = 0.0f;
-	std::string strName = "";
 };
 
 struct ColorObject_t
 {
 	float flValue[4] = { 255.f, 255.f, 255.f, 255.f };
-	std::string strName = "";
 };
 
 namespace cfg {
@@ -519,7 +515,7 @@ private:
 	void SetupBoolArray(bool* arrArray, int iLength, bool iDefault, std::string szName);
 
 	void SetupInt(int& iValue, int iDefault, std::string szName);
-	void SetupFloat(float& iValue, float iDefault, std::string szName);
+	void SetupFloat(float& iValue, float flDefault, std::string szName);
 	void SetupBool(bool& bValue, bool bDefault, std::string szName);
 	void SetupString(std::string& szValue, std::string szDefault, std::string szName);
 	void SetupStringArray(std::string* szValue, int iLength, std::string szDefault, std::string szName);
