@@ -246,7 +246,7 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
     static const char* arrModifiers[] = { ("Off"), ("Jitter"), ("Random"), ("Rytter"), ("Spin")};
     static const char* arrDesyncs[] = { ("Off"), ("Static"), ("Extended"), ("Jitter"), ("Flick") };
     static const char* arrFreestands[] = { ("Off"), ("Circular"), ("Predictive")};
-    static const char* arrFakelagType[] = { ("Normal"), ("Adaptive"), ("Jitter") };
+    static const char* arrFakelagType[] = { ("Normal"), ("Adaptive"), ("Jitter"), ("Random")};
 
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x + 1);
     menu::DrawCustomChildRounding(("##TopBar"), ImVec2(ImGui::GetContentRegionAvail().x, 80), true, 0, ImDrawCornerFlags_TopRight);

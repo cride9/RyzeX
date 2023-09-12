@@ -1,5 +1,7 @@
 #include "misc.h"
 #include <fstream>
+#include <cstdlib> // for rand() and srand()
+#include <ctime>   // for time()
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/math.h"
 #include "../Rage/exploits.h"
@@ -1069,7 +1071,8 @@ void misc::FakeLag(bool& bSendPacket) {
 
 		MAXIMUM,
 		ADAPTIVE,
-		JITTER
+		JITTER,
+		RANDOM
 	};
 
 	if ((*GameRules)->m_bFreezePeriod())
@@ -1136,6 +1139,14 @@ void misc::FakeLag(bool& bSendPacket) {
 				if (bChokeCycleEnded)
 					antiaim::flickJitter = true;
 			}
+			break;
+		case RANDOM:
+			
+			srand(static_cast<unsigned int>(time(0)));
+
+			iCurrentChoke = rand() % (iMax - iMin + 1) + iMin;
+			
+
 			break;
 		}
 	}
