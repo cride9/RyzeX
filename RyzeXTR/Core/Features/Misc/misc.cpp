@@ -1,7 +1,5 @@
 #include "misc.h"
 #include <fstream>
-#include <cstdlib> // for rand() and srand()
-#include <ctime>   // for time()
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/math.h"
 #include "../Rage/exploits.h"
@@ -1141,23 +1139,15 @@ void misc::FakeLag(bool& bSendPacket) {
 			}
 			break;
 		case RANDOM:
+
+			bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
+
 			if (bChokeCycleEnded) {
 
 				antiaim::flickJitter = false;
 				iCurrentChoke = M::RandomInt(iMin, iMax);
-				bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
-			}
-			else {
-
 				
-				bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
-
-				if (bChokeCycleEnded)
-					antiaim::flickJitter = true;
 			}
-			
-
-			
 			
 
 			break;
