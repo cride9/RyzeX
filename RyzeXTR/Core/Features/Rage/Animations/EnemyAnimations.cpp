@@ -5,7 +5,6 @@
 #include "../../Networking/networking.h"
 #include "../aimbot.h"
 #include "../../Visuals/drawlist.h"
-#include "Setupbones.h"
 
 float flOldLowerbodyYaw[65];
 float flOldPlaybackrateYaw[65];

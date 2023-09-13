@@ -36,7 +36,6 @@ enum AATYPE : int {
 namespace antiaim {
 
 	inline bool needMicromovement = false;
-	inline bool flickJitter = false;
 	inline bool bHideFlick = false;
 
 	inline bool shotInvert = false;

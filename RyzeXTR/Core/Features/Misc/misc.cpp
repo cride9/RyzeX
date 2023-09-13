@@ -1093,11 +1093,11 @@ void misc::FakeLag(bool& bSendPacket) {
 		return;
 
 	static int iCurrentChoke = 0;
+	static bool bSwitch = false;
 
 	static CConVar* sv_maxspeed = i::ConVar->FindVar(XorStr("sv_maxspeed"));
 	float flVelocity = g::pLocal->GetVelocity().Length2D();
 	float flMaxVelocity = g::pLocal->GetWeapon() ? g::pLocal->IsScoped() ? g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[1] : g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[0] : sv_maxspeed->GetFloat();
-	static bool bChokeCycleEnded = false;
 
 	int iMin = cfg::antiaim::iFakelagMin;
 	int iMax = cfg::antiaim::iFakeLagMax;
@@ -1113,6 +1113,7 @@ void misc::FakeLag(bool& bSendPacket) {
 		switch (cfg::antiaim::iFakeLagType) {
 
 		case MAXIMUM:
+
 			iCurrentChoke = cfg::antiaim::iFakelag;
 			break;
 
@@ -1123,32 +1124,17 @@ void misc::FakeLag(bool& bSendPacket) {
 
 		case JITTER:
 
-			if (bChokeCycleEnded) {
-
-				antiaim::flickJitter = false;
-				iCurrentChoke = iMin;
-				bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
+			if (bSendPacket) {
+				bSwitch = !bSwitch;
+				iCurrentChoke = bSwitch ? iMin : iMax;
 			}
-			else {
-
-				iCurrentChoke = cfg::antiaim::iFakeLagMax;
-				bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
 				
-				if (bChokeCycleEnded)
-					antiaim::flickJitter = true;
-			}
+
 			break;
 		case RANDOM:
 
-			bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
-
-			if (bChokeCycleEnded) {
-
-				antiaim::flickJitter = false;
+			if (bSendPacket)
 				iCurrentChoke = M::RandomInt(iMin, iMax);
-				
-			}
-			
 
 			break;
 		}

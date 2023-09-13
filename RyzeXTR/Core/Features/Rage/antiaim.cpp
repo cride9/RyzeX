@@ -161,7 +161,9 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 	case FLICK:
 
-		if (flickJitter) {
+		//if (flickJitter) {
+		// no choke so flick that bitch
+		if (bSendPacket) {
 
 			iChangeOnTick++;
 

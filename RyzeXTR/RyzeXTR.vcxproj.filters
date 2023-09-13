@@ -97,7 +97,6 @@
     <ClCompile Include="Core\Hooks\Hooked\hkInPrediction.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkSetUpMovement.cpp" />
     <ClCompile Include="Core\Features\Misc\Vizualizer.cpp" />
-    <ClCompile Include="Core\Features\Rage\Animations\Setupbones.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkTrayRace.cpp" />
   </ItemGroup>
@@ -323,7 +322,6 @@
     <ClInclude Include="Core\Features\Visuals\drawlist.h" />
     <ClInclude Include="Core\Interface\Interfaces\IClientLeafSystem.h" />
     <ClInclude Include="Core\Features\Misc\Vizualizer.h" />
-    <ClInclude Include="Core\Features\Rage\Animations\Setupbones.h" />
     <ClInclude Include="Core\Interface\Interfaces\MemAlloc.h" />
   </ItemGroup>
   <ItemGroup>

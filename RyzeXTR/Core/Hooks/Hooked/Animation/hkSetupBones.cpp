@@ -3,7 +3,6 @@
 #include "../../../globals.h"
 #include "../../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../../Features/Rage/Animations/EnemyAnimations.h"
-#include "../../../Features/Rage/Animations/Setupbones.h"
 
 bool __fastcall h::hkSetupBones(IClientRenderable* ecx, void* edx, matrix3x4a_t* matrix, int maxbones, int bonemask, float curtime) {
 
