@@ -1141,10 +1141,23 @@ void misc::FakeLag(bool& bSendPacket) {
 			}
 			break;
 		case RANDOM:
-			
-			srand(static_cast<unsigned int>(time(0)));
+			if (bChokeCycleEnded) {
 
-			iCurrentChoke = rand() % (iMax - iMin + 1) + iMin;
+				antiaim::flickJitter = false;
+				iCurrentChoke = M::RandomInt(iMin, iMax);
+				bChokeCycleEnded = !(i::ClientState->nChokedCommands >= iCurrentChoke);
+			}
+			else {
+
+				
+				bChokeCycleEnded = i::ClientState->nChokedCommands >= iCurrentChoke;
+
+				if (bChokeCycleEnded)
+					antiaim::flickJitter = true;
+			}
+			
+
+			
 			
 
 			break;
