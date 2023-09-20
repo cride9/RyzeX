@@ -117,6 +117,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 	static CConVar* ax = i::ConVar->FindVar("cl_lagcompensation");
 
+	//std::unordered_map<int, std::vector<float>> mapHitboxDamages{};
 	std::vector<Hitscan_t> vecHitscan{};
 	/* Loop through our valid entity logs */
 	for (Lagcompensation::AnimationInfo_t* it : vecIn) {
@@ -173,6 +174,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 						continue;
 				}
 
+				//mapHitboxDamages.emplace(iHitbox, std::vector<float>());
 				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint);
 				// OPTIMIZATION: first element in the vector is always the hitbox center
 				bool bFirstElement = true;
@@ -210,16 +212,15 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData);
 					if (flDamage >= flTransformedDamage) {
 
-						/* Don't do underdamage if wrong resolve, wait for the other resolve side to be visible with enough damage LMAO */
-						if (iCollidePoints == 3 && iHitbox == HITBOX_HEAD) {
-
-							pRecord->ApplyMatrix(pRecord->pEntity, pRecord->iResolveSide == RIGHT ? LEFT : RIGHT);
-							if (autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData) < flTransformedDamage)
-								continue;
-						}
+						//pRecord->ApplyMatrix(pRecord->pEntity, pRecord->iResolveSide == RIGHT ? LEFT : RIGHT);
+						//if (autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData) < flTransformedDamage)
+						//	continue;
 
 						/* Push back this shit */
-						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint)));
+						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint), flTransformedDamage));
+						
+						/* ATTEMPT: fix underdamage by getting avarage damage that can be dealt to that hitbox */
+						//mapHitboxDamages.at(iHitbox).push_back(flDamage);
 
 						/* If that's a baim hitbox and we can hit it break out of the loop ( Fixes shooting hitbox edge while the middle is out ) */
 						if (iHitbox != HITBOX_HEAD)
@@ -240,6 +241,16 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	{
 		if (refRecord.flDamage == -1.f)
 			continue;
+
+		//if (std::vector<float>& map = mapHitboxDamages.at(refRecord.iHitbox); !map.empty()) {
+
+		//	float flSummary = 0.f;
+		//	for (float& it : map) 
+		//		flSummary += it;
+		//	
+		//	if (flSummary / map.size() < refRecord.iTransformedDamage)
+		//		continue;
+		//}
 		
 		aimData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
 		aimData.bSafe = refRecord.bSafe;

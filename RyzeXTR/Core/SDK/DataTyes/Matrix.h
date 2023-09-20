@@ -39,6 +39,11 @@ struct matrix3x4_t
 		this->arrData[2][0] = vecForward.z;
 	}
 
+	constexpr Vector GetForward() {
+
+		return { this->arrData[0][0], this->arrData[1][0], this->arrData[2][0] };
+	}
+
 	constexpr void SetLeft(const Vector& vecLeft)
 	{
 		this->arrData[0][1] = vecLeft.x;
@@ -46,11 +51,21 @@ struct matrix3x4_t
 		this->arrData[2][1] = vecLeft.z;
 	}
 
+	constexpr Vector GetLeft() {
+
+		return { this->arrData[0][1], this->arrData[1][1], this->arrData[2][1] };
+	}
+
 	constexpr void SetUp(const Vector& vecUp)
 	{
 		this->arrData[0][2] = vecUp.x;
 		this->arrData[1][2] = vecUp.y;
 		this->arrData[2][2] = vecUp.z;
+	}
+
+	constexpr Vector GetUp() {
+
+		return { this->arrData[0][2], this->arrData[1][2], this->arrData[2][2] };
 	}
 
 	constexpr void SetOrigin(const Vector& vecOrigin)
@@ -62,7 +77,7 @@ struct matrix3x4_t
 
 	constexpr Vector GetOrigin() {
 
-		return { arrData[0][3] , arrData[1][3], arrData[2][3] };
+		return { arrData[0][3], arrData[1][3], arrData[2][3] };
 	}
 
 	constexpr void Invalidate()

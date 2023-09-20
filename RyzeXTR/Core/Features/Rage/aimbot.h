@@ -24,7 +24,7 @@ enum EHitboxType : int {
 struct Hitscan_t {
 
 	Hitscan_t() {}
-	Hitscan_t(Lagcompensation::LagRecord_t* _record, Vector& _point, FireBulletData_t& data, bool _baimlethal, bool _safe) {
+	Hitscan_t(Lagcompensation::LagRecord_t* _record, Vector& _point, FireBulletData_t& data, bool _baimlethal, bool _safe, int _damage) {
 
 		pRecord = _record;
 		vecPoint = _point;
@@ -39,6 +39,7 @@ struct Hitscan_t {
 
 		iHitbox = data.enterTrace.iHitbox;
 		iHitgroup = data.enterTrace.iHitGroup;
+		iTransformedDamage = _damage;
 	}
 
 	Lagcompensation::LagRecord_t* pRecord = nullptr;
@@ -55,6 +56,7 @@ struct Hitscan_t {
 
 	int iHitbox{};
 	int iHitgroup{};
+	int iTransformedDamage{};
 
 	bool operator<(const Hitscan_t& other) const {
 		// Sort by baimlethal (true first, false second)
@@ -163,6 +165,7 @@ struct weaponConfig_t {
 	CBaseCombatWeapon* pWeapon{};
 
 	int iMinimumDamage{};
+	int iTransformedDamage{};
 	int iHitchance{};
 	int iAccuracyBoost{};
 	int iAutostopValue{};

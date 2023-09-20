@@ -603,112 +603,49 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 	if (pEntity->IsDormant())
 		return;
 
-	const Model_t* model = pEntity->GetModel();
-	if (!model)
-		return;
-
-	studiohdr_t* pStudioHdr = i::ModelInfo->GetStudioModel(model);
+	CStudioHdr* pStudioHdr = pEntity->GetModelPtr();
 	if (!pStudioHdr)
 		return;
 
-	auto* pLog = &lagcomp.GetLog(pEntity->EntIndex());
-	if (pEntity != g::pLocal && (!pLog || pLog->pRecord.empty() || pLog->pCachedMatrix.data()->GetOrigin().IsZero()))
+	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEntity->EntIndex());
+	if (!pLog || pLog->pRecord.empty() && g::pLocal != pEntity)
 		return;
 
-	auto skeleton_position = [=](const size_t idx)
-	{
-		auto child = (pEntity == g::pLocal) ? pEntity->GetCachedBoneData().Base()[idx].GetOrigin() : pLog->pCachedMatrix[idx].GetOrigin();
-		return child;
-	};
-	auto skeleton_position_desync = [=](const size_t idx)
-	{
-		auto child = localAnim->GetDesyncMatrix()[idx].GetOrigin();
-		return child;
-	};
+	bool pLocal = g::pLocal == pEntity;
+	matrix3x4a_t* pBoneToWorld = pLocal ? localAnim->GetRealMatrix().data() : pLog->pCachedMatrix.data();
 
-	if (g::pLocal == pEntity && cfg::model::bDesyncChams && cfg::model::bDesyncSkeleton) {
-		for (int i = 0; i < pStudioHdr->nBones; i++){
+	for (int j = 0; j < pStudioHdr->pStudioHdr->nBones; j++) {
 
-			auto bone = pStudioHdr->GetBone(i);
-			if (!bone)
-				continue;
+		mstudiobone_t* pBone = pStudioHdr->pStudioHdr->GetBone(j);
 
-			if (bone->iParent == -1)
-				continue;
-
-			if (!(bone->iFlags & BONE_USED_BY_HITBOX))
-				continue;
-
-			auto child = skeleton_position_desync(i);
-			auto parent = skeleton_position_desync(bone->iParent);
-			auto chestbone = skeleton_position_desync(6);
-
-			auto upper = skeleton_position_desync(6 + 1) - chestbone;
-			auto breast = chestbone + upper - (upper / 3);
-
-			auto deltachild = child - breast;
-			auto deltaparent = parent - breast;
-
-			if (deltaparent.Length() < 9.0f && deltachild.Length() < 9.0f)
-				parent = breast;
-
-			if (i == 5)
-				child = breast;
-
-			if (std::abs(deltachild.z) < 5.0f && deltaparent.Length() < 5.0f && deltachild.Length() < 5.0f || i == 6)
-				continue;
-
-			Vector sParent;
-			Vector sChild;
-			i::DebugOverlay->ScreenPosition(parent, sParent);
-			i::DebugOverlay->ScreenPosition(child, sChild);
-
-			i::Surface->DrawSetColor(cfg::model::flDesyncChamsCol[0] * 255.f, cfg::model::flDesyncChamsCol[1] * 255.f, cfg::model::flDesyncChamsCol[2] * 255.f, color[3]);
-			i::Surface->DrawLine(sParent[0], sParent[1], sChild[0], sChild[1]);
-		}
-	}
-
-	for (int i = 0; i < pStudioHdr->nBones; i++)
-	{
-		auto bone = pStudioHdr->GetBone(i);
-		if (!bone)
+		if (!pBone || !(pBone->iFlags & BONE_USED_BY_HITBOX) || pBone->iParent <= -1)
 			continue;
 
-		if (bone->iParent == -1)
+		Vector vecChild = pBoneToWorld[j].GetOrigin();
+		Vector vecParent = pBoneToWorld[pBone->iParent].GetOrigin();
+
+		constexpr const static unsigned int const iChestBone = 6;
+		Vector vecUpperDirection = pBoneToWorld[iChestBone + 1].GetOrigin() - pBoneToWorld[iChestBone].GetOrigin();
+		Vector vecBreastBone = pBoneToWorld[iChestBone].GetOrigin() + vecUpperDirection / 2;
+
+		Vector vecDeltaChild = vecChild - vecBreastBone;
+		Vector vecDeltaParent = vecParent - vecBreastBone;
+
+		if ((vecDeltaParent.Length() < 9 && vecDeltaChild.Length() < 9))
+			vecParent = vecBreastBone;
+
+		if (j == iChestBone - 1)
+			vecChild = vecBreastBone;
+
+		if (fabsf(vecDeltaChild.z) < 5 && (vecDeltaParent.Length() < 5 && vecDeltaChild.Length() < 5) || j == iChestBone)
 			continue;
 
-		if (!(bone->iFlags & BONE_USED_BY_HITBOX))
-			continue;
+		Vector vecScreenParent, vecScreenChild;
+		i::DebugOverlay->ScreenPosition(vecParent, vecScreenParent);
+		i::DebugOverlay->ScreenPosition(vecChild, vecScreenChild);
 
-		auto child = skeleton_position(i);
-		auto parent = skeleton_position(bone->iParent);
-		auto chestbone = skeleton_position(6);
-
-		auto upper = skeleton_position(6 + 1) - chestbone;
-		auto breast = chestbone + upper - (upper / 3);
-
-		if (child == Vector(0, 0, 0) || parent == Vector(0, 0, 0) || chestbone == Vector(0, 0, 0) || upper == Vector(0, 0, 0))
-			continue;
-
-		auto deltachild = child - breast;
-		auto deltaparent = parent - breast;
-
-		if (deltaparent.Length() < 9.0f && deltachild.Length() < 9.0f)
-			parent = breast;
-
-		if (i == 5)
-			child = breast;
-
-		if (std::abs(deltachild.z) < 5.0f && deltaparent.Length() < 5.0f && deltachild.Length() < 5.0f || i == 6)
-			continue;
-
-		Vector sParent;
-		Vector sChild;
-		i::DebugOverlay->ScreenPosition(parent, sParent);
-		i::DebugOverlay->ScreenPosition(child, sChild);
-
-		i::Surface->DrawSetColor(color[0], color[1], color[2], color[3]);
-		i::Surface->DrawLine(sParent[0], sParent[1], sChild[0], sChild[1]);
+		i::Surface->DrawSetColor(Color(cfg::model::flDesyncChamsCol));
+		i::Surface->DrawLine(vecScreenParent[0], vecScreenParent[1], vecScreenChild[0], vecScreenChild[1]);
 	}
 }
 
