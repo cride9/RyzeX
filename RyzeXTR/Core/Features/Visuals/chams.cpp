@@ -418,15 +418,37 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 	//}
 	else if (szModelName.find("arms") != std::string_view::npos && !i::Input->bCameraInThirdPerson) {
 
-		//if ((szModelName.find("sleeve") != std::string_view::npos)) {
-
-		//	BeginChams(materials[ANIMATED], flWeaponAnimOverlayColor, false, flWeaponAnimOverlayXhair);
-		//	original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-
-		//	return true;
-		//}
-
 		bool ret = false;
+		if ((szModelName.find("sleeve") != std::string_view::npos) && bSleeve) {
+
+			if (bSleeve) {
+				BeginChams(materials[iSleeveType], flSleeveColor, false, bSleeveXhair);
+				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				ret = true;
+			}
+			else {
+				EndChams(false);
+				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				ret = false;
+			}
+			if (bSleeveOverlay) {
+				BeginChams(materials[GLOW], flSleeveOverlayColor, false, bSleeveOverlayXhair);
+				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				ret = true;
+			}
+			if (bSleeveThinOverlay) {
+				BeginChams(materials[THINGLOW], flSleeveThinOverlayColor, false, bSleeveThinOverlayXhair);
+				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				ret = true;
+			}
+			if (bSleeveAnimOverlay) {
+				BeginChams(materials[ANIMATED], flSleeveAnimOverlayColor, false, bSleeveAnimOverlayXhair);
+				original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+				ret = true;
+			}
+			return ret;
+		}
+
 		if (bViewmodel) {
 			BeginChams(materials[iViewmodelType], flViewmodelColor, false, bViewmodelXhair);
 			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);

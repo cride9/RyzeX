@@ -117,7 +117,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 	static CConVar* ax = i::ConVar->FindVar("cl_lagcompensation");
 
-	//std::unordered_map<int, std::vector<float>> mapHitboxDamages{};
+	std::unordered_map<int, std::vector<float>> mapHitboxDamages{};
 	std::vector<Hitscan_t> vecHitscan{};
 	/* Loop through our valid entity logs */
 	for (Lagcompensation::AnimationInfo_t* it : vecIn) {
@@ -174,7 +174,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 						continue;
 				}
 
-				//mapHitboxDamages.emplace(iHitbox, std::vector<float>());
+				std::vector<float> vecDamages = std::vector<float>();
 				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint);
 				// OPTIMIZATION: first element in the vector is always the hitbox center
 				bool bFirstElement = true;
@@ -210,23 +210,21 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					/* Prepare bullet data variable for later usage */
 					FireBulletData_t pData;
 					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData);
-					if (flDamage >= flTransformedDamage) {
-
-						//pRecord->ApplyMatrix(pRecord->pEntity, pRecord->iResolveSide == RIGHT ? LEFT : RIGHT);
-						//if (autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData) < flTransformedDamage)
-						//	continue;
+					if (flDamage >= 1) {
 
 						/* Push back this shit */
 						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint), flTransformedDamage));
 						
 						/* ATTEMPT: fix underdamage by getting avarage damage that can be dealt to that hitbox */
-						//mapHitboxDamages.at(iHitbox).push_back(flDamage);
+						vecDamages.push_back(flDamage);
 
 						/* If that's a baim hitbox and we can hit it break out of the loop ( Fixes shooting hitbox edge while the middle is out ) */
 						if (iHitbox != HITBOX_HEAD)
 							break;
 					}
 				}
+				mapHitboxDamages.emplace(iHitbox, vecDamages);
+
 			}
 		}
 	}
@@ -239,18 +237,21 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 	for (Hitscan_t& refRecord : vecHitscan)
 	{
-		if (refRecord.flDamage == -1.f)
+		if (refRecord.flDamage == -1.f || refRecord.iTransformedDamage > refRecord.flDamage)
 			continue;
 
-		//if (std::vector<float>& map = mapHitboxDamages.at(refRecord.iHitbox); !map.empty()) {
+		if (mapHitboxDamages.contains(refRecord.iHitbox)) {
+			std::vector<float>& map = mapHitboxDamages.at(refRecord.iHitbox);
+			if (!map.empty()) {
 
-		//	float flSummary = 0.f;
-		//	for (float& it : map) 
-		//		flSummary += it;
-		//	
-		//	if (flSummary / map.size() < refRecord.iTransformedDamage)
-		//		continue;
-		//}
+				float flSummary = 0.f;
+				for (float& it : map)
+					flSummary += it;
+
+				if (flSummary / map.size() < refRecord.iTransformedDamage)
+					continue;
+			}
+		}
 		
 		aimData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
 		aimData.bSafe = refRecord.bSafe;

@@ -58,31 +58,31 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 
 	int iCurrentBrute = arrMissedShots[iEntityID] % 2;
 
-	if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
+	//if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
 
-		float flFromServerPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate);
+		//float flFromServerPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate);
 
-		const float fCenterPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[CENTER].flPlaybackRate);
-		const float fRightPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[RIGHT].flPlaybackRate);
-		const float fLeftPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[LEFT].flPlaybackRate);
+		//const float fCenterPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[CENTER].flPlaybackRate);
+		//const float fRightPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[RIGHT].flPlaybackRate);
+		//const float fLeftPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[LEFT].flPlaybackRate);
 
-		// differences.
-		const float fDifferenceCenterPlaybackrate = fabsf(flFromServerPlaybackrate - fCenterPlaybackrate);
-		const float fDifferenceRightPlaybackrate = fabsf(flFromServerPlaybackrate - fRightPlaybackrate);
-		const float fDifferenceLeftPlaybackrate = fabsf(flFromServerPlaybackrate - fLeftPlaybackrate);
+		//// differences.
+		//const float fDifferenceCenterPlaybackrate = fabsf(flFromServerPlaybackrate - fCenterPlaybackrate);
+		//const float fDifferenceRightPlaybackrate = fabsf(flFromServerPlaybackrate - fRightPlaybackrate);
+		//const float fDifferenceLeftPlaybackrate = fabsf(flFromServerPlaybackrate - fLeftPlaybackrate);
 
-		if (GetVelocityLengthXY(pEntity) > 0.f)
-		{
-			if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
-				SetYaw(pRecord, CENTER);
-			else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
-				SetYaw(pRecord, RIGHT);
-			else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
-				SetYaw(pRecord, LEFT);
-		}
-	}
+		//if (GetVelocityLengthXY(pEntity) > 0.f)
+		//{
+		//	if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
+		//		SetYaw(pRecord, CENTER);
+		//	else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
+		//		SetYaw(pRecord, RIGHT);
+		//	else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
+		//		SetYaw(pRecord, LEFT);
+		//}
+	//}
 	/* Don't resolve onshot */
-	else if (pRecord->bDidShot)
+	if (pRecord->bDidShot)
 		return;
 
 	/* breaking to the left */
@@ -344,7 +344,7 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 
 void SetResolveMatrix(Lagcompensation::LagRecord_t* pRecord, int iType) {
 
-	//memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[iType], sizeof(matrix3x4a_t) * MAXSTUDIOBONES);
+	//memcpy(pRecord->pMatricies[RESOLVE], pRecord->pMatricies[iType], sizeof(matrix3x4_t) * MAXSTUDIOBONES);
 	pRecord->iResolveSide = iType;
 }
 

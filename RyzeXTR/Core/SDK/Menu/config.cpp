@@ -302,6 +302,24 @@ void CConfig::Setup() {
 		SetupColor(flViewmodelAnimOverlayColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flViewmodelAnimOverlayColor"));
 		SetupBool(bViewmodelAnimOverlayXhair, false, XorStr("bViewmodelAnimOverlayXhair"));
 
+		SetupBool(bSleeve, false, XorStr("bSleeve"));
+
+		SetupInt(iSleeveType, 0, XorStr("iSleeveType"));
+		SetupColor(flSleeveColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flSleeveColor"));
+		SetupBool(bSleeveXhair, false, XorStr("bSleeveXhair"));
+
+		SetupBool(bSleeveOverlay, 0, XorStr("iSleeveOverlay"));
+		SetupColor(flSleeveOverlayColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flSleeveOverlayColor"));
+		SetupBool(bSleeveOverlayXhair, false, XorStr("bSleeveOverlayXhair"));
+
+		SetupBool(bSleeveThinOverlay, 0, XorStr("bSleeveThinOverlay"));
+		SetupColor(flSleeveThinOverlayColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flSleeveThinOverlayColor"));
+		SetupBool(bSleeveThinOverlayXhair, false, XorStr("bSleeveThinOverlayXhair"));
+
+		SetupBool(bSleeveAnimOverlay, 0, XorStr("bSleeveAnimOverlay"));
+		SetupColor(flSleeveAnimOverlayColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flSleeveAnimOverlayColor"));
+		SetupBool(bSleeveAnimOverlayXhair, false, XorStr("bSleeveAnimOverlayXhair"));
+
 		SetupBool(bWeapon, false, XorStr("bWeapon"));
 
 		SetupInt(iWeaponType, 0, XorStr("iWeaponType"));

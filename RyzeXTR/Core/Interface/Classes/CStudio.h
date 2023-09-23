@@ -143,7 +143,7 @@ struct mstudiobone_t
 	Vector		vecPositionScale;
 	Vector		vecEulerScale;
 
-	matrix3x4a_t matPoseToBone;
+	matrix3x4_t matPoseToBone;
 	Quaternion_t qAlignment;
 	int			iFlags;
 	int			iProcedureType;

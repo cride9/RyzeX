@@ -280,6 +280,24 @@ namespace cfg {
 		inline float flViewmodelAnimOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
 		inline bool bViewmodelAnimOverlayXhair = false;
 
+		inline bool bSleeve = false;
+
+		inline int iSleeveType = 0;
+		inline float flSleeveColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool bSleeveXhair = false;
+
+		inline bool bSleeveOverlay = false;
+		inline float flSleeveOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool bSleeveOverlayXhair = false;
+
+		inline bool bSleeveThinOverlay = false;
+		inline float flSleeveThinOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool bSleeveThinOverlayXhair = false;
+
+		inline bool bSleeveAnimOverlay = false;
+		inline float flSleeveAnimOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool bSleeveAnimOverlayXhair = false;
+
 		inline bool bWeapon = false;
 
 		inline int iWeaponType = 0;

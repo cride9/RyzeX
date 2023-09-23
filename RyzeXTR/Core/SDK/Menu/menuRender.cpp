@@ -468,7 +468,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
     ImGui::BeginChild(("##LeftBot"), ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
         using namespace cfg::model;
-        static const char* arrChamsConfig[] = { "Player", "Overlays", "Attachment", "Viewmodel", "Weapon"};
+        static const char* arrChamsConfig[] = { "Player", "Overlays", "Attachment", "Viewmodel", "Weapon", "Sleeve"};
         static int iSelectedConfig = 0;
 
         static const char* iOverlayTypes[] = { ("Glow"), ("Thin"), ("Animated") };
@@ -478,7 +478,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
             ImGui::Combo(("Chams##2"), &iSelectedConfig, arrChamsConfig, IM_ARRAYSIZE(arrChamsConfig));
         else {
             iSelectedConfig = iSelectedConfig > 2 ? 2 : iSelectedConfig;
-            ImGui::Combo(("Chams##2"), &iSelectedConfig, arrChamsConfig, IM_ARRAYSIZE(arrChamsConfig) - 2);
+            ImGui::Combo(("Chams##2"), &iSelectedConfig, arrChamsConfig, IM_ARRAYSIZE(arrChamsConfig) - 3);
         }
         switch (iSelectedConfig) {
 
@@ -635,6 +635,38 @@ void menu::Visual(ImVec2 savedCursorPosition) {
                 ImGui::Checkbox(("Overlay##3"), &bWeaponAnimOverlay);
                 ImGui::ColorEdit4(("##AnimOverlayColor"), flWeaponAnimOverlayColor);
                 ImGui::Checkbox(("Wireframe##3"), &flWeaponAnimOverlayXhair);
+                break;
+            }
+
+            break;
+
+        case 5:
+
+            ImGui::Combo(("Material"), &iSleeveType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
+
+            ImGui::Checkbox("Sleeve", &bSleeve);
+            ImGui::ColorEdit4("##SleeveColor", flSleeveColor);
+            ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
+            switch (iSelectedOverlay) {
+            case 0:
+                // overlay
+                ImGui::Checkbox(("Overlay##1"), &bSleeveOverlay);
+                ImGui::ColorEdit4(("##OverlayColor"), flSleeveOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bSleeveOverlayXhair);
+                break;
+
+            case 1:
+                // thin
+                ImGui::Checkbox(("Overlay##2"), &bSleeveThinOverlay);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), flSleeveThinOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bSleeveThinOverlayXhair);
+                break;
+
+            case 2:
+                // animated
+                ImGui::Checkbox(("Overlay##3"), &bSleeveAnimOverlay);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), flSleeveAnimOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bSleeveAnimOverlayXhair);
                 break;
             }
 

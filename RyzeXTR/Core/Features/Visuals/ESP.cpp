@@ -201,7 +201,7 @@ void visual::VisualRender() {
 			if (!bEnable[ENEMY])
 				continue;
 
-			//if (bSkeleton[ENEMY]) SkeletonEsp(pEnt, flSkeletonColor[ENEMY]);
+			if (bSkeleton[ENEMY]) SkeletonEsp(pEnt, flSkeletonColor[ENEMY]);
 			if (bName[ENEMY]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, pEnt->IsDormant() ? vecDormantColor : Color(flNameColor[ENEMY]));
 			if (bBox[ENEMY]) BoxEsp(left, top.y, right, bot.y, pEnt->IsDormant() ? vecDormantColor : Color(flBoxColor[ENEMY]));
 			if (bHealth[ENEMY]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), pEnt->IsDormant() ? vecDormantColor : Color(flHealthColorStart[ENEMY]), pEnt->IsDormant() ? vecDormantColor : Color(flHealthColorEnd[ENEMY]), i);
@@ -217,7 +217,7 @@ void visual::VisualRender() {
 				if (!bEnable[LOCAL])
 					continue;
 
-				//if (bSkeleton[LOCAL]) SkeletonEsp(pEnt, flSkeletonColor[LOCAL]);
+				if (bSkeleton[LOCAL]) SkeletonEsp(pEnt, flSkeletonColor[LOCAL]);
 				if (bName[LOCAL]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[LOCAL]));
 				if (bBox[LOCAL]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[LOCAL]));
 				if (bHealth[LOCAL]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[LOCAL]), Color(flHealthColorEnd[LOCAL]), i);
@@ -232,7 +232,7 @@ void visual::VisualRender() {
 				continue;
 
 			// Teammate
-			//if (bSkeleton[TEAM]) SkeletonEsp(pEnt, flSkeletonColor[TEAM]);
+			if (bSkeleton[TEAM]) SkeletonEsp(pEnt, flSkeletonColor[TEAM]);
 			if (bName[TEAM]) NameEsp(left, top.y, right, bot.y, w, h, pEnt, Color(flNameColor[TEAM]));
 			if (bBox[TEAM]) BoxEsp(left, top.y, right, bot.y, Color(flBoxColor[TEAM]));
 			if (bHealth[TEAM]) HealthEsp(left, top.y, right, bot.y, w, h, pEnt->GetHealth(), Color(flHealthColorStart[TEAM]), Color(flHealthColorEnd[TEAM]), i);
@@ -603,7 +603,11 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 	if (pEntity->IsDormant())
 		return;
 
-	CStudioHdr* pStudioHdr = pEntity->GetModelPtr();
+	const Model_t* model = pEntity->GetModel();
+	if (!model)
+		return;
+
+	studiohdr_t* pStudioHdr = i::ModelInfo->GetStudioModel(model);
 	if (!pStudioHdr)
 		return;
 
@@ -612,13 +616,13 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 		return;
 
 	bool pLocal = g::pLocal == pEntity;
-	matrix3x4a_t* pBoneToWorld = pLocal ? localAnim->GetRealMatrix().data() : pLog->pCachedMatrix.data();
+	matrix3x4_t* pBoneToWorld = pLocal ? localAnim->GetRealMatrix().data() : pLog->pCachedMatrix.data();
 
-	for (int j = 0; j < pStudioHdr->pStudioHdr->nBones; j++) {
+	for (int j = 0; j < pStudioHdr->nBones; j++) {
 
-		mstudiobone_t* pBone = pStudioHdr->pStudioHdr->GetBone(j);
+		mstudiobone_t* pBone = pStudioHdr->GetBone(j);
 
-		if (!pBone || !(pBone->iFlags & BONE_USED_BY_HITBOX) || pBone->iParent <= -1)
+		if (!pBone || !(pBone->iFlags & BONE_USED_BY_HITBOX) || pBone->iParent <= -1 || pBone->iParent > MAXSTUDIOBONES)
 			continue;
 
 		Vector vecChild = pBoneToWorld[j].GetOrigin();
@@ -644,7 +648,7 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 		i::DebugOverlay->ScreenPosition(vecParent, vecScreenParent);
 		i::DebugOverlay->ScreenPosition(vecChild, vecScreenChild);
 
-		i::Surface->DrawSetColor(Color(cfg::model::flDesyncChamsCol));
+		i::Surface->DrawSetColor(Color(color));
 		i::Surface->DrawLine(vecScreenParent[0], vecScreenParent[1], vecScreenChild[0], vecScreenChild[1]);
 	}
 }
