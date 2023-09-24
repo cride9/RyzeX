@@ -29,6 +29,7 @@ void h::SetupHooks() {
 	HookTable(detour::listLeaves, i::EngineClient->GetBSPTreeQuery(), table::listLeaves, &hkListLeavesInBox);
 	HookTable(detour::paintTraverse, i::Panel, table::paintTraverse, &hkPaintTraverse);
 	HookTable(detour::drawModel, i::StudioRender, table::drawModel, &hkDrawModel);
+	HookTable(detour::drawModelMdl, i::ModelRender, table::drawModelMdl, &hkDrawModelMDL);
 	HookTable(detour::lockCursor, i::Surface, table::lockCursor, &hkLockCursor);
 	HookTable(detour::runCommand, i::Prediction, table::runCommand, &hkRunCommand);
 	HookTable(detour::getViewmodelFov, i::ClientMode, table::getViewmodelFov, &hkGetViewModelFov);
@@ -68,6 +69,7 @@ void h::SetupHooks() {
 	HookSignature(detour::extraBoneProcessing, CLIENT_DLL, "55 8B EC 83 E4 F8 81 EC ? ? ? ? 53 56 8B F1 57 89 74 24 1C", &hkDoExtraBoneProcessing);
 	HookSignature(detour::processInterpolatedList, CLIENT_DLL, "0F B7 05 ? ? ? ? 3D FF FF 00 00 74 3F 56 57", &hkProcessInterpolatedList);
 	HookSignature(detour::drawViewmodel, CLIENT_DLL, "55 8B EC 51 57 E8", &hkShouldDrawViewmodel);
+	HookSignature(detour::drawModelAnimating, CLIENT_DLL, "55 8B EC 56 8B F1 80 ? ? ? ? ? ? 75 07 33", &hkDrawModelAnimating);
 
 	menu::DestroyDirectX();
 
