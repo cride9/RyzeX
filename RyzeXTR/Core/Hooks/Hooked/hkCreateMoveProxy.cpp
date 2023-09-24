@@ -17,6 +17,7 @@
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Features/Rage/aimbot.h"
 #include "../../Lua/Lua.h"
+#include "../../Features/Visuals/GrenadePredict.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -59,6 +60,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		if (i::ClientState->iDeltaTick > 0 && !exploits::bIsShiftingTicks)
 			i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
 		
+		grenadePrediction::Run();
 		misc::BoostMovement(pCmd);
 		g::vecEyePosition = pLocal->GetEyePosition(false);
 		localAnim->CopyPlayerAnimationData(false, pLocal);

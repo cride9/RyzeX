@@ -329,6 +329,9 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 {
 	// @ida firebullet: client.dll @ 55 8B EC 83 E4 F0 81 EC ? ? ? ? F3 0F 7E
 
+	if (!pWeapon || !pLocal)
+		return false;
+
 	CCSWeaponInfo* pWeaponData = i::WeaponSystem->GetWpnData( pWeapon->GetItemDefinitionIndex( ) );
 
 	if ( pWeaponData == nullptr )

@@ -695,6 +695,8 @@ void menu::Visual(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Projectile"), &bProjectileESP);
         ImGui::ColorEdit4(("##flProjectileESP"), flProjectileESP);
 
+        ImGui::Checkbox(("Nade prediction"), &bNadePrediction);
+
         ImGui::Checkbox(("Bullet Impact"), &bBulletImpact);
         ImGui::ColorEdit4(("##flImpactColor1"), flImpactColor[0], true);
         ImGui::ColorEdit4(("##flImpactColor2"), flImpactColor[1]);

@@ -99,6 +99,7 @@
     <ClCompile Include="Core\Features\Misc\Vizualizer.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkShouldDrawViewmodel.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkTrayRace.cpp" />
+    <ClCompile Include="Core\Features\Visuals\GrenadePredict.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
@@ -323,6 +324,7 @@
     <ClInclude Include="Core\Interface\Interfaces\IClientLeafSystem.h" />
     <ClInclude Include="Core\Features\Misc\Vizualizer.h" />
     <ClInclude Include="Core\Interface\Interfaces\MemAlloc.h" />
+    <ClInclude Include="Core\Features\Visuals\GrenadePredict.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependecies\freetype\win32\freetype.lib" />

@@ -150,6 +150,7 @@
     <ClCompile Include="Core\Features\Rage\exploits.cpp" />
     <ClCompile Include="Core\Features\Visuals\chams.cpp" />
     <ClCompile Include="Core\Features\Visuals\ESP.cpp" />
+    <ClCompile Include="Core\Features\Visuals\GrenadePredict.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkBaseInterpolatePart1.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkBuildTransformation.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\Animation\hkCalculateView.cpp" />
@@ -251,6 +252,7 @@
     <ClInclude Include="Core\Features\Visuals\chams.h" />
     <ClInclude Include="Core\Features\Visuals\drawlist.h" />
     <ClInclude Include="Core\Features\Visuals\ESP.h" />
+    <ClInclude Include="Core\Features\Visuals\GrenadePredict.h" />
     <ClInclude Include="Core\globals.h" />
     <ClInclude Include="Core\Interface\Classes\CMsg.h" />
     <ClInclude Include="Core\Interface\Interfaces\CNetworkStringTableContainer.h" />

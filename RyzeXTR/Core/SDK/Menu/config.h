@@ -324,6 +324,8 @@ namespace cfg {
 		inline float flDrawCapsuleColor[4];
 		inline float flDrawCapsuleColorHit[4];
 
+		inline bool bNadePrediction = false;
+
 		//inline bool bKeyBindList = false;
 		inline bool bKeyBindList = false;
 		inline bool iKeyBindList[10];

@@ -1264,6 +1264,11 @@ public:
 		return true;
 	}
 
+	Vector& GetWorldSpaceCenter() {
+
+		return util::CallVFunc<Vector&>(this, 79);
+	}
+
 	void SetModelIndex(int index) {
 		return util::GetVFunc< void(__thiscall*)(void*, int) >(this, 75)(this, index);
 	}
@@ -1350,6 +1355,7 @@ public:
 	void					PostThink();
 	bool					IsEnemy(CBaseEntity* pEntity);
 	bool					IsTargetingLocal(CBaseEntity* pLocal);
+	bool					CanShootLocalPlayer(CBaseEntity* pLocal);
 	bool					CanShoot(CBaseCombatWeapon* pBaseWeapon, int iTickbase = -1);
 	bool					IsVisible(CBaseEntity* pEntity, const Vector& vecEnd, bool bSmokeCheck = false);
 	bool					HandleBoneSetup(matrix3x4a_t* pBoneToWorldOut, int boneMask, float currentTime);

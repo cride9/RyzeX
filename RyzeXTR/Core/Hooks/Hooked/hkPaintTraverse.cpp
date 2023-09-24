@@ -8,6 +8,7 @@
 #include "../../Features/Visuals/drawlist.h"
 #include "../../Features/../Lua/Lua.h"
 #include "../../Features/Misc/Vizualizer.h"
+#include "../../Features/Visuals/GrenadePredict.h"
 
 void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPanel, bool forceRepaint, bool allowForce) {
 
@@ -62,6 +63,7 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		visual::HandleDamageIndicator();
 		visual::DrawList();
 		vizualizer::DrawInformation();
+		grenadePrediction::Draw();
 
 		//D::SwapDrawData( );
 	}

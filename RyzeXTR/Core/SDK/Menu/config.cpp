@@ -350,6 +350,8 @@ void CConfig::Setup() {
 		SetupColor(flDrawCapsuleColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flDrawCapsuleColor"));
 		SetupColor(flDrawCapsuleColorHit, Color(1.f, 1.f, 1.f, 1.f), XorStr("flDrawCapsuleColorHit"));
 
+		SetupBool(bNadePrediction, false, XorStr("bNadePrediction"));
+
 		SetupBool(bKeyBindList, false, XorStr("bKeyBindList"));
 		SetupBoolArray(iKeyBindList, 10, false, XorStr("iKeyBindList"));
 

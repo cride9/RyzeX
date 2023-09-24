@@ -3,6 +3,7 @@
 #include "../globals.h"
 #include "../Hooks/hooks.h"
 #include "../Features/Networking/networking.h"
+#include "../Features/Rage/autowall.h"
 
 CBaseEntity* CBaseEntity::GetLocalPlayer()
 {
@@ -411,6 +412,18 @@ bool CBaseEntity::IsTargetingLocal(CBaseEntity* pLocal)
 		return true;
 
 	return false;
+}
+
+bool CBaseEntity::CanShootLocalPlayer(CBaseEntity* pLocal) {
+
+	Lagcompensation::LagRecord_t pLocalRecord(pLocal);
+	std::memcpy(&pLocalRecord.pMatricies[RESOLVE], localAnim->GetRealMatrix().data(), sizeof(matrix3x4a_t) * 256);
+
+	const Vector vecHeadPosition = pLocal->GetHitboxPosition(HITBOX_HEAD, pLocalRecord.pMatricies[RESOLVE]);
+	Vector vecShootAngle = M::VectorAngles(vecHeadPosition - GetEyePosition(false));
+
+	FireBulletData_t data;
+	return autowall.SimulateFireBullet(this, this->GetWeapon(), data, &pLocalRecord);
 }
 
 bool CBaseEntity::CanShoot(CBaseCombatWeapon* pBaseWeapon, int iTickbase)
