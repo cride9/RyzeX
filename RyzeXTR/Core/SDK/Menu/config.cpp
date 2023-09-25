@@ -54,6 +54,10 @@ void CConfig::Setup() {
 		SetupBool(bForceBaim, false, XorStr("bForceBaim"));
 		SetupInt(iForceBaimKey, 0, XorStr("iForceBaimKey"));
 
+		SetupBool(bAutoNade, false, XorStr("bAutoNade"));
+		SetupInt(iAutoNadeBind, 0, XorStr("iAutoNadeBind"));
+		SetupInt(iAutoNadeMinDmg, 0, XorStr("iAutoNadeMinDmg"));
+
 		SetupBoolArray(bHitboxes[NORMAL][AUTO], 6, false, XorStr("bHitboxesNormalAuto"));
 		SetupBoolArray(bHitboxes[MULTIPOINT][AUTO], 6, false, XorStr("bHitboxesMultipointAuto"));
 		SetupBoolArray(bHitboxes[SAFE][AUTO], 6, false, XorStr("bHitboxesSafeAuto"));
@@ -351,6 +355,7 @@ void CConfig::Setup() {
 		SetupColor(flDrawCapsuleColorHit, Color(1.f, 1.f, 1.f, 1.f), XorStr("flDrawCapsuleColorHit"));
 
 		SetupBool(bNadePrediction, false, XorStr("bNadePrediction"));
+		
 
 		SetupBool(bKeyBindList, false, XorStr("bKeyBindList"));
 		SetupBoolArray(iKeyBindList, 10, false, XorStr("iKeyBindList"));

@@ -112,6 +112,10 @@ namespace cfg {
 		inline int	bAutostopAggressiveness[7]{ false };
 		inline bool bConditions[7][2]{ false };
 		inline bool bAutoScope[] = { false, false, false };
+
+		inline bool bAutoNade = false;
+		inline int	iAutoNadeBind = 0;
+		inline int	iAutoNadeMinDmg = 0;
 	}
 	namespace antiaim {
 

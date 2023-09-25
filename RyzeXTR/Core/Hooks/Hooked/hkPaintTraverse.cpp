@@ -64,6 +64,7 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		visual::DrawList();
 		vizualizer::DrawInformation();
 		grenadePrediction::Draw();
+		
 
 		//D::SwapDrawData( );
 	}

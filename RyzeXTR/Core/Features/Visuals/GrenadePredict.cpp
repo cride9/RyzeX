@@ -1,5 +1,6 @@
 #include "GrenadePredict.h"
 #include "../Rage/autowall.h"
+#include "../../SDK/InputSystem.h"
 
 void grenadePrediction::Reset() {
 
@@ -13,14 +14,43 @@ void grenadePrediction::Reset() {
 	vecBounces.clear();
 }
 
-void grenadePrediction::Draw() {
+void grenadePrediction::AutoThrow(float dmg) {
 
+	/* Config check, bind */
+	
+	if (!cfg::rage::bAutoNade || !IPT::HandleInput(cfg::rage::iAutoNadeBind))
+		return;
+	
+
+	if (dmg >= cfg::rage::iAutoNadeMinDmg) {
+		//		|
+		//		|
+		//		|
+		//		|
+		//		|
+		//		V
+		g::pCmd->iButtons |= IN_FIRST_GRENADE;
+		//		A
+		//		|
+		//		|
+		//		|
+		//		|
+		//		|
+		//WHY? ARE YOU NOT WORKNG?
+	}
+
+
+}
+
+void grenadePrediction::Draw() {
+	
 	static CTraceFilter pFilter(nullptr);
 	Trace_t pTrace;
 	std::pair<float, CBaseEntity*> pTarget{ 0.f, nullptr };
 
 	/* Config check */
-	if (!cfg::misc::bNadePrediction)
+	//p100 logic
+	if (!cfg::misc::bNadePrediction && !cfg::rage::bAutoNade)
 		return;
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
@@ -38,11 +68,14 @@ void grenadePrediction::Draw() {
 
 		Vector vecScreen[2];
 
-		if (i::DebugOverlay->ScreenPosition(vecPrevious, vecScreen[0]) || i::DebugOverlay->ScreenPosition(vecCurrent, vecScreen[1]))
-			continue;
+		if(cfg::misc::bNadePrediction)
+		{
+			if (i::DebugOverlay->ScreenPosition(vecPrevious, vecScreen[0]) || i::DebugOverlay->ScreenPosition(vecCurrent, vecScreen[1]))
+				continue;
 
-		i::Surface->DrawSetColor(Color(255, 255, 255, 255));
-		i::Surface->DrawLine(vecScreen[0].x, vecScreen[0].y, vecScreen[1].x, vecScreen[1].y);
+			i::Surface->DrawSetColor(Color(255, 255, 255, 255));
+			i::Surface->DrawLine(vecScreen[0].x, vecScreen[0].y, vecScreen[1].x, vecScreen[1].y);
+		}
 
 		vecPrevious = vecCurrent;
 	}
@@ -80,27 +113,33 @@ void grenadePrediction::Draw() {
 
 			if (flDamage > pTarget.first)
 				pTarget = { flDamage, pEntity };
+			
+			//autonade
+			AutoThrow(flDamage);
+
 		}
 	}
 
-	if (pTarget.second) {
+	if (cfg::misc::bNadePrediction) {
+		if (pTarget.second) {
 
-		Vector vecScreen{};
+			Vector vecScreen{};
 
-		if (!vecBounces.empty())
-			vecBounces.back().colColor = { 0, 255, 0, 255 };
+			if (!vecBounces.empty())
+				vecBounces.back().colColor = { 0, 255, 0, 255 };
 
-		if (!i::DebugOverlay->ScreenPosition(vecPrevious, vecScreen))
-			i::Surface->DrawT(vecScreen.x, vecScreen.y, colTextColor, g::fonts::FlagESP, true, std::format("{} dmg", pTarget.first).c_str());
-	}
+			if (!i::DebugOverlay->ScreenPosition(vecPrevious, vecScreen))
+				i::Surface->DrawT(vecScreen.x, vecScreen.y, colTextColor, g::fonts::FlagESP, true, std::format("{} dmg", pTarget.first).c_str());
+		}
 
-	for (const Bounce_t& vecBounce : vecBounces) {
+		for (const Bounce_t& vecBounce : vecBounces) {
 
-		Vector vecScreen{};
+			Vector vecScreen{};
 
-		if (!i::DebugOverlay->ScreenPosition(vecBounce.vecPoint, vecScreen)) {
-			i::Surface->DrawSetColor(vecBounce.colColor);
-			i::Surface->DrawOutlinedCircle(vecScreen.x, vecScreen.y, 2, 85);
+			if (!i::DebugOverlay->ScreenPosition(vecBounce.vecPoint, vecScreen)) {
+				i::Surface->DrawSetColor(vecBounce.colColor);
+				i::Surface->DrawOutlinedCircle(vecScreen.x, vecScreen.y, 2, 85);
+			}
 		}
 	}
 }
@@ -112,8 +151,9 @@ void grenadePrediction::Run() {
 	Reset();
 
 	/* Config check */
-	if (!cfg::misc::bNadePrediction)
+	if (!cfg::misc::bNadePrediction && !cfg::rage::bAutoNade)
 		return;
+
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
 
@@ -137,7 +177,7 @@ void grenadePrediction::Run() {
 	bAttack1 = g::pCmd->iButtons & IN_ATTACK;
 	bAttack2 = g::pCmd->iButtons & IN_SECOND_ATTACK;
 
-	if (!bAttack1 && !bAttack2 /* && always on predict */)
+	if (!bAttack1 && !bAttack2 /* && always on predict */ && !IPT::HandleInput(cfg::rage::iAutoNadeBind))
 		return;
 
 	iID = iIndex;

@@ -184,6 +184,14 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Override"), &bOverride);
         ImGui::Keybind(("Overridekey"), &iOverrideBind);
 
+        ImGui::Text(("Misc:"));
+        ImGui::Checkbox(("Auto Grenade"), &bAutoNade);
+        ImGui::Keybind(("autonade key"), &iAutoNadeBind);
+        if (bAutoNade == true) {
+            ImGui::SliderInt(("Minimum dmg"), &iAutoNadeMinDmg, 0, 98);
+        }
+
+
         ImGui::Text(("Optimization:"));
         ImGui::Checkbox(("Limit scan"), &bLimitScan);
     }

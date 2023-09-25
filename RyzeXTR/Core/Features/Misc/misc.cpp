@@ -1157,7 +1157,7 @@ void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
 	info.m_nModelIndex = -1;
 	info.m_flHaloScale = -1.0f;
 	info.m_flLife = 3.0f;
-	info.m_flWidth = 1.0f;
+	info.m_flWidth = 0.1;
 	info.m_flEndWidth = 1.0f;
 	info.m_flFadeLength = 0.0f;
 	info.m_flAmplitude = 2.0f;
@@ -1180,7 +1180,7 @@ void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
 }
 
 void misc::BulletTracer(IGameEvent* pEvent) {
-
+	
 	if (!g::pLocal)
 		return;
 
@@ -1235,7 +1235,8 @@ void misc::FixScopeSens() {
 		zoom_sensitivity_ratio_mouse->SetValue(1);
 		return;
 	}
-
+	
+	
 	zoom_sensitivity_ratio_mouse->SetValue(g::pLocal->IsScoped() ? cfg::misc::bRemovals[3] ? 0 : 1 : 1);
 }
 

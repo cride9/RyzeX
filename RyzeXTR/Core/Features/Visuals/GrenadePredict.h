@@ -32,6 +32,7 @@ namespace grenadePrediction {
 	inline Vector vecMove;
 
 	void Reset();
+	void AutoThrow(float dmg);
 	void Draw();
 	void Run();
 	void Simulate(CBaseEntity* pLocal);
