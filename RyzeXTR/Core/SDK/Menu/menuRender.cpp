@@ -893,7 +893,7 @@ void menu::Misc(ImVec2 savedCursorPosition) {
     {
 		ImGui::Checkbox("Keybind", &cfg::misc::bKeyBindList);
         if (bKeyBindList) {
-            static const char* options[] = { "Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping" };
+            static const char* options[] = { "Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping", "Auto Nade" };
             ImGui::MultiComboBox("Keybinds", options, cfg::misc::iKeyBindList, IM_ARRAYSIZE(options));
         }
 

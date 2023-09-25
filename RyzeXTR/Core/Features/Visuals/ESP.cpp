@@ -829,6 +829,11 @@ void visual::CoolHackKeyBindList() {
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (outgoing), 255), max(191 - outgoing, 0), 61, 255), g::fonts::SkeetFont, false, "PING");
 		spacing += 30;
 	}
+	if (IPT::HandleInput(cfg::rage::iAutoNadeBind) && cfg::rage::bAutoNade && cfg::misc::iKeyBindList[10]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "Auto Nade");
+		spacing += 30;
+	}
 }
 
 void visual::DrawRadioInformation() {
