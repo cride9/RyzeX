@@ -555,6 +555,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
 
         case 2:
 
+            ImGui::Combo(("Material"), &iAttachmentMaterial[iSelect], arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
             ImGui::Checkbox("Attachment", &bAttachment[iSelect]);
             ImGui::ColorEdit4("##attachmentpicker", flAttachmentColor[iSelect]);
             ImGui::Checkbox("Wireframe", &bAttachmentXhair[iSelect]);

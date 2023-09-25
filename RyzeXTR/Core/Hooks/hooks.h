@@ -25,6 +25,7 @@ namespace table {
 	inline constexpr auto overrideView = 18;		// Thirdperson, fov etc...
 	inline constexpr auto lockCursor = 67;
 	inline constexpr auto drawModel = 29;
+	inline constexpr auto drawModelMdl = 21;
 	inline constexpr auto listLeaves = 6;
 	inline constexpr auto getViewmodelFov = 35;
 	inline constexpr auto writeUserCmd = 24;
@@ -65,6 +66,8 @@ namespace detour {
 	inline CDetourHook overrideView;		// clientmode -> 18
 	inline CDetourHook lockCursor;			// panel -> 67
 	inline CDetourHook drawModel;			// studiorender -> 29
+	inline CDetourHook drawModelMdl;		// MDLrender -> 21
+	inline CDetourHook drawModelAnimating;
 	inline CDetourHook listLeaves;			// bsptree -> 6
 	inline CDetourHook runCommand;			// prediction -> 19
 	inline CDetourHook getViewmodelFov;		// clientmode -> 35
@@ -148,7 +151,9 @@ namespace h {
 	void __fastcall		hkOverrideView(void*, void*, CViewSetup*);
 	void __fastcall		hkLockCursor(ISurface*, int);
 	void __fastcall		hkDrawModel(IStudioRender*, int, DrawModelResults_t*, const DrawModelInfo_t&, matrix3x4a_t*, float*, float*, const Vector&, int);
-	int  __fastcall		hkListLeavesInBox(void*, int, const Vector&, const Vector&, unsigned short*, int);
+	void __fastcall		hkDrawModelMDL(void*, int, IMatRenderContext*, const DrawModelState_t&, const ModelRenderInfo_t&, matrix3x4_t*);
+	int __fastcall		hkDrawModelAnimating(void* ecx, int edx, int flags, RenderableInstance_t& instance);
+	int  __fastcall		hkListLeavesInBox(void*, void*, const Vector*, const Vector*, unsigned short*, int);
 	void __fastcall		hkRunCommand(void*, void*, CBaseEntity*, CUserCmd*, IMoveHelper*);
 	float __fastcall	hkGetViewModelFov(void*, void*);
 	bool __fastcall		hkWriteUserCmdDeltaToBuffer(void*, void*, int, bf_write*, int, int, bool);

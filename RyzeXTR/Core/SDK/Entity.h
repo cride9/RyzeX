@@ -1121,6 +1121,7 @@ public:
 	ADD_NETVAR(GetModelScale, float, "CBaseAnimating->m_flModelScale");
 	ADD_NETVAR( GetModelScaleType, int, "CBaseAnimating->m_ScaleType" );
 	ADD_NETVAR(GetBodyID, int, "CBaseAnimating->m_nBody");
+	ADD_NETVAROFFSET(bSetFrozen, bool, "CBaseAnimating->m_nHitboxSet", 0x4);
 
 	//ADD_NETVAR(GetEncodedControllerArray, std::array<float, MAXSTUDIOBONECTRLS>, "CBaseAnimating->m_flEncodedController");
 

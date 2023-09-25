@@ -182,6 +182,36 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 	static auto original = detour::drawModel.GetOriginal<decltype(&h::hkDrawModel)>();
 
+	//if (info.pStudioHdr && strstr(info.pStudioHdr->szName, "prop")) {
+	//	bool ret = false;
+	//	if (bSleeve) {
+	//		BeginChams(materials[iSleeveType], flSleeveColor, false, bSleeveXhair);
+	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		ret = true;
+	//	}
+	//	else {
+	//		EndChams(false);
+	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		ret = false;
+	//	}
+	//	if (bSleeveOverlay) {
+	//		BeginChams(materials[GLOW], flSleeveOverlayColor, false, bSleeveOverlayXhair);
+	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		ret = true;
+	//	}
+	//	if (bSleeveThinOverlay) {
+	//		BeginChams(materials[THINGLOW], flSleeveThinOverlayColor, false, bSleeveThinOverlayXhair);
+	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		ret = true;
+	//	}
+	//	if (bSleeveAnimOverlay) {
+	//		BeginChams(materials[ANIMATED], flSleeveAnimOverlayColor, false, bSleeveAnimOverlayXhair);
+	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+	//		ret = true;
+	//	}
+	//	return ret;
+	//}
+
 	if (nFlags & (STUDIO_RENDER | STUDIO_SKIP_FLEXES | STUDIO_DONOTMODIFYSTENCILSTATE | STUDIO_NOLIGHTING_OR_CUBEMAP | STUDIO_SKIP_DECALS))
 		return false;
 
@@ -210,7 +240,8 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		return true;
 	}
 
-	if (pEnt->IsPlayer() && pEnt->IsAlive()) {
+	bool bRagdoll = (szModelName.find("player") != std::string_view::npos && !pEnt->IsAlive());
+	if ((pEnt->IsPlayer() && pEnt->IsAlive()) || bRagdoll) {
 
 		if (pEnt == g::pLocal) {
 
@@ -332,7 +363,7 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			}
 			return true;
 		}
-		else {
+		else if (pEnt->IsEnemy(g::pLocal)) {
 
 			//auto pLog = &lagcomp.GetLog( pEnt->EntIndex( ) );
 			//if (pLog->pRecord.size( ) >= 2) 
@@ -350,10 +381,10 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			//	original( i::StudioRender, 0U, pResults, info, pLog->pRecord.front().pMatricies[ RIGHT ], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags );
 			//}
 
-			if (bBacktrackChams) {
+			if (bBacktrackChams && !bRagdoll) {
 
 				auto pLog = &lagcomp.GetLog(pEnt->EntIndex());
-				if (pLog->pRecord.size() >= 2) {
+				if (pLog && pLog->pRecord.size() >= 2) {
 
 					std::array<float, 4> flBacktrackColor = { cfg::model::flBacktrackColor[0], cfg::model::flBacktrackColor[1], cfg::model::flBacktrackColor[2], cfg::model::flBacktrackColor[3] };
 					flBacktrackColor[3] *= min(pLog->pRecord.at(pLog->iLastValid).vecOrigin.DistTo(pEnt->GetVecOrigin()) / 10.f, 1.f);
@@ -643,5 +674,6 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			return true;
 		}
 	}
+
 	return false;
 }

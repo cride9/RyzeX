@@ -2093,7 +2093,7 @@ void misc::FogOptions() {
 
 void misc::RemoveShadows() {
 
-	static CConVar* r_shadows = i::ConVar->FindVar("r_shadows");
+	static CConVar* r_shadows = i::ConVar->FindVar("cl_csm_shadows");
 	if (r_shadows)
 		r_shadows->SetValue(cfg::misc::bRemovals[6] ? 0 : 1);
 }
