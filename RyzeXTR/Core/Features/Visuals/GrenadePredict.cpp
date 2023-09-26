@@ -14,21 +14,64 @@ void grenadePrediction::Reset() {
 	vecBounces.clear();
 }
 
-void grenadePrediction::AutoThrow(float dmg) {
-
+void grenadePrediction::AutoThrow( CUserCmd* pCmd ) 
+{
 	/* Config check, bind */
-	
 	if (!cfg::rage::bAutoNade || !IPT::HandleInput(cfg::rage::iAutoNadeBind))
 		return;
-	
 
-	if (dmg >= cfg::rage::iAutoNadeMinDmg) {
-		//bnote to self : minden mukszk eza  fos nem
-		g::pCmd->iButtons |= IN_FIRST_GRENADE;
-		
+	if (!g::pLocal->IsAlive( ) || vecBounces.empty( ))
+		return;
+
+	// get refference to last entry in bounces
+	Bounce_t& lastBounce = vecBounces.back();
+	// Should we release?
+	static bool bRemoveAttack = false;
+
+	// loop through all entities
+	for (int i = 1; i < i::GlobalVars->nMaxClients; i++) 
+	{
+		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
+		if (!pEntity || !pEntity->IsAlive( ) || !pEntity->IsEnemy( g::pLocal ) )
+			continue;
+
+		Vector vecCenter = pEntity->GetWorldSpaceCenter( );
+		Vector vecDelta = vecCenter - lastBounce.vecPoint;
+
+		if (iID == WEAPON_HEGRENADE && !vecDelta.IsZero( )) {
+
+			if (vecDelta.Length( ) > 350.f)
+				continue;
+
+			static CTraceFilter pFilter( nullptr );
+			Trace_t pTrace;
+			i::EngineTrace->TraceRay( Ray_t( lastBounce.vecPoint, vecCenter ), MASK_SHOT, &pFilter, &pTrace );
+
+			if (!pTrace.pHitEntity || pTrace.pHitEntity != pEntity)
+				continue;
+
+			float flDamage = 105.f * std::exp( ( -( vecDelta.Length( ) - 25.f ) / 140.f ) * ( ( vecDelta.Length( ) - 25.f ) / 140.f ) );
+			autowall.ScaleDamage( HITGROUP_CHEST, pEntity, 1.f, 4.f, flDamage );
+
+			flDamage = min( flDamage, ( pEntity->GetArmor( ) > 0 ) ? 57.f : 98.f );
+
+			if (bRemoveAttack)
+			{
+				bRemoveAttack = false;
+				// remove attack
+				pCmd->iButtons &= ~IN_ATTACK;
+				return;
+			}
+
+			//autonade
+			if (flDamage >= cfg::rage::iAutoNadeMinDmg)
+			{
+				// set to true so we can remove attack next tick
+				bRemoveAttack = true;
+				pCmd->iButtons |= IN_ATTACK;
+			}
+		}
 	}
-
-
 }
 
 void grenadePrediction::Draw() {
@@ -36,11 +79,6 @@ void grenadePrediction::Draw() {
 	static CTraceFilter pFilter(nullptr);
 	Trace_t pTrace;
 	std::pair<float, CBaseEntity*> pTarget{ 0.f, nullptr };
-
-	/* Config check */
-	//p100 logic
-	if (!cfg::misc::bNadePrediction && !cfg::rage::bAutoNade)
-		return;
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
 	if (!pLocal || !pLocal->IsAlive())
@@ -102,11 +140,6 @@ void grenadePrediction::Draw() {
 
 			if (flDamage > pTarget.first)
 				pTarget = { flDamage, pEntity };
-			
-			//autonade
-			AutoThrow(flDamage);
-			
-
 		}
 	}
 
@@ -143,7 +176,6 @@ void grenadePrediction::Run() {
 	/* Config check */
 	if (!cfg::misc::bNadePrediction && !cfg::rage::bAutoNade)
 		return;
-
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
 

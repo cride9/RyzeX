@@ -61,6 +61,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 			i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
 		
 		grenadePrediction::Run();
+		grenadePrediction::AutoThrow( pCmd );
+
 		misc::BoostMovement(pCmd);
 		g::vecEyePosition = pLocal->GetEyePosition(false);
 		localAnim->CopyPlayerAnimationData(false, pLocal);
