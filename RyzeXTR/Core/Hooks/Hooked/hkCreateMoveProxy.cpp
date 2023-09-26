@@ -84,7 +84,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 			LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_PREDICTION ], pCmd );
 	}
 	prediction.End(pCmd, pLocal);
-
+	
 	aimbot.PostPrediction(pCmd, bSendPacket);
 	prediction.RestoreNetvars( pCmd->iCommandNumber, pLocal);
 

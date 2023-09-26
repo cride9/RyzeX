@@ -302,6 +302,15 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
             ImGui::Combo(("Pitch"), &iPitch[iSelect], arrPitches, IM_ARRAYSIZE(arrPitches));
             ImGui::Combo(("Base"), &iYawBase[iSelect], arrYawBases, IM_ARRAYSIZE(arrYawBases));
             ImGui::Combo(("Yaw"), &iYaw[iSelect], arrYaws, IM_ARRAYSIZE(arrYaws));
+            ImGui::Checkbox("Enable Manual Anti-Aim", &cfg::antiaim::bManualAA);
+            if (cfg::antiaim::bManualAA)
+            {
+                //i dunno why it doesnt but the keybind into a new lne
+                ImGui::Checkbox(("Left"), &bManualAAL);
+                ImGui::Keybind("##iManualAAL", &iManualAAL);
+                ImGui::Checkbox(("Right"), &bManualAAR);
+                ImGui::Keybind("##iManualAAR", &iManualAAR);
+            }
             ImGui::Combo(("Modifier"), &iModifier[iSelect], arrModifiers, IM_ARRAYSIZE(arrModifiers));
             if (iModifier[iSelect] != 0) {
 				if (iModifier[iSelect] == 3) {
@@ -893,7 +902,7 @@ void menu::Misc(ImVec2 savedCursorPosition) {
     {
 		ImGui::Checkbox("Keybind", &cfg::misc::bKeyBindList);
         if (bKeyBindList) {
-            static const char* options[] = { "Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping", "Auto Nade" };
+            static const char* options[] = { "Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping", "Auto Nade", "Manual Anti-Aim"};
             ImGui::MultiComboBox("Keybinds", options, cfg::misc::iKeyBindList, IM_ARRAYSIZE(options));
         }
 

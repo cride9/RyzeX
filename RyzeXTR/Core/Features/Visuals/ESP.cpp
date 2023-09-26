@@ -834,6 +834,16 @@ void visual::CoolHackKeyBindList() {
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "Auto Nade");
 		spacing += 30;
 	}
+	if (IPT::HandleInput(cfg::antiaim::iManualAAR) && cfg::antiaim::bManualAA && cfg::misc::iKeyBindList[11]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "R");
+		spacing += 30;
+	}
+	if (IPT::HandleInput(cfg::antiaim::iManualAAL) && cfg::antiaim::bManualAA && cfg::misc::iKeyBindList[11]) {
+
+		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "L");
+		spacing += 30;
+	}
 }
 
 void visual::DrawRadioInformation() {

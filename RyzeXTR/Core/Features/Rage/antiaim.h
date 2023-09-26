@@ -61,4 +61,5 @@ namespace antiaim {
 	bool LBYUpdate(CBaseEntity* pLocal);
 
 	void DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE);
+	bool ManualAA(CUserCmd* pCmd, bool type);
 }

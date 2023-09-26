@@ -23,20 +23,9 @@ void grenadePrediction::AutoThrow(float dmg) {
 	
 
 	if (dmg >= cfg::rage::iAutoNadeMinDmg) {
-		//		|
-		//		|
-		//		|
-		//		|
-		//		|
-		//		V
+		//bnote to self : minden mukszk eza  fos nem
 		g::pCmd->iButtons |= IN_FIRST_GRENADE;
-		//		A
-		//		|
-		//		|
-		//		|
-		//		|
-		//		|
-		//WHY? ARE YOU NOT WORKNG?
+		
 	}
 
 
@@ -116,6 +105,7 @@ void grenadePrediction::Draw() {
 			
 			//autonade
 			AutoThrow(flDamage);
+			
 
 		}
 	}

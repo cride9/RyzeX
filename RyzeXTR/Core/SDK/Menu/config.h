@@ -126,6 +126,16 @@ namespace cfg {
 		inline int iPitch[3];
 		inline int iYawBase[3];
 		inline int iYaw[3];
+
+		inline bool bManualAA;
+		inline bool bManualAAKeybind;
+
+		inline bool bManualAAR;
+		inline bool bManualAAL;
+
+		inline int iManualAAR;
+		inline int iManualAAL;
+
 		inline bool bSlideWalk;
 		inline bool bInvertOnShoot[3];
 		inline bool bInverter = false;
@@ -332,7 +342,7 @@ namespace cfg {
 
 		//inline bool bKeyBindList = false;
 		inline bool bKeyBindList = false;
-		inline bool iKeyBindList[10];
+		inline bool iKeyBindList[13];
 
 		inline bool bBunnyHop = false;//
 		inline bool bAutoStrafe = false;

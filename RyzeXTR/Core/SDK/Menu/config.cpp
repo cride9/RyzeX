@@ -121,6 +121,17 @@ void CConfig::Setup() {
 		SetupIntArray(iPitch, 3, 0, XorStr("iPitch"));
 		SetupIntArray(iYawBase, 3, 0, XorStr("iYawBase"));
 		SetupIntArray(iYaw, 3, 0, XorStr("iYaw"));
+
+		SetupBool(bManualAA, false, XorStr("bManualAA"));
+
+		SetupBool(bManualAA, false, XorStr("bManualAAKeybind"));
+
+		SetupBool(bManualAAR, false, XorStr("bManualAAR"));
+		SetupBool(bManualAAL, false, XorStr("bManualAAL"));
+
+		SetupInt(iManualAAL, 0, XorStr("iManualAAL"));
+		SetupInt(iManualAAR, 0, XorStr("iManualAAR"));
+
 		SetupBoolArray(bInvertOnShoot, 3, false, XorStr("bInvertOnShoot"));
 
 		SetupBool(bSlideWalk, false, XorStr("bSlideWalk"));
@@ -358,7 +369,7 @@ void CConfig::Setup() {
 		
 
 		SetupBool(bKeyBindList, false, XorStr("bKeyBindList"));
-		SetupBoolArray(iKeyBindList, 10, false, XorStr("iKeyBindList"));
+		SetupBoolArray(iKeyBindList, 11, false, XorStr("iKeyBindList"));
 
 		SetupBool(bBunnyHop, false, XorStr("bBunnyHop"));
 		SetupBool(bAutoStrafe, false, XorStr("bAutoStrafe"));

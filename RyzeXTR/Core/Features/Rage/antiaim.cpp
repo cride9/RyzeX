@@ -93,7 +93,15 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 	if (iYawBase[type] == 1 && !bInitializedFreestand)
 		AtTarget(pCmd, pCmd->angViewPoint);
 
-	if (!bInitializedFreestand) {
+	bool bInitializedManual = false;
+	if (IPT::HandleInput(cfg::antiaim::iManualAAR)) {
+		bInitializedManual = ManualAA(pCmd, true);
+	}
+	if (IPT::HandleInput(cfg::antiaim::iManualAAL)) {
+		bInitializedManual = ManualAA(pCmd, false);
+	}
+
+	if (!bInitializedFreestand || !bInitializedManual) {
 		// yaw
 		switch (iYaw[type]) {
 
@@ -578,4 +586,20 @@ void antiaim::DoRytter(CUserCmd* pCmd, int type) {
 	catch (std::exception) {
 
 	}
+}
+
+bool antiaim::ManualAA(CUserCmd* pCmd, bool type) {
+	//type 0 - rght
+	//type 1 - left
+
+	if (type)
+	{
+		pCmd->angViewPoint.y = pCmd->angViewPoint.y + 90.f;
+	}
+	else if (!type)
+	{
+		pCmd->angViewPoint.y = pCmd->angViewPoint.y + -90.f;
+	}
+
+	return true;
 }
