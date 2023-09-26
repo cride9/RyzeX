@@ -128,7 +128,7 @@ namespace cfg {
 		inline int iYaw[3];
 
 		inline bool bManualAA;
-		inline bool bManualAAKeybind;
+		
 
 		inline bool bManualAAR;
 		inline bool bManualAAL;

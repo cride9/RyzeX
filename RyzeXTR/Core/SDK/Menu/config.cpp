@@ -124,7 +124,7 @@ void CConfig::Setup() {
 
 		SetupBool(bManualAA, false, XorStr("bManualAA"));
 
-		SetupBool(bManualAA, false, XorStr("bManualAAKeybind"));
+		
 
 		SetupBool(bManualAAR, false, XorStr("bManualAAR"));
 		SetupBool(bManualAAL, false, XorStr("bManualAAL"));
