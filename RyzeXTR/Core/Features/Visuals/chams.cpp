@@ -182,35 +182,36 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 
 	static auto original = detour::drawModel.GetOriginal<decltype(&h::hkDrawModel)>();
 
-	//if (info.pStudioHdr && strstr(info.pStudioHdr->szName, "prop")) {
-	//	bool ret = false;
-	//	if (bSleeve) {
-	//		BeginChams(materials[iSleeveType], flSleeveColor, false, bSleeveXhair);
-	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		ret = true;
-	//	}
-	//	else {
-	//		EndChams(false);
-	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		ret = false;
-	//	}
-	//	if (bSleeveOverlay) {
-	//		BeginChams(materials[GLOW], flSleeveOverlayColor, false, bSleeveOverlayXhair);
-	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		ret = true;
-	//	}
-	//	if (bSleeveThinOverlay) {
-	//		BeginChams(materials[THINGLOW], flSleeveThinOverlayColor, false, bSleeveThinOverlayXhair);
-	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		ret = true;
-	//	}
-	//	if (bSleeveAnimOverlay) {
-	//		BeginChams(materials[ANIMATED], flSleeveAnimOverlayColor, false, bSleeveAnimOverlayXhair);
-	//		original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
-	//		ret = true;
-	//	}
-	//	return ret;
-	//}
+	if (info.pStudioHdr && strstr(info.pStudioHdr->szName, "prop")) {
+
+		bool ret = false;
+		if (bProps) {
+			BeginChams(materials[iPropsType], flPropsColor, false, bPropsXhair);
+			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
+		}
+		else {
+			EndChams(false);
+			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = false;
+		}
+		if (bPropsOverlay) {
+			BeginChams(materials[GLOW], flPropsOverlayColor, false, bPropsOverlayXhair);
+			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
+		}
+		if (bPropsThinOverlay) {
+			BeginChams(materials[THINGLOW], flPropsThinOverlayColor, false, bPropsThinOverlayXhair);
+			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
+		}
+		if (bPropsAnimOverlay) {
+			BeginChams(materials[ANIMATED], flPropsAnimOverlayColor, false, bPropsAnimOverlayXhair);
+			original(i::StudioRender, 0U, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+			ret = true;
+		}
+		return ret;
+	}
 
 	if (nFlags & (STUDIO_RENDER | STUDIO_SKIP_FLEXES | STUDIO_DONOTMODIFYSTENCILSTATE | STUDIO_NOLIGHTING_OR_CUBEMAP | STUDIO_SKIP_DECALS))
 		return false;

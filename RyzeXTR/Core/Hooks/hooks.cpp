@@ -70,6 +70,7 @@ void h::SetupHooks() {
 	HookSignature(detour::processInterpolatedList, CLIENT_DLL, "0F B7 05 ? ? ? ? 3D FF FF 00 00 74 3F 56 57", &hkProcessInterpolatedList);
 	HookSignature(detour::drawViewmodel, CLIENT_DLL, "55 8B EC 51 57 E8", &hkShouldDrawViewmodel);
 	HookSignature(detour::drawModelAnimating, CLIENT_DLL, "55 8B EC 56 8B F1 80 ? ? ? ? ? ? 75 07 33", &hkDrawModelAnimating);
+	HookSignature(detour::isDepthOfFieldEnabled, CLIENT_DLL, "8B ? ? ? ? ? 56 8B 01 FF 50 34 8B F0 85 F6 75", &hkIsDepthOfFieldEnabled);
 
 	menu::DestroyDirectX();
 

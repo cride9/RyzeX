@@ -353,6 +353,24 @@ void CConfig::Setup() {
 		SetupColor(flWeaponAnimOverlayColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flWeaponAnimOverlayColor"));
 		SetupBool(flWeaponAnimOverlayXhair, false, XorStr("flWeaponAnimOverlayXhair"));
 
+		SetupBool(bProps, false, XorStr("bProps"));
+
+		SetupInt(iPropsType, 0, XorStr("iPropsType"));
+		SetupColor(flPropsColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flPropsColor"));
+		SetupBool(bPropsXhair, false, XorStr("bPropsXhair"));
+
+		SetupBool(bPropsOverlay, 0, XorStr("iPropsOverlay"));
+		SetupColor(flPropsOverlayColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flPropsOverlayColor"));
+		SetupBool(bPropsOverlayXhair, false, XorStr("bPropsOverlayXhair"));
+
+		SetupBool(bPropsThinOverlay, 0, XorStr("bPropsThinOverlay"));
+		SetupColor(flPropsThinOverlayColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flPropsThinOverlayColor"));
+		SetupBool(bPropsThinOverlayXhair, false, XorStr("bPropsThinOverlayXhair"));
+
+		SetupBool(bPropsAnimOverlay, 0, XorStr("bPropsAnimOverlay"));
+		SetupColor(flPropsAnimOverlayColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flPropsAnimOverlayColor"));
+		SetupBool(bPropsAnimOverlayXhair, false, XorStr("bPropsAnimOverlayXhair"));
+
 		SetupBool(bPaperMode, false, XorStr("bPaperMode"));
 	}
 
@@ -360,6 +378,14 @@ void CConfig::Setup() {
 	{
 		using namespace cfg::misc;
 		PushCategory(XorStr("Miscellaneous"));
+
+		SetupBool(bMotionBlur, false, XorStr("bMotionBlur"));
+		SetupBool(bForwardEnabled, false, XorStr("bForwardEnabled"));
+		SetupFloat(flFallingMin, 10.f, XorStr("flFallingMin"));
+		SetupFloat(flFallingMax, 20.f, XorStr("flFallingMax"));
+		SetupFloat(flFallingIntensity, 1.f, XorStr("flFallingIntensity"));
+		SetupFloat(flRotationIntensity, 1.f, XorStr("flRotationIntensity"));
+		SetupFloat(flStrength, 4.f, XorStr("flStrength"));
 
 		SetupBool(bDrawCapsule, false, XorStr("bDrawCapsule"));
 		SetupColor(flDrawCapsuleColor, Color(1.f, 1.f, 1.f, 1.f), XorStr("flDrawCapsuleColor"));
@@ -495,6 +521,16 @@ void CConfig::Setup() {
 
 		SetupStringArray(szSkinNametag, 37, "", XorStr("szSkinNametag"));
 
+	}
+
+	{
+		using namespace cfg::vizualizer;
+		PushCategory(XorStr("Vizualizer"));
+
+		SetupBool(bEnabled, false, XorStr("bEnabled"));
+		SetupBool(bDynamic, true, XorStr("bDynamic"));
+		SetupFloat(flStaticThreshold, 0.55f, XorStr("flStaticThreshold"));
+		SetupFloat(flSensitivity, 0.00f, XorStr("flSensitivity"));
 	}
 
 	// scripts

@@ -183,6 +183,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkGetViewModelFov.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkINetchannelHandler.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkInPrediction.cpp" />
+    <ClCompile Include="Core\Hooks\Hooked\hkIsDepthOfFieldEnabled.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkRenderView.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkLevelShutDownClient.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkListLeavesInBox.cpp" />

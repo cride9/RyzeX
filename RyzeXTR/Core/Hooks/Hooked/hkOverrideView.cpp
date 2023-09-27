@@ -8,6 +8,7 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 	static auto original = detour::overrideView.GetOriginal<decltype(&h::hkOverrideView)>();
 
 	misc::ThirdPerson();
+	misc::MotionBlur(pSetup);
 
 	if (!g::pLocal || !g::pLocal->IsAlive())
 		return original(ecx, edx, pSetup);
@@ -28,7 +29,7 @@ void __fastcall h::hkOverrideView(void* ecx, void* edx, CViewSetup* pSetup) {
 	}
 
 	if (IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck) {
-		pSetup->vecOrigin.z = g::pLocal->GetAbsOrigin().z + 64.f;
+		pSetup->vecOrigin = g::pLocal->GetAbsOrigin() + i::GameMovement->GetPlayerViewOffset(false);
 	}
 
 	original(ecx, edx, pSetup);

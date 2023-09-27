@@ -18,6 +18,7 @@
 #include "../../Features/Rage/aimbot.h"
 #include "../../Lua/Lua.h"
 #include "../../Features/Visuals/GrenadePredict.h"
+#include "../../Features/Misc/Vizualizer.h"
 
 static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrametime, bool bIsActive, bool& bSendPacket) {
 
@@ -49,6 +50,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (i::ClientState->nChokedCommands >= 14 || exploits::bIsCurrentlyCharging)
 		bSendPacket = true;
 
+	vizualizer::Draw(pLocal);
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
 	// Run lua callbacks

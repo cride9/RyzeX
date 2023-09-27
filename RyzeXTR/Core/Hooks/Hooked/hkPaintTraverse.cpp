@@ -62,7 +62,6 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		visual::AutoPeekCircle();
 		visual::HandleDamageIndicator();
 		visual::DrawList();
-		vizualizer::DrawInformation();
 		grenadePrediction::Draw();
 		
 

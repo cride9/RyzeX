@@ -75,7 +75,10 @@ namespace cfg {
 
 	namespace vizualizer {
 
-		inline float flDivider = 1.f;
+		inline bool bEnabled = false;
+		inline bool bDynamic = true;
+		inline float flStaticThreshold = 0.55f;
+		inline float flSensitivity = 0.05f;
 	}
 
 	namespace rage {
@@ -330,9 +333,35 @@ namespace cfg {
 		inline float flWeaponAnimOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
 		inline bool flWeaponAnimOverlayXhair = false;
 
+		inline bool bProps = false;
+
+		inline int iPropsType = 0;
+		inline float flPropsColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool bPropsXhair = false;
+
+		inline bool bPropsOverlay = false;
+		inline float flPropsOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool bPropsOverlayXhair = false;
+
+		inline bool bPropsThinOverlay = false;
+		inline float flPropsThinOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool bPropsThinOverlayXhair = false;
+
+		inline bool bPropsAnimOverlay = false;
+		inline float flPropsAnimOverlayColor[4] = { 255.f, 255.f, 255.f, 255.f };
+		inline bool bPropsAnimOverlayXhair = false;
+
 		inline bool bPaperMode = false;
 	}
 	namespace misc {
+
+		inline bool bMotionBlur = false;
+		inline bool bForwardEnabled = false;
+		inline float flFallingMin{};
+		inline float flFallingMax{};
+		inline float flFallingIntensity{};
+		inline float flRotationIntensity{};
+		inline float flStrength{};
 
 		inline bool bDrawCapsule = false; // 
 		inline float flDrawCapsuleColor[4];

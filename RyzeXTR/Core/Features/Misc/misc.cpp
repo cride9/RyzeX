@@ -2137,3 +2137,154 @@ void misc::BoostMovement(CUserCmd* pCmd) {
 
 	nButtons &= ~IN_SPEED;
 }
+
+void misc::MotionBlur(CViewSetup* pSetup) {
+
+	using namespace cfg::misc;
+	if (!bMotionBlur)
+		return;
+
+	if (i::ClientState->iSignonState != SIGNONSTATE_FULL)
+		return;
+
+	if (!g::pLocal)
+		return;
+
+	static std::tuple<float, float, float, Vector, float> tupBlurHistory{};
+	static std::array<float, 4U> arrMotionBlurValues = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	if (pSetup) {
+
+		const float flElapsedTime = i::GlobalVars->flRealTime - std::get<0>(tupBlurHistory);
+
+		const Vector vecViewAngles = pSetup->angView;
+		float flCurrentPitch = vecViewAngles.x;
+		float flCurrentYaw = vecViewAngles.y;
+
+		M::NormalizeYaw(flCurrentPitch);
+		M::NormalizeYaw(flCurrentYaw);
+
+		Vector vecCurrentSideVector;
+		Vector vecCurrentForwardVector;
+		Vector vecCurrentUpVector;
+		M::AngleVectors(pSetup->angView, &vecCurrentForwardVector, &vecCurrentSideVector, &vecCurrentUpVector);
+
+		Vector vecCurrentPosition = pSetup->vecOrigin;
+		Vector vecPositionChange = std::get<3>(tupBlurHistory) - vecCurrentPosition;
+
+		if (((vecPositionChange.Length() > 30.0f) && (flElapsedTime >= 0.5f)) || flElapsedTime > (1.0f / 15.0f))
+			std::fill(arrMotionBlurValues.begin(), arrMotionBlurValues.end(), 0.f);
+		
+		else if (vecPositionChange.Length() > 50.0f) 
+			std::get<4>(tupBlurHistory) = i::GlobalVars->flRealTime + 1.0f;
+		
+		else {
+
+			const float flHorizontalFov = pSetup->flFOV;
+			const float flVerticalFov = (pSetup->flAspectRatio <= 0.0f) ? (pSetup->flFOV) : (pSetup->flFOV / pSetup->flAspectRatio);
+			const float flViewDotMotion = vecCurrentForwardVector.DotProduct(vecPositionChange);
+
+			arrMotionBlurValues[2] = flViewDotMotion;
+
+			const float flSideDotMotion = vecCurrentSideVector.DotProduct(vecPositionChange);
+			float flYawDifference = std::get<2>(tupBlurHistory) - flCurrentYaw;
+			if (((std::get<2>(tupBlurHistory) - flCurrentYaw > 180.0f) || (std::get<2>(tupBlurHistory) - flCurrentYaw < -180.0f)) &&
+				((std::get<2>(tupBlurHistory) + flCurrentYaw > -180.0f) && (std::get<2>(tupBlurHistory) + flCurrentYaw < 180.0f)))
+				flYawDifference = std::get<2>(tupBlurHistory) + flCurrentYaw;
+
+			float flYawDifferenceAdjusted = flYawDifference + (flSideDotMotion / 3.0f);
+
+			if (flYawDifference < 0.0f)
+				flYawDifferenceAdjusted = std::clamp(flYawDifferenceAdjusted, flYawDifference, 0.0f);
+			else
+				flYawDifferenceAdjusted = std::clamp(flYawDifferenceAdjusted, 0.0f, flYawDifference);
+
+			const float flUnDampenedYaw = flYawDifferenceAdjusted / flHorizontalFov;
+			arrMotionBlurValues[0] = flUnDampenedYaw * (1.0f - (fabsf(flCurrentPitch) / 90.0f));
+
+			const float flPitchCompensateMask = 1.0f - ((1.0f - fabsf(vecCurrentForwardVector.z)) * (1.0f - fabsf(vecCurrentForwardVector.z)));
+			const float flPitchDifference = std::get<1>(tupBlurHistory) - flCurrentPitch;
+			float flPitchDifferenceAdjusted = flPitchDifference;
+
+			if (flCurrentPitch > 0.0f)
+				flPitchDifferenceAdjusted = flPitchDifference - ((flViewDotMotion / 2.0f) * flPitchCompensateMask);
+			else
+				flPitchDifferenceAdjusted = flPitchDifference + ((flViewDotMotion / 2.0f) * flPitchCompensateMask);
+
+			if (flPitchDifference < 0.0f)
+				flPitchDifferenceAdjusted = std::clamp(flPitchDifferenceAdjusted, flPitchDifference, 0.0f);
+			else
+				flPitchDifferenceAdjusted = std::clamp(flPitchDifferenceAdjusted, 0.0f, flPitchDifference);
+
+			arrMotionBlurValues[1] = flPitchDifferenceAdjusted / flVerticalFov;
+			arrMotionBlurValues[3] = flUnDampenedYaw;
+			arrMotionBlurValues[3] *= (fabs(flCurrentPitch) / 90.0f) * (fabs(flCurrentPitch) / 90.0f) * (fabs(flCurrentPitch) / 90.0f);
+
+			if (flElapsedTime > 0.0f)
+				arrMotionBlurValues[2] /= flElapsedTime * 30.0f;
+			else
+				arrMotionBlurValues[2] = 0.0f;
+
+			arrMotionBlurValues[2] = std::clamp((fabsf(arrMotionBlurValues[2]) - flFallingMin) / (flFallingMax - flFallingMin), 0.0f, 1.0f) * (arrMotionBlurValues[2] >= 0.0f ? 1.0f : -1.0f);
+			arrMotionBlurValues[2] /= 30.0f;
+			arrMotionBlurValues[0] *= flRotationIntensity * .15f * flStrength;
+			arrMotionBlurValues[1] *= flRotationIntensity * .15f * flStrength;
+			arrMotionBlurValues[2] *= flRotationIntensity * .15f * flStrength;
+			arrMotionBlurValues[3] *= flRotationIntensity * .15f * flStrength;
+		}
+
+		if (i::GlobalVars->flRealTime < std::get<4>(tupBlurHistory)) {
+			arrMotionBlurValues[0] = 0.0f;
+			arrMotionBlurValues[1] = 0.0f;
+			arrMotionBlurValues[3] = 0.0f;
+		}
+		else 
+			std::get<4>(tupBlurHistory) = 0.0f;
+		
+		std::get<0>(tupBlurHistory) = i::GlobalVars->flRealTime;
+		std::get<1>(tupBlurHistory) = flCurrentPitch;
+		std::get<2>(tupBlurHistory) = flCurrentYaw;
+		std::get<3>(tupBlurHistory) = vecCurrentPosition;
+
+		return;
+	}
+
+	const auto pMaterial = i::MaterialSystem->FindMaterial(("dev/motion_blur"), ("rendertargets"), false);
+	if (!pMaterial) 
+		return;
+
+	IMaterialVar* const pMotionBlurInternal = pMaterial->FindVar("$motionblurinternal", nullptr, false);
+	IMaterialVar* const pMotionBlurViewPortInternal = pMaterial->FindVar("$motionblurviewportinternal", nullptr, false);
+
+	if (!pMotionBlurInternal || !pMotionBlurViewPortInternal)
+		return;
+
+	pMotionBlurInternal->SetVectorComponent(arrMotionBlurValues[0], 0);
+	pMotionBlurInternal->SetVectorComponent(arrMotionBlurValues[1], 1);
+	pMotionBlurInternal->SetVectorComponent(arrMotionBlurValues[2], 2);
+	pMotionBlurInternal->SetVectorComponent(arrMotionBlurValues[3], 3);
+
+	pMotionBlurViewPortInternal->SetVectorComponent(0.0f, 0);
+	pMotionBlurViewPortInternal->SetVectorComponent(0.0f, 1);
+	pMotionBlurViewPortInternal->SetVectorComponent(1.0f, 2);
+	pMotionBlurViewPortInternal->SetVectorComponent(1.0f, 3);
+
+	static uint8_t* uDrawScreenEffectsSig = (MEM::FindPattern(CLIENT_DLL, "55 8B EC 83 E4 F8 83 EC 1C 53 56 57 8D"));
+	if (!uDrawScreenEffectsSig)
+		return;
+
+	int iWidth, iHeight;
+	i::EngineClient->GetScreenSize(iWidth, iHeight);
+
+	__asm
+	{
+		push iHeight
+		push iWidth
+		push 0
+		xor edx, edx
+		mov ecx, pMaterial
+		call uDrawScreenEffectsSig
+		add esp, 12
+	}
+
+}

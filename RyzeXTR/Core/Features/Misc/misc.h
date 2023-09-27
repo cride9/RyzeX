@@ -62,6 +62,7 @@ namespace misc {
 	bool ResetName(bool, const char*);
 	void FogOptions();
 	void RemoveShadows();
+	void MotionBlur(CViewSetup* pSetup);
 
 	void Killsay(IGameEvent*);
 

@@ -485,7 +485,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
     ImGui::BeginChild(("##LeftBot"), ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
         using namespace cfg::model;
-        static const char* arrChamsConfig[] = { "Player", "Overlays", "Attachment", "Viewmodel", "Weapon", "Sleeve"};
+        static const char* arrChamsConfig[] = { "Player", "Overlays", "Attachment", "Viewmodel", "Weapon", "Sleeve", "Props"};
         static int iSelectedConfig = 0;
 
         static const char* iOverlayTypes[] = { ("Glow"), ("Thin"), ("Animated") };
@@ -495,7 +495,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
             ImGui::Combo(("Chams##2"), &iSelectedConfig, arrChamsConfig, IM_ARRAYSIZE(arrChamsConfig));
         else {
             iSelectedConfig = iSelectedConfig > 2 ? 2 : iSelectedConfig;
-            ImGui::Combo(("Chams##2"), &iSelectedConfig, arrChamsConfig, IM_ARRAYSIZE(arrChamsConfig) - 3);
+            ImGui::Combo(("Chams##2"), &iSelectedConfig, arrChamsConfig, IM_ARRAYSIZE(arrChamsConfig) - 4);
         }
         switch (iSelectedConfig) {
 
@@ -689,6 +689,38 @@ void menu::Visual(ImVec2 savedCursorPosition) {
             }
 
             break;
+
+        case 6:
+
+            ImGui::Combo(("Material"), &iPropsType, arrMaterialType, IM_ARRAYSIZE(arrMaterialType));
+
+            ImGui::Checkbox("Props", &bProps);
+            ImGui::ColorEdit4("##PropsColor", flPropsColor);
+            ImGui::Combo(("Overlay##1337"), &iSelectedOverlay, iOverlayTypes, IM_ARRAYSIZE(iOverlayTypes));
+            switch (iSelectedOverlay) {
+            case 0:
+                // overlay
+                ImGui::Checkbox(("Overlay##1"), &bPropsOverlay);
+                ImGui::ColorEdit4(("##OverlayColor"), flPropsOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bPropsOverlayXhair);
+                break;
+
+            case 1:
+                // thin
+                ImGui::Checkbox(("Overlay##2"), &bPropsThinOverlay);
+                ImGui::ColorEdit4(("##ThinOverlayColor"), flPropsThinOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bPropsThinOverlayXhair);
+                break;
+
+            case 2:
+                // animated
+                ImGui::Checkbox(("Overlay##3"), &bPropsAnimOverlay);
+                ImGui::ColorEdit4(("##AnimOverlayColor"), flPropsAnimOverlayColor);
+                ImGui::Checkbox(("Wireframe##3"), &bPropsAnimOverlayXhair);
+                break;
+            }
+
+            break;
         }
 
         //static const char* arrNames[] = { "Normal", "Behind wall", "Overlay", "Overlay behind wall", "Thin", "Thin behind wall", "Animated", "Animated behind wall" };
@@ -748,6 +780,8 @@ void menu::Visual(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Nightmode"), &bNightmode);
         ImGui::ColorEdit4(("##flNightmodeColor"), flNightmodeColor, true);
         ImGui::ColorEdit4(("##flPropColor"), flPropColor);
+
+        // prop chams
 
         ImGui::Combo(("##Skybox"), &iSkybox, arrSkyboxes, IM_ARRAYSIZE(arrSkyboxes));
         ImGui::ColorEdit4(("##flSkyboxColor"), flSkyboxColor);
@@ -835,6 +869,15 @@ void menu::Misc(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Invert knife"), &bInvertKnife);
 		ImGui::Checkbox(("Persistent kill feed"), &bPreserveKillfeed);
 		ImGui::Checkbox(("Animation Breaker"), &cfg::antiaim::bSlideWalk);
+
+        ImGui::Checkbox("Motion blur", &bMotionBlur);
+        if (bMotionBlur) {
+
+            ImGui::Text("NVIDIA GPU only");
+            ImGui::SliderFloat(("Strength"), &flStrength, 0, 15, "%.1f");
+            ImGui::SliderFloat(("Falling"), &flFallingIntensity, 0, 10, "%.1f");
+            ImGui::SliderFloat(("Rotation"), &flRotationIntensity, 0, 10, "%.1f");
+        }
     }
     ImGui::EndChild();
 
@@ -935,7 +978,11 @@ void menu::Misc(ImVec2 savedCursorPosition) {
             ImGui::PopItemWidth();
         }
 
-		//ImGui::SliderFloat("Divider", &cfg::vizualizer::flDivider, 0.1, 10.f, "%.3f");
+        ImGui::Checkbox("Vizualizer", &cfg::vizualizer::bEnabled);
+        ImGui::Checkbox("Dynamic threshold", &cfg::vizualizer::bDynamic);
+        ImGui::SliderFloat("Sens", &cfg::vizualizer::flSensitivity, 0.00f, 0.1f, "%.3f");
+        if (!cfg::vizualizer::bDynamic)
+		    ImGui::SliderFloat("Threshold", &cfg::vizualizer::flStaticThreshold, 0.1, 1.f, "%.3f");
     }
     ImGui::EndChild();
 }

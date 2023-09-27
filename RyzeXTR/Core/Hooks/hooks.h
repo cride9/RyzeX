@@ -82,6 +82,7 @@ namespace detour {
 	inline CDetourHook levelShutDown;
 	inline CDetourHook renderView;			// viewrender -> 6
 	inline CDetourHook verifyReturnAddress;
+	inline CDetourHook isDepthOfFieldEnabled;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -169,6 +170,7 @@ namespace h {
 	void __vectorcall	hkUpdateAnimationState(CAnimState* pAnimstate, void* edx, float z, float y, float x, void* unknown1);
 	int __fastcall		hkBaseInterpolatePart1(CBaseEntity* pEntity, void* edx, float& currentTime, Vector& oldOrigin, Vector& oldAngles, int& bNoMoreChanges);
 	bool __fastcall		hkShouldDrawViewmodel(void* ecx, void* edx);
+	bool __fastcall		hkIsDepthOfFieldEnabled();
 
 	// netchannel table
 	void __fastcall		hkProcessPacket( void*, void*, void*, bool );
