@@ -357,8 +357,8 @@ namespace cfg {
 
 		inline bool bMotionBlur = false;
 		inline bool bForwardEnabled = false;
-		inline float flFallingMin{};
-		inline float flFallingMax{};
+		inline float flFallingMin = 10.f;
+		inline float flFallingMax = 20.f;
 		inline float flFallingIntensity{};
 		inline float flRotationIntensity{};
 		inline float flStrength{};

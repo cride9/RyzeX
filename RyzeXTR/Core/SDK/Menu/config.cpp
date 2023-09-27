@@ -381,8 +381,6 @@ void CConfig::Setup() {
 
 		SetupBool(bMotionBlur, false, XorStr("bMotionBlur"));
 		SetupBool(bForwardEnabled, false, XorStr("bForwardEnabled"));
-		SetupFloat(flFallingMin, 10.f, XorStr("flFallingMin"));
-		SetupFloat(flFallingMax, 20.f, XorStr("flFallingMax"));
 		SetupFloat(flFallingIntensity, 1.f, XorStr("flFallingIntensity"));
 		SetupFloat(flRotationIntensity, 1.f, XorStr("flRotationIntensity"));
 		SetupFloat(flStrength, 4.f, XorStr("flStrength"));
