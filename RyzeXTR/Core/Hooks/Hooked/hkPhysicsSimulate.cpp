@@ -43,9 +43,9 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
 		
-	networking.RestoreNetvarData( pCommandContext->nCommandNumber - 1 );
+	networking.RestoreNetvarData( pCommandContext->nCommandNumber );
 
-	TickbaseRecord_t* Record = prediction.GetTickbaseRecord(pCommandContext->nCommandNumber - 1);
+	TickbaseRecord_t* Record = prediction.GetTickbaseRecord( pCommandContext->nCommandNumber );
 	if (Record->bIsValid)
 	{
 		/* set tickbase */

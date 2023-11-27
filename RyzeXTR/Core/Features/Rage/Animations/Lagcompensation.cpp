@@ -6,7 +6,7 @@
 #include "../../Misc/Playerlist.h"
 #include "../../../Interface/Classes/CCSGameRulesProxy.h"
 
-Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
+Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* __restrict pEntity)
 {
 	CBaseCombatWeapon* pWeapon = pEntity->GetWeapon();
 
@@ -48,7 +48,7 @@ Lagcompensation::LagRecord_t::LagRecord_t(CBaseEntity* pEntity)
 
 }
 
-void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity, bool Backup)
+void Lagcompensation::LagRecord_t::Apply(CBaseEntity* __restrict pEntity, bool Backup)
 {
 	pEntity->GetFlags() = iFlags;
 	pEntity->GetSimulationTime() = flSimulationTime;
@@ -65,7 +65,7 @@ void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity, bool Backup)
 		ApplyMatrix(pEntity, RESOLVE);
 }
 
-void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity)
+void Lagcompensation::LagRecord_t::Apply(CBaseEntity* __restrict pEntity)
 {
 	// set poses
 	pEntity->SetPoseParameters(flPoses);
@@ -78,7 +78,7 @@ void Lagcompensation::LagRecord_t::Apply(CBaseEntity* pEntity)
 	pEntity->SetAbsOrigin(vecOrigin);
 }
 
-void Lagcompensation::LagRecord_t::Restore(CBaseEntity* pEntity)
+void Lagcompensation::LagRecord_t::Restore(CBaseEntity* __restrict pEntity)
 {
 	pEntity->GetVelocity() = vecVelocity;
 	pEntity->GetVecAbsVelocity() = vecAbsVelocity;
@@ -130,7 +130,10 @@ void Lagcompensation::FrameStageNotify() noexcept {
 			pPrevious.bRestoreData = true;
 		}
 
-		Lagcompensation::LagRecord_t pRecord(pPlayerLogs[i].pEntity);
+		auto pRecordUnique = std::make_shared<Lagcompensation::LagRecord_t>( pPlayerLogs[ i ].pEntity );
+		Lagcompensation::LagRecord_t& pRecord = *pRecordUnique.get();
+
+		//Lagcompensation::LagRecord_t pRecord(pPlayerLogs[i].pEntity);
 		if (pPrevious.bRestoreData)
 		{
 			if (!DataChanged(pEntity, &pPrevious))

@@ -3,7 +3,7 @@
 #include "../../Lua/Lua.h"
 #include "../../Interface/Classes/CCSGameRulesProxy.h"
 
-void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
+void CAimBot::CreateMove(CUserCmd* __restrict pCmd, CBaseEntity* __restrict pLocal) {
 
 	static CConVar* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
 
@@ -95,7 +95,7 @@ void CAimBot::ResetAimbotData() {
 	exploits::bCanCharge = true;
 }
 
-void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
+void CAimBot::PostPrediction(CUserCmd* pCmd, bool& __restrict bSendPacket) {
 
 	if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey))
 		bShouldSendPacket = false;
@@ -113,7 +113,7 @@ void CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 	exploits::bForcePacket = false;
 }
 
-Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal) {
+Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* __restrict pLocal) {
 
 	static CConVar* ax = i::ConVar->FindVar("cl_lagcompensation");
 
@@ -265,7 +265,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	return Vector(0, 0, 0);
 }
 
-bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal, CUserCmd* pCmd, bool bSkipCheck) {
+bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* __restrict pLocal, CUserCmd* __restrict pCmd, bool bSkipCheck) {
 
 	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar(XorStr("weapon_accuracy_nospread"));
 	if (!curConfig.bAutostop)
@@ -348,7 +348,7 @@ bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CB
 	return true;
 }
 
-bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecAimPosition, Lagcompensation::LagRecord_t* pRecord) {
+bool CAimBot::HitChance(CUserCmd* __restrict pCmd, CBaseEntity* __restrict pLocal, Vector vecWorldPosition, Vector vecAimPosition, Lagcompensation::LagRecord_t* __restrict pRecord) {
 
 	matrix3x4a_t* pMatrix = pRecord->pMatricies[RESOLVE];
 
@@ -452,7 +452,7 @@ bool CAimBot::HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosi
 	return false;
 }
 
-bool CAimBot::HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy) {
+bool CAimBot::HasEnoughAccuracy(CBaseEntity* __restrict pLocal, float flWeaponInAccuracy) {
 
 	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar(XorStr("weapon_accuracy_nospread"));
 	if (weapon_accuracy_nospread->GetInt() == 1)
@@ -562,7 +562,7 @@ void CAimBot::GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon) {
 	}
 }
 
-std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CBaseEntity* pLocal) {
+std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CBaseEntity* __restrict pLocal) {
 
 	std::vector<Lagcompensation::AnimationInfo_t*> ret{};
 
@@ -605,7 +605,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 	return ret;
 }
 
-std::vector<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, int iHitbox, EMatrixType iType, bool bShouldMultipoint) {
+std::vector<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeapon* __restrict pWeapon, Lagcompensation::LagRecord_t* __restrict pRecord, int iHitbox, EMatrixType iType, bool bShouldMultipoint) {
 
 	std::vector<Vector> refVecPoints{};
 
