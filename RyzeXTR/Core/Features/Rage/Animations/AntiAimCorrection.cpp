@@ -39,85 +39,75 @@ void Animations::Resolver(CBaseEntity* __restrict pEntity, Lagcompensation::LagR
 		return;
 #endif
 
+	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pRecord->iEntIndex);
+	static std::array<int, 65> arrMissedShotsBackup{ 0 };
+	static float flFakePitch[65];
+
 	const int iEntityID = pEntity->EntIndex();
 
-	switch ( arrMissedShots[ iEntityID ] % 2 ) {
+	if (fabsf(pEntity->AnimState()->flEyePitch) == 180.f)
+		flFakePitch[iEntityID] = pEntity->AnimState()->flEyePitch;
+	else if (pRecord->bDidShot) flFakePitch[iEntityID] = NULL;
 
-	case 0:
-		SetYaw( pRecord, LEFT );
-		break;
+	if (fabsf(flFakePitch[iEntityID]) == 180.f)
+		pEntity->GetEyeAngles() = Vector(89.f, pEntity->AnimState()->flEyeYaw, 0.f);
+		
+	float flHitPercentage = static_cast<float>(pLog->iHitAmount) / static_cast<float>(pLog->iShotAmount);
+	if (arrMissedShots[iEntityID] == 0 && flHitPercentage < 0.2f)
+		arrMissedShots[iEntityID] = 1;
 
-	case 1:
-		SetYaw( pRecord, RIGHT );
-		break;
+	int iCurrentBrute = arrMissedShots[iEntityID] % 2;
+
+	if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
+
+		if ( !( pRecord->arrLayers[ 12 ].flWeight * 1000.f ) && ( ( pRecord->arrLayers[ 6 ].flWeight * 1000.f ) == ( pPrevious->arrLayers[ 6 ].flWeight * 1000.f ) ) ) {
+
+			float flFromServerPlaybackrate = GetLocalCycleIncrement( pEntity, pRecord->arrLayers[ ANIMATION_LAYER_MOVEMENT_MOVE ].flPlaybackRate );
+
+			const float fCenterPlaybackrate = GetLocalCycleIncrement( pEntity, pRecord->LayerData[ CENTER ].flPlaybackRate );
+			const float fRightPlaybackrate = GetLocalCycleIncrement( pEntity, pRecord->LayerData[ RIGHT ].flPlaybackRate );
+			const float fLeftPlaybackrate = GetLocalCycleIncrement( pEntity, pRecord->LayerData[ LEFT ].flPlaybackRate );
+
+			// differences.
+			const float fDifferenceCenterPlaybackrate = fabsf( flFromServerPlaybackrate - fCenterPlaybackrate );
+			const float fDifferenceRightPlaybackrate = fabsf( flFromServerPlaybackrate - fRightPlaybackrate );
+			const float fDifferenceLeftPlaybackrate = fabsf( flFromServerPlaybackrate - fLeftPlaybackrate );
+
+			if ( GetVelocityLengthXY( pEntity ) > 0.f )
+			{
+				if ( fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate )
+					SetYaw( pRecord, CENTER );
+				else if ( fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate )
+					SetYaw( pRecord, RIGHT );
+				else if ( fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate )
+					SetYaw( pRecord, LEFT );
+			}
+		}
 	}
+	/* Don't resolve onshot */
+	if (pRecord->bDidShot)
+		return;
 
-	//Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pRecord->iEntIndex);
-	//static std::array<int, 65> arrMissedShotsBackup{ 0 };
-	//static float flFakePitch[65];
+	/* breaking to the left */
+	else if (pRecord->flPoses[BODY_YAW] > 0.85f && pRecord->arrLayers[6].flPlaybackRate == 0.f)
+		SetYaw(pRecord, RIGHT);
 
-	//const int iEntityID = pEntity->EntIndex();
+	/* breaking to the right */
+	else if (pRecord->flPoses[BODY_YAW] < 0.15f && pRecord->arrLayers[6].flPlaybackRate == 0.f)
+		SetYaw(pRecord, LEFT);
 
-	//if (fabsf(pEntity->AnimState()->flEyePitch) == 180.f)
-	//	flFakePitch[iEntityID] = pEntity->AnimState()->flEyePitch;
-	//else if (pRecord->bDidShot) flFakePitch[iEntityID] = NULL;
+	/* Apply previous data if no new data */
+	else if (pPrevious->iResolveSide != VISUAL)
+		SetYaw(pRecord, pPrevious->iResolveSide);
 
-	//if (fabsf(flFakePitch[iEntityID]) == 180.f)
-	//	pEntity->GetEyeAngles() = Vector(89.f, pEntity->AnimState()->flEyeYaw, 0.f);
-	//	
-	//float flHitPercentage = static_cast<float>(pLog->iHitAmount) / static_cast<float>(pLog->iShotAmount);
-	//if (arrMissedShots[iEntityID] == 0 && flHitPercentage < 0.2f)
-	//	arrMissedShots[iEntityID] = 1;
+	/* If we didn't get any data apply right side & no previous data */
+	else if (pRecord->iResolveSide == VISUAL)
+		SetYaw(pRecord, RIGHT);
 
-	//int iCurrentBrute = arrMissedShots[iEntityID] % 2;
-
-	//if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
-
-	//	float flFromServerPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate);
-
-	//	const float fCenterPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[CENTER].flPlaybackRate);
-	//	const float fRightPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[RIGHT].flPlaybackRate);
-	//	const float fLeftPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[LEFT].flPlaybackRate);
-
-	//	// differences.
-	//	const float fDifferenceCenterPlaybackrate = fabsf(flFromServerPlaybackrate - fCenterPlaybackrate);
-	//	const float fDifferenceRightPlaybackrate = fabsf(flFromServerPlaybackrate - fRightPlaybackrate);
-	//	const float fDifferenceLeftPlaybackrate = fabsf(flFromServerPlaybackrate - fLeftPlaybackrate);
-
-	//	if (GetVelocityLengthXY(pEntity) > 0.f)
-	//	{
-	//		if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
-	//			SetYaw(pRecord, CENTER);
-	//		else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
-	//			SetYaw(pRecord, RIGHT);
-	//		else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
-	//			SetYaw(pRecord, LEFT);
-	//	}
-	//}
-	///* Don't resolve onshot */
-	//if (pRecord->bDidShot)
-	//	return;
-
-	///* breaking to the left */
-	//else if (pRecord->flPoses[BODY_YAW] > 0.85f && pRecord->arrLayers[6].flPlaybackRate == 0.f)
-	//	SetYaw(pRecord, RIGHT);
-
-	///* breaking to the right */
-	//else if (pRecord->flPoses[BODY_YAW] < 0.15f && pRecord->arrLayers[6].flPlaybackRate == 0.f)
-	//	SetYaw(pRecord, LEFT);
-
-	///* Apply previous data if no new data */
-	//else if (pPrevious->iResolveSide != VISUAL)
-	//	SetYaw(pRecord, pPrevious->iResolveSide);
-
-	///* If we didn't get any data apply right side & no previous data */
-	//else if (pRecord->iResolveSide == VISUAL)
-	//	SetYaw(pRecord, RIGHT);
-
-	//if (arrMissedShots[iEntityID] != arrMissedShotsBackup[iEntityID]) {
-	//	SetYaw(pRecord, pPrevious->iResolveSide == LEFT ? pPrevious->iResolveSide + iCurrentBrute : pPrevious->iResolveSide == RIGHT ? pPrevious->iResolveSide - iCurrentBrute : RIGHT);
-	//	arrMissedShotsBackup[iEntityID] = arrMissedShots[iEntityID];
-	//}
+	if (arrMissedShots[iEntityID] != arrMissedShotsBackup[iEntityID]) {
+		SetYaw(pRecord, pPrevious->iResolveSide == LEFT ? pPrevious->iResolveSide + iCurrentBrute : pPrevious->iResolveSide == RIGHT ? pPrevious->iResolveSide - iCurrentBrute : RIGHT);
+		arrMissedShotsBackup[iEntityID] = arrMissedShots[iEntityID];
+	}
 }
 
 void Animations::ResolverLogic() {

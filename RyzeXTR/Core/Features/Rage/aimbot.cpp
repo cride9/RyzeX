@@ -46,7 +46,7 @@ void CAimBot::CreateMove(CUserCmd* __restrict pCmd, CBaseEntity* __restrict pLoc
 	Vector vecShootPosition = ScanHitboxes(vecTargets, pLocal);
 	
 	/* Run predicted autostop */
-	bool bSkipPostStop = AutoStop(vecTargets, pLocal, pCmd, false);
+	bool bSkipPostStop = false/*AutoStop(vecTargets, pLocal, pCmd, false)*/;
 
 	if (aimData.pRecord == nullptr || vecShootPosition == Vector(0, 0, 0))
 		return ResetAimbotData();
@@ -117,9 +117,10 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 
 	static CConVar* ax = i::ConVar->FindVar("cl_lagcompensation");
 
-	std::unordered_map<int, std::vector<float>> mapHitboxDamages{};
 	std::vector<Hitscan_t> vecHitscan{};
 	/* Loop through our valid entity logs */
+	std::unique_ptr<float> flTransformedDamage = std::make_unique<float>();
+
 	for (Lagcompensation::AnimationInfo_t* it : vecIn) {
 
 		/* Invalid data check */
@@ -129,17 +130,17 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (ax->GetInt() == 0)
 			it->iLastValid = 0;
 
-		float flTransformedDamage = curConfig.iMinimumDamage;
+		*flTransformedDamage = curConfig.iMinimumDamage;
 		if (curConfig.iMinimumDamage > 100)
-			flTransformedDamage = max(it->pEntity->GetHealth(), 8) + (curConfig.iMinimumDamage - 100);
+			*flTransformedDamage = max(it->pEntity->GetHealth(), 8) + (curConfig.iMinimumDamage - 100);
 
 		/* Retarded fix for retarded people who uses 100 mindmg and trying to baim */
 		if (cfg::rage::bForceBaim && IPT::HandleInput(cfg::rage::iForceBaimKey) && 
 			curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_AWP && 
 			curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_TASER && 
-			flTransformedDamage > curConfig.pWeapon->GetCSWpnData()->iDamage)
-			flTransformedDamage = curConfig.pWeapon->GetCSWpnData()->iDamage;
-
+			*flTransformedDamage > curConfig.pWeapon->GetCSWpnData()->iDamage)
+			*flTransformedDamage = curConfig.pWeapon->GetCSWpnData()->iDamage;
+		
 		/* Go through every valid data */
 		for (int i = 0; i <= it->iLastValid; i++) {
 
@@ -147,19 +148,22 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 				i = it->iLastValid;
 
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at(i);
-			if (pRecord->bBreakingLagcompensation || !pRecord->bValid && pRecord != &it->pRecord.front() || !pRecord->IsValid())
+			if ( i == 0 && it->pRecentRecord.iCreationTick == i::GlobalVars->iTickCount )
+				pRecord = &it->pRecentRecord;
+
+			if ( !pRecord->bValid )
 				continue;
 
 			/* Set current matrix for accurate tracing */
 			pRecord->ApplyMatrix(pRecord->pEntity, RESOLVE);
 			for (int& iHitbox : curConfig.vecHitboxes[NORMAL]) {
 
-				if (flTransformedDamage >= 98 && (curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_AWP && curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_TASER) && iHitbox != HITBOX_HEAD)
+				if (*flTransformedDamage >= 98 && (curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_AWP && curConfig.pWeapon->GetItemDefinitionIndex() != WEAPON_TASER) && iHitbox != HITBOX_HEAD)
 					continue;
 
 				bool bShouldMultiPoint = std::find(curConfig.vecHitboxes[MULTIPOINT].begin(), curConfig.vecHitboxes[MULTIPOINT].end(), iHitbox) != curConfig.vecHitboxes[MULTIPOINT].end();
 				bool bShouldForceSafePoint = std::find(curConfig.vecHitboxes[SAFE].begin(), curConfig.vecHitboxes[SAFE].end(), iHitbox) != curConfig.vecHitboxes[SAFE].end();
-				bool bShouldSafe = curConfig.bSafePoint;
+				bool& bShouldSafe = curConfig.bSafePoint;
 				mstudiobbox_t* pStudioHitbox = it->pEntity->StudioHitbox(iHitbox);
 
 				if (cfg::rage::iAimbotFov < 180) {
@@ -174,7 +178,6 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 						continue;
 				}
 
-				std::vector<float> vecDamages = std::vector<float>();
 				std::vector<Vector> vecWorldPoints = CreatePoints(vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint);
 				// OPTIMIZATION: first element in the vector is always the hitbox center
 				bool bFirstElement = true;
@@ -191,18 +194,15 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 						continue;
 
 					/* If we resolved with 70% accuracy skip safepoint */
-					if (static_cast<float>(it->iHitAmount) / static_cast<float>(it->iShotAmount) < 0.7f || it->iShotAmount < 3) {
+					if (bShouldSafe) {
+						if (iCollidePoints < 2) {
+							bFirstElement = false;
+							continue;
+						}
 
-						if (bShouldSafe) {
-							if (iCollidePoints < 2) {
-								bFirstElement = false;
-								continue;
-							}
-
-							if (bShouldForceSafePoint && iCollidePoints < 3) {
-								bFirstElement = false;
-								continue;
-							}
+						if (bShouldForceSafePoint && iCollidePoints < 3) {
+							bFirstElement = false;
+							continue;
 						}
 					}
 					bFirstElement = false;
@@ -213,18 +213,16 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					if (flDamage >= 1) {
 
 						/* Push back this shit */
-						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint), flTransformedDamage));
-						
-						/* ATTEMPT: fix underdamage by getting avarage damage that can be dealt to that hitbox */
-						vecDamages.push_back(flDamage);
+						vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), (bShouldSafe || bShouldForceSafePoint), *flTransformedDamage));
+
+						if ( iCollidePoints == 3 )
+							break;
 
 						/* If that's a baim hitbox and we can hit it break out of the loop ( Fixes shooting hitbox edge while the middle is out ) */
 						if (iHitbox != HITBOX_HEAD)
 							break;
 					}
 				}
-				mapHitboxDamages.emplace(iHitbox, vecDamages);
-
 			}
 		}
 	}
@@ -239,19 +237,6 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	{
 		if (refRecord.flDamage == -1.f || refRecord.iTransformedDamage > refRecord.flDamage)
 			continue;
-
-		if (mapHitboxDamages.contains(refRecord.iHitbox)) {
-			std::vector<float>& map = mapHitboxDamages.at(refRecord.iHitbox);
-			if (!map.empty()) {
-
-				float flSummary = 0.f;
-				for (float& it : map)
-					flSummary += it;
-
-				if (flSummary / map.size() < refRecord.iTransformedDamage)
-					continue;
-			}
-		}
 		
 		aimData.SetTarget(refRecord.pRecord, vecEyePosition, refRecord.bBacktrack);
 		aimData.bSafe = refRecord.bSafe;
@@ -288,21 +273,6 @@ bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CB
 		return false;
 	}
 
-	if (!bSkipCheck) {
-
-		float flDamage = -1.f;
-		for (Lagcompensation::AnimationInfo_t* it : vecIn) {
-
-			Vector vecHitboxPosition = vecIn.front()->pEntity->GetHitboxPosition(HITBOX_STOMACH, vecIn.front()->pRecord.front().pMatricies[RESOLVE]);
-			flDamage = autowall.GetDamage(pLocal, vecEyePosition + (pLocal->GetVelocity() * (i::GlobalVars->flIntervalPerTick * 1)), vecHitboxPosition, curConfig.pWeapon, &vecIn.front()->pRecord.front());
-
-			if (flDamage >= 1.f)
-				break;
-		}
-		if (flDamage < 1.f)
-			return false;
-	}
-
 	float flMultiplier = 0.28f;
 	switch (curConfig.iAutostopValue) {
 	case 1: flMultiplier = 0.26f;
@@ -319,8 +289,8 @@ bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CB
 
 	// Get the ideal speed for shooting (playstyle)
 	Vector vecVelocity = pLocal->GetVelocity();
-	Vector vecDirection;
-	Vector vecRealView;
+	Vector vecDirection{};
+	Vector vecRealView{};
 
 	if (flIdealSpeed > vecVelocity.Length2D())
 		return false;
@@ -330,7 +300,7 @@ bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CB
 
 	vecDirection.y = vecRealView.y - vecDirection.y;
 
-	Vector vecForward;
+	Vector vecForward{};
 	M::AngleVectors(vecDirection, &vecForward);
 
 	static CConVar* cl_forwardspeed = i::ConVar->FindVar(XorStr("cl_forwardspeed"));
@@ -381,7 +351,7 @@ bool CAimBot::HitChance(CUserCmd* __restrict pCmd, CBaseEntity* __restrict pLoca
 	int iAccuracry = bSpecialWeapon ? 256 : 128;
 
 	static bool bSetupSpreadValues = true;
-	static float flSpreadValues[256][6];
+	static float flSpreadValues[ 256 ][ 6 ]{};
 
 	if (bSetupSpreadValues)
 	{
@@ -578,7 +548,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 			continue;
 
 		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
-		if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity)
+		if ( !pLog || ( pLog->pRecord.empty( ) && pLog->pRecentRecord.iCreationTick != i::GlobalVars->iTickCount ) || pLog->pEntity != pEntity )
 			continue;
 
 		// OPTIMIZATION: skip entities that are further than our weapons range
@@ -587,7 +557,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CB
 
 		if (playerList::arrPlayers[i].bWhiteList)
 			continue;
-
+		
 		for (auto j = 0u; j < pLog->pRecord.size(); j++) {
 
 			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);

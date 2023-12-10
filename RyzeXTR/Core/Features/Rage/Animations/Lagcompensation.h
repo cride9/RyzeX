@@ -168,6 +168,7 @@ public:
 		int iEntIndex{};
 		int iChoked{};
 		int iResolveSide = 0;
+		int iCreationTick{};
 	};
 
 	enum EResolverMode
@@ -224,6 +225,7 @@ public:
 
 		float flExploitTime;
 
+		Lagcompensation::LagRecord_t pRecentRecord;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
 		std::array<matrix3x4a_t, 256> pCachedMatrix{ matrix3x4a_t()};
 

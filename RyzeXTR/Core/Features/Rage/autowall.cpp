@@ -468,9 +468,9 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* p
 	if (!studioBox)
 		return 0;  // Skip this hitbox if it's invalid
 
-	if (iHitbox == HITBOX_HEAD)
-		if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord))
-			return 0;
+	//if (iHitbox == HITBOX_HEAD)
+	//	if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord))
+	//		return 0;
 
 	// Safepoint count
 	int iSafePoint = 0;

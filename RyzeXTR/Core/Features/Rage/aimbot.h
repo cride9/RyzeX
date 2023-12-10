@@ -35,7 +35,7 @@ struct Hitscan_t {
 
 		flAnimationVelocity = _record->flAnimationVelocity;
 		flDesyncDelta = _record->flDesyncDelta;
-		flDamage = static_cast<int>(data.flCurrentDamage);
+		flDamage = std::floor(data.flCurrentDamage);
 
 		iHitbox = data.enterTrace.iHitbox;
 		iHitgroup = data.enterTrace.iHitGroup;
@@ -59,26 +59,21 @@ struct Hitscan_t {
 	int iTransformedDamage{};
 
 	bool operator<(const Hitscan_t& other) const {
+
 		// Sort by baimlethal (true first, false second)
 		if (bBaimLethal && !other.bBaimLethal)
 			return true;
-		if (!bBaimLethal && other.bBaimLethal)
-			return false;
 
 		// Sort by bSafe (true first, false second)
 		if (bSafe && !other.bSafe)
 			return true;
-		if (!bSafe && other.bSafe)
-			return false;
 
 		// Sort by flDesyncDelta (smaller values first)
 		if (flDesyncDelta < other.flDesyncDelta)
 			return true;
-		if (flDesyncDelta > other.flDesyncDelta)
-			return false;
 
 		// Sort by flAnimationVelocity (larger values first)
-		return flAnimationVelocity > other.flAnimationVelocity;
+		return flDamage > other.flDamage;
 	}
 };
 
@@ -197,12 +192,11 @@ private:
 	bool bShouldSendPacket = false;
 	int iTickCount = 0;
 
-	rageBotData_t aimData;
-	rageBotData_t hitlogData;
+	rageBotData_t aimData{};
+	rageBotData_t hitlogData{};
 
-	weaponConfig_t curConfig;
-	Vector vecEyePosition;
-
+	weaponConfig_t curConfig{};
+	Vector vecEyePosition{};
 
 
 	bool HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy);

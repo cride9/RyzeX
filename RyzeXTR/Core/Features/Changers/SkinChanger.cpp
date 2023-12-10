@@ -439,7 +439,8 @@ void ForceItemUpdate(CBaseCombatWeapon* m_pWeapon)
 	m_pWeapon->PostDataUpdate(DATA_UPDATE_CREATED);
 	m_pWeapon->OnDataChanged(DATA_UPDATE_CREATED);
 
-	i::ClientState->iDeltaTick = -1;
+	//i::ClientState->iDeltaTick = -1;
+	i::EngineClient->ClientCmdUnrestricted( "cl_fullupdate" );
 
 	util::ForceFullUpdate();
 }

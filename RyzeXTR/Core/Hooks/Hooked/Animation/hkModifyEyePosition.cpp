@@ -3,13 +3,15 @@
 
 void __fastcall h::hkModifyEyePosition(void* animstatePointer, void* edx, Vector& unused1) 
 {
-	return;
-
 	static auto original = detour::modifyEyePosition.GetOriginal<decltype(&h::hkModifyEyePosition)>();
+
+	return;
 
 	const auto pAnimstate = reinterpret_cast<CAnimState*>(animstatePointer);
 	if (!pAnimstate || !pAnimstate->pEntity || !pAnimstate->pEntity->IsAlive())
 		return original(animstatePointer, edx, unused1);
+
+	//return pAnimstate->pEntity->ModifyEyePosition( pAnimstate, &unused1 );
 
 	pAnimstate->bSmoothHeightValid = false;
 
