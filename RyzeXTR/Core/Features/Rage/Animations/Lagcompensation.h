@@ -225,7 +225,6 @@ public:
 
 		float flExploitTime;
 
-		Lagcompensation::LagRecord_t pRecentRecord;
 		std::deque<Lagcompensation::LagRecord_t> pRecord;
 		std::array<matrix3x4a_t, 256> pCachedMatrix{ matrix3x4a_t()};
 
@@ -259,7 +258,7 @@ public:
 	};
 
 	/* Everything will be ran inside this */
-	void FrameStageNotify() noexcept;
+	void FrameStageNotify();
 
 	/* Those functions will run in createmove */
 	void StartLagcompensation(CBaseEntity*);

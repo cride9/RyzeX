@@ -317,7 +317,7 @@ void M::Extrapolate(CBaseEntity* pEnt , Vector& vecOrigin, Vector& vecVelocity, 
 	Vector                start, end, normal;
 	CGameTrace            trace;
 	CTraceFilter		  filter(nullptr, TRACE_WORLD_ONLY);
-
+	
 	// define trace start.
 	start = vecOrigin;
 

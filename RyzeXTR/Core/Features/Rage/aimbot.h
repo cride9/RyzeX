@@ -60,20 +60,22 @@ struct Hitscan_t {
 
 	bool operator<(const Hitscan_t& other) const {
 
-		// Sort by baimlethal (true first, false second)
-		if (bBaimLethal && !other.bBaimLethal)
+		if ( bBaimLethal && !other.bBaimLethal )
 			return true;
+		else if ( !bBaimLethal && other.bBaimLethal )
+			return false;
 
-		// Sort by bSafe (true first, false second)
-		if (bSafe && !other.bSafe)
-			return true;
-
-		// Sort by flDesyncDelta (smaller values first)
-		if (flDesyncDelta < other.flDesyncDelta)
-			return true;
-
-		// Sort by flAnimationVelocity (larger values first)
 		return flDamage > other.flDamage;
+	}
+
+	bool operator>( const Hitscan_t& other ) const {
+
+		if ( bBaimLethal && !other.bBaimLethal )
+			return false;
+		else if ( !bBaimLethal && other.bBaimLethal )
+			return true;
+
+		return flDamage < other.flDamage;
 	}
 };
 

@@ -92,7 +92,7 @@ void Lagcompensation::LagRecord_t::Restore( CBaseEntity* __restrict pEntity )
 	pEntity->SetAbsOrigin( vecAbsOrigin );
 }
 
-void Lagcompensation::FrameStageNotify( ) noexcept {
+void Lagcompensation::FrameStageNotify( ) {
 
 	if ( !g::pLocal || g::bUpdatingSkins )
 		return;
@@ -123,7 +123,6 @@ void Lagcompensation::FrameStageNotify( ) noexcept {
 		}
 
 		std::shared_ptr<LagRecord_t> pPrevious = std::make_shared<LagRecord_t>( );
-		pLog->pRecentRecord = Lagcompensation::LagRecord_t( pPlayerLogs[ i ].pEntity );
 
 		pPrevious.get()->bRestoreData = false;
 		if ( !pLog->pRecord.empty( ) )
@@ -135,8 +134,10 @@ void Lagcompensation::FrameStageNotify( ) noexcept {
 		std::shared_ptr<Lagcompensation::LagRecord_t> pRecordUnique = std::make_shared<Lagcompensation::LagRecord_t>( pPlayerLogs[ i ].pEntity );
 		if ( pPrevious.get( )->bRestoreData )
 		{
-			if ( !DataChanged( pEntity, pPrevious.get( ) ) )
+			if ( !DataChanged( pEntity, pPrevious.get( ) ) ) {
+
 				continue;
+			}
 		}
 
 		if ( pPrevious.get( )->flSimulationTime > pRecordUnique.get( )->flSimulationTime )
@@ -587,7 +588,6 @@ void Lagcompensation::LagRecord_t::ApplyMatrix( CBaseEntity* pEntity, EMatrixTyp
 
 	//pEntity->SetCollisionBounds(vecMins, vecMaxs);
 	pEntity->SetBoneCache( pMatricies[ iType ] );
-	return pEntity->InvalidateBoneCache( );
 }
 
 void Lagcompensation::LagRecord_t::ApplyMatrix( CBaseEntity* pEntity, matrix3x4a_t* pMatrix ) {
@@ -597,7 +597,6 @@ void Lagcompensation::LagRecord_t::ApplyMatrix( CBaseEntity* pEntity, matrix3x4a
 
 	//pEntity->SetCollisionBounds(vecMins, vecMaxs);
 	pEntity->SetBoneCache( pMatrix );
-	return pEntity->InvalidateBoneCache( );
 }
 
 bool Lagcompensation::LagRecord_t::IsValid( ) {

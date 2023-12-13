@@ -460,10 +460,6 @@ bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstu
 
 int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox) {
 
-	// If we don't have a record how would we safepoint men
-	if (!pRecord)
-		return 0;
-
 	mstudiobbox_t* studioBox = pRecord->pEntity->StudioHitbox(iHitbox);
 	if (!studioBox)
 		return 0;  // Skip this hitbox if it's invalid
@@ -475,15 +471,6 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* p
 	// Safepoint count
 	int iSafePoint = 0;
 	for ( int iSafeSide = EMatrixType::LEFT; iSafeSide <= EMatrixType::CENTER; iSafeSide++) {
-
-	   // Check matrix origins for this hitbox
-		if (pRecord->pMatricies[iSafeSide]->GetOrigin() == Vector(0,0,0))
-			continue;  // Skip this hitbox if any matrix origin is invalid
-
-		if (pRecord->iResolveSide == iSafeSide) {
-			iSafePoint++;
-			continue;
-		}
 
 		// Increment iSafePoint based on the collidepoint results
 		iSafePoint += autowall.bCollidePoint(vecEyePosition, vecShootposition, studioBox, pRecord->pMatricies[iSafeSide]);

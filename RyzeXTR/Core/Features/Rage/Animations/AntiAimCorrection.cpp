@@ -28,7 +28,7 @@ float Animations::GetLocalCycleIncrement(CBaseEntity* pEntity, float flPlaybackr
 	return flLocalCycleIncrement * 1000000.0f;
 }
 
-void Animations::Resolver(CBaseEntity* __restrict pEntity, Lagcompensation::LagRecord_t* __restrict pRecord, Lagcompensation::LagRecord_t* __restrict pPrevious) {
+void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
 	if (!cfg::rage::bResolver || !pLocal || !pEntity || !pEntity->IsAlive() || !pRecord || !pPrevious)

@@ -145,37 +145,37 @@ public:
 struct BeamInfo_t
 {
 	//Beam
-	int				m_nType;
-	CBaseEntity*	m_pStartEnt;
-	int				m_nStartAttachment;
-	CBaseEntity*	m_pEndEnt;
-	int				m_nEndAttachment;
-	Vector			m_vecStart;
-	Vector			m_vecEnd;
-	int				m_nModelIndex;
-	const char* m_pszModelName;
-	int				m_nHaloIndex;
-	const char* m_pszHaloName;
-	float			m_flHaloScale;
-	float			m_flLife;
-	float			m_flWidth;
-	float			m_flEndWidth;
-	float			m_flFadeLength;
-	float			m_flAmplitude;
-	float			m_flBrightness;
-	float			m_flSpeed;
-	int				m_nStartFrame;
-	float			m_flFrameRate;
-	float			m_flRed;
-	float			m_flGreen;
-	float			m_flBlue;
-	bool			m_bRenderable;
-	int				m_nSegments;
-	int				iFlags;
+	int				m_nType{};
+	CBaseEntity*	m_pStartEnt = nullptr;
+	int				m_nStartAttachment{};
+	CBaseEntity*	m_pEndEnt = nullptr;
+	int				m_nEndAttachment{};
+	Vector			m_vecStart{};
+	Vector			m_vecEnd{};
+	int				m_nModelIndex{};
+	const char* m_pszModelName{};
+	int				m_nHaloIndex{};
+	const char* m_pszHaloName{};
+	float			m_flHaloScale{};
+	float			m_flLife{};
+	float			m_flWidth{};
+	float			m_flEndWidth{};
+	float			m_flFadeLength{};
+	float			m_flAmplitude{};
+	float			m_flBrightness{};
+	float			m_flSpeed{};
+	int				m_nStartFrame{};
+	float			m_flFrameRate{};
+	float			m_flRed{};
+	float			m_flGreen{};
+	float			m_flBlue{};
+	bool			m_bRenderable{};
+	int				m_nSegments{};
+	int				iFlags{};
 	// Rings
-	Vector			m_vecCenter;
-	float			m_flStartRadius;
-	float			m_flEndRadius;
+	Vector			m_vecCenter{};
+	float			m_flStartRadius{};
+	float			m_flEndRadius{};
 
 	BeamInfo_t()
 	{

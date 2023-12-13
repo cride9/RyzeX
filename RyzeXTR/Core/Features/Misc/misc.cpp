@@ -1571,7 +1571,6 @@ void misc::BlockBot(CUserCmd* pCmd) {
 		pBlockedPlayer != nullptr && 
 		pBlockedPlayer->IsPlayer()) {
 
-
 		// allowed difference before we fall down cuz head has a bigger surface (idk why)
 		// so if player is going in small circles, we won't fall (or doing small changes that could kill most blockbots)
 		if (abs((vecExtrapolatedLocalPos - pBlockedPlayer->GetVecOrigin()).Length2D()) > 0.75f/*1.29217472f*/) {

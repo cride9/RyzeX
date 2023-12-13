@@ -86,7 +86,7 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 
 	bool bInitializedFreestand = false;
 	if (iFreestand[type] == 1)
-		bInitializedFreestand = FreeStandingDistance(pCmd, pCmd->angViewPoint);
+		FreeStandingDistance( pCmd, pCmd->angViewPoint );
 	if (iFreestand[type] == 2)
 		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
 
@@ -365,11 +365,10 @@ int antiaim::ClosesToCrosshair() {
 		if (!pLog || pLog->pRecord.empty())
 			continue;
 
-		Vector output;
-		M::VectorAngles(pEntity->GetHitboxPosition(HITBOX_HEAD, pLog->pCachedMatrix.data()) - vecLocalPosition, output);
+		Vector output = M::VectorAngles(pEntity->GetVecOrigin() - vecLocalPosition);
 		Vector vecDistanceBetween = (g::vecOriginalViewAngle - output.Normalize());
 
-		float flFov = abs((vecDistanceBetween).Normalize().Length2D());
+		float flFov = fabsf((vecDistanceBetween).Normalize().Length2D());
 
 		if (flFov < flLowestFOV) {
 
@@ -435,16 +434,15 @@ void antiaim::AtTarget(CUserCmd* pCmd, Vector& vecAngle) {
 		if (playerList::arrPlayers[i].bPriority == FRIEND)
 			continue;
 
-		Vector vecCalcAngle;
 		auto vecPosition = pEnt->IsDormant() ? visual::vecDormatPosition[i] : pEnt->GetVecOrigin();
 
-		M::VectorAngles(vecPosition - g::pLocal->GetEyePosition(false), vecCalcAngle);
-		Vector vecDistanceBetween = (g::vecOriginalViewAngle.Normalize() - vecCalcAngle.Normalize());
+		Vector vecCalcAngle = M::VectorAngles( vecPosition - localAnim->GetShootPosition() );
+		Vector vecDistanceBetween = (g::vecOriginalViewAngle - vecCalcAngle);
 
-		if (abs(vecDistanceBetween.Length2D()) < flBestFov) {
+		if (fabsf(vecDistanceBetween.Normalize().Length2D( ) ) < flBestFov ) {
 
 			vecBestEntity = vecCalcAngle;
-			flBestFov = abs(vecDistanceBetween.Length2D());
+			flBestFov = fabsf(vecDistanceBetween.Length2D());
 		}
 	}
 	if (vecBestEntity == Vector(0, 0, 0))
