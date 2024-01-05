@@ -5,6 +5,7 @@
 #include "../../Networking/networking.h"
 #include "../../../SDK/InputSystem.h"
 #include "../antiaim.h"
+#include "../../Misc/setupbones.h"
 
 void C_LocalAnimations::AnimationBreaker(CBaseEntity* pLocal) {
 
@@ -577,6 +578,7 @@ void C_LocalAnimations::SetupShootPosition(CBaseEntity* pLocal)
 }
 void C_LocalAnimations::SetupPlayerBones(matrix3x4a_t* aMatrix, int nMask, CBaseEntity* pLocal)
 {
+
 	// save globals
 	std::tuple < float, float, float, float, float, int, int > m_Globals = std::make_tuple
 	(

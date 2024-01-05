@@ -6,7 +6,7 @@
 #include "../../Misc/Playerlist.h"
 #include "../../../Interface/Classes/CCSGameRulesProxy.h"
 
-Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* __restrict pEntity )
+Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity*  pEntity )
 {
 	CBaseCombatWeapon* pWeapon = pEntity->GetWeapon( );
 
@@ -48,7 +48,7 @@ Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity* __restrict pEntity )
 	iCreationTick = i::GlobalVars->iTickCount;
 }
 
-void Lagcompensation::LagRecord_t::Apply( CBaseEntity* __restrict pEntity, bool Backup )
+void Lagcompensation::LagRecord_t::Apply( CBaseEntity*  pEntity, bool Backup )
 {
 	pEntity->GetFlags( ) = iFlags;
 	pEntity->GetSimulationTime( ) = flSimulationTime;
@@ -65,7 +65,7 @@ void Lagcompensation::LagRecord_t::Apply( CBaseEntity* __restrict pEntity, bool 
 		ApplyMatrix( pEntity, RESOLVE );
 }
 
-void Lagcompensation::LagRecord_t::Apply( CBaseEntity* __restrict pEntity )
+void Lagcompensation::LagRecord_t::Apply( CBaseEntity*  pEntity )
 {
 	// set poses
 	pEntity->SetPoseParameters( flPoses );
@@ -78,7 +78,7 @@ void Lagcompensation::LagRecord_t::Apply( CBaseEntity* __restrict pEntity )
 	pEntity->SetAbsOrigin( vecOrigin );
 }
 
-void Lagcompensation::LagRecord_t::Restore( CBaseEntity* __restrict pEntity )
+void Lagcompensation::LagRecord_t::Restore( CBaseEntity*  pEntity )
 {
 	pEntity->GetVelocity( ) = vecVelocity;
 	pEntity->GetVecAbsVelocity( ) = vecAbsVelocity;
@@ -259,8 +259,8 @@ void Lagcompensation::SetInterpolationFlags( )
 		void* m_VarMap = *( void** )( ( DWORD )( pEntity )+0x24 );
 		if ( m_VarMap )
 		{
-			*( float* )( *( DWORD* )( ( DWORD )( m_VarMap )+0x8 ) + 0x24 ) = i::GlobalVars->flIntervalPerTick * 1.f;
-			*( float* )( *( DWORD* )( ( DWORD )( m_VarMap )+0x44 ) + 0x24 ) = i::GlobalVars->flIntervalPerTick * 1.f;
+			*( float* )( *( DWORD* )( ( DWORD )( m_VarMap )+0x8 ) + 0x24 ) = cfg::misc::bSmoothFix ? i::GlobalVars->flIntervalPerTick * 7.f : i::GlobalVars->flIntervalPerTick;
+			*( float* )( *( DWORD* )( ( DWORD )( m_VarMap )+0x44 ) + 0x24 ) = cfg::misc::bSmoothFix ? i::GlobalVars->flIntervalPerTick * 7.f : i::GlobalVars->flIntervalPerTick;
 		}
 	}
 }
@@ -344,7 +344,7 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 	int flags = pCurrent->iFlags;
 
 	if ( !( flags & FL_ONGROUND ) )
-		velocity.z -= ( i::GlobalVars->flFrameTime * sv_gravity->GetFloat( ) );
+		velocity.z -= ( ( i::GlobalVars->flFrameTime * 5 ) * sv_gravity->GetFloat( ) );
 	else if ( pPrevious->iFlags & FL_ONGROUND && !( pCurrent->iFlags & FL_ONGROUND ) )
 		velocity.z = sv_jump_impulse->GetFloat( );
 
@@ -352,7 +352,7 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 	const Vector max = m_pEntity->vecMaxs( );
 
 	const Vector src = pCurrent->vecOrigin;
-	Vector end = src + ( velocity * i::GlobalVars->flFrameTime );
+	Vector end = src + ( velocity * ( i::GlobalVars->flFrameTime * 5 ) );
 
 	Ray_t ray( src, end, mins, max );
 
@@ -385,11 +385,11 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 		}
 	}
 
-	pCurrent->vecOrigin = trace.vecEnd;
+	//pCurrent->vecOrigin = trace.vecEnd;
 	end = trace.vecEnd;
 	end.z -= 2.f;
 
-	ray = Ray_t( pCurrent->vecOrigin, end, mins, max );
+	ray = Ray_t( trace.vecEnd, end, mins, max );
 	i::EngineTrace->TraceRay( ray, MASK_PLAYERSOLID, &filter, &trace );
 
 	flags &= ~( 1 << 0 );
@@ -397,11 +397,11 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 	if ( trace.DidHit( ) && trace.plane.vecNormal.z > 0.7f )
 		flags |= ( 1 << 0 );
 
-	pCurrent->flSimulationTime += i::GlobalVars->flIntervalPerTick;
-	m_pEntity->GetVecOrigin( ) = pCurrent->vecOrigin;
-	m_pEntity->SetAbsOrigin( pCurrent->vecOrigin );
+	//pCurrent->flSimulationTime += i::GlobalVars->flIntervalPerTick;
+	m_pEntity->GetVecOrigin( ) = trace.vecEnd;
+	m_pEntity->SetAbsOrigin( trace.vecEnd );
 
-	pCurrent->vecVelocity = velocity;
+	//pCurrent->vecVelocity = velocity;
 	m_pEntity->GetVelocity( ) = velocity;
 
 	/*CSimulationData simulationData;
@@ -587,6 +587,7 @@ void Lagcompensation::LagRecord_t::ApplyMatrix( CBaseEntity* pEntity, EMatrixTyp
 		return;
 
 	//pEntity->SetCollisionBounds(vecMins, vecMaxs);
+	pEntity->InvalidateBoneCache( );
 	pEntity->SetBoneCache( pMatricies[ iType ] );
 }
 
@@ -596,19 +597,11 @@ void Lagcompensation::LagRecord_t::ApplyMatrix( CBaseEntity* pEntity, matrix3x4a
 		return;
 
 	//pEntity->SetCollisionBounds(vecMins, vecMaxs);
+	pEntity->InvalidateBoneCache( );
 	pEntity->SetBoneCache( pMatrix );
 }
 
 bool Lagcompensation::LagRecord_t::IsValid( ) {
-
-	if (/*!this->bValid ||*/ this->bBreakingLagcompensation || !i::EngineClient->GetNetChannelInfo( ) )
-		return false;
-
-	if ( this->flSimulationTime < this->flOldSimulationTime )
-		return false;
-
-	if ( this->iCreationTick == i::GlobalVars->iTickCount )
-		return true;
 
 	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo( );
 
@@ -622,11 +615,7 @@ bool Lagcompensation::LagRecord_t::IsValid( ) {
 		return false;
 
 	// idk if lagcomp counts with the servertick or current time
-	int nDeadTime = static_cast< int >( static_cast< float >( TICKS_TO_TIME( networking.GetServerTick( ) ) ) - 0.2f );
-	if ( TIME_TO_TICKS( this->flSimulationTime + flLerpTime ) < nDeadTime )
-		return false;
-
-	nDeadTime = static_cast< int >( i::GlobalVars->flCurrentTime - 0.2f );
+	int nDeadTime = static_cast< int >( static_cast< float >( TICKS_TO_TIME( i::ClientState->clockDriftMgr.nServerTick ) ) - 0.2f );
 	if ( TIME_TO_TICKS( this->flSimulationTime + flLerpTime ) < nDeadTime )
 		return false;
 

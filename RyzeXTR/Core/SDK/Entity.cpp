@@ -4,6 +4,7 @@
 #include "../Hooks/hooks.h"
 #include "../Features/Networking/networking.h"
 #include "../Features/Rage/autowall.h"
+#include "crt.h"
 
 CBaseEntity* CBaseEntity::GetLocalPlayer()
 {
@@ -432,7 +433,8 @@ bool CBaseEntity::CanShoot(CBaseCombatWeapon* pBaseWeapon, int iTickbase)
 		return false;
 
 	if (iTickbase == -1)
-		iTickbase = this == g::pLocal ? networking.GetCorrectedTickbase() : this->GetTickBase();
+		iTickbase = this->GetTickBase();
+
 	const float flServerTime = TICKS_TO_TIME(iTickbase);
 
 	// check is have ammo
@@ -522,6 +524,71 @@ float CBaseEntity::GetSequenceMoveDist(CStudioHdr* pStudioHdr, int iSequence) {
 	return vecReturn.Length();
 }
 #pragma runtime_checks( "", restore )
+
+inline float Studio_SetPoseParameter( CStudioHdr* pStudioHdr, const int iParameter, float flValue, float& flOutFactor )
+{
+	/*
+	 * @ida Studio_SetPoseParameter():
+	 * client.dll -> "55 8B EC 83 E4 F8 83 EC 08 F3 0F 11 54 24 ? 85"
+	 * server.dll -> ABS["E8 ? ? ? ? D9 45 08" + 0x1]
+	 */
+
+	if ( iParameter < 0 || iParameter >= pStudioHdr->GetNumSeq( ) )
+	{
+		flOutFactor = 0.0f;
+		return 0.0f;
+	}
+
+	const mstudioposeparamdesc_t& poseParameterDescription = const_cast< CStudioHdr* >( pStudioHdr )->GetPoseParameterDescription( iParameter );
+	if ( poseParameterDescription.flLoop > 0.0f )
+	{
+		const float flWrap = ( poseParameterDescription.flStart + poseParameterDescription.flEnd ) * 0.5f + poseParameterDescription.flLoop * 0.5f;
+		const float flShift = poseParameterDescription.flLoop - flWrap;
+
+		flValue -= poseParameterDescription.flLoop * std::floorf( ( flValue + flShift ) / poseParameterDescription.flLoop );
+	}
+
+	flOutFactor = CRT::Clamp( ( flValue - poseParameterDescription.flStart ) / ( poseParameterDescription.flEnd - poseParameterDescription.flStart ), 0.0f, 1.0f );
+	return poseParameterDescription.flStart + ( poseParameterDescription.flEnd - poseParameterDescription.flStart ) * flOutFactor;
+}
+
+float CBaseEntity::SetPoseParameter( CStudioHdr* pStudioHdr, int iParameter, float flValue ) {
+
+	if ( !pStudioHdr )
+		return flValue;
+
+	if ( iParameter >= 0 )
+	{
+		float flNewValue;
+		flValue = Studio_SetPoseParameter( pStudioHdr, iParameter, flValue, flNewValue );
+		this->GetPoseParameter( )[ iParameter ] = flNewValue;
+	}
+
+	return flValue;
+
+	//static auto func = MEM::FindPattern( CLIENT_DLL, XorStr( "E8 ? ? ? ? D9 45 08 5F" ) );
+	//CMDLCacheCriticalSection criticalSection( i::MDLCache );
+	//__asm
+	//{
+	//	push iParameter
+	//	movss xmm2, flValue
+	//	mov ecx, pStudioHdr
+	//	call func
+	//}
+
+	//if ( !pStudioHdr )
+	//	return flValue;
+
+	//if ( iParameter >= 0 )
+	//{
+	//	float flNewValue;
+
+	//	flValue = Studio_SetPoseParameter( pStudioHdr, iParameter, flValue, flNewValue );
+	//	m_flPoseParameter[ iParameter ] = flNewValue;
+	//}
+
+	//return flValue;
+}
 
 //float CBaseEntity::GetSequenceMoveDist( CStudioHdr* pStudioHdr, int iSequence ) {
 //
@@ -710,4 +777,62 @@ bool CBaseEntity::IsFakeducking() {
 	}
 
 	return false;
+}
+
+Vector CBaseEntity::GetExtrapolatedEyePosition( ) {
+
+	static CConVar* sv_gravity = i::ConVar->FindVar( XorStr( "sv_gravity" ) );
+	static CConVar* sv_jump_impulse = i::ConVar->FindVar( XorStr( "sv_jump_impulse" ) );
+
+	Vector vecVelocity = this->GetVelocity( );
+	int iFlags = this->GetFlags( );
+
+	if ( !( iFlags & FL_ONGROUND ) ) // if not on ground
+		vecVelocity -= ( i::GlobalVars->flFrameTime * 2 ) * sv_gravity->GetFloat( );
+
+	const Vector vecMins = this->GetCollideable( )->OBBMins( );
+	const Vector vecMaxs = this->GetCollideable( )->OBBMaxs( );
+
+	const Vector vecSource = this->GetVecOrigin( );
+	Vector vecEnd = vecSource + ( vecVelocity * ( i::GlobalVars->flFrameTime * 2 ) );
+
+	Ray_t nRay( vecSource, vecEnd, vecMins, vecMaxs );
+	CGameTrace nTrace{};
+	CTraceFilter nFilter( this );
+
+	i::EngineTrace->TraceRay( nRay, MASK_PLAYERSOLID, &nFilter, &nTrace );
+
+	if ( nTrace.flFraction != 1.f ) {
+
+		for ( unsigned int i = 0; i < 2; i++ ){
+
+			vecVelocity -= nTrace.plane.vecNormal * vecVelocity.DotProduct( nTrace.plane.vecNormal );
+			const float flDotProduct = vecVelocity.DotProduct( nTrace.plane.vecNormal );
+
+			if ( flDotProduct < 0.0f ) {
+
+				vecVelocity.x -= flDotProduct * nTrace.plane.vecNormal.x;
+				vecVelocity.y -= flDotProduct * nTrace.plane.vecNormal.y;
+				vecVelocity.z -= flDotProduct * nTrace.plane.vecNormal.z;
+			}
+
+			vecEnd = nTrace.vecEnd + 
+				( 
+					vecVelocity * 
+					( 
+						i::GlobalVars->flIntervalPerTick * ( 1.f - nTrace.flFraction )
+					) 
+				);
+
+			nRay = Ray_t( nTrace.vecEnd, vecEnd, vecMins, vecMaxs );
+			i::EngineTrace->TraceRay( nRay, MASK_PLAYERSOLID, &nFilter, &nTrace );
+
+			if ( nTrace.flFraction == 1.f )
+				break;
+		} 
+	}
+
+	const Vector vecDifference = nTrace.vecEnd - vecSource;
+
+	return this->GetEyePosition( ) + vecDifference;
 }

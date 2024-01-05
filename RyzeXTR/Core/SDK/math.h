@@ -89,6 +89,9 @@ namespace M
 
 	float GetVelocityDegree(float flVelocity);
 
+	void QuaternionMatrix( const BoneQuaternion& q, const BoneVector& pos, matrix3x4_t& matrix );
+	void QuaternionMatrix( const BoneQuaternion& q, matrix3x4_t& matrix );
+
 	template< class T >
 	void Normalize3(T& vec);
 

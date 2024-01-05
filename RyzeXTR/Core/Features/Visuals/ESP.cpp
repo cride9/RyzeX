@@ -788,6 +788,11 @@ void visual::CoolHackKeyBindList() {
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "OSAA");
 		spacing += 30;
 	}
+	if ( IPT::HandleInput( cfg::antiaim::iLCKey ) && cfg::antiaim::bBreakLagcompensation && cfg::misc::iKeyBindList[ 1 ] ) {
+
+		i::Surface->DrawT( 10, iHeight / 2 + spacing, Color( 255, 255, 255 ), g::fonts::SkeetFont, false, "LC" );
+		spacing += 30;
+	}
 	if (IPT::HandleInput(cfg::rage::iForceBaimKey) && cfg::rage::bForceBaim && cfg::misc::iKeyBindList[2]) {
 
 		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BODY");
@@ -1683,9 +1688,9 @@ void visual::CrossHair() {
 
 void visual::DrawList() {
 
+	static Vector screenPosition{};
 	for (Vector& drawPos : g::drawList)
 	{
-		Vector screenPosition;
 		if (i::DebugOverlay->ScreenPosition(drawPos, screenPosition))
 			continue;
 

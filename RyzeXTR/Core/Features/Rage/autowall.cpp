@@ -464,9 +464,9 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* p
 	if (!studioBox)
 		return 0;  // Skip this hitbox if it's invalid
 
-	//if (iHitbox == HITBOX_HEAD)
-	//	if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord))
-	//		return 0;
+	if (iHitbox == HITBOX_HEAD )
+		if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord))
+			return 0;
 
 	// Safepoint count
 	int iSafePoint = 0;
@@ -481,7 +481,7 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* p
 bool CAutoWall::bTraceMeantForHitbox(const Vector& vecEyePosition, const Vector& vecEnd, int iHitbox, Lagcompensation::LagRecord_t* pRecord, EMatrixType iMatrix) {
 
 	// Initialize our trace data & information
-	Trace_t traceData = Trace_t();
+	Trace_t traceData;
 	Ray_t traceRay = Ray_t(vecEyePosition, vecEnd);
 
 	// Apply bone cache for accurate tracing

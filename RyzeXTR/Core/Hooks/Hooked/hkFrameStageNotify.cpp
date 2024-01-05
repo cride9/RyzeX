@@ -113,11 +113,11 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_RENDER_START:
-		if (exploits::bIsShiftingTicks)
+		if (exploits::bIsCurrentlyCharging )
 			localAnim->SetupInterpolation(pLocal, false);
 
 #ifdef _DEBUG
-		//misc::ServerHitboxes();
+		misc::ServerHitboxes();
 #endif
 		misc::BulletImpactFrameStage(pLocal);
 		break;
@@ -160,11 +160,12 @@ void hkPostFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_NET_UPDATE_END:
+
 		prediction.OnFrameStage(pLocal);
 		break;
 
 	case FRAME_RENDER_START:
-		if (exploits::bIsShiftingTicks)
+		if ( exploits::bIsCurrentlyCharging )
 			localAnim->SetupInterpolation(pLocal, true);
 		break;
 

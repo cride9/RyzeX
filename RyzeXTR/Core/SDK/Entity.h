@@ -681,72 +681,72 @@ private:
 void* operator new(const std::size_t nSize) = delete;	\
 void operator delete(void* pMemory) = delete;
 
-class CBoneSetup
-{
-public:
-	CBoneSetup( const CStudioHdr* pStudioHdr, const int nBoneMask, const float* arrPoseParameters, void* pPoseDebugger = nullptr ) :
-		pStudioHdr( pStudioHdr ), nBoneMask( nBoneMask ), pPoseParameters( arrPoseParameters ), pPoseDebugger( pPoseDebugger ) { }
-
-	Q_CLASS_NO_ALLOC( )
-
-		void InitPose( BoneVector* arrBonesPosition, BoneQuaternionAligned* arrBonesRotation ) const
-	{
-		for (int i = 0; i < pStudioHdr->pStudioHdr->nBones; i++)
-		{
-			if (const mstudiobone_t* pBone = pStudioHdr->pStudioHdr->GetBone( i ); pBone->iFlags & nBoneMask)
-			{
-				arrBonesPosition[ i ] = pBone->vecPosition;
-				arrBonesRotation[ i ] = pBone->qWorld;
-			}
-		}
-	}
-
-	void AccumulatePose( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, int nSequence, float flCycle, float flWeight, float flTime, IKContext* pIKContext )
-	{
-		static auto fnAccumulatePose = reinterpret_cast< void( __thiscall* )( CBoneSetup*, BoneVector*, BoneQuaternion*, int, float, float, float, IKContext* ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? A1" ) ) );
-		fnAccumulatePose( this, arrBonesPosition, arrBonesRotation, nSequence, flCycle, flWeight, flTime, pIKContext );
-	}
-
-	void CalcAutoplaySequences( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, float flRealTime, IKContext* pIKContext )
-	{
-		static auto fnCalcAutoplaySequences = MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 EC 10 53 56 57 8B 7D 10" ) );
-		std::uintptr_t uCalcAutoplaySequences = reinterpret_cast< std::uintptr_t >( fnCalcAutoplaySequences ); // @todo: clang compiles direct (E8) call instead of indirect (FF 15) without this
-
-		__asm
-		{
-			mov ecx, this
-			movss xmm3, flRealTime
-			push pIKContext
-			push arrBonesRotation
-			push arrBonesPosition
-			call uCalcAutoplaySequences
-		}
-	}
-
-	// blend together two bone positions and rotations
-	void CalcBoneAdjustment( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, const float* arrEncodedControllers ) const
-	{
-		static auto fnCalcBoneAdj = MEM::FindPattern( CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 81 EC ? ? ? ? 8B C1 89" ) );
-
-		__asm
-		{
-			mov eax, this
-			mov ecx, [ eax + pStudioHdr ]
-			mov edx, arrBonesPosition
-			push[ eax + nBoneMask ]
-			push arrEncodedControllers
-			push arrBonesRotation
-			call fnCalcBoneAdj
-			add esp, 0Ch
-		}
-	}
-
-public:
-	const CStudioHdr* pStudioHdr; // 0x00
-	int nBoneMask; // 0x04
-	const float* pPoseParameters; // 0x08
-	void* pPoseDebugger; // 0x0C
-};
+//class CBoneSetup
+//{
+//public:
+//	CBoneSetup( const CStudioHdr* pStudioHdr, const int nBoneMask, const float* arrPoseParameters, void* pPoseDebugger = nullptr ) :
+//		pStudioHdr( pStudioHdr ), nBoneMask( nBoneMask ), pPoseParameters( arrPoseParameters ), pPoseDebugger( pPoseDebugger ) { }
+//
+//	Q_CLASS_NO_ALLOC( )
+//
+//		void InitPose( BoneVector* arrBonesPosition, BoneQuaternionAligned* arrBonesRotation ) const
+//	{
+//		for (int i = 0; i < pStudioHdr->pStudioHdr->nBones; i++)
+//		{
+//			if (const mstudiobone_t* pBone = pStudioHdr->pStudioHdr->GetBone( i ); pBone->iFlags & nBoneMask)
+//			{
+//				arrBonesPosition[ i ] = pBone->vecPosition;
+//				arrBonesRotation[ i ] = pBone->qWorld;
+//			}
+//		}
+//	}
+//
+//	void AccumulatePose( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, int nSequence, float flCycle, float flWeight, float flTime, IKContext* pIKContext )
+//	{
+//		static auto fnAccumulatePose = reinterpret_cast< void( __thiscall* )( CBoneSetup*, BoneVector*, BoneQuaternion*, int, float, float, float, IKContext* ) >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? A1" ) ) );
+//		fnAccumulatePose( this, arrBonesPosition, arrBonesRotation, nSequence, flCycle, flWeight, flTime, pIKContext );
+//	}
+//
+//	void CalcAutoplaySequences( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, float flRealTime, IKContext* pIKContext )
+//	{
+//		static auto fnCalcAutoplaySequences = MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 83 EC 10 53 56 57 8B 7D 10" ) );
+//		std::uintptr_t uCalcAutoplaySequences = reinterpret_cast< std::uintptr_t >( fnCalcAutoplaySequences ); // @todo: clang compiles direct (E8) call instead of indirect (FF 15) without this
+//
+//		__asm
+//		{
+//			mov ecx, this
+//			movss xmm3, flRealTime
+//			push pIKContext
+//			push arrBonesRotation
+//			push arrBonesPosition
+//			call uCalcAutoplaySequences
+//		}
+//	}
+//
+//	// blend together two bone positions and rotations
+//	void CalcBoneAdjustment( BoneVector* arrBonesPosition, BoneQuaternion* arrBonesRotation, const float* arrEncodedControllers ) const
+//	{
+//		static auto fnCalcBoneAdj = MEM::FindPattern( CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 81 EC ? ? ? ? 8B C1 89" ) );
+//
+//		__asm
+//		{
+//			mov eax, this
+//			mov ecx, [ eax + pStudioHdr ]
+//			mov edx, arrBonesPosition
+//			push[ eax + nBoneMask ]
+//			push arrEncodedControllers
+//			push arrBonesRotation
+//			call fnCalcBoneAdj
+//			add esp, 0Ch
+//		}
+//	}
+//
+//public:
+//	const CStudioHdr* pStudioHdr; // 0x00
+//	int nBoneMask; // 0x04
+//	const float* pPoseParameters; // 0x08
+//	void* pPoseDebugger; // 0x0C
+//};
 #pragma pack(pop)
 
 class CWeaponCSBase;
@@ -1368,6 +1368,7 @@ public:
 	float					GetLayerSequenceCycleRate(CAnimationLayer*, int);
 	bool					InitializeAsClientEntity(const char* pszModelName, bool bRenderWithViewModels);
 	bool					IsFakeducking();
+	Vector					GetExtrapolatedEyePosition( );
 
 	float SetPoseParameter( CStudioHdr* pStudioHdr, int iParameter, float flValue );
 

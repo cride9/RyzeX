@@ -6,6 +6,7 @@
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Rage/exploits.h"
 
+using namespace exploits;
 void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCmd* pCmd, IMoveHelper* pMovehelper) {
 
 	static auto original = detour::runCommand.GetOriginal<decltype(&h::hkRunCommand)>();
@@ -20,6 +21,18 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 		pCmd->bHasBeenPredicted = true;
 		return;
 	}
+
+
+	if ( abs( pEnt->GetTickBase( ) - arrTickbases[ pCmd->iCommandNumber % 500 ] ) < 20 ) {
+
+		pEnt->GetTickBase( ) = arrTickbases[ pCmd->iCommandNumber % 500 ];
+	}
+
+	//if ( TickbaseFix.contains( pCmd->iCommandNumber ) ) 
+	//	pEnt->GetTickBase( ) = TickbaseFix.at( pCmd->iCommandNumber ) - 1;
+	//
+	//while ( TickbaseFix.size( ) > 128 )
+	//	TickbaseFix.erase( TickbaseFix.end( ) );
 
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
 	misc::RevolverRunCommand(pEnt);

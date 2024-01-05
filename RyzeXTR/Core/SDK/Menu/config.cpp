@@ -155,6 +155,8 @@ void CConfig::Setup() {
 		SetupInt(iFakeLagType, 0, XorStr("iFakeLagType"));
 
 		SetupBool(bBreakLagcompensation, false, XorStr("bBreakLagcompensation"));
+		SetupInt( iLCKey, 0, XorStr( "iLCButton" ) );
+
 		SetupBool(bFakeWalk, false, XorStr("bFakeWalk"));
 		SetupInt(iFakeWalkKey, 0, XorStr("iFakeWalkKey"));
 		SetupFloat(iFakeWalkSpeed, 0.f, XorStr("iFakeWalkSpeed"));
@@ -492,6 +494,7 @@ void CConfig::Setup() {
 		SetupBool(bCustomHud, false, XorStr("bCustomHud"));
 
 		SetupIntArray(cfg::m_iKeyStates, 256, 0, XorStr("KeyStates"));
+		SetupBool( bSmoothFix, true, XorStr( "bSmoothFix" ) );
 	}
 
 	// skins

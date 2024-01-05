@@ -9,7 +9,7 @@
 void __cdecl h::hkClMove(float flSamples, bool bFinalTick) {
 
 	// run exploits
-	return exploits::OnCLMove( flSamples, bFinalTick );
+	return exploits::CLMove( flSamples, bFinalTick );
 
 	// this hook calls g_ClientDLL->CreateMove (that is hooked lmao)
 	// g_ClientDLL->CreateMove( cl.lastoutgoingcommand + cl.chokedcommands + 1, host_state.interval_per_tick - flSamples, !cl.IsPaused() );

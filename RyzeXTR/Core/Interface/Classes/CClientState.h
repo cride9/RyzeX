@@ -215,7 +215,7 @@ public:
 class CClientState {
 public:
 	std::byte		pad0[0x9C];				// 0x0000
-	INetChannel* pNetChannel;			// 0x009C
+	INetChannel*	pNetChannel;			// 0x009C
 	int				iChallengeNr;			// 0x00A0
 	std::byte		pad1[0x64];				// 0x00A4
 	int				iSignonState;			// 0x0108
@@ -223,8 +223,8 @@ public:
 	float			flNextCmdTime;			// 0x0114
 	int				nServerCount;			// 0x0118
 	int				iCurrentSequence;		// 0x011C
-	char			pad_0120[ 0x4 ];               //0x0120
-	CClockDriftMgr	clockDriftMgr; //0x0128
+	char			pad_0120[ 0x4 ];        // 0x0120
+	CClockDriftMgr	clockDriftMgr;			// 0x0128
 	int				iDeltaTick;				// 0x0174
 	bool			bPaused;				// 0x0178
 	std::byte		pad4[0x7];				// 0x0179
@@ -253,4 +253,9 @@ public:
 	Vector			angViewPoint;			// 0x4D90
 	std::byte		pad9[0xD0];				// 0x4D9C
 	CEventInfo*		pEvents;				// 0x4E6C
+
+	void ForceFullUpdate( ) {
+
+		*reinterpret_cast< int* >( reinterpret_cast<uintptr_t*>(this) + 0x0178 ) = -1;
+	}
 };

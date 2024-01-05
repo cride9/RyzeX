@@ -439,9 +439,7 @@ void ForceItemUpdate(CBaseCombatWeapon* m_pWeapon)
 	m_pWeapon->PostDataUpdate(DATA_UPDATE_CREATED);
 	m_pWeapon->OnDataChanged(DATA_UPDATE_CREATED);
 
-	//i::ClientState->iDeltaTick = -1;
-	i::EngineClient->ClientCmdUnrestricted( "cl_fullupdate" );
-
+	i::ClientState->iDeltaTick = -1;
 	util::ForceFullUpdate();
 }
 
@@ -600,7 +598,6 @@ void CSkinChanger::Run(CBaseEntity* pLocal)
 			}
 		}
 
-		//i::ClientDllState->m_iDeltaTick = -1;
 		if (g::pLocal != nullptr && g::pLocal->GetWeapon() != nullptr)
 			ForceItemUpdate(g::pLocal->GetWeapon());
 

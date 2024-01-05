@@ -161,6 +161,7 @@ namespace cfg {
 		inline int iFakeLagType = 0;
 
 		inline bool bBreakLagcompensation = false;
+		inline int iLCKey = 0;
 
 		inline bool bFakeWalk = false;
 		inline int iFakeWalkKey = 0;
@@ -355,6 +356,7 @@ namespace cfg {
 	}
 	namespace misc {
 
+		inline bool bSmoothFix = true;
 		inline bool bMotionBlur = false;
 		inline bool bForwardEnabled = false;
 		inline float flFallingMin = 10.f;

@@ -5,6 +5,7 @@
 #include "../../Networking/networking.h"
 #include "../aimbot.h"
 #include "../../Visuals/drawlist.h"
+#include "../../Misc/setupbones.h"
 
 float flOldLowerbodyYaw[65];
 float flOldPlaybackrateYaw[65];
@@ -90,13 +91,26 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 		std::memcpy(arrPoses.data(), pEntity->GetPoseParameter().data(), sizeof(float) * 24);
 		std::memcpy(&pAnimationState, pEntity->AnimState(), sizeof(CAnimState));
 
-		pEntity->AnimState()->flGoalFeetYaw = GetYawRotation(pRecord, nRotationSide);
+		float flYaw = 0.f;
+		switch ( nRotationSide == EXTRAPOLATED ? pRecord->iResolveSide : nRotationSide ) {
+
+		case LEFT: flYaw = -58.f;
+			break;
+
+		case RIGHT: flYaw = 58.f;
+			break;
+		}
+		pEntity->AnimState()->flGoalFeetYaw = pEntity->AnimState()->flEyeYaw + flYaw/*GetYawRotation(pRecord, nRotationSide)*/;
 
 		UpdateClientSideAnimations(pEntity, pRecord);
 
 		matrix3x4a_t* aMatrix = pRecord->pMatricies[nRotationSide];
 
-		SetupPlayerMatrix(pEntity, pRecord, aMatrix, BoneUsedByHitbox);
+		if ( nRotationSide == EXTRAPOLATED ) {
+			SetupPlayerMatrix( pEntity, pRecord, aMatrix, BoneUsedByHitbox, 5 );
+		}
+		else
+			SetupPlayerMatrix(pEntity, pRecord, aMatrix, BoneUsedByHitbox);
 
 		std::memcpy(pEntity->GetAnimationOverlays(), arrLayers.data(), sizeof(CAnimationLayer) * 13);
 		std::memcpy(pEntity->GetPoseParameter().data(), arrPoses.data(), sizeof(float) * 24);
@@ -111,6 +125,9 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 	BuildSafePoint(LEFT);
 	BuildSafePoint(CENTER);
 	BuildSafePoint(RIGHT);
+	/* Make an extrapolted matrix aswell kekw */
+	lagcomp.ExtrapolatePlayer( pEntity, pRecord, pPrevious );
+	BuildSafePoint( EXTRAPOLATED );
 }
 
 float Animations::BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
@@ -943,6 +960,19 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 
 void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags) {
 
+	/* Remove interpolation if required */
+	if ( !( nFlags & EMatrixFlags::Interpolated ) && pRecord->vecOrigin.IsValid( ) )
+		pEntity->SetAbsOrigin( pRecord->vecOrigin );
+
+	/* Compute bone mask */
+	int iBoneMask = BONE_USED_BY_ANYTHING;
+	if ( nFlags & EMatrixFlags::BoneUsedByHitbox )
+		iBoneMask = BONE_USED_BY_HITBOX;
+
+	g::bSettingUpBones[ pEntity->EntIndex( ) ] = true;
+	pEntity->SetupBones( pMatrix, MAXSTUDIOBONES, iBoneMask, 0.0f );
+	return;
+
 	pEntity->SetAnimationLayers(pRecord->arrLayers);
 
 	const float flCurrentTime = i::GlobalVars->flCurrentTime;
@@ -1025,6 +1055,22 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	i::GlobalVars->flInterpolationAmount = flInterpolationAmount;
 	i::GlobalVars->iTickCount = iTickCount;
 	i::GlobalVars->iFrameCount = iFrameCount;
+}
+
+void Animations::SetupPlayerMatrix( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags, int iExtrapolate ) {
+
+	/* Remove interpolation if required */
+	if ( !( nFlags & EMatrixFlags::Interpolated ) && pRecord->vecOrigin.IsValid( ) )
+		pEntity->SetAbsOrigin( pRecord->vecOrigin );
+
+	/* Compute bone mask */
+	int iBoneMask = BONE_USED_BY_ANYTHING;
+	if ( nFlags & EMatrixFlags::BoneUsedByHitbox )
+		iBoneMask = BONE_USED_BY_HITBOX;
+
+	g::bSettingUpBones[ pEntity->EntIndex( ) ] = true;
+	pEntity->SetupBones( pMatrix, MAXSTUDIOBONES, iBoneMask, 1.0f );
+	return;
 }
 
 void UpdateLmao(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {

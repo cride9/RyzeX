@@ -24,7 +24,7 @@ enum EHitboxType : int {
 struct Hitscan_t {
 
 	Hitscan_t() {}
-	Hitscan_t(Lagcompensation::LagRecord_t* _record, Vector& _point, FireBulletData_t& data, bool _baimlethal, bool _safe, int _damage) {
+	Hitscan_t(Lagcompensation::LagRecord_t* _record, Vector& _point, FireBulletData_t& data, bool _baimlethal, bool _safe, int _damage, int _count) {
 
 		pRecord = _record;
 		vecPoint = _point;
@@ -40,6 +40,7 @@ struct Hitscan_t {
 		iHitbox = data.enterTrace.iHitbox;
 		iHitgroup = data.enterTrace.iHitGroup;
 		iTransformedDamage = _damage;
+		iRecordCount = _count;
 	}
 
 	Lagcompensation::LagRecord_t* pRecord = nullptr;
@@ -57,25 +58,21 @@ struct Hitscan_t {
 	int iHitbox{};
 	int iHitgroup{};
 	int iTransformedDamage{};
+	int iRecordCount{};
 
-	bool operator<(const Hitscan_t& other) const {
+	bool operator<( const Hitscan_t& other ) const {
 
-		if ( bBaimLethal && !other.bBaimLethal )
-			return true;
-		else if ( !bBaimLethal && other.bBaimLethal )
-			return false;
+		if ( bBaimLethal != other.bBaimLethal )
+			return bBaimLethal;
+
+		if ( flDamage >= iTransformedDamage && other.flDamage >= iTransformedDamage )
+			if ( bSafe != other.bSafe )
+				return bSafe;
 
 		return flDamage > other.flDamage;
-	}
 
-	bool operator>( const Hitscan_t& other ) const {
-
-		if ( bBaimLethal && !other.bBaimLethal )
-			return false;
-		else if ( !bBaimLethal && other.bBaimLethal )
-			return true;
-
-		return flDamage < other.flDamage;
+		// Otherwise, maintain the current order
+		return false;
 	}
 };
 
@@ -97,6 +94,7 @@ struct rageBotData_t
 
 	bool bBacktrack{};
 	bool bCanShoot{};
+	bool bFireReady{};
 	bool bSafe{};
 
 	float flTargetSimulation{};
@@ -182,14 +180,22 @@ class CAimBot {
 
 public:
 	void CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal);
-    void ResetAimbotData();
-	void PostPrediction(CUserCmd* pCmd, bool& bSendPacket);
+    void ResetAimbotData( bool bShouldRecharge = false );
+	bool PostPrediction(CUserCmd* pCmd, bool& bSendPacket);
 
 	rageBotData_t& GetHitLogData() { return hitlogData; }
 	rageBotData_t& GetAimbotData() { return aimData; }
 	weaponConfig_t& GetCurrentConfig() { return curConfig; }
+	bool ShouldSendPacket( ) { return bShouldSendPacket; }
 
 private:
+
+	enum SCAN : char {
+
+		SCAN_CONTINUE,
+		SCAN_SKIP,
+		SCAN_BREAK
+	};
 
 	bool bShouldSendPacket = false;
 	int iTickCount = 0;
@@ -200,12 +206,12 @@ private:
 	weaponConfig_t curConfig{};
 	Vector vecEyePosition{};
 
-
 	bool HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy);
 	bool HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecPosition, Lagcompensation::LagRecord_t* pRecord);
 	
 	void GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon);
 	bool AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal, CUserCmd* pCmd, bool bSkipCheck);
+	SCAN ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pFirstRecord );
 
 	weaponConfig_t GetWeaponConfiguration(short iItemDefinitionIndex);
 

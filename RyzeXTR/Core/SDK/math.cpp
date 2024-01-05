@@ -627,6 +627,55 @@ bool M::WorldToScreen( const Vector& in, Vector2D& out )
 	return false;
 }
 
+void M::QuaternionMatrix( const BoneQuaternion& q, const BoneVector& pos, matrix3x4_t& matrix ) {
+
+	if ( !pos.IsValid( ) )
+		return;
+
+	QuaternionMatrix( q, matrix );
+
+	matrix[ 0 ][ 3 ] = pos.x;
+	matrix[ 1 ][ 3 ] = pos.y;
+	matrix[ 2 ][ 3 ] = pos.z;
+}
+
+void M::QuaternionMatrix( const BoneQuaternion& q, matrix3x4_t& matrix ) {
+
+	if ( !q.IsValid( ) )
+		return;
+
+	float wx, wy, wz, xx, yy, yz, xy, xz, zz, x2, y2, z2;
+
+	// precalculate common multiplitcations
+	x2 = q.x + q.x;
+	y2 = q.y + q.y;
+	z2 = q.z + q.z;
+	xx = q.x * x2;
+	xy = q.x * y2;
+	xz = q.x * z2;
+	yy = q.y * y2;
+	yz = q.y * z2;
+	zz = q.z * z2;
+	wx = q.w * x2;
+	wy = q.w * y2;
+	wz = q.w * z2;
+
+	matrix[ 0 ][ 0 ] = 1.0 - ( yy + zz );
+	matrix[ 0 ][ 1 ] = xy - wz;
+	matrix[ 0 ][ 2 ] = xz + wy;
+	matrix[ 0 ][ 3 ] = 0.0f;
+
+	matrix[ 1 ][ 0 ] = xy + wz;
+	matrix[ 1 ][ 1 ] = 1.0 - ( xx + zz );
+	matrix[ 1 ][ 2 ] = yz - wx;
+	matrix[ 1 ][ 3 ] = 0.0f;
+
+	matrix[ 2 ][ 0 ] = xz - wy;
+	matrix[ 2 ][ 1 ] = yz + wx;
+	matrix[ 2 ][ 2 ] = 1.0 - ( xx + yy );
+	matrix[ 2 ][ 3 ] = 0.0f;
+}
+
 //float M::ApproachAngle(float target, float value, float speed) {
 //
 //	target = anglemod(target);

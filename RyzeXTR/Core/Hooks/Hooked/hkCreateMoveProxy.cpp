@@ -65,7 +65,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		grenadePrediction::Run();
 		grenadePrediction::AutoThrow( pCmd );
 
-		misc::BoostMovement(pCmd);
+		//misc::BoostMovement(pCmd);
 		g::vecEyePosition = pLocal->GetEyePosition(false);
 		localAnim->CopyPlayerAnimationData(false, pLocal);
 		localAnim->SetupShootPosition(pLocal );
@@ -74,9 +74,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 		aimbot.CreateMove(pCmd, pLocal);
 
-		exploits::HandleDoubleTap( bSendPacket, pCmd );
-		exploits::HandleHideShots(bSendPacket, pCmd);
-		exploits::HandleBreakLagcomp(pCmd);
+		exploits::HandleExploits( pLocal, pCmd );
+		exploits::CorrectTickbase( );
+
 		misc::IdealTick(pCmd, pLocal);
 		misc::AutoPistol(pCmd, pLocal);
 		antiaim::InvertOnShoot(pCmd);

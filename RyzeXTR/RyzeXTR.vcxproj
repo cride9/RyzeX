@@ -138,6 +138,7 @@
     <ClCompile Include="Core\Features\Misc\enginepred.cpp" />
     <ClCompile Include="Core\Features\Misc\misc.cpp" />
     <ClCompile Include="Core\Features\Misc\serversounds.cpp" />
+    <ClCompile Include="Core\Features\Misc\setupbones.cpp" />
     <ClCompile Include="Core\Features\Misc\Vizualizer.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
     <ClCompile Include="Core\Features\Rage\aimbot.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="Core\Features\Misc\misc.h" />
     <ClInclude Include="Core\Features\Misc\Playerlist.h" />
     <ClInclude Include="Core\Features\Misc\serversounds.h" />
+    <ClInclude Include="Core\Features\Misc\setupbones.h" />
     <ClInclude Include="Core\Features\Misc\Vizualizer.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
     <ClInclude Include="Core\Features\Rage\aimbot.h" />

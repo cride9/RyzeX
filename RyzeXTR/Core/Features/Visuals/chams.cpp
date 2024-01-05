@@ -367,11 +367,11 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 		else if (pEnt->IsEnemy(g::pLocal)) {
 
 			//auto pLog = &lagcomp.GetLog( pEnt->EntIndex( ) );
-			//if (pLog->pRecord.size( ) >= 2) 
+			//if (pLog && pLog->pRecord.size( ) >= 2 ) 
 			//{
 			//	// left
 			//	BeginChams( materials[ iBacktrackType ], Color( 255, 0, 0, 255 ).BaseAlpha().data(), true, bBacktrackXhair );
-			//	original( i::StudioRender, 0U, pResults, info, pLog->pRecord.front( ).pMatricies[ LEFT ], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags );
+			//	original( i::StudioRender, 0U, pResults, info, pLog->pRecord.front( ).pMatricies[ EXTRAPOLATED ], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags );
 
 			//	// center
 			//	BeginChams( materials[ iBacktrackType ], Color( 0, 0, 255, 255 ).BaseAlpha( ).data( ), true, bBacktrackXhair );

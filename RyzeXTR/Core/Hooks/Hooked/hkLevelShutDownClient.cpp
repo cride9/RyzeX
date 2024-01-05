@@ -8,6 +8,7 @@
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/Playerlist.h"
 #include "../../Features/Rage/aimbot.h"
+#include "../../Features/Changers/SkinChanger.h"
 
 void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
@@ -43,6 +44,7 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 	aimbot.GetAimbotData().pTargetMatrix = nullptr;
 	anims.bResolverHandler = std::array<bool, Animations::EResolverHandler::HANDLERCOUNT>();
 	misc::exploitInitialized = false;
+	skinChanger.flUpdateTime = 0.f;
 
 	/* Clear visuals */
 	chams::materials.fill(nullptr);
@@ -54,6 +56,8 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 		*g::bSendPacket = true;
 
 	lagcomp.ClearIncomingSequences();
+	//exploits::TickbaseFix.clear( );
+	exploits::arrTickbases = std::array<int, 500U>( );
 	/* New server = new client these needs to be rehooked */
 	//UnHookClientState();
 }

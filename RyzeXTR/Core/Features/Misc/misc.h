@@ -16,7 +16,6 @@ enum ECONFIG : int {
 namespace misc {
 
 	inline bool bNewRound = false;
-	inline bool bBreakLagcompensation = false;
 	inline bool bFilter = false;
 	inline bool bRetreat = false, bTeleportBack = false;
 	inline bool exploitInitialized = false;

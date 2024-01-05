@@ -65,6 +65,7 @@ enum EMatrixType : int {
 	LEFT,
 	RIGHT,
 	CENTER,
+	EXTRAPOLATED,
 	MAX
 };
 

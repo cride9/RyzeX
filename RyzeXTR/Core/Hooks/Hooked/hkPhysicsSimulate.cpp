@@ -4,6 +4,7 @@
 #include "../hooks.h"
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Networking/networking.h"
+#include "../../Features/Misc/misc.h"
 #undef max
 
 /* CBasePlayer::PhysicsSimulate */
@@ -31,8 +32,8 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	int& SimulationTick = *pEntity->GetOffsetPointer<int>( 0x2ACU );
 	CCommandContext* pCommandContext = pEntity->GetOffsetPointer<CCommandContext>(0x350C);
 
-	if ( SimulationTick == i::GlobalVars->iTickCount )
-		return original(ecx, edx);
+	/*if ( SimulationTick == i::GlobalVars->iTickCount )
+		return original(ecx, edx);*/
 
 	if ( !pCommandContext || !pCommandContext->bNeedsProcessing )
 		return original(ecx, edx);
@@ -42,22 +43,21 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 		SimulationTick = i::GlobalVars->iTickCount;
 		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
-		
-	networking.RestoreNetvarData( pCommandContext->nCommandNumber );
 
-	TickbaseRecord_t* Record = prediction.GetTickbaseRecord( pCommandContext->nCommandNumber );
-	if (Record->bIsValid)
-	{
-		/* set tickbase */
-		pEntity->GetTickBase() = Record->iTickbase - 1;
+	//TickbaseRecord_t* Record = prediction.GetTickbaseRecord( pCommandContext->nCommandNumber );
+	//if ( Record->bIsValid )
+	//{
+	//	misc::Print( std::format("Tickbase set from: {} -> {}", pEntity->GetTickBase(), Record->iTickbase) );
+	//	/* set tickbase */
+	//	pEntity->GetTickBase( ) = Record->iTickbase;
 
-		/* reset record */
-		Record->iTickbase = -1;
-		Record->bIsValid = false;
-	}
+	//	/* reset record */
+	//	Record->bIsValid = false;
+	//	Record->iTickbase = -1;
+	//}
 
 	original(ecx, edx);
-	
+
 	prediction.SaveViewmodelData(pEntity);
 	return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 }

@@ -206,6 +206,9 @@ void menu::Rage(ImVec2 savedCursorPosition) {
 
         ImGui::Checkbox(("Hideshot"), &bHideshot);
         ImGui::Keybind(("##iHideShotKey"), &iHideShotKey);
+
+        ImGui::Checkbox( ( "Break lagcompenstaion" ), &cfg::antiaim::bBreakLagcompensation );
+        ImGui::Keybind( ( "##iLCButton" ), &cfg::antiaim::iLCKey );
     }
     ImGui::EndChild();
 
@@ -363,8 +366,6 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
             ImGui::SliderInt(("Base"), &iFakelag, 0, 14);
             ImGui::SliderInt(("Min"), &iFakelagMin, 0, iFakelag);
             ImGui::SliderInt(("Max"), &iFakeLagMax, iFakelagMin, iFakelag);
-
-            ImGui::Checkbox(("Break lagcompenstaion"), &bBreakLagcompensation);
 
             ImGui::Checkbox(("Fake ping"), &cfg::misc::bFakePing);
             if (cfg::misc::bFakePing)
@@ -870,6 +871,7 @@ void menu::Misc(ImVec2 savedCursorPosition) {
 		ImGui::Checkbox(("Persistent kill feed"), &bPreserveKillfeed);
 		ImGui::Checkbox(("Animation Breaker"), &cfg::antiaim::bSlideWalk);
 
+        ImGui::Checkbox( "Smooth animations", &bSmoothFix );
         ImGui::Checkbox("Motion blur", &bMotionBlur);
         if (bMotionBlur) {
 

@@ -101,6 +101,7 @@
     <ClCompile Include="Core\Hooks\Hooked\hkTrayRace.cpp" />
     <ClCompile Include="Core\Features\Visuals\GrenadePredict.cpp" />
     <ClCompile Include="Core\Hooks\Hooked\hkIsDepthOfFieldEnabled.cpp" />
+    <ClCompile Include="Core\Features\Misc\setupbones.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Features\Changers\SkinChanger.h" />
@@ -326,6 +327,7 @@
     <ClInclude Include="Core\Features\Misc\Vizualizer.h" />
     <ClInclude Include="Core\Interface\Interfaces\MemAlloc.h" />
     <ClInclude Include="Core\Features\Visuals\GrenadePredict.h" />
+    <ClInclude Include="Core\Features\Misc\setupbones.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependecies\freetype\win32\freetype.lib" />

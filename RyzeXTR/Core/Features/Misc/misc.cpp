@@ -18,6 +18,7 @@
 #include "../../SDK/Menu/gui.h"
 #include "Playerlist.h"
 #include "../Rage/Animations/EnemyAnimations.h"
+#include "../Rage/aimbot.h"
 
 void misc::SetupRadio( )
 {
@@ -114,7 +115,7 @@ void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
 		pCmd->iButtons |= IN_BULLRUSH;
 	RemoveShadows();
 #if NDEBUG || ALPHA
-	Security();
+	//Security();
 #endif
 	//ViewModel();
 }
@@ -1089,9 +1090,6 @@ void misc::FakeLag(bool& bSendPacket) {
 		return;
 	}
 
-	if (exploits::bDoubleTapEnabled && exploits::iShiftAmount > 0 && cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey))
-		return;
-
 	static int iCurrentChoke = 0;
 	static bool bSwitch = false;
 
@@ -1142,7 +1140,9 @@ void misc::FakeLag(bool& bSendPacket) {
 	else
 		iCurrentChoke = cfg::antiaim::iFakelag;
 
-	iMax = ((cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) || (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey))) ? 1 : iMax;
+
+
+	iMax = ( ( cfg::rage::bDoubletap && IPT::HandleInput( cfg::rage::iDoubletapKey ) ) || ( cfg::rage::bHideshot && IPT::HandleInput( cfg::rage::iHideShotKey ) ) || ( cfg::antiaim::bBreakLagcompensation && IPT::HandleInput( cfg::antiaim::iLCKey ) ) ) ? 1 : iMax;
 	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
 	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;
 	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;
@@ -1639,8 +1639,6 @@ void misc::ClanTag() {
 	if (!bShouldPrint && !cfg::misc::bClantag)
 		return;
 
-	//std::vector<std::string> vecClantagString = util::AnimateText("RyzeXTR");
-
 	static float flTime = 1;
 	int iTicks = TIME_TO_TICKS(pNetChannel->GetAvgLatency(FLOW_OUTGOING)) + (float)i::GlobalVars->iTickCount;
 	float intervals = 0.4f / i::GlobalVars->flIntervalPerTick;
@@ -1734,9 +1732,13 @@ void misc::CapsuleOnHit(int pEntity, int iHitgroup, Color arrColor, float flDura
 		if (!pHitbox)
 			continue;
 
+		matrix3x4_t* pMatrix = pLog->pCachedMatrix.data();
+		if ( aimbot.GetHitLogData( ).pTargetMatrix )
+			pMatrix = aimbot.GetHitLogData( ).pTargetMatrix;
+
 		Vector vMin, vMax;
-		vMin = M::VectorTransform(pHitbox->vecBBMin, pLog->pCachedMatrix[pHitbox->iBone]);
-		vMax = M::VectorTransform(pHitbox->vecBBMax, pLog->pCachedMatrix[pHitbox->iBone]);
+		vMin = M::VectorTransform(pHitbox->vecBBMin, pMatrix[pHitbox->iBone]);
+		vMax = M::VectorTransform(pHitbox->vecBBMax, pMatrix[pHitbox->iBone]);
 
 		if (pHitbox->flRadius > -1) {
 			if (pHitbox->iGroup == iHitgroup) 

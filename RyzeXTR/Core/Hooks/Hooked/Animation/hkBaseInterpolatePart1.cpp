@@ -1,5 +1,6 @@
 #include "../../hooks.h"
 #include "../../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../../Features/Rage/exploits.h"
 
 enum
 {
@@ -11,16 +12,8 @@ int __fastcall h::hkBaseInterpolatePart1(CBaseEntity* pEntity, void* edx, float&
 
 	static auto original = detour::baseInterpolatePart1.GetOriginal<decltype(&hkBaseInterpolatePart1)>();
 
-	if (!pEntity->IsPlayer())
-		return original(pEntity, edx, currentTime, oldOrigin, oldAngles, bNoMoreChanges);
+	if ( exploits::bIsCurrentlyCharging )
+		return INTERPOLATE_STOP;
 
-	using MoveToLastReceivedPositionFn = int(__thiscall*)(CBaseEntity*, char);
-	static auto oMoveToLastReceivedPosition = reinterpret_cast<MoveToLastReceivedPositionFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 51 53 56 8B F1 32 DB 8B 06")));
-	oMoveToLastReceivedPosition(pEntity, 0);
-
-	bNoMoreChanges = 2;
-	return INTERPOLATE_STOP;
-
-	//lagcomp.SetInterpolationFlags();
 	return original(pEntity, edx, currentTime, oldOrigin, oldAngles, bNoMoreChanges);
 }
