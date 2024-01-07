@@ -71,6 +71,7 @@ void h::SetupHooks() {
 	HookSignature(detour::drawViewmodel, CLIENT_DLL, "55 8B EC 51 57 E8", &hkShouldDrawViewmodel);
 	HookSignature(detour::drawModelAnimating, CLIENT_DLL, "55 8B EC 56 8B F1 80 ? ? ? ? ? ? 75 07 33", &hkDrawModelAnimating);
 	HookSignature(detour::isDepthOfFieldEnabled, CLIENT_DLL, "8B ? ? ? ? ? 56 8B 01 FF 50 34 8B F0 85 F6 75", &hkIsDepthOfFieldEnabled);
+	HookSignature( detour::clSendMove, ENGINE_DLL, "55 8B EC 8B 4D 04 81 EC FC 0F 00 00 53 56 57", &hkClSendMove );
 
 	menu::DestroyDirectX();
 

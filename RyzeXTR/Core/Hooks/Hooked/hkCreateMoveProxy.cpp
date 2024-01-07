@@ -74,8 +74,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 
 		aimbot.CreateMove(pCmd, pLocal);
 
-		exploits::HandleExploits( pLocal, pCmd );
-		exploits::CorrectTickbase( );
+		exploits::HandleExploits( pLocal, pCmd, bSendPacket );
+		exploits::CorrectTickbase( pCmd );
 
 		misc::IdealTick(pCmd, pLocal);
 		misc::AutoPistol(pCmd, pLocal);
@@ -104,15 +104,15 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	else
 		lagcomp.ClearIncomingSequences( );
 
-	if (bSendPacket)
-		packetManager.pCommandList.emplace_back(pCmd->iCommandNumber);
-
 	if (!bShooting)
 		LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_CREATE_MOVE ], pCmd, *g::bSendPacket );
 
 	// re-verify the command after running lua callbacks
 	if ( i::ClientState->nChokedCommands >= 14 )
 		bSendPacket = true;
+
+	if ( bSendPacket )
+		packetManager.pCommandList.emplace_back( pCmd->iCommandNumber );
 
 	pCmd->angViewPoint.Normalize();
 	pCmd->angViewPoint.Clamp();

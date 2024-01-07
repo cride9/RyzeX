@@ -393,7 +393,7 @@ void CBoneSetup::AccumulatePose( BoneVector pos[ ], BoneQuaternion q[ ], int seq
 {
     using AccumulatePoseFn = void( __thiscall* )( CBoneSetup*, BoneVector*, BoneQuaternion*, int, float, float, float, void* );
     static AccumulatePoseFn AccumulatePose = reinterpret_cast<AccumulatePoseFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? A1" ) ) ); // client.dll - \x55\x8B\xEC\x83\xE4\xF0\xB8\x00\x00\x00\x00\xE8\x00\x00\x00\x00\xA1
-
+   
     AccumulatePose( this, pos, q, sequence, cycle, weight, time, IKContext );
 }
 

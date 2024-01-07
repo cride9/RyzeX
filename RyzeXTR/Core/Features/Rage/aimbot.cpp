@@ -81,14 +81,16 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 	if ( !aimData.bCanShoot || !aimData.bFireReady )
 		return ResetAimbotData( );
 
+	if ( exploits::IsExploiting( ) & HIDESHOT && exploits::iLastShiftTick + 16 + TIME_TO_TICKS( pWeapon->FireRate( ) ) >= g::pLocal->GetTickBase( ) )
+		return;
+
 	/* Shoot entity when we can & have enough hitchance */
 	pCmd->angViewPoint = vecAimAngle;
 	if ( !cfg::rage::bSilentAim ) i::EngineClient->SetViewAngles( vecAimAngle );
 
 	lagcomp.GetLog( aimData.pRecord->iEntIndex ).iShotAmount++;
 	pCmd->iButtons |= IN_ATTACK;
-	aimData.iTickcount = pCmd->iTickCount;
-	pCmd->iTickCount = TIME_TO_TICKS( aimData.flTargetSimulation + lagcomp.GetClientInterpAmount( ) );
+	aimData.iDesiredTickcount = TIME_TO_TICKS( aimData.flTargetSimulation + lagcomp.GetClientInterpAmount( ) );
 
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
 	bShouldSendPacket = true;
@@ -106,6 +108,12 @@ void CAimBot::ResetAimbotData( bool bShouldRecharge ) {
 
 bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
 
+	if ( !( pCmd->iButtons & IN_ATTACK ) )
+		return false;
+
+	if ( aimData.iDesiredTickcount != -1 )
+		pCmd->iTickCount = aimData.iDesiredTickcount;
+
 	if ( cfg::antiaim::bFakeDuck && IPT::HandleInput( cfg::antiaim::iFakeDuckKey ) )
 		bShouldSendPacket = false;
 
@@ -115,6 +123,8 @@ bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
 	if ( exploits::bForcePacket )
 		bSendPacket = true;
 
+	aimData.iTickcount = pCmd->iTickCount;
+	aimData.iDesiredTickcount = -1;
 	return exploits::bChokePacket = exploits::bForcePacket = bShouldSendPacket = false;
 }
 
@@ -122,6 +132,9 @@ CAimBot::SCAN CAimBot::ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, 
 
 	if ( pFirstRecord == pRecord )
 		return SCAN_CONTINUE;
+
+	if ( exploits::iTicksToStore > 0 && pFirstRecord != pRecord && exploits::IsExploiting() != NONE )
+		return SCAN_BREAK;
 
 	if ( pRecord->bBreakingLagcompensation )
 		return SCAN_BREAK;
@@ -172,14 +185,14 @@ Vector CAimBot::ScanHitboxes( std::vector<Lagcompensation::AnimationInfo_t*>& ve
 			else if ( result == SCAN_SKIP ) continue;
 
 			/* Set current matrix for accurate tracing */
-			pRecord->ApplyMatrix( it->pEntity, EXTRAPOLATED );
+			pRecord->ApplyMatrix( it->pEntity, RESOLVE );
 			for ( int& iHitbox : curConfig.vecHitboxes[ NORMAL ] ) {
 
 				bool bShouldMultiPoint = std::find( curConfig.vecHitboxes[ MULTIPOINT ].begin( ), curConfig.vecHitboxes[ MULTIPOINT ].end( ), iHitbox ) != curConfig.vecHitboxes[ MULTIPOINT ].end( );
 				bool bShouldForceSafePoint = std::find( curConfig.vecHitboxes[ SAFE ].begin( ), curConfig.vecHitboxes[ SAFE ].end( ), iHitbox ) != curConfig.vecHitboxes[ SAFE ].end( );
 				bool& bShouldSafe = curConfig.bSafePoint;
 
-				std::vector<Vector> vecWorldPoints = CreatePoints( vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, EXTRAPOLATED, bShouldMultiPoint );
+				std::vector<Vector> vecWorldPoints = CreatePoints( vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint );
 				// OPTIMIZATION: first element in the vector is always the hitbox center
 				bool bFirstElement = true;
 				for ( Vector& vecHitboxPoint : vecWorldPoints ) {
@@ -223,15 +236,11 @@ Vector CAimBot::ScanHitboxes( std::vector<Lagcompensation::AnimationInfo_t*>& ve
 	/* Sort hitboxes with a bit of logic ( REF: Hitscan_t::operator< ) */
 	std::sort( vecHitscan.begin( ), vecHitscan.end( ) );
 
-	for ( size_t i = 0; i < vecHitscan.size(); i++ )
-	{
-		misc::Print( std::format( "{}: {}", i, vecHitscan.at( i ).flDamage ) );
-
-	}
 	for ( Hitscan_t& refRecord : vecHitscan )
 	{
 		/* Aimbot using extrapolated information so use normal values instead here to validate */
-		if ( autowall.GetDamage( pLocal, localAnim->GetShootPosition( ), refRecord.vecPoint, curConfig.pWeapon, refRecord.pRecord ) < 1.f )
+		float flDamage = autowall.GetDamage( pLocal, localAnim->GetShootPosition( ), refRecord.vecPoint, curConfig.pWeapon, refRecord.pRecord );
+		if ( flDamage < 1.f )
 			continue;
 
 		aimData.SetTarget( refRecord.pRecord, vecEyePosition, refRecord.bBacktrack );

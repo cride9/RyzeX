@@ -17,3 +17,10 @@ void __cdecl h::hkClMove(float flSamples, bool bFinalTick) {
 	// changing flSamples while doubletapping can cause some issues like freezing when doubletapping while our ticks are getting back to sync
 	// and gl getting back ticks to synced values while we freeze :D (takes like 20-30sec to unfreeze the game)
 }
+
+using namespace exploits;
+void __cdecl h::hkClSendMove( ) {
+
+	static auto original = detour::clSendMove.GetOriginal<decltype( &hkClSendMove )>( );
+	original( );
+}

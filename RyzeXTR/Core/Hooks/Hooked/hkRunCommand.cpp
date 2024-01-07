@@ -22,12 +22,6 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 		return;
 	}
 
-
-	if ( abs( pEnt->GetTickBase( ) - arrTickbases[ pCmd->iCommandNumber % 500 ] ) < 20 ) {
-
-		pEnt->GetTickBase( ) = arrTickbases[ pCmd->iCommandNumber % 500 ];
-	}
-
 	//if ( TickbaseFix.contains( pCmd->iCommandNumber ) ) 
 	//	pEnt->GetTickBase( ) = TickbaseFix.at( pCmd->iCommandNumber ) - 1;
 	//

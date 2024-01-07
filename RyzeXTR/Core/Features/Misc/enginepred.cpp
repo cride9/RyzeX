@@ -29,7 +29,7 @@ int Prediction::AdjustPlayerTimeBase(int iSimulationTick) {
 
 	// define const
 	const int nCorrectionTicks = TIME_TO_TICKS(0.03f);
-	int nChokedCmds = i::ClientState->nChokedCommands;
+	const int nChokedCmds = i::ClientState->nChokedCommands;
 
 	// if client gets ahead or behind of this, we'll need to correct.
 	const int nTooFastLimit = nTickBase + nCorrectionTicks + nChokedCmds - Tickbase_t.iSimulationTick + 1;

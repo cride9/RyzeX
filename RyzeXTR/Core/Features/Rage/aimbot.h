@@ -88,6 +88,7 @@ struct rageBotData_t
 
 	int	iHealth{};
 	int	iTickcount{};
+	int	iDesiredTickcount{};
 	int	iHitbox{};
 	int	iHitGroup{};
 	int iEntityIndex{};

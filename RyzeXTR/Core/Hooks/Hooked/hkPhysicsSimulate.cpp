@@ -32,8 +32,8 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	int& SimulationTick = *pEntity->GetOffsetPointer<int>( 0x2ACU );
 	CCommandContext* pCommandContext = pEntity->GetOffsetPointer<CCommandContext>(0x350C);
 
-	/*if ( SimulationTick == i::GlobalVars->iTickCount )
-		return original(ecx, edx);*/
+	if ( SimulationTick == i::GlobalVars->iTickCount )
+		return original(ecx, edx);
 
 	if ( !pCommandContext || !pCommandContext->bNeedsProcessing )
 		return original(ecx, edx);
@@ -44,17 +44,8 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
 
-	//TickbaseRecord_t* Record = prediction.GetTickbaseRecord( pCommandContext->nCommandNumber );
-	//if ( Record->bIsValid )
-	//{
-	//	misc::Print( std::format("Tickbase set from: {} -> {}", pEntity->GetTickBase(), Record->iTickbase) );
-	//	/* set tickbase */
-	//	pEntity->GetTickBase( ) = Record->iTickbase;
-
-	//	/* reset record */
-	//	Record->bIsValid = false;
-	//	Record->iTickbase = -1;
-	//}
+	if ( abs( pEntity->GetTickBase( ) - exploits::arrTickbases[ pCommandContext->nCommandNumber % 500 ] ) < 20 )
+		pEntity->GetTickBase( ) = exploits::arrTickbases[ pCommandContext->nCommandNumber % 500 ];
 
 	original(ecx, edx);
 

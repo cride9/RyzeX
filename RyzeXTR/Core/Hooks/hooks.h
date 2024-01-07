@@ -83,6 +83,7 @@ namespace detour {
 	inline CDetourHook renderView;			// viewrender -> 6
 	inline CDetourHook verifyReturnAddress;
 	inline CDetourHook isDepthOfFieldEnabled;
+	inline CDetourHook clSendMove;
 
 	// netchannel table
 	inline CDetourHook processPacket;		// netchannel -> 39
@@ -149,6 +150,7 @@ namespace h {
 	void __fastcall		hkFrameStageNotify(void*, void*, EStage);
 	void __fastcall		hkPaintTraverse(void*, int, unsigned int, bool, bool);
 	void __cdecl		hkClMove(float, bool);
+	void __cdecl		hkClSendMove( );
 	void __fastcall		hkOverrideView(void*, void*, CViewSetup*);
 	void __fastcall		hkLockCursor(ISurface*, int);
 	void __fastcall		hkDrawModel(IStudioRender*, int, DrawModelResults_t*, const DrawModelInfo_t&, matrix3x4a_t*, float*, float*, const Vector&, int);

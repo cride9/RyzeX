@@ -126,7 +126,7 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 	BuildSafePoint(CENTER);
 	BuildSafePoint(RIGHT);
 	/* Make an extrapolted matrix aswell kekw */
-	lagcomp.ExtrapolatePlayer( pEntity, pRecord, pPrevious );
+	//lagcomp.ExtrapolatePlayer( pEntity, pRecord, pPrevious );
 	BuildSafePoint( EXTRAPOLATED );
 }
 
@@ -970,7 +970,8 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 		iBoneMask = BONE_USED_BY_HITBOX;
 
 	g::bSettingUpBones[ pEntity->EntIndex( ) ] = true;
-	pEntity->SetupBones( pMatrix, MAXSTUDIOBONES, iBoneMask, 0.0f );
+	rebuiltBones.build( pEntity, pMatrix, 256, iBoneMask );
+	//pEntity->SetupBones( pMatrix, MAXSTUDIOBONES, iBoneMask, 0.0f );
 	return;
 
 	pEntity->SetAnimationLayers(pRecord->arrLayers);
@@ -1069,7 +1070,7 @@ void Animations::SetupPlayerMatrix( CBaseEntity* pEntity, Lagcompensation::LagRe
 		iBoneMask = BONE_USED_BY_HITBOX;
 
 	g::bSettingUpBones[ pEntity->EntIndex( ) ] = true;
-	pEntity->SetupBones( pMatrix, MAXSTUDIOBONES, iBoneMask, 1.0f );
+	rebuiltBones.build( pEntity, pMatrix, 256, iBoneMask, iExtrapolate );
 	return;
 }
 
