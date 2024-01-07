@@ -717,7 +717,7 @@ bool Lagcompensation::DataChanged( CBaseEntity* pEntity, Lagcompensation::LagRec
 
 	if ( pPrevious )
 		if ( pEntity->GetAnimationOverlays( )[ ANIMATION_LAYER_ALIVELOOP ].flCycle == pPrevious->arrLayers[ ANIMATION_LAYER_ALIVELOOP ].flCycle )
-			return pEntity->GetSimulationTime( ) = pEntity->GetOldSimulationTime( );
+			pEntity->GetSimulationTime( ) = pEntity->GetOldSimulationTime( );
 
 	return pEntity->GetSimulationTime( ) != pEntity->GetOldSimulationTime( );
 }

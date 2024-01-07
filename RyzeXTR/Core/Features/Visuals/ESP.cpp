@@ -1709,28 +1709,30 @@ void visual::HandleDamageIndicator() {
 		return;
 	}
 
-	static std::unordered_map<int, std::pair<float, float>> animationMap{};
 	for (int i = 0; i < vecDamageIndicator.size(); i++) {
 
-		std::pair<Vector, int>& it = vecDamageIndicator.at(i);
+		auto& it = vecDamageIndicator.at(i);
 
-		if (!animationMap.contains(it.second))
-			animationMap.emplace(it.second, std::make_pair(i::GlobalVars->flCurrentTime, 1.f));
+		// it.vecPosition += Vector( 0, 0, 10 * i::GlobalVars->flFrameTime );
 
-		it.first += Vector(0, 0, 0.2f);
-		animationMap.at(it.second).second = std::clamp(animationMap.at(it.second).second - (1.f / 255.f), 0.f, 1.f);
-		if (fabsf(animationMap.at(it.second).first - i::GlobalVars->flCurrentTime) > 2.f) {
+		if ( abs( it.iTickcount - i::GlobalVars->iTickCount ) > TIME_TO_TICKS( 1.f ) ) {
 
-			animationMap.erase(it.second);
-			vecDamageIndicator.erase(vecDamageIndicator.begin() + i);
+			vecDamageIndicator.erase( vecDamageIndicator.begin( ) + i );
 			i--;
 			continue;
 		}
 
 		Vector vecScreenPosition{};
-		if (i::DebugOverlay->ScreenPosition(it.first, vecScreenPosition))
+		if ( i::DebugOverlay->ScreenPosition( it.vecPosition, vecScreenPosition ) )
 			continue;
 
-		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[1], cfg::misc::flDamageIndicator[2], animationMap.at(it.second).second), g::fonts::FlagESP, true, it.second == 0 ? XorStr( "Missed" ) : std::to_string( it.second ).c_str( ) );
+		if ( it.iDamage == 0 )
+			continue;
+
+		Color indicatorColor = it.bHeadshot ? Color( 255, 0, 0, 255 ) : Color( 255, 255, 255, 255 );
+		indicatorColor[ 3 ] = std::clamp( it.iTickcount - ( TIME_TO_TICKS( 1.f ) / 255.f ), 0.f, 1.f ) * 255;
+		i::Surface->DrawT( vecScreenPosition.x, vecScreenPosition.y, indicatorColor, g::fonts::HitIndicator, true, std::to_string( it.iDamage ).c_str( ) );
+
+		/*i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[1], cfg::misc::flDamageIndicator[2], animationMap.at(it.second).second), g::fonts::FlagESP, true, it.second == 0 ? XorStr( "Missed" ) : std::to_string( it.second ).c_str( ) );*/
 	}
 }

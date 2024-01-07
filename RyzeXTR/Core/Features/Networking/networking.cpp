@@ -106,7 +106,7 @@ void CNetworking::RestoreNetvarData( int nCommand )
 		g::pLocal->GetFallVelocity( ) = 0.0f;
 }
 
-void CNetworking::OnPacketEnd( CClientState* ClientState )
+void CNetworking::OnPacketEnd( CClientState* cl )
 {
 	if (!g::pLocal)
 		return; 

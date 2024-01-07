@@ -143,7 +143,7 @@ namespace cfg {
 		inline bool bInvertOnShoot[3];
 		inline bool bInverter = false;
 
-		inline int iDesyncType[3];
+		inline int iDesyncType[5];
 		inline int iInverterBind = 0;
 
 		inline int iFlickOffset[3];
@@ -547,6 +547,19 @@ public:
 
 		if (it != floats.end())
 			return *(*it)->value;
+	}
+
+	Color FindColor( std::string targetName ) {
+
+		return Color( FindFloat( targetName + "R" ), FindFloat( targetName + "G" ), FindFloat( targetName + "B" ), FindFloat( targetName + "A" ) );
+	}
+
+	void SetColor( std::string targetName, Color color ) {
+
+		FindFloat( targetName + "R" ) = color.BaseAlpha( ).at( 0 );
+		FindFloat( targetName + "G" ) = color.BaseAlpha( ).at( 1 );
+		FindFloat( targetName + "B" ) = color.BaseAlpha( ).at( 2 );
+		FindFloat( targetName + "A" ) = color.BaseAlpha( ).at( 3 );
 	}
 
 	std::string& FindString(std::string targetName) {

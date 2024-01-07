@@ -53,6 +53,7 @@ public:
 	virtual void SetupShootPosition(CBaseEntity* pLocal);
 	virtual void CopyPlayerAnimationData(bool bFake, CBaseEntity* pLocal);
 	virtual void AnimationBreaker(CBaseEntity*);
+	virtual void OnetapSlide( CBaseEntity* pLocal );
 	virtual void SetupInterpolation(CBaseEntity* pLocal, bool bPostFrame);
 
 	virtual float GetYawDelta()

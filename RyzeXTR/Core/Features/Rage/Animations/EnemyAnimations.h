@@ -77,6 +77,7 @@ public:
 	void ResolverLogic();
 	float GetVelocityLengthXY(CBaseEntity* pEntity);
 	void SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw);
+	EMatrixType FreestandResolver( Lagcompensation::LagRecord_t* pRecord );
     float GetLocalCycleIncrement(CBaseEntity* pEntity, float flPlaybackrate);
     void Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious);
 

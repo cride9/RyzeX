@@ -255,7 +255,7 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
     static const char* arrYawBases[] = { ("Local view"), ("At target") };
     static const char* arrYaws[] = { ("Forward"), ("Backward") };
     static const char* arrModifiers[] = { ("Off"), ("Jitter"), ("Random"), ("Rytter"), ("Spin")};
-    static const char* arrDesyncs[] = { ("Off"), ("Static"), ("Extended"), ("Jitter"), ("Flick") };
+    static const char* arrDesyncs[] = { ("Off"), ("Static"), ("Extended"), ("Jitter"), ("Flick"), ("Automatic" ) };
     static const char* arrFreestands[] = { ("Off"), ("Circular"), ("Predictive")};
     static const char* arrFakelagType[] = { ("Normal"), ("Adaptive"), ("Jitter"), ("Random")};
 
@@ -337,7 +337,7 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
 				ImGui::Checkbox(("Anti Prediction"), &bAntiJitter[iSelect]);
 			}
             ImGui::Combo(("Desync"), &iDesyncType[iSelect], arrDesyncs, IM_ARRAYSIZE(arrDesyncs));
-            if (iDesyncType[iSelect] != 0 && iDesyncType[iSelect] != 5) {
+            if ( iDesyncType[iSelect] != 0 ) {
                 ImGui::Checkbox(("Inverter"), &bInverter);
                 ImGui::Keybind(("##iInverterBind"), &iInverterBind);
                 if (iDesyncType[iSelect] == 4) {

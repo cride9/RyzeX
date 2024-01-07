@@ -7,7 +7,7 @@
 #include "../antiaim.h"
 #include "../../Misc/setupbones.h"
 
-void C_LocalAnimations::AnimationBreaker(CBaseEntity* pLocal) {
+void C_LocalAnimations::AnimationBreaker( CBaseEntity* pLocal ) {
 
 	if (!cfg::antiaim::bSlideWalk)
 		return;
@@ -47,9 +47,30 @@ end
 
 	pLocal->GetPoseParameter()[JUMP_FALL] = 1.f;
 	pLocal->GetPoseParameter()[MOVE_YAW] = 0;
+
+
+
 	//flPoseParameter[8] = 0;
 	//flPoseParameter[9] = 0;
 	//flPoseParameter[10] = 0;
+}
+
+void C_LocalAnimations::OnetapSlide( CBaseEntity* pLocal ) {
+
+	if ( !IPT::HandleInput( cfg::antiaim::iFakeWalkKey ) || !g::pCmd )
+		return;
+
+	float flMinSpeed = ( float )( sqrt( ( g::pCmd->flForwardMove * g::pCmd->flForwardMove ) + ( g::pCmd->flSideMove * g::pCmd->flSideMove ) + ( g::pCmd->flUpMove * g::pCmd->flUpMove ) ) );
+	if ( flMinSpeed <= 0.f )
+		return;
+
+	pLocal->GetPoseParameter( )[ MOVE_BLEND_CROUCH ] = 0;
+	pLocal->GetPoseParameter( )[ MOVE_BLEND_WALK ] = 0;
+	pLocal->GetPoseParameter( )[ MOVE_BLEND_RUN ] = 0;
+	pLocal->GetAnimationOverlays( )[ ANIMATION_LAYER_MOVEMENT_JUMP_OR_FALL ].flCycle = 0.f;
+	pLocal->GetAnimationOverlays( )[ ANIMATION_LAYER_MOVEMENT_LAND_OR_CLIMB ].flCycle = 0.f;
+	pLocal->GetAnimationOverlays( )[ ANIMATION_LAYER_MOVEMENT_MOVE ].flCycle = 0.f;
+	pLocal->GetAnimationOverlays( )[ ANIMATION_LAYER_ADJUST ].flCycle = 0.f;
 }
 
 /* New stuff */
@@ -181,7 +202,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 
 	pLocal->SetAbsOrigin(LocalData_t.vecAbsOrigin);
 	//if ( !g_Globals->m_Packet.m_bSkipMatrix )
-
+	OnetapSlide( pLocal );
 	AnimationBreaker(pLocal);
 
 	localAnim->SetupPlayerBones(LocalData_t.RealData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);
@@ -358,6 +379,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 
 	LocalData_t.flYawDelta = std::roundf(M::AngleDiff(M::NormalizeAngle(pLocal->AnimState()->flGoalFeetYaw), M::NormalizeAngle(pAnimationState.flGoalFeetYaw)));
 
+	OnetapSlide( pLocal );
 	AnimationBreaker(pLocal);
 	
 	localAnim->SetupPlayerBones(LocalData_t.FakeData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);

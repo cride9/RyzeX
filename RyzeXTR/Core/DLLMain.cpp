@@ -76,11 +76,13 @@ void SetupFonts() {
 	g::fonts::FlagESP = i::Surface->CreateFontGame();
 	g::fonts::SkeetFont = i::Surface->CreateFontGame();
 	g::fonts::DebugFont = i::Surface->CreateFontGame();
+	g::fonts::HitIndicator = i::Surface->CreateFontGame( );
 
 	i::Surface->SetFontGlyphSet(g::fonts::NameESP, XorStr("Verdana"), 12, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 	i::Surface->SetFontGlyphSet(g::fonts::HealthESP, XorStr("Verdana"), 10, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 	i::Surface->SetFontGlyphSet(g::fonts::FlagESP, XorStr("Small Fonts"), 11, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 	i::Surface->SetFontGlyphSet(g::fonts::SkeetFont, XorStr("Verdana"), 25, FW_EXTRABOLD, 0, 0, FONTFLAG_DROPSHADOW | FONTFLAG_ANTIALIAS);
+	i::Surface->SetFontGlyphSet( g::fonts::HitIndicator, XorStr( "Verdana" ), 20, FW_NORMAL, 0, 0, FONTFLAG_ANTIALIAS );
 	i::Surface->SetFontGlyphSet(g::fonts::DebugFont, XorStr("Small Fonts"), 16, FW_NORMAL, 0, 0, FONTFLAG_OUTLINE);
 
 	util::Print(XorStr("Fonts initialized"));

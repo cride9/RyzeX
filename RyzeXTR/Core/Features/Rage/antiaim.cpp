@@ -184,6 +184,13 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 		}
 
 		break;
+
+	case AUTOMATIC:
+
+		bool bSide = DesyncSide( );
+		flDesyncValue = bSide ? 120.f : -120.f * bInvertValue;
+
+		break;
 	}
 
 	if ((pCmd->flForwardMove == 0.0f || pCmd->iButtons & IN_DUCK) && needMicromovement)
@@ -584,6 +591,97 @@ void antiaim::DoRytter(CUserCmd* pCmd, int type) {
 	catch (std::exception) {
 
 	}
+}
+
+bool antiaim::DesyncSide( ) {
+
+	auto GRD_TO_BOG = [ & ]( float GRD ) -> float {
+		return ( M_PI / 180 ) * GRD;
+	};
+
+	static bool bSide = false;
+	bool bSide1 = false;
+	bool bSide2 = false;
+	bool autowalld = false;
+	for ( size_t i = 1; i <= i::GlobalVars->nMaxClients; ++i ) {
+
+		CBaseEntity* pPlayerEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
+
+		if ( !pPlayerEntity
+			|| !pPlayerEntity->IsAlive( )
+			|| pPlayerEntity->IsDormant( )
+			|| pPlayerEntity == g::pLocal
+			|| !pPlayerEntity->IsEnemy( g::pLocal ) )
+			continue;
+
+		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog( i );
+		if ( !pLog || pLog->pRecord.empty( ) )
+			continue;
+
+		float flAngToLocal = M::CalcAngle( g::pLocal->GetVecOrigin( ), pPlayerEntity->GetVecOrigin( ) ).y;
+		Vector vecViewPoint = pPlayerEntity->GetVecOrigin( ) + Vector( 0, 0, 90 );
+
+		Vector2D vecSide1 = { ( 45 * sin( GRD_TO_BOG( flAngToLocal ) ) ),( 45 * cos( GRD_TO_BOG( flAngToLocal ) ) ) };
+		Vector2D vecSide2 = { ( 45 * sin( GRD_TO_BOG( flAngToLocal + 180 ) ) ) ,( 45 * cos( GRD_TO_BOG( flAngToLocal + 180 ) ) ) };
+
+		Vector2D vecSide3 = { ( 50 * sin( GRD_TO_BOG( flAngToLocal ) ) ),( 50 * cos( GRD_TO_BOG( flAngToLocal ) ) ) };
+		Vector2D vecSide4 = { ( 50 * sin( GRD_TO_BOG( flAngToLocal + 180 ) ) ) ,( 50 * cos( GRD_TO_BOG( flAngToLocal + 180 ) ) ) };
+
+		Vector vecOrigin = g::pLocal->GetVecOrigin( );
+
+		Vector2D vecOriginLeftRight[ ] = { Vector2D( vecSide1.x, vecSide1.y ), Vector2D( vecSide2.x, vecSide2.y ) };
+
+		Vector2D vecOriginLeftRightLocal[ ] = { Vector2D( vecSide3.x, vecSide3.y ), Vector2D( vecSide4.x, vecSide4.y ) };
+
+		for ( int iSide = 0; iSide < 2; iSide++ ) {
+
+			Vector vecOriginAutowall = { vecOrigin.x + vecOriginLeftRight[ iSide ].x,  vecOrigin.y - vecOriginLeftRight[ iSide ].y , vecOrigin.z + 80 };
+			Vector vecOriginAutowall2 = { vecViewPoint.x + vecOriginLeftRightLocal[ iSide ].x,  vecViewPoint.y - vecOriginLeftRightLocal[ iSide ].y , vecViewPoint.z };
+
+			if ( autowall.CanHitFloatingPoint( vecOriginAutowall, vecViewPoint, &pLog->pRecord.front( ) ) ) {
+
+				if ( iSide == 1 ) {
+
+					bSide1 = true;
+					bSide = true;
+				}
+				else if ( iSide == 0 ) {
+
+					bSide2 = true;
+					bSide = false;
+				}
+				autowalld = true;
+			}
+			else {
+				for ( int iSideID = 0; iSideID < 2; iSideID++ ) {
+
+					Vector vecOriginAutowall3 = { vecOrigin.x + vecOriginLeftRight[ iSideID ].x,  vecOrigin.y - vecOriginLeftRight[ iSideID ].y , vecOrigin.z + 80 };
+
+					if ( autowall.CanHitFloatingPoint( vecOriginAutowall3, vecOriginAutowall2, &pLog->pRecord.front( ) ) ) {
+
+						if ( iSideID == 1 ) {
+
+							bSide1 = true;
+							bSide = true;
+						}
+						else if ( iSideID == 0 ) {
+
+							bSide2 = true;
+							bSide = false;
+						}
+						autowalld = true;
+					}
+				}
+			}
+		}
+	}
+
+	if ( !autowalld || ( bSide1 && bSide2 ) )
+		return false;
+	else
+		return bSide;
+
+	return true;
 }
 
 bool antiaim::ManualAA(CUserCmd* pCmd, bool type) {

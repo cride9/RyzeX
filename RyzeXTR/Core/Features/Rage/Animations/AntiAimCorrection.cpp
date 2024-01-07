@@ -63,7 +63,10 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 		
 	int iCurrentBrute = arrMissedShots[iEntityID] % 2;
 
-	if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
+	if ( auto side = FreestandResolver( pRecord ); side != VISUAL )
+		SetYaw( pRecord, side );
+
+	else if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
 
 		if ( !( pRecord->arrLayers[ 12 ].flWeight * 1000.f ) && ( ( pRecord->arrLayers[ 6 ].flWeight * 1000.f ) == ( pPrevious->arrLayers[ 6 ].flWeight * 1000.f ) ) ) {
 
@@ -135,7 +138,7 @@ void Animations::ResolverLogic() {
 	if (!bResolverHandler[WEAPONFIRE] || !bResolverHandler[BULLETIMPACT]) 
 		return;
 	
-	// apply shot matrix
+	// apply shot matrix 
 	refCurrentData.pRecord->ApplyMatrix(pTarget, RESOLVE);
 	refCurrentData.iServerHitbox = iHitHitbox;
 	refCurrentData.iBacktrackTicks = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
@@ -147,25 +150,25 @@ void Animations::ResolverLogic() {
 	autowall.GetDamage(g::pLocal, refCurrentData.vecLocalShootPosition, bBulletImpact, g::pLocal->GetWeapon(), refCurrentData.pRecord , &data);
 
 	// Check if we killed, or hurt the player
-	if (bResolverHandler[PLAYERHURT] || bResolverHandler[PLAYERDEATH]) {
+	if ( bResolverHandler[ PLAYERHURT ] || bResolverHandler[ PLAYERDEATH ] ) {
 
-		if (data.enterTrace.iHitGroup != iHitHitbox)
-			anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++;
+		if ( data.enterTrace.iHitGroup != iHitHitbox )
+			anims.arrMissedShots[ refCurrentData.pAimbotTarget->EntIndex( ) ]++;
 
-		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		misc::Print(std::vformat(
-			XorStr("Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}" ), std::make_format_args(
-			info.szName,
-			misc::GetHitgroupName(iHitHitbox),
-			iHitDmg,
-			refCurrentData.flHitchance,
-			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
-			misc::GetHitgroupName(refCurrentData.iHitGroup),
-			refCurrentData.flDamage,
-			refCurrentData.pRecord->flResolveDelta
-		) ) );
+		bResolverHandler = std::array<bool, HANDLERCOUNT>( );
+		misc::Print( std::vformat(
+			XorStr( "Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}" ), std::make_format_args(
+				info.szName,
+				misc::GetHitgroupName( iHitHitbox ),
+				iHitDmg,
+				refCurrentData.flHitchance,
+				( refCurrentData.iTickcount - TIME_TO_TICKS( refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount( ) ) ),
+				misc::GetHitgroupName( refCurrentData.iHitGroup ),
+				refCurrentData.flDamage,
+				refCurrentData.pRecord->flResolveDelta
+			) ) );
 		pLog->iHitAmount++;
-		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, static_cast<int>(iHitDmg)));
+		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, static_cast< int >( iHitDmg ), i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 		return;
 	}
@@ -189,7 +192,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.pRecord->flResolveDelta
 		)));
 		pLog->iHitAmount++;
-		visual::vecDamageIndicator.push_back(std::make_pair(bBulletImpact, static_cast<int>(iHitDmg)));
+		visual::vecDamageIndicator.push_back( { bBulletImpact, static_cast< int >( iHitDmg ), i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 		return;
 	}
@@ -212,7 +215,7 @@ void Animations::ResolverLogic() {
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
 			)));
-			visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
+			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -227,7 +230,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
 		)));
-		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
+		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 	}
 	else {
@@ -244,12 +247,12 @@ void Animations::ResolverLogic() {
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
 			)));
-			visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
+			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
 		}
 
-		// check for occlusion
+		// check for occlusionaw
 		Trace_t traceData;
 		Ray_t rayData(refCurrentData.vecLocalShootPosition, bBulletImpact);
 		CTraceFilter filterData(g::pLocal, TRACE_ENTITIES_ONLY);
@@ -268,7 +271,7 @@ void Animations::ResolverLogic() {
 				refCurrentData.flDamage,
 				refCurrentData.pRecord->flResolveDelta
 			)));
-			visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
+			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -283,7 +286,7 @@ void Animations::ResolverLogic() {
 			refCurrentData.flDamage,
 			refCurrentData.pRecord->flResolveDelta
 		)));
-		visual::vecDamageIndicator.push_back(std::make_pair(refCurrentData.vecTargetShootPosition, 0));
+		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 	}
 }
@@ -384,4 +387,84 @@ void Animations::SetYaw(Lagcompensation::LagRecord_t* pRecord, int flYaw) {
 		pRecord->flResolveDelta = M::NormalizeYaw(pRecord->vecEyeAngles.y - pState->flGoalFeetYaw);
 		break;
 	}
+}
+
+EMatrixType Animations::FreestandResolver( Lagcompensation::LagRecord_t* pRecord ) {
+
+	if ( !pRecord )
+		return VISUAL;
+
+	auto GRD_TO_BOG = [ & ]( float GRD ) -> float {
+		return ( M_PI / 180 ) * GRD;
+	};
+
+	static EMatrixType FinalAngle = VISUAL;
+	bool bSide1 = false;
+	bool bSide2 = false;
+	bool autowalld = false;
+	CBaseEntity* pPlayerEntity = pRecord->pEntity;
+
+	float flAngToLocal = M::CalcAngle( pPlayerEntity->GetVecOrigin( ), g::pLocal->GetVecOrigin( ) ).y;
+	Vector vecViewPoint = g::pLocal->GetVecOrigin( ) + Vector( 0, 0, 90 );
+
+	Vector2D vecSide1 = { ( 45 * sin( GRD_TO_BOG( flAngToLocal ) ) ),( 45 * cos( GRD_TO_BOG( flAngToLocal ) ) ) };
+	Vector2D vecSide2 = { ( 45 * sin( GRD_TO_BOG( flAngToLocal + 180 ) ) ) ,( 45 * cos( GRD_TO_BOG( flAngToLocal + 180 ) ) ) };
+
+	Vector2D vecSide3 = { ( 50 * sin( GRD_TO_BOG( flAngToLocal ) ) ),( 50 * cos( GRD_TO_BOG( flAngToLocal ) ) ) };
+	Vector2D vecSide4 = { ( 50 * sin( GRD_TO_BOG( flAngToLocal + 180 ) ) ) ,( 50 * cos( GRD_TO_BOG( flAngToLocal + 180 ) ) ) };
+
+	Vector vecOrigin = pPlayerEntity->GetVecOrigin( );
+
+	Vector2D vecOriginLeftRight[ ] = { Vector2D( vecSide1.x, vecSide1.y ), Vector2D( vecSide2.x, vecSide2.y ) };
+
+	Vector2D vecOriginLeftRightLocal[ ] = { Vector2D( vecSide3.x, vecSide3.y ), Vector2D( vecSide4.x, vecSide4.y ) };
+
+	for ( int iSide = 0; iSide < 2; iSide++ ) {
+
+		Vector vecOriginAutowall = { vecOrigin.x + vecOriginLeftRight[ iSide ].x,  vecOrigin.y - vecOriginLeftRight[ iSide ].y , vecOrigin.z + 80 };
+		Vector vecOriginAutowall2 = { vecViewPoint.x + vecOriginLeftRightLocal[ iSide ].x,  vecViewPoint.y - vecOriginLeftRightLocal[ iSide ].y , vecViewPoint.z };
+
+		if ( autowall.CanHitFloatingPoint( vecOriginAutowall, vecViewPoint, pRecord ) ) {
+
+			if ( iSide == 1 ) {
+
+				bSide1 = true;
+				FinalAngle = RIGHT;
+			}
+			else if ( iSide == 0 ) {
+
+				bSide2 = true;
+				FinalAngle = LEFT;
+			}
+			autowalld = true;
+		}
+		else {
+			for ( int iSideID = 0; iSideID < 2; iSideID++ ) {
+
+				Vector vecOriginAutowall3 = { vecOrigin.x + vecOriginLeftRight[ iSideID ].x,  vecOrigin.y - vecOriginLeftRight[ iSideID ].y , vecOrigin.z + 80 };
+
+				if ( autowall.CanHitFloatingPoint( vecOriginAutowall3, vecOriginAutowall2, pRecord ) ) {
+
+					if ( iSideID == 1 ) {
+
+						bSide1 = true;
+						FinalAngle = RIGHT;
+					}
+					else if ( iSideID == 0 ) {
+
+						bSide2 = true;
+						FinalAngle = LEFT;
+					}
+					autowalld = true;
+				}
+			}
+		}
+	}
+
+	if ( !autowalld || ( bSide1 && bSide2 ) )
+		return VISUAL;
+	else
+		return FinalAngle;
+
+	return VISUAL;
 }

@@ -947,7 +947,7 @@ public:
 		if (!this->GetCachedBoneData().Base() || !this->GetCachedBoneData().Count() || !IsBoneCacheValid())
 			return;
 
-		if (!matrix || !matrix->Base())
+		if (!matrix || !matrix->Base() || *matrix->Base() == std::numeric_limits<float>::infinity( ) )
 			return;
 
 		if (!matrix->GetOrigin().IsValid())

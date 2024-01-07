@@ -126,6 +126,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	localAnim->OnCreateMove(bSendPacket, pLocal);
 	lagcomp.FinishLagcompensation(pLocal);
 	anims.ResolverLogic();
+	g::bSendPacket = &bSendPacket;
 }
 
 __declspec(naked) void __fastcall h::hkCreateMoveProxy(IBaseClientDLL* thisptr, int edx, int nSequenceNumber, float flInputSampleFrametime, bool bIsActive)

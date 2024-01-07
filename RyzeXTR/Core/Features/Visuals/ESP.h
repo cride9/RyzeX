@@ -48,7 +48,15 @@ namespace visual {
 
 	void Flags(float&, int&, CBaseEntity*, size_t&, bool*, float[5][4], bool bDormant = false);
 
-	inline std::vector<std::pair<Vector, int>> vecDamageIndicator{};
+	struct DamageIndicator {
+
+		Vector vecPosition{};
+		int iDamage{};
+		int iTickcount{};
+		bool bHeadshot{};
+	};
+
+	inline std::vector<DamageIndicator> vecDamageIndicator{};
 	void HandleDamageIndicator();
 
 	void WorldCrosshair();

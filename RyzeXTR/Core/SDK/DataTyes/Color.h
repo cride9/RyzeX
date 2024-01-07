@@ -38,6 +38,9 @@ public:
 	constexpr Color(float color[4]) :
 		arrColor({ static_cast<std::uint8_t>(color[0] * 255.f), static_cast<std::uint8_t>(color[1] * 255.f), static_cast<std::uint8_t>(color[2] * 255.f), static_cast<std::uint8_t>(color[3] * 255.f)}) { }
 
+	constexpr Color( std::array<float, 4U> color ) :
+		arrColor( { static_cast< std::uint8_t >( color[ 0 ] * 255.f ), static_cast< std::uint8_t >( color[ 1 ] * 255.f ), static_cast< std::uint8_t >( color[ 2 ] * 255.f ), static_cast< std::uint8_t >( color[ 3 ] * 255.f ) } ) { }
+
 	/* output color to given variables */
 	void Get(std::uint8_t& r, std::uint8_t& g, std::uint8_t& b, std::uint8_t& a) const
 	{

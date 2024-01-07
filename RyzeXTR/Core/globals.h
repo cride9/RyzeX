@@ -32,5 +32,6 @@ namespace g {
 		inline HFont FlagESP;
 		inline HFont SkeetFont;
 		inline HFont DebugFont;
+		inline HFont HitIndicator;
 	}
 }

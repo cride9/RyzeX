@@ -69,13 +69,13 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 	/* Calculate the aim angle with vectorAngles */
 	Vector vecAimAngle = ( M::VectorAngles( vecShootPosition - vecEyePosition ) -= ( pLocal->GetAimPunch( ) * recoilScale->GetFloat( ) ) );
 
-	/* Run normal autostop */
-	if ( !bSkipPostStop )
-		AutoStop( vecTargets, pLocal, pCmd, true );
-
 	/* Calculate current hitchance & accuracy boost */
 	aimData.bFireReady = pLocal->CanShoot( pWeapon, pLocal->GetTickBase() - exploits::iShiftAmount );
 	aimData.bCanShoot = HitChance( pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord );
+
+	/* Run normal autostop */
+	if ( !bSkipPostStop )
+		AutoStop( vecTargets, pLocal, pCmd, true );
 
 	/* Wait til we can shoot */
 	if ( !aimData.bCanShoot || !aimData.bFireReady )
@@ -90,6 +90,7 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 
 	lagcomp.GetLog( aimData.pRecord->iEntIndex ).iShotAmount++;
 	pCmd->iButtons |= IN_ATTACK;
+	aimData.iTickcount = pCmd->iTickCount;
 	aimData.iDesiredTickcount = TIME_TO_TICKS( aimData.flTargetSimulation + lagcomp.GetClientInterpAmount( ) );
 
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
@@ -129,9 +130,6 @@ bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
 }
 
 CAimBot::SCAN CAimBot::ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pFirstRecord ) {
-
-	if ( pFirstRecord == pRecord )
-		return SCAN_CONTINUE;
 
 	if ( exploits::iTicksToStore > 0 && pFirstRecord != pRecord && exploits::IsExploiting() != NONE )
 		return SCAN_BREAK;
@@ -181,7 +179,8 @@ Vector CAimBot::ScanHitboxes( std::vector<Lagcompensation::AnimationInfo_t*>& ve
 				continue;
 
 			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at( i );
-			if ( SCAN result = ShouldSkipRecord( pRecord, pFirstRecord ); result == SCAN_BREAK ) break;
+			SCAN result = ShouldSkipRecord( pRecord, pFirstRecord );
+			if ( result == SCAN_BREAK ) break;
 			else if ( result == SCAN_SKIP ) continue;
 
 			/* Set current matrix for accurate tracing */

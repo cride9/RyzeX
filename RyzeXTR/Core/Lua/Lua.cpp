@@ -1106,6 +1106,11 @@ namespace LUAModules
 			return pConfig->FindFloat(szVar);
 		}
 
+		Color GetColor( std::string szVar, sol::this_state L ) {
+
+			return pConfig->FindColor( szVar );
+		}
+
 		int& GetInt(std::string szVar, sol::this_state L)
 		{
 			return pConfig->FindInt(szVar);
@@ -1134,6 +1139,11 @@ namespace LUAModules
 		void SetString(std::string szVar, std::string szValue, sol::this_state L)
 		{
 			pConfig->FindString(szVar) = szValue;
+		}
+
+		void SetColor( std::string szVar, int r, int g, int b, int a, sol::this_state L ) {
+
+			pConfig->SetColor( szVar, Color( r, g, b, a ) );
 		}
 	}
 
@@ -1945,11 +1955,13 @@ void LuaImplementation::CreateLuaState( )
 		Vars[ XorStr( "GetFloat" ) ] = LUAModules::Variables::GetFloat;
 		Vars[ XorStr( "GetInt" ) ] = LUAModules::Variables::GetInt;
 		Vars[ XorStr( "GetString" ) ] = LUAModules::Variables::GetString;
+		Vars[ XorStr( "GetColor" ) ] = LUAModules::Variables::GetColor;
 
 		Vars[ XorStr( "SetBool" ) ] = LUAModules::Variables::SetBool;
 		Vars[ XorStr( "SetFloat" ) ] = LUAModules::Variables::SetFloat;
 		Vars[ XorStr( "SetInt" ) ] = LUAModules::Variables::SetInt;
 		Vars[ XorStr( "SetString" ) ] = LUAModules::Variables::SetString;
+		Vars[ XorStr( "SetColor" ) ] = LUAModules::Variables::SetColor;
 		lua[ XorStr( "Vars" ) ] = Vars;
 	}
 
