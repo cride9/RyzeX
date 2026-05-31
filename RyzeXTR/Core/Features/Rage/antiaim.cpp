@@ -188,7 +188,7 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 	case AUTOMATIC:
 
 		bool bSide = DesyncSide( );
-		flDesyncValue = bSide ? 120.f : -120.f * bInvertValue;
+		flDesyncValue = (bSide ? 120.f : -120.f) * bInvertValue;
 
 		break;
 	}

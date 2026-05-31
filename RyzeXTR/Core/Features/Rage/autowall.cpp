@@ -464,11 +464,10 @@ int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* p
 	if (!studioBox)
 		return 0;  // Skip this hitbox if it's invalid
 
-	if (iHitbox == HITBOX_HEAD )
-		if (!autowall.bTraceMeantForHitbox(vecEyePosition, vecShootposition, iHitbox, pRecord))
-			return 0;
-
-	// Safepoint count
+	// Safepoint count — check how many desync matrices (LEFT, RIGHT, CENTER) the ray intersects
+	// bCollidePoint uses ClipRayToHitbox which traces against the actual studio hitbox per matrix,
+	// making the old bTraceMeantForHitbox (ClipRayToCollideable, physics hull) redundant and overly
+	// restrictive: it rejected head points whenever the body hull occluded the head (enemy facing away).
 	int iSafePoint = 0;
 	for ( int iSafeSide = EMatrixType::LEFT; iSafeSide <= EMatrixType::CENTER; iSafeSide++) {
 

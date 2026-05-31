@@ -42,6 +42,9 @@ IMaterial* chams::CreateMaterial(std::string_view szName, std::string_view szSha
 	 * use "mat_texture_list 1" command to see full materials list
 	 */
 
+	const int nIgnorez = bIgnorez ? 1 : 0;
+	const int nWireframe = bWireframe ? 1 : 0;
+
 	const std::string szMaterial = std::vformat(R"#("{0}"
 	{{
 		"$basetexture"		"{1}"
@@ -58,7 +61,7 @@ IMaterial* chams::CreateMaterial(std::string_view szName, std::string_view szSha
 		{{
 			{5}
 		}}
-	}})#", std::make_format_args(szShader, szBaseTexture, szEnvMap, bIgnorez ? 1 : 0, bWireframe ? 1 : 0, szProxies));
+	}})#", std::make_format_args(szShader, szBaseTexture, szEnvMap, nIgnorez, nWireframe, szProxies));
 
 
 

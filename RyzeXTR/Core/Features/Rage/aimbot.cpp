@@ -306,7 +306,7 @@ bool CAimBot::AutoStop( std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, C
 
 	float flIdealSpeed = ( flMultiplier ) * ( pLocal->IsScoped( ) ? curConfig.pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : curConfig.pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
 
-	pCmd->iButtons &= ~IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT;
+	pCmd->iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT);
 
 	// Get the ideal speed for shooting (playstyle)
 	Vector vecVelocity = pLocal->GetVelocity( );
@@ -394,7 +394,7 @@ bool CAimBot::HitChance( CUserCmd*  pCmd, CBaseEntity*  pLocal, Vector vecWorldP
 			M::SinCos( b, &flSinB, &flCosB );
 
 			auto flSinD = 0.0f, flCosD = 0.0f;
-			M::SinCos( b, &flSinD, &flCosD );
+			M::SinCos( d, &flSinD, &flCosD );
 
 			flSpreadValues[ i ][ 2 ] = flSinB;
 			flSpreadValues[ i ][ 3 ] = flCosB;
@@ -615,8 +615,8 @@ std::vector<Vector> CAimBot::CreatePoints( Vector vecEyePosition, CBaseCombatWea
 	const Vector vecLeft = Vector( -vecRight.x, -vecRight.y, vecRight.z );
 	const Vector vecTop = Vector( 0, 0, 1 );
 
+	refVecPoints.push_back(vecCenter);
 	if ( iHitbox == HITBOX_HEAD ) {
-		refVecPoints.push_back( vecCenter );
 		refVecPoints.push_back( vecCenter + vecTop * flHitboxDistance );
 
 		refVecPoints.push_back( vecCenter + ( vecTop * flHitboxDistance ) + ( vecLeft * ( flHitboxDistance * 0.65f ) ) );
@@ -627,7 +627,6 @@ std::vector<Vector> CAimBot::CreatePoints( Vector vecEyePosition, CBaseCombatWea
 	}
 	refVecPoints.push_back( vecCenter + vecLeft * flHitboxDistance );
 	refVecPoints.push_back( vecCenter + vecRight * flHitboxDistance );
-	refVecPoints.push_back( vecCenter );
 
 	return refVecPoints;
 }

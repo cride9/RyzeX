@@ -846,7 +846,7 @@ public:
 		return *(CUtlVector <matrix3x4a_t>*)(uintptr_t(this) + 0x2914);
 	}
 
-	PlayerInfo_t& GetPlayerInfo() {
+	PlayerInfo_t GetPlayerInfo() {
 
 		PlayerInfo_t pInfo;
 		i::EngineClient->GetPlayerInfo(this->EntIndex(), &pInfo);

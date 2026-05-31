@@ -927,6 +927,10 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	pEntity->GetPoseParameters(pRecord->flPoses);
 	GetSideLayersForResolver(pEntity, pRecord);
 
+	// Compute flGuessedYaw by sweeping playback rates across yaw offsets
+	// This is used by the resolver's animation layer matching logic
+	FindDesyncSide(pRecord);
+
 	if (playerList::arrPlayers[pEntity->EntIndex()].bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerList::arrPlayers[pEntity->EntIndex()].flOverrideYaw);
 	else

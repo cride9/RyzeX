@@ -40,69 +40,147 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 #endif
 
 	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pRecord->iEntIndex);
-	//switch ( pPrevious->iResolveSide ) {
-
-	//case LEFT: SetYaw( pRecord, RIGHT ); break;
-	//case RIGHT: SetYaw( pRecord, LEFT ); break;
-	//case VISUAL: SetYaw( pRecord, LEFT ); break;
-	//case CENTER: SetYaw( pRecord, RIGHT ); break;
-
-	//}
-
-	static std::array<int, 65> arrMissedShotsBackup{ 0 };
-	static float flFakePitch[65];
-
 	const int iEntityID = pEntity->EntIndex();
 
+	/* ========== Fake pitch resolver ========== */
+	static float flFakePitch[65];
 	if (fabsf(pEntity->AnimState()->flEyePitch) == 180.f)
 		flFakePitch[iEntityID] = pEntity->AnimState()->flEyePitch;
-	else if (pRecord->bDidShot) flFakePitch[iEntityID] = NULL;
+	else if (pRecord->bDidShot)
+		flFakePitch[iEntityID] = NULL;
 
 	if (fabsf(flFakePitch[iEntityID]) == 180.f)
 		pEntity->GetEyeAngles() = Vector(89.f, pEntity->AnimState()->flEyeYaw, 0.f);
+
+	/* ========== Freestand resolver (highest priority) ========== */
+	if (auto side = FreestandResolver(pRecord); side != VISUAL) {
+		SetYaw(pRecord, side);
+		return;
+	}
+
+	/* ========== LBY delta based resolver ========== */
+	// Track LBY update timings per player
+	static float flLastLBYUpdateTime[65] = {};
+	static float flLBYUpdateDelta[65] = {};
+	static int iLBYUpdateCount[65] = {};
+
+	const float flEyeYaw = pRecord->vecEyeAngles.y;
+	const float flLBY = pRecord->flLowerBodyYawTarget;
+	const float flLBYDelta = fabsf(M::NormalizeYaw(flEyeYaw - flLBY));
+
+	// Detect LBY update: LBY changed from previous record
+	if (pRecord->flLowerBodyYawTarget != pPrevious->flLowerBodyYawTarget) {
+		flLBYUpdateDelta[iEntityID] = pRecord->flSimulationTime - flLastLBYUpdateTime[iEntityID];
+		flLastLBYUpdateTime[iEntityID] = pRecord->flSimulationTime;
+		iLBYUpdateCount[iEntityID]++;
+	}
+
+	// Extended desync detection: LBY updates at ~1.1s intervals while standing
+	// Pattern: real = eyeAngles ± desyncDelta (sent on LBY break), fake = eyeAngles ∓ desyncDelta (choked)
+	const bool bPotentialExtended = (iLBYUpdateCount[iEntityID] > 1)
+		&& (flLBYUpdateDelta[iEntityID] > 1.0f && flLBYUpdateDelta[iEntityID] < 1.3f)
+		&& (pRecord->iFlags & FL_ONGROUND);
+
+	if (bPotentialExtended && flLBYDelta > pRecord->flDesyncDelta * 0.5f) {
+		// On extended desync LBY break: the real angle is sent on the LBY update tick
+		// The eye angles point toward the fake, LBY points toward the real
+		// We need the side where flGoalFeetYaw would be closer to LBY
+		const float flLBYToEyeDelta = M::NormalizeYaw(flEyeYaw - flLBY);
+		if (flLBYToEyeDelta > 0.f)
+			SetYaw(pRecord, LEFT);   // Eye is right of LBY → fake is right → real is left
+		else
+			SetYaw(pRecord, RIGHT);  // Eye is left of LBY → fake is left → real is right
+		return;
+	}
+
+	/* ========== Static desync detection via LBY delta ========== */
+	// When enemy uses static desync: eye angles are real, LBY = real ± body yaw offset
+	// The desync delta between real and fake creates observable patterns in animation
+	if (flLBYDelta > 35.f && pRecord->flDesyncDelta > 1.f) {
+		// Eye angles are significantly offset from LBY → likely static desync
+		// If eye is right of LBY → real is right, fake is left (desync left)
+		// If eye is left of LBY → real is left, fake is right (desync right)
+		// The real angle IS the eye angles (what we see)
+		// But the enemy's client animation runs with fake = eyeAngles ± desyncDelta
+		// The actual hitboxes will be at the real side, so we need to resolve to the real
+
+		// Actually: eye angles are what the server uses. LBY is updated from real animstate.
+		// When desyncing left (fake = eye - 120): LBY tends to trail to the left of eye
+		// When desyncing right (fake = eye + 120): LBY tends to trail to the right of eye
+		// But on LBY update, LBY = flGoalFeetYaw which is bounded around eye yaw
+		// So LBY should be near eye yaw ± maxBodyYaw
+		// The key: on LBY update tick, LBY snaps to flGoalFeetYaw which reflects server reality
 		
-	int iCurrentBrute = arrMissedShots[iEntityID] % 2;
+		const float flLBYSign = M::NormalizeYaw(flLBY - flEyeYaw);
+		if (flLBYSign > 0.f)
+			SetYaw(pRecord, LEFT);   // LBY is right of eye → fake is right → real is left
+		else
+			SetYaw(pRecord, RIGHT);  // LBY is left of eye → fake is left → real is right
+		return;
+	}
 
-	if ( auto side = FreestandResolver( pRecord ); side != VISUAL )
-		SetYaw( pRecord, side );
+	/* ========== Animation layer playback rate matching ========== */
+	// First, use flGuessedYaw from FindDesyncSide if available
+	if (fabsf(pRecord->flGuessedYaw) > 0.1f) {
+		if (pRecord->flGuessedYaw > 5.f)
+			SetYaw(pRecord, RIGHT);
+		else if (pRecord->flGuessedYaw < -5.f)
+			SetYaw(pRecord, LEFT);
+		else
+			SetYaw(pRecord, CENTER);
+		return;
+	}
 
-	else if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND && pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
+	// Fallback: direct layer comparison (only valid during walk-to-run transition)
+	if (pRecord->iFlags & FL_ONGROUND && pPrevious->iFlags & FL_ONGROUND
+		&& pRecord->flWalkToRunTransition > 0.f && pRecord->flWalkToRunTransition < 1.f) {
 
-		if ( !( pRecord->arrLayers[ 12 ].flWeight * 1000.f ) && ( ( pRecord->arrLayers[ 6 ].flWeight * 1000.f ) == ( pPrevious->arrLayers[ 6 ].flWeight * 1000.f ) ) ) {
+		if (!(pRecord->arrLayers[ANIMATION_LAYER_LEAN].flWeight * 1000.f)
+			&& ((pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flWeight * 1000.f) == (pPrevious->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flWeight * 1000.f))) {
 
-			float flFromServerPlaybackrate = GetLocalCycleIncrement( pEntity, pRecord->arrLayers[ ANIMATION_LAYER_MOVEMENT_MOVE ].flPlaybackRate );
+			float flFromServerPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->arrLayers[ANIMATION_LAYER_MOVEMENT_MOVE].flPlaybackRate);
 
-			const float fCenterPlaybackrate = GetLocalCycleIncrement( pEntity, pRecord->LayerData[ CENTER ].flPlaybackRate );
-			const float fRightPlaybackrate = GetLocalCycleIncrement( pEntity, pRecord->LayerData[ RIGHT ].flPlaybackRate );
-			const float fLeftPlaybackrate = GetLocalCycleIncrement( pEntity, pRecord->LayerData[ LEFT ].flPlaybackRate );
+			const float fCenterPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[CENTER].flPlaybackRate);
+			const float fRightPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[RIGHT].flPlaybackRate);
+			const float fLeftPlaybackrate = GetLocalCycleIncrement(pEntity, pRecord->LayerData[LEFT].flPlaybackRate);
 
-			const float fDifferenceCenterPlaybackrate = fabsf( flFromServerPlaybackrate - fCenterPlaybackrate );
-			const float fDifferenceRightPlaybackrate = fabsf( flFromServerPlaybackrate - fRightPlaybackrate );
-			const float fDifferenceLeftPlaybackrate = fabsf( flFromServerPlaybackrate - fLeftPlaybackrate );
+			const float fDifferenceCenterPlaybackrate = fabsf(flFromServerPlaybackrate - fCenterPlaybackrate);
+			const float fDifferenceRightPlaybackrate = fabsf(flFromServerPlaybackrate - fRightPlaybackrate);
+			const float fDifferenceLeftPlaybackrate = fabsf(flFromServerPlaybackrate - fLeftPlaybackrate);
 
-			if ( GetVelocityLengthXY( pEntity ) > 0.f )
-			{
-				if ( fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate )
-					SetYaw( pRecord, CENTER );
-				else if ( fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate )
-					SetYaw( pRecord, RIGHT );
-				else if ( fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate )
-					SetYaw( pRecord, LEFT );
+			if (GetVelocityLengthXY(pEntity) > 0.f) {
+				if (fDifferenceCenterPlaybackrate <= fDifferenceRightPlaybackrate && fDifferenceCenterPlaybackrate <= fDifferenceLeftPlaybackrate)
+					SetYaw(pRecord, CENTER);
+				else if (fDifferenceRightPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceRightPlaybackrate <= fDifferenceLeftPlaybackrate)
+					SetYaw(pRecord, RIGHT);
+				else if (fDifferenceLeftPlaybackrate <= fDifferenceCenterPlaybackrate && fDifferenceLeftPlaybackrate <= fDifferenceRightPlaybackrate)
+					SetYaw(pRecord, LEFT);
+				return;
 			}
 		}
 	}
 
-	/* Apply previous data if no new data */
-	else if (pPrevious->iResolveSide != VISUAL)
+	/* ========== Carry over previous resolve data ========== */
+	if (pPrevious->iResolveSide != VISUAL) {
 		SetYaw(pRecord, pPrevious->iResolveSide);
+		return;
+	}
 
-	/* If we didn't get any data apply right side & no previous data */
-	else if (pRecord->iResolveSide == VISUAL)
-		SetYaw(pRecord, RIGHT);
+	/* ========== Default fallback ========== */
+	SetYaw(pRecord, RIGHT);
+
+	/* ========== Miss brute-force logic ========== */
+	// This overrides the resolved side when we've missed shots
+	static std::array<int, 65> arrMissedShotsBackup{ 0 };
 
 	if (arrMissedShots[iEntityID] != arrMissedShotsBackup[iEntityID]) {
-
-		SetYaw(pRecord, pPrevious->iResolveSide == LEFT ? pPrevious->iResolveSide + iCurrentBrute : pPrevious->iResolveSide == RIGHT ? pPrevious->iResolveSide - iCurrentBrute : RIGHT);
+		// Cycle through LEFT, RIGHT, CENTER based on miss count
+		int iBruteMode = arrMissedShots[iEntityID] % 3;
+		switch (iBruteMode) {
+		case 0: SetYaw(pRecord, RIGHT);  break;
+		case 1: SetYaw(pRecord, LEFT);   break;
+		case 2: SetYaw(pRecord, CENTER); break;
+		}
 		arrMissedShotsBackup[iEntityID] = arrMissedShots[iEntityID];
 	}
 }
@@ -156,17 +234,22 @@ void Animations::ResolverLogic() {
 			anims.arrMissedShots[ refCurrentData.pAimbotTarget->EntIndex( ) ]++;
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>( );
-		misc::Print( std::vformat(
-			XorStr( "Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}" ), std::make_format_args(
-				info.szName,
-				misc::GetHitgroupName( iHitHitbox ),
-				iHitDmg,
-				refCurrentData.flHitchance,
-				( refCurrentData.iTickcount - TIME_TO_TICKS( refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount( ) ) ),
-				misc::GetHitgroupName( refCurrentData.iHitGroup ),
-				refCurrentData.flDamage,
-				refCurrentData.pRecord->flResolveDelta
-			) ) );
+		{
+			std::string szHitgroupNameHitbox = misc::GetHitgroupName( iHitHitbox );
+			int nBacktrack = ( refCurrentData.iTickcount - TIME_TO_TICKS( refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount( ) ) );
+			std::string szHitgroupNameWanted = misc::GetHitgroupName( refCurrentData.iHitGroup );
+			misc::Print( std::vformat(
+				XorStr( "Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}" ), std::make_format_args(
+					info.szName,
+					szHitgroupNameHitbox,
+					iHitDmg,
+					refCurrentData.flHitchance,
+					nBacktrack,
+					szHitgroupNameWanted,
+					refCurrentData.flDamage,
+					refCurrentData.pRecord->flResolveDelta
+				) ) );
+		}
 		pLog->iHitAmount++;
 		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, static_cast< int >( iHitDmg ), i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
@@ -180,17 +263,22 @@ void Animations::ResolverLogic() {
 			anims.arrMissedShots[refCurrentData.pAimbotTarget->EntIndex()]++; 
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		misc::Print(std::vformat(
-			XorStr("Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}"), std::make_format_args(
-			info.szName,
-			misc::GetHitgroupName(iHitHitbox),
-			iHitDmg,
-			refCurrentData.flHitchance,
-			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
-			misc::GetHitgroupName(refCurrentData.iHitGroup),
-			refCurrentData.flDamage,
-			refCurrentData.pRecord->flResolveDelta
-		)));
+		{
+			std::string szHitgroupNameHitbox = misc::GetHitgroupName(iHitHitbox);
+			int nBacktrack = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
+			std::string szHitgroupNameWanted = misc::GetHitgroupName(refCurrentData.iHitGroup);
+			misc::Print(std::vformat(
+				XorStr("Hit {}'s {} for {} hp. | [hc] {} | [bt] {} | [wanted hg: {}] | [wanted dmg: {}] | [yaw] {}"), std::make_format_args(
+				info.szName,
+				szHitgroupNameHitbox,
+				iHitDmg,
+				refCurrentData.flHitchance,
+				nBacktrack,
+				szHitgroupNameWanted,
+				refCurrentData.flDamage,
+				refCurrentData.pRecord->flResolveDelta
+			)));
+		}
 		pLog->iHitAmount++;
 		visual::vecDamageIndicator.push_back( { bBulletImpact, static_cast< int >( iHitDmg ), i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
@@ -206,30 +294,38 @@ void Animations::ResolverLogic() {
 		if (refCurrentData.bBacktrack) {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
-			misc::Print(std::vformat(
-				XorStr("Missed {}'s {} due to invalid record | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args( 
-				info.szName,
-				misc::GetHitgroupName(refCurrentData.iHitGroup),
-				refCurrentData.flHitchance,
-				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
-				refCurrentData.flDamage,
-				refCurrentData.pRecord->flResolveDelta
-			)));
+			{
+				std::string szHitgroupName = misc::GetHitgroupName(refCurrentData.iHitGroup);
+				int nBacktrack = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
+				misc::Print(std::vformat(
+					XorStr("Missed {}'s {} due to invalid record | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
+					info.szName,
+					szHitgroupName,
+					refCurrentData.flHitchance,
+					nBacktrack,
+					refCurrentData.flDamage,
+					refCurrentData.pRecord->flResolveDelta
+				)));
+			}
 			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
 		}
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		misc::Print(std::vformat(
-			XorStr("Missed {}'s {} due to resolver. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args( 
-			info.szName,
-			misc::GetHitgroupName(refCurrentData.iHitGroup),
-			refCurrentData.flHitchance,
-			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
-			refCurrentData.flDamage,
-			refCurrentData.pRecord->flResolveDelta
-		)));
+		{
+			std::string szHitgroupName = misc::GetHitgroupName(refCurrentData.iHitGroup);
+			int nBacktrack = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
+			misc::Print(std::vformat(
+				XorStr("Missed {}'s {} due to resolver. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
+				info.szName,
+				szHitgroupName,
+				refCurrentData.flHitchance,
+				nBacktrack,
+				refCurrentData.flDamage,
+				refCurrentData.pRecord->flResolveDelta
+			)));
+		}
 		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 	}
@@ -238,15 +334,19 @@ void Animations::ResolverLogic() {
 		if (refCurrentData.flHitchance >= 99) {
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
-			misc::Print(std::vformat(
-				XorStr("Missed {}'s {} due to correction. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
-				info.szName,
-				misc::GetHitgroupName(refCurrentData.iHitGroup),
-				refCurrentData.flHitchance,
-				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
-				refCurrentData.flDamage,
-				refCurrentData.pRecord->flResolveDelta
-			)));
+			{
+				std::string szHitgroupName = misc::GetHitgroupName(refCurrentData.iHitGroup);
+				int nBacktrack = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
+				misc::Print(std::vformat(
+					XorStr("Missed {}'s {} due to correction. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
+					info.szName,
+					szHitgroupName,
+					refCurrentData.flHitchance,
+					nBacktrack,
+					refCurrentData.flDamage,
+					refCurrentData.pRecord->flResolveDelta
+				)));
+			}
 			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
@@ -262,30 +362,38 @@ void Animations::ResolverLogic() {
 		if (bOccluded) { // traceData.pHitEntity != nullptr && traceData.pHitEntity == refCurrentData.pAimbotTarget || data.flCurrentDamage == 0.f
 
 			bResolverHandler = std::array<bool, HANDLERCOUNT>();
-			misc::Print(std::vformat(
-				XorStr("Missed {}'s {} due to occlusion. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
-				info.szName,
-				misc::GetHitgroupName(refCurrentData.iHitGroup),
-				refCurrentData.flHitchance,
-				(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
-				refCurrentData.flDamage,
-				refCurrentData.pRecord->flResolveDelta
-			)));
+			{
+				std::string szHitgroupName = misc::GetHitgroupName(refCurrentData.iHitGroup);
+				int nBacktrack = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
+				misc::Print(std::vformat(
+					XorStr("Missed {}'s {} due to occlusion. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
+					info.szName,
+					szHitgroupName,
+					refCurrentData.flHitchance,
+					nBacktrack,
+					refCurrentData.flDamage,
+					refCurrentData.pRecord->flResolveDelta
+				)));
+			}
 			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
 		}
 
 		bResolverHandler = std::array<bool, HANDLERCOUNT>();
-		misc::Print(std::vformat(
-			XorStr("Missed {}'s {} due to spread. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
-			info.szName,
-			misc::GetHitgroupName(refCurrentData.iHitGroup),
-			refCurrentData.flHitchance,
-			(refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount())),
-			refCurrentData.flDamage,
-			refCurrentData.pRecord->flResolveDelta
-		)));
+		{
+			std::string szHitgroupName = misc::GetHitgroupName(refCurrentData.iHitGroup);
+			int nBacktrack = (refCurrentData.iTickcount - TIME_TO_TICKS(refCurrentData.flTargetSimulation + lagcomp.GetClientInterpAmount()));
+			misc::Print(std::vformat(
+				XorStr("Missed {}'s {} due to spread. | [hc] {} | [bt] {} | [dmg] {} | [yaw] {}"), std::make_format_args(
+				info.szName,
+				szHitgroupName,
+				refCurrentData.flHitchance,
+				nBacktrack,
+				refCurrentData.flDamage,
+				refCurrentData.pRecord->flResolveDelta
+			)));
+		}
 		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 	}
@@ -340,8 +448,10 @@ void Animations::ResolverHandler(IGameEvent* pEvent) {
 	}
 	if (szEventName.find(cachedEvents::roundStart) != std::string_view::npos) {
 
-		for (size_t i = 0; i < 65; i++)
+		for (size_t i = 0; i < 65; i++) {
 			lagcomp.GetLog(i).ClearData();
+			arrMissedShots[i] = 0;
+		}
 	}
 }
 
