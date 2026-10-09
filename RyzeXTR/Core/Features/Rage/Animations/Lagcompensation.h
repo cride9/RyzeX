@@ -249,10 +249,16 @@ public:
 			iLastValid = 0;
 		}
 
-		bool operator<(AnimationInfo_t& other) {
+		bool operator<(const AnimationInfo_t& other) const
+		{
+			const bool bPriority =
+				playerList::arrPlayers[pEntity->EntIndex()].bPriority;
 
-			if (playerList::arrPlayers[pEntity->EntIndex()].bPriority)
-				return true;
+			const bool bOtherPriority =
+				playerList::arrPlayers[other.pEntity->EntIndex()].bPriority;
+
+			if (bPriority != bOtherPriority)
+				return bPriority;
 
 			return pEntity->GetHealth() < other.pEntity->GetHealth();
 		}

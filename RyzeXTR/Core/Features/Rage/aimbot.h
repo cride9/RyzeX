@@ -60,19 +60,23 @@ struct Hitscan_t {
 	int iTransformedDamage{};
 	int iRecordCount{};
 
-	bool operator<( const Hitscan_t& other ) const {
+	bool operator<(const Hitscan_t& other) const
+	{
+		const bool meetsDamage = flDamage >= iTransformedDamage;
+		const bool otherMeetsDamage =
+			other.flDamage >= other.iTransformedDamage;
 
-		if ( bBaimLethal != other.bBaimLethal )
-			return bBaimLethal;
-
-		if ( flDamage >= iTransformedDamage && other.flDamage >= iTransformedDamage )
-			if ( bSafe != other.bSafe )
-				return bSafe;
-
-		return flDamage > other.flDamage;
-
-		// Otherwise, maintain the current order
-		return false;
+		return std::make_tuple(
+			bBaimLethal,
+			meetsDamage,
+			meetsDamage && bSafe,
+			flDamage
+		) > std::make_tuple(
+			other.bBaimLethal,
+			otherMeetsDamage,
+			otherMeetsDamage && other.bSafe,
+			other.flDamage
+		);
 	}
 };
 

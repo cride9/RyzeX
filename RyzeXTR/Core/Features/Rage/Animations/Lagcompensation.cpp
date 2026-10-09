@@ -615,7 +615,7 @@ bool Lagcompensation::LagRecord_t::IsValid( ) {
 		return false;
 
 	// idk if lagcomp counts with the servertick or current time
-	int nDeadTime = static_cast< int >( static_cast< float >( TICKS_TO_TIME( i::ClientState->clockDriftMgr.nServerTick ) ) - 0.2f );
+	int nDeadTime = static_cast< int >( static_cast< float >( TICKS_TO_TIME( i::ClientState->clockDriftMgr.nServerTick ) ) - sv_maxunlag->GetFloat() );
 	if ( TIME_TO_TICKS( this->flSimulationTime + flLerpTime ) < nDeadTime )
 		return false;
 

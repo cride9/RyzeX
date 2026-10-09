@@ -5,7 +5,7 @@
 
 float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* pDataOut)
 {
-	if (!pWeapon)
+	if (!pLocal || !pWeapon || !pRecord || !pRecord->pEntity)
 		return -1.0f;
 
 	// setup data
@@ -97,55 +97,46 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 
 	const Ray_t ray( vecAbsStart, vecAbsEnd );
 
-	//for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++)
+	if ( pFilter != nullptr && !pFilter->ShouldHitEntity( pRecord->pEntity, fMask ) )
+		return;
+
+	// get bounding box
+	const Vector vecMin = pRecord->vecMins;
+	const Vector vecMax = pRecord->vecMaxs;
+
+	// calculate world space center
+	const Vector vecCenter = ( vecMax + vecMin ) * 0.5f;
+	const Vector vecPosition = vecCenter + pRecord->vecOrigin;
+
+	const Vector vecTo = vecPosition - vecAbsStart;
+	Vector vecDirection = vecAbsEnd - vecAbsStart;
+	const float flLength = vecDirection.NormalizeInPlace( );
+
+	const float flRangeAlong = vecDirection.DotProduct( vecTo );
+	float flRange = 0.0f;
+
+	// calculate distance to ray
+	if ( flRangeAlong < 0.0f )
+		// off start point
+		flRange = -vecTo.Length( );
+	else if ( flRangeAlong > flLength )
+		// off end point
+		flRange = -( vecPosition - vecAbsEnd ).Length( );
+	else
+		// within ray bounds
+		flRange = ( vecPosition - ( vecDirection * flRangeAlong + vecAbsStart ) ).Length( );
+
+	constexpr float flMaxRange = 60.f;
+	if ( flRange < flMinRange || flRange > flMaxRange )
+		return;
+
+	i::EngineTrace->ClipRayToEntity( ray, fMask | CONTENTS_HITBOX, pRecord->pEntity, &trace );
+
+	if ( trace.flFraction < flSmallestFraction )
 	{
-		//CBaseEntity* pEntity = lagcomp.arrBackupData[i].first.pEntity;
-
-
-		//if ( pEntity == nullptr || !pEntity->IsAlive( ) || pEntity->IsDormant( ))
-		//	return;
-
-		if ( pFilter != nullptr && !pFilter->ShouldHitEntity( pRecord->pEntity, fMask ) )
-			return;
-
-		// get bounding box
-		const Vector vecMin = pRecord->vecMins;
-		const Vector vecMax = pRecord->vecMaxs;
-
-		// calculate world space center
-		const Vector vecCenter = ( vecMax + vecMin ) * 0.5f;
-		const Vector vecPosition = vecCenter + pRecord->vecOrigin;
-
-		const Vector vecTo = vecPosition - vecAbsStart;
-		Vector vecDirection = vecAbsEnd - vecAbsStart;
-		const float flLength = vecDirection.NormalizeInPlace( );
-
-		const float flRangeAlong = vecDirection.DotProduct( vecTo );
-		float flRange = 0.0f;
-
-		// calculate distance to ray
-		if ( flRangeAlong < 0.0f )
-			// off start point
-			flRange = -vecTo.Length( );
-		else if ( flRangeAlong > flLength )
-			// off end point
-			flRange = -( vecPosition - vecAbsEnd ).Length( );
-		else
-			// within ray bounds
-			flRange = ( vecPosition - ( vecDirection * flRangeAlong + vecAbsStart ) ).Length( );
-
-		constexpr float flMaxRange = 60.f;
-		if ( flRange < flMinRange || flRange > flMaxRange )
-			return;
-
-		i::EngineTrace->ClipRayToEntity( ray, fMask | CONTENTS_HITBOX, pRecord->pEntity, &trace );
-
-		if ( trace.flFraction < flSmallestFraction )
-		{
-			// we shortened the ray - save off the trace
-			*pTrace = trace;
-			flSmallestFraction = trace.flFraction;
-		}
+		// we shortened the ray - save off the trace
+		*pTrace = trace;
+		flSmallestFraction = trace.flFraction;
 	}
 }
 
@@ -205,8 +196,13 @@ bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vect
 
 			if ( exitTrace.DidHit( ) && !exitTrace.bStartSolid )
 			{
-				if ( enterTrace.pHitEntity->IsBreakable( ) && exitTrace.pHitEntity->IsBreakable( ) )
+				if (enterTrace.pHitEntity &&
+					exitTrace.pHitEntity &&
+					enterTrace.pHitEntity->IsBreakable() &&
+					exitTrace.pHitEntity->IsBreakable())
+				{
 					return true;
+				}
 
 				if ( enterTrace.surface.uFlags & SURF_NODRAW || ( !( exitTrace.surface.uFlags & SURF_NODRAW ) && exitTrace.plane.vecNormal.DotProduct( vecDirection ) <= 1.0f ) )
 				{
@@ -337,7 +333,7 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	if ( pWeaponData == nullptr )
 		return false;
 
-	float flMaxRange = pWeaponData->flRange;
+	const float flMaxRange = pWeaponData->flRange;
 
 	// the total number of surfaces any bullet can penetrate in a single flight is capped at 4
 	if (data.iPenetrateCount > 4 || data.iPenetrateCount == 0)
@@ -345,40 +341,93 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 	// set our current damage to what our gun's initial damage reports it will do
 	data.flCurrentDamage = static_cast< float >( pWeaponData->iDamage );
 
-	float flTraceLenght = 0.0f;
+	float flTraceLength = 0.0f;
 	CTraceFilter filter( pLocal );
 
 	while ( data.iPenetrateCount > 0 && data.flCurrentDamage >= 1.0f )
 	{
-		// max bullet range
-		flMaxRange -= flTraceLenght;
+		const float flRemainingRange = flMaxRange - flTraceLength;
 
-		// end position of bullet
-		const Vector vecEnd = data.vecPosition + data.vecDirection * flMaxRange;
-
-		Ray_t ray( data.vecPosition, vecEnd );
-		i::EngineTrace->TraceRay( ray, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &data.enterTrace );
-
-		// check for player hitboxes extending outside their collision bounds
-		ClipTraceToPlayers( data.vecPosition, vecEnd + data.vecDirection * 40.0f, MASK_SHOT_HULL | CONTENTS_HITBOX, &filter, &data.enterTrace, pRecord, 0.f);
-
-		const surfacedata_t* pEnterSurfaceData = i::PhysicsProps->GetSurfaceData( data.enterTrace.surface.nSurfaceProps );
-		const float flEnterPenetrationModifier = pEnterSurfaceData->game.flPenetrationModifier;
-
-		// we didn't hit anything, stop tracing shoot
-		if ( data.enterTrace.flFraction == 1.0f )
+		if (flRemainingRange <= 0.0f)
 			break;
 
+		const Vector vecEnd =
+			data.vecPosition + data.vecDirection * flRemainingRange;
+
+		constexpr unsigned int kTraceMask =
+			MASK_SHOT_HULL | CONTENTS_HITBOX;
+
+		Ray_t ray(data.vecPosition, vecEnd);
+
+		i::EngineTrace->TraceRay(
+			ray, kTraceMask, &filter, &data.enterTrace
+		);
+
+		// Separate extended player trace
+		Trace_t playerTrace{};
+		playerTrace.flFraction = 1.0f;
+
+		constexpr float kPlayerExtension = 40.0f;
+
+		ClipTraceToPlayers(
+			data.vecPosition,
+			vecEnd + data.vecDirection * kPlayerExtension,
+			kTraceMask,
+			&filter,
+			&playerTrace,
+			pRecord,
+			0.0f
+		);
+
+		if (playerTrace.flFraction < 1.0f)
+		{
+			const float flCorrectedFraction =
+				playerTrace.flFraction *
+				((flRemainingRange + kPlayerExtension) / flRemainingRange);
+
+			if (flCorrectedFraction < data.enterTrace.flFraction)
+			{
+				data.enterTrace = playerTrace;
+				data.enterTrace.flFraction = flCorrectedFraction;
+			}
+		}
+
+		// we didn't hit anything, stop tracing shoot
+		if (data.enterTrace.flFraction >= 1.0f)
+			break;
+
+		const surfacedata_t* pEnterSurfaceData =
+			i::PhysicsProps->GetSurfaceData(
+				data.enterTrace.surface.nSurfaceProps
+			);
+
+		if (!pEnterSurfaceData)
+			return false;
+
+		const float flEnterPenetrationModifier =
+			pEnterSurfaceData->game.flPenetrationModifier;
+
 		// calculate the damage based on the distance the bullet traveled
-		flTraceLenght += data.enterTrace.flFraction * flMaxRange;
-		data.flCurrentDamage *= std::powf( pWeaponData->flRangeModifier, flTraceLenght / MAX_DAMAGE );
+		const float flSegmentLength =
+			data.enterTrace.flFraction * flRemainingRange;
+
+		flTraceLength += flSegmentLength;
+
+		data.flCurrentDamage *= std::powf(
+			pWeaponData->flRangeModifier,
+			flSegmentLength / MAX_DAMAGE
+		);
 
 		// check is actually can shoot through
-		if ( flTraceLenght > 3000.f || flEnterPenetrationModifier < 0.1f )
+		if (flTraceLength > 3000.f || flEnterPenetrationModifier < 0.1f )
 			break;
 
 		// check is can do damage
-		if ( data.enterTrace.iHitGroup != HITGROUP_GENERIC && data.enterTrace.iHitGroup != HITGROUP_GEAR && pLocal->IsEnemy( data.enterTrace.pHitEntity ) )
+		if (pRecord &&
+			data.enterTrace.pHitEntity == pRecord->pEntity &&
+			data.enterTrace.iHitGroup != HITGROUP_GENERIC &&
+			data.enterTrace.iHitGroup != HITGROUP_GEAR &&
+			pLocal->IsEnemy(data.enterTrace.pHitEntity))
 		{
 			// we got target - scale damage
 			ScaleDamage( data.enterTrace.iHitGroup, data.enterTrace.pHitEntity, pWeaponData->flArmorRatio, pWeaponData->flHeadShotMultiplier, data.flCurrentDamage );
