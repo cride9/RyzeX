@@ -1,72 +1,81 @@
 #include "setupbones.h"
 #include "../../SDK/math.h"
 #include "../../globals.h"
+#include <new>
+
+namespace {
+class BoneBuildScope {
+public:
+    explicit BoneBuildScope(int index) : index(index), previous(g::bSettingUpBones[index]) {
+        g::bSettingUpBones[index] = true;
+    }
+    ~BoneBuildScope() { g::bSettingUpBones[index] = previous; }
+private:
+    int index;
+    bool previous;
+};
+
+class IKPointerScope {
+public:
+    IKPointerScope(CBaseEntity* entity, CIKContext* context) : entity(entity), previous(entity->GetIKContext()) {
+        entity->GetIKContext() = reinterpret_cast<IKContext*>(context);
+    }
+    ~IKPointerScope() { entity->GetIKContext() = previous; }
+private:
+    CBaseEntity* entity;
+    IKContext* previous;
+};
+
+class WeaponMergeScope {
+public:
+    WeaponMergeScope(CBaseEntity* entity, CBoneMergeCache* temporary) : entity(entity), previous(entity->GetBoneMergeCache()) {
+        entity->GetPoseParameters(poses.data());
+        entity->GetBoneMergeCache() = temporary;
+    }
+    ~WeaponMergeScope() {
+        entity->GetBoneMergeCache() = previous;
+        entity->SetPoseParameters(poses.data());
+    }
+private:
+    CBaseEntity* entity;
+    CBoneMergeCache* previous;
+    std::array<float, MAXSTUDIOPOSEPARAM> poses;
+};
+}
 
 bool BoneSetup::build( CBaseEntity* base_animating, matrix3x4a_t* bone_to_world, int max_bones, int bone_mask )
 {
-    g::bSettingUpBones[ base_animating->EntIndex( ) ] = true;
-    CMDLCacheCriticalSection criticalSection( i::MDLCache );
-    {
-        auto studio_hdr = base_animating->GetModelPtr( );
-
-        if ( studio_hdr ) {
-            alignas( 16 ) BoneVector pos[ MAXSTUDIOBONES ];
-            alignas( 16 ) BoneQuaternion q[ MAXSTUDIOBONES ];
-
-            // Allocate our own
-            CIKContext* ik = new CIKContext;
-
-            // Backup game ptr and set game to ours
-            CIKContext* backup = reinterpret_cast< CIKContext* >( base_animating->GetIKContext( ) );
-            base_animating->GetIKContext( ) = reinterpret_cast< IKContext* >( ik );
-
-            uint8_t bone_computed[ 32 ]{};
-            RtlSecureZeroMemory( &bone_computed, sizeof bone_computed );
-
-            ik->Init( studio_hdr, base_animating->GetAbsAngles( ), base_animating->GetAbsOrigin( ), base_animating->GetSimulationTime( ), i::GlobalVars->iTickCount, bone_mask );
-            get_skeleton( base_animating, studio_hdr, pos, q, bone_mask, ik );
-
-            ik->UpdateTargets( pos, q, bone_to_world, &bone_computed );
-            base_animating->CalculateIKLocks( base_animating->GetSimulationTime( ) ); // Need to set game's ik ptr for this
-            ik->SolveDependencies( pos, q, bone_to_world, &bone_computed );
-
-            // reset and cleanup
-            base_animating->GetIKContext( ) = reinterpret_cast< IKContext* >( backup );
-            delete ik;
-
-            // TODO: phage - Implement MoveParent handling
-            // Useless in csgo, never seen a single instance of MoveParents
-            build_matrices( base_animating, studio_hdr, pos, q, base_animating->GetCachedBoneData( ).Base( ), bone_mask );
-        }
-
-        if ( bone_to_world && max_bones >= base_animating->GetCachedBoneData( ).Count( ) ) {
-            memcpy( bone_to_world, base_animating->GetCachedBoneData( ).Base( ), sizeof( matrix3x4a_t ) * base_animating->GetCachedBoneData( ).Count( ) );
-        }
-    }
-
-    base_animating->ClampBonesInBBox( bone_to_world, bone_mask );
-    g::bSettingUpBones[ base_animating->EntIndex( ) ] = false;
-
-    return true;
+    return build(base_animating, bone_to_world, max_bones, bone_mask, 0);
 }
 
 bool BoneSetup::build( CBaseEntity* base_animating, matrix3x4a_t* bone_to_world, int max_bones, int bone_mask, int extrapolte )
 {
-    g::bSettingUpBones[ base_animating->EntIndex( ) ] = true;
+    if (!base_animating || !bone_to_world || max_bones <= 0) return false;
+    const int index = base_animating->EntIndex();
+    if (index < 1 || index >= static_cast<int>(std::size(g::bSettingUpBones))) return false;
+    BoneBuildScope settingUp(index);
     CMDLCacheCriticalSection criticalSection( i::MDLCache );
     {
         auto studio_hdr = base_animating->GetModelPtr( );
 
-        if ( studio_hdr ) {
-            alignas( 16 ) BoneVector pos[ MAXSTUDIOBONES ];
-            alignas( 16 ) BoneQuaternion q[ MAXSTUDIOBONES ];
+        auto& cache = base_animating->GetCachedBoneData();
+        if (!studio_hdr || !studio_hdr->pStudioHdr || !cache.Base()) return false;
+        const int bones = studio_hdr->pStudioHdr->nBones;
+        if (bones <= 0 || bones > MAXSTUDIOBONES || cache.Count() < bones
+            || cache.Count() > MAXSTUDIOBONES || max_bones < cache.Count()) return false;
+        for (int bone = 0; bone < bones; ++bone) {
+            const int parent = studio_hdr->pStudioHdr->GetBone(bone)->iParent;
+            if (parent < -1 || parent >= bone) return false;
+        }
+        {
+            alignas( 16 ) BoneVector pos[ MAXSTUDIOBONES ]{};
+            alignas( 16 ) BoneQuaternion q[ MAXSTUDIOBONES ]{};
 
-            // Allocate our own
-            CIKContext* ik = new CIKContext;
-
-            // Backup game ptr and set game to ours
-            CIKContext* backup = reinterpret_cast< CIKContext* >( base_animating->GetIKContext( ) );
-            base_animating->GetIKContext( ) = reinterpret_cast< IKContext* >( ik );
+            // Native construction/destruction owns the internal IK vectors.
+            // Stack storage avoids an outer heap allocation for every matrix.
+            CIKContext context;
+            CIKContext* ik = &context;
+            IKPointerScope redirect(base_animating, ik);
 
             uint8_t bone_computed[ 32 ]{};
             RtlSecureZeroMemory( &bone_computed, sizeof bone_computed );
@@ -78,10 +87,6 @@ bool BoneSetup::build( CBaseEntity* base_animating, matrix3x4a_t* bone_to_world,
             base_animating->CalculateIKLocks( base_animating->GetSimulationTime( ) ); // Need to set game's ik ptr for this
             ik->SolveDependencies( pos, q, bone_to_world, &bone_computed );
 
-            // reset and cleanup
-            base_animating->GetIKContext( ) = reinterpret_cast< IKContext* >( backup );
-            delete ik;
-
             // TODO: phage - Implement MoveParent handling
             // Useless in csgo, never seen a single instance of MoveParents
             build_matrices( base_animating, studio_hdr, pos, q, base_animating->GetCachedBoneData( ).Base( ), bone_mask );
@@ -92,8 +97,6 @@ bool BoneSetup::build( CBaseEntity* base_animating, matrix3x4a_t* bone_to_world,
         }
     }
     base_animating->ClampBonesInBBox( bone_to_world, bone_mask );
-    g::bSettingUpBones[ base_animating->EntIndex( ) ] = false;
-
     return true;
 }
 
@@ -120,8 +123,9 @@ void BoneSetup::get_skeleton( CBaseEntity* base_animating, CStudioHdr* studio_hd
 
     CBaseCombatWeapon* weapon = nullptr;
     CBaseEntity* weapon_world_model = nullptr;
-    CBoneMergeCache* bone_merge_cache = nullptr;
-    CBoneMergeCache* bone_merge_backup = nullptr;
+    std::optional<CBoneMergeCache> boneMergeStorage;
+    // Restore the world model before its temporary cache is destroyed.
+    std::optional<WeaponMergeScope> weaponRestore;
 
     bool do_weapon_setup = false;
 
@@ -129,13 +133,12 @@ void BoneSetup::get_skeleton( CBaseEntity* base_animating, CStudioHdr* studio_hd
         CBaseEntity* player = base_animating;
         weapon = player->GetWeapon( );
         if ( weapon ) {
-            weapon_world_model = ( CBaseEntity* )( i::EntityList->GetClientEntityFromHandle( weapon->GetRefEHandle( ) ) );
-            // Currently just return true in HoldsPlayerAnimations, something fucked on knives and I can't be bothered
-            if ( weapon_world_model && weapon_world_model->GetModelPtr( ) && weapon_world_model->GetHoldPlayerAnimations( ) ) {
-                bone_merge_backup = weapon_world_model->GetBoneMergeCache( );
-
-                bone_merge_cache = new CBoneMergeCache;
-                weapon_world_model->GetBoneMergeCache( ) = bone_merge_cache;
+            weapon_world_model = ( CBaseEntity* )( i::EntityList->GetClientEntityFromHandle( weapon->GetWorldModelHandle( ) ) );
+            const auto weapon_hdr = weapon_world_model ? weapon_world_model->GetModelPtr() : nullptr;
+            if (weapon_hdr && weapon_hdr->pStudioHdr && weapon_hdr->pStudioHdr->nBones > 0
+                && weapon_hdr->pStudioHdr->nBones <= MAXSTUDIOBONES && weapon_world_model->IsHoldPlayerAnimations()) {
+                boneMergeStorage.emplace();
+                weaponRestore.emplace(weapon_world_model, &*boneMergeStorage);
                 weapon_world_model->GetBoneMergeCache( )->Init( weapon_world_model );
 
                 if ( weapon_world_model->GetBoneMergeCache( ) )
@@ -149,18 +152,20 @@ void BoneSetup::get_skeleton( CBaseEntity* base_animating, CStudioHdr* studio_hd
 
         weapon_world_model->GetBoneMergeCache( )->MergeMatchingPoseParams( );
 
-        CIKContext* weaponIK = new CIKContext;
+        CIKContext weaponContext;
+        CIKContext* weaponIK = &weaponContext;
         weaponIK->Init( weapon_studio_hdr, base_animating->GetAbsAngles( ), base_animating->GetAbsOrigin( ), base_animating->GetSimulationTime( ), 0, BONE_USED_BY_BONE_MERGE );
 
         CBoneSetup weaponSetup( weapon_studio_hdr, BONE_USED_BY_BONE_MERGE, weapon_world_model->GetPoseParameter( ).data( ) );
-        BoneVector weaponPos[ 256 ];
-        BoneQuaternion weaponQ[ 256 ];
+        alignas(16) BoneVector weaponPos[ MAXSTUDIOBONES ]{};
+        alignas(16) BoneQuaternion weaponQ[ MAXSTUDIOBONES ]{};
 
         weaponSetup.InitPose( weaponPos, weaponQ );
 
         for ( int i = 0; i < 13; i++ ) {
             CAnimationLayer* pLayer = &base_animating->GetAnimationOverlays( )[ i ];
-            if ( pLayer->nSequence <= 1 || pLayer->flWeight <= 0.f )
+            if ( pLayer->nSequence <= 1 || pLayer->nSequence >= static_cast<unsigned>(studio_hdr->GetNumSeq())
+                || !std::isfinite(pLayer->flWeight) || !std::isfinite(pLayer->flCycle) || pLayer->flWeight <= 0.f )
                 continue;
 
             // TODO: phage - This should be moved to the end of animation update,
@@ -169,7 +174,7 @@ void BoneSetup::get_skeleton( CBaseEntity* base_animating, CStudioHdr* studio_hd
             // Alternatively, we ensure that the above condition never happens
             base_animating->UpdateDispatchLayer( pLayer, weapon_studio_hdr, pLayer->nSequence );
 
-            if ( pLayer->nDispatchedDst <= 0 || pLayer->nDispatchedDst >= studio_hdr->GetNumSeq( ) ) {
+            if ( pLayer->nDispatchedDst <= 0 || pLayer->nDispatchedDst >= weapon_studio_hdr->GetNumSeq( ) ) {
                 boneSetup.AccumulatePose( pos, q, pLayer->nSequence, pLayer->flCycle, pLayer->flWeight, base_animating->GetSimulationTime( ), ik );
             }
             else {
@@ -186,7 +191,6 @@ void BoneSetup::get_skeleton( CBaseEntity* base_animating, CStudioHdr* studio_hd
             }
         }
 
-        delete weaponIK;
     }
     else {
         for ( int i = 0; i < 13; i++ ) {
@@ -197,19 +201,15 @@ void BoneSetup::get_skeleton( CBaseEntity* base_animating, CStudioHdr* studio_hd
         }
     }
 
-    CIKContext* auto_ik = new CIKContext;
+    CIKContext autoplayContext;
+    CIKContext* auto_ik = &autoplayContext;
     auto_ik->Init( studio_hdr, base_animating->GetAbsAngles( ), base_animating->GetAbsOrigin( ), base_animating->GetSimulationTime( ), 0, bone_mask );
     boneSetup.CalcAutoplaySequences( pos, q, base_animating->GetSimulationTime( ), auto_ik );
-    delete auto_ik;
 
     if ( studio_hdr->pStudioHdr->nBoneControllers > 0 ) {
         boneSetup.CalcBoneAdj( pos, q, base_animating->GetEncodedControllerArray( ).data( ) );
     }
 
-    if ( weapon_world_model && bone_merge_cache ) {
-        weapon_world_model->GetBoneMergeCache( ) = bone_merge_backup;
-        delete bone_merge_cache;
-    }
 }
 
 // you can choose to rebuild this or sig the client's, they're identical 
@@ -282,11 +282,22 @@ void BoneSetup::concat_transforms( const matrix3x4a_t& m0, const matrix3x4a_t& m
 }
 
 // IK_Context section:
+CIKContext::CIKContext() { Construct(this); }
+
+CIKContext::~CIKContext()
+{
+    // Same native destructor used by the SDK's IKContext wrapper. Freeing only
+    // the outer 0x1070 bytes leaks chain rules and autoplay/sequence locks.
+    using DestructorFn = void(__thiscall*)(CIKContext*);
+    static auto destructor = reinterpret_cast<DestructorFn>(MEM::GetAbsoluteAddress(
+        MEM::FindPattern(CLIENT_DLL, XorStr("E8 ? ? ? ? 8B 44 24 14 85 C0 74 0B")) + 0x1));
+    destructor(this);
+}
+
 void* CIKContext::operator new( size_t size )
 {
-    CIKContext* ptr = ( CIKContext* )i::MemAlloc->Alloc( size );
-    Construct( ptr );
-
+    void* ptr = i::MemAlloc->Alloc(size);
+    if (!ptr) throw std::bad_alloc();
     return ptr;
 }
 
@@ -297,7 +308,7 @@ void CIKContext::operator delete( void* ptr )
 
 void CIKContext::Construct( CIKContext* ik )
 {
-    using ConstructFn = CIKContext * ( __fastcall* )( CIKContext* );
+    using ConstructFn = void ( __thiscall* )( CIKContext* );
     static ConstructFn Construct = reinterpret_cast< ConstructFn >( MEM::GetAbsoluteAddress( MEM::FindPattern( CLIENT_DLL, XorStr( "E8 ? ? ? ? A1 ? ? ? ? FF 75 18" ) ) + 0x1 ) );
     // client.dll - \x53\x8B\xD9\xF6\xC3\x03\x74\x0B\xFF\x15\x00\x00\x00\x00\x84\xC0\x74\x01\xCC\xC7\x83\x00\x00\x00\x00\x00\x00\x00\x00\x8B\xCB
 
@@ -331,30 +342,33 @@ void CIKContext::SolveDependencies( BoneVector* pos, BoneQuaternion* q, matrix3x
     SolveDependencies( this, pos, q, bone_cache, computed );
 }
 
-struct IKTarget {
-    int m_iFrameCount;
-
-private:
-    char pad_00004[ 0x51 ];
-};
-
 void CIKContext::ClearTargets( )
 {
-    int m_iTargetCount = *( int* )( ( uintptr_t )this + 0xFF0 );
-    auto m_pIkTarget = ( IKTarget* )( ( uintptr_t )this + 0xD0 );
+    const int m_iTargetCount = *( int* )( ( uintptr_t )this + 0xFF0 );
+    auto m_pIkTarget = ( int* )( ( uintptr_t )this + 0xD0 );
     for ( int i = 0; i < m_iTargetCount; i++ ) {
-        m_pIkTarget->m_iFrameCount = -9999;
-        m_pIkTarget++;
+        *m_pIkTarget = -9999;
+        m_pIkTarget += 0x154 / sizeof(int);
     }
 }
 
 void CIKContext::AddDependencies( mstudioseqdesc_t& seqdesc, int iSequence, float flCycle, const float poseParameters[ ], float flWeight )
 {
-    using AddDependenciesFn = void( __thiscall* )( CIKContext*, mstudioseqdesc_t&, int, float, const float[ ], float );
-    static AddDependenciesFn AddDependencies = reinterpret_cast< AddDependenciesFn >( MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 81 EC ? ? ? ? 53 56 57 8B F9 0F" ) ) );
+    static auto AddDependencies = MEM::FindPattern( CLIENT_DLL, XorStr( "55 8B EC 81 EC ? ? ? ? 53 56 57 8B F9 0F" ) );
+    const std::uintptr_t address = reinterpret_cast<std::uintptr_t>(AddDependencies);
+    const std::uintptr_t description = reinterpret_cast<std::uintptr_t>(&seqdesc);
     // server.dll - \x55\x8B\xEC\x81\xEC\x00\x00\x00\x00\x53\x56\x57\x8B\xF9\x0F\x28\xCB\xF3\x0F\x11\x4D\x00
 
-    AddDependencies( this, seqdesc, iSequence, flCycle, poseParameters, flWeight );
+    // The native legacy function takes cycle in xmm3 (see SDK::IKContext).
+    __asm {
+        mov ecx, this
+        movss xmm3, flCycle
+        push flWeight
+        push poseParameters
+        push iSequence
+        push description
+        call address
+    }
 }
 
 void CIKContext::CopyTo( CIKContext* other, const unsigned short* iRemapping )
@@ -391,6 +405,8 @@ void CBoneSetup::InitPose( BoneVector pos[ ], BoneQuaternion q[ ] )
 
 void CBoneSetup::AccumulatePose( BoneVector pos[ ], BoneQuaternion q[ ], int sequence, float cycle, float weight, float time, void* IKContext )
 {
+    if (sequence < 0 || sequence >= const_cast<CStudioHdr*>(m_pStudioHdr)->GetNumSeq() || !std::isfinite(cycle)
+        || !std::isfinite(weight) || !std::isfinite(time) || weight <= 0.f) return;
     using AccumulatePoseFn = void( __thiscall* )( CBoneSetup*, BoneVector*, BoneQuaternion*, int, float, float, float, void* );
     static AccumulatePoseFn AccumulatePose = reinterpret_cast<AccumulatePoseFn>(MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? A1" ) ) ); // client.dll - \x55\x8B\xEC\x83\xE4\xF0\xB8\x00\x00\x00\x00\xE8\x00\x00\x00\x00\xA1
    

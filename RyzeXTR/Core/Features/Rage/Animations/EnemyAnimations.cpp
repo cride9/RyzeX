@@ -974,14 +974,15 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	else
 		Resolver(pEntity, pRecord, pPrevious);
 
-	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
-	pRecord->bVisualMatrixValid = true;
-	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4a_t)* MAXSTUDIOBONES);
+	pRecord->bVisualMatrixValid = SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
+	if (pRecord->bVisualMatrixValid)
+		std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4a_t)* MAXSTUDIOBONES);
 
 	if (cfg::rage::bEnable) {
-		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
-		pRecord->bAnimationMatrixValid = true;
-		if (mode == resolver::Mode::Standard)
+		pRecord->bAnimationMatrixValid = SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
+		if (!pRecord->bAnimationMatrixValid)
+			pRecord->bSafeMatrixValid = false;
+		else if (mode == resolver::Mode::Standard)
 			GenerateSafePointMatricies(pRecord->pEntity, pRecord);
 		else if (mode == resolver::Mode::Experimental)
 			experimentalResolver.BuildSafePoints(pEntity, pRecord);
@@ -1008,7 +1009,7 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	i::GlobalVars->iFrameCount = iFrameCount;
 }
 
-void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags) {
+bool Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags) {
 
 	/* Remove interpolation if required */
 	if ( !( nFlags & EMatrixFlags::Interpolated ) && pRecord->vecOrigin.IsValid( ) )
@@ -1019,10 +1020,8 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	if ( nFlags & EMatrixFlags::BoneUsedByHitbox )
 		iBoneMask = BONE_USED_BY_HITBOX;
 
-	g::bSettingUpBones[ pEntity->EntIndex( ) ] = true;
-	rebuiltBones.build( pEntity, pMatrix, 256, iBoneMask );
+	return rebuiltBones.build( pEntity, pMatrix, MAXSTUDIOBONES, iBoneMask );
 	//pEntity->SetupBones( pMatrix, MAXSTUDIOBONES, iBoneMask, 0.0f );
-	return;
 
 	pEntity->SetAnimationLayers(pRecord->arrLayers);
 
@@ -1108,7 +1107,7 @@ void Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRec
 	i::GlobalVars->iFrameCount = iFrameCount;
 }
 
-void Animations::SetupPlayerMatrix( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags, int iExtrapolate ) {
+bool Animations::SetupPlayerMatrix( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags, int iExtrapolate ) {
 
 	/* Remove interpolation if required */
 	if ( !( nFlags & EMatrixFlags::Interpolated ) && pRecord->vecOrigin.IsValid( ) )
@@ -1119,9 +1118,7 @@ void Animations::SetupPlayerMatrix( CBaseEntity* pEntity, Lagcompensation::LagRe
 	if ( nFlags & EMatrixFlags::BoneUsedByHitbox )
 		iBoneMask = BONE_USED_BY_HITBOX;
 
-	g::bSettingUpBones[ pEntity->EntIndex( ) ] = true;
-	rebuiltBones.build( pEntity, pMatrix, 256, iBoneMask, iExtrapolate );
-	return;
+	return rebuiltBones.build( pEntity, pMatrix, MAXSTUDIOBONES, iBoneMask, iExtrapolate );
 }
 
 void UpdateLmao(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {

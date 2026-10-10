@@ -251,7 +251,9 @@ public:
 	bool					bPlantAnimStarted;
 	bool					bTwitchAnimStarted;
 	bool					bAdjustStarted;
-	char					ActivityModifiers[ 20 ];
+	// Native CUtlVector<CUtlSymbol> starts at 0x13C, after three padding bytes.
+	// A plain char array starts at 0x139 and corrupts the native vector on copy.
+	alignas(4) char			ActivityModifiers[ 20 ];
 	float					flNextTwitchTime;
 	float					flTimeOfLastKnownInjury;
 	float					flLastVelocityTestTime;
@@ -505,3 +507,5 @@ public:
 		pAnimationLayer->flPlaybackRate = GetLayerSequenceCycleRate(pEntity, pAnimationLayer, iSequence);
 	}
 };
+static_assert(offsetof(CAnimState, ActivityModifiers) == 0x13C);
+static_assert(offsetof(CAnimState, flNextTwitchTime) == 0x150);

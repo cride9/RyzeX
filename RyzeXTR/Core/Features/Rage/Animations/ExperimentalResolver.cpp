@@ -323,9 +323,9 @@ bool ExperimentalResolver::BuildMatrix(CBaseEntity* entity, Lagcompensation::Lag
     entity->SetAbsAngles(Vector(0.f, yaw, 0.f));
     entity->SetAnimationLayers(record->arrLayers);
     std::memset(output, 0, MAXSTUDIOBONES * sizeof(matrix3x4a_t));
-    anims.SetupPlayerMatrix(entity, record, output, BoneUsedByHitbox);
+    const bool built = anims.SetupPlayerMatrix(entity, record, output, BoneUsedByHitbox);
     ReleaseModifiers(entity->AnimState());
-    return true;
+    return built;
 }
 
 void ExperimentalResolver::Resolve(CBaseEntity* entity, Lagcompensation::LagRecord_t* record,

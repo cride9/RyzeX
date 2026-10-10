@@ -1,12 +1,17 @@
 #pragma once
 #include "../../SDK/Entity.h"
 
-class CIKContext
+class alignas(16) CIKContext
 {
-    // Not sure of the correct size, also don't care
+    // Legacy Win32 engine layout (including the native vectors).
     uint8_t pad[ 0x1070 ];
 
 public:
+    CIKContext();
+    ~CIKContext();
+    CIKContext(const CIKContext&) = delete;
+    CIKContext& operator=(const CIKContext&) = delete;
+
     void* operator new( size_t size );
     void  operator delete( void* ptr );
 
@@ -18,6 +23,7 @@ public:
     void AddDependencies( mstudioseqdesc_t& seqdesc, int iSequence, float flCycle, const float poseParameters[ ], float flWeight );
     void CopyTo( CIKContext* other, const unsigned short* iRemapping );
 };
+static_assert(sizeof(CIKContext) == 0x1070);
 
 struct CBoneSetup {
     CBoneSetup( const CStudioHdr* studio_hdr, int bone_mask, float* pose_parameters );

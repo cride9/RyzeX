@@ -1153,6 +1153,7 @@ public:
 		if (this->GetHoldPlayerAnimations() == 0)
 		{
 			const CStudioHdr* pStudioHdr = this->GetModelPtr();
+			if (!pStudioHdr || !pStudioHdr->pStudioHdr) return false;
 			int iCount = pStudioHdr->pStudioHdr->nLocalSequences;
 			if (pStudioHdr->pVirtualModel)
 				iCount = pStudioHdr->pVirtualModel->vecSequence.Count();
@@ -1894,9 +1895,26 @@ class CBoneMergeCache
 {
 public:
 	CBoneMergeCache( )
+		: vecMergedBones{}, pad0{}
 	{
 		Init( nullptr );
 	}
+
+	~CBoneMergeCache()
+	{
+		// The SDK vector is a layout wrapper: it has no native destructor.
+		// Init purges the engine-owned merged-bone vector before outer storage dies.
+		Init(nullptr);
+		// CVarBitVec stores one word inline; only larger buffers own heap memory.
+		unsigned short words = 0;
+		std::uint32_t* bits = nullptr;
+		std::memcpy(&words, pad0 + 2, sizeof(words));
+		std::memcpy(&bits, pad0 + 8, sizeof(bits));
+		if (words > 1 && bits) i::MemAlloc->Free(bits);
+	}
+
+	CBoneMergeCache(const CBoneMergeCache&) = delete;
+	CBoneMergeCache& operator=(const CBoneMergeCache&) = delete;
 
 	void* operator new( const std::size_t nSize )
 	{
