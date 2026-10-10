@@ -10,8 +10,7 @@
 
 namespace vizualizer {
 
-	inline bool bDoEffect{};
-
 	void Initialize();
+	void Shutdown();
 	void Draw(CBaseEntity* pLocal);
 }

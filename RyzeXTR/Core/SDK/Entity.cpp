@@ -266,11 +266,12 @@ std::optional<Vector> CBaseEntity::GetHitGroupPosition(const int iHitGroup)
 						pHitbox = pHitboxSet->GetHitbox(i);
 
 						// check is reached needed group
-						if (pHitbox->iGroup == iHitGroup)
+						if (pHitbox && pHitbox->iGroup == iHitGroup)
 							break;
 					}
 
-					if (pHitbox != nullptr)
+					if (pHitbox && pHitbox->iGroup == iHitGroup && pHitbox->iBone >= 0 &&
+						pHitbox->iBone < arrBonesToWorld.size())
 					{
 						// get mins/maxs by bone
 						const Vector vecMin = M::VectorTransform(pHitbox->vecBBMin, arrBonesToWorld.at(pHitbox->iBone));

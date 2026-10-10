@@ -42,8 +42,10 @@ long CALLBACK h::hkWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	IPT::Process( uMsg, wParam, lParam );
 
 	// switch window state on key click
-	if ( IPT::IsKeyReleased( VK_INSERT ) )
+	if ( IPT::IsKeyReleased( VK_INSERT ) ) {
 		menu::open = !menu::open;
+		IPT::ResetPressed();
+	}
 
 	if ( menu::open )
 	{

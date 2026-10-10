@@ -3,6 +3,7 @@
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
+#include "../../Features/Rage/Animations/ExperimentalResolver.h"
 #include "../../Features/Visuals/chams.h"
 #include "../../Features/Visuals/ESP.h"
 #include "../../Features/Misc/misc.h"
@@ -14,6 +15,8 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
 	static auto original = detour::levelShutDown.GetOriginal<decltype(&h::hkLevelShutDownClient)>();
 
+	misc::RestoreOverrides();
+	experimentalResolver.ResetAll();
 	original(ecx, edx);
 
 	auto pLocal = CBaseEntity::GetLocalPlayer();
@@ -50,6 +53,7 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 	chams::materials.fill(nullptr);
 	visual::vecDormatPosition = std::array<Vector, 65>();
 	visual::vecLights.clear();
+	visual::ClearDamageIndicators();
 	
 	/* Set last sendpacket pointer to true */
 	if (g::bSendPacket)

@@ -26,6 +26,13 @@ namespace misc {
 	inline CConVar* con_filter_enable = nullptr;
 
 	void SetupRadio( );
+	void UpdateRadioSettings();
+	bool IsRadioMuted();
+	std::string GetRadioStatus();
+	bool PreviewHitSound();
+	std::string GetHitSoundError();
+	void RestoreOverrides();
+	void Shutdown();
 
 	void CreateMove(CUserCmd*, Vector&, bool&);
 	bool CanFireWeapon(float curtime, bool bRevolverSecondary = false, bool bSkipExtraRevolverChecks = false);

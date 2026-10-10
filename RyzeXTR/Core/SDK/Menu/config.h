@@ -5,9 +5,12 @@
 #include <set>
 #include <unordered_map>
 #include <mutex>
+#include <atomic>
 #include <any>
 #include <deque>
 #include "../DataTyes/Color.h"
+#include "ResolverMode.h"
+#include "../../Features/Misc/RadioVisualizerMath.h"
 
 enum EVARIABLETYPES : int
 {
@@ -56,10 +59,12 @@ struct ColorObject_t
 
 namespace cfg {
 
+	inline radio_visualizer::Settings radioVisualizer;
+
 	inline std::vector< std::string > vecScripts;
 	inline std::vector< LuaVariables_t > vecScriptVariables;
 
-	inline bool bDoUnload = false;
+	inline std::atomic<bool> bDoUnload{ false };
 
 	inline int configID = -1;
 
@@ -93,7 +98,7 @@ namespace cfg {
 		inline int  iDoubletapKey;
 		inline bool bHideshot = false;
 		inline int  iHideShotKey;
-		inline bool bResolver = false;
+		inline int iResolverMode = static_cast<int>(resolver::Mode::Off);
 		inline bool bOverride = false;
 		inline int	iOverrideBind;
 
@@ -374,6 +379,10 @@ namespace cfg {
 		//inline bool bKeyBindList = false;
 		inline bool bKeyBindList = false;
 		inline bool iKeyBindList[13];
+		inline bool bSpectatorList = false;
+		inline float flHudScale = 1.f;
+		inline float flKeybindPosition[2] = { .02f, .5f };
+		inline float flSpectatorPosition[2] = { .8f, .3f };
 
 		inline bool bBunnyHop = false;//
 		inline bool bAutoStrafe = false;
@@ -404,6 +413,9 @@ namespace cfg {
 		inline int iRadioStation = 0;
 		inline float flRadioVolume = 0.f;
 		inline int iRadioMuteHotKey = 0;
+		inline std::string szCustomRadioUrl;
+		inline std::string szRadioFavoriteNames[4];
+		inline std::string szRadioFavoriteUrls[4];
 
 		inline bool bOOF = false; //
 		inline float flOOFColor[4];
@@ -424,9 +436,14 @@ namespace cfg {
 
 		inline bool bDroppedWeaponESP = false; //
 		inline float flDroppedWeaponESP[4];
+		inline bool bDroppedWeaponIcon = false;
+		inline bool bDroppedWeaponAmmo = false;
+		inline bool bWorldEspDistance = false;
+		inline int iWorldEspMaxDistance = 0; // metres; zero is unlimited
 
 		inline bool bProjectileESP = false; //
 		inline float flProjectileESP[4];
+		inline bool bGrenadeTimers = false;
 
 		inline bool bOnlyCheatlog = false; //
 
@@ -435,6 +452,11 @@ namespace cfg {
 
 		inline bool bDamageIndicator = false; //
 		inline float flDamageIndicator[4];
+		inline float flDamageHeadshot[4] = {1.f, 0.f, 0.f, 1.f};
+		inline float flDamageLifetime = 1.f;
+		inline float flDamageRise = 18.f;
+		inline int iDamageFontSize = 20;
+		inline bool bMergeDamage = false;
 
 		inline int iViewModelFov = 75; //
 		inline int iDebugFov = 90; //
@@ -448,6 +470,15 @@ namespace cfg {
 		inline bool bAutobuy = false; //
 		inline int iPistols;
 		inline int iSnipers;
+		inline int iRifles = 0;
+		inline bool bSeparateAutobuy = false;
+		inline int iTeamPistols[2] = {};
+		inline int iTeamRifles[2] = {};
+		inline int iTeamSnipers[2] = {};
+		inline bool bTeamEquipments[2][3] = {};
+		inline bool bTeamGrenades[2][5] = {};
+		inline int iAutobuyReserve = 0;
+		inline bool bAutobuyKeepWeapons = false;
 		inline bool bEquipments[3];
 		inline bool bGrenades[5];
 
@@ -580,6 +611,8 @@ public:
 private:
 	
 	std::string szCategory;
+	std::vector<std::string> storedScripts;
+	std::vector<LuaVariables_t> storedScriptVariables;
 	void PushCategory(std::string szCateg) { szCategory = szCateg; };
 
 	void SetupColor(float(*colColor)[4], int iLength, Color colDefault, std::string szName);
@@ -602,6 +635,12 @@ public:
 	CConfig()
 	{
 		Setup();
+	}
+	~CConfig() {
+		for (auto* value : ints) delete value;
+		for (auto* value : bools) delete value;
+		for (auto* value : floats) delete value;
+		for (auto* value : strings) delete value;
 	}
 
 	void Setup();

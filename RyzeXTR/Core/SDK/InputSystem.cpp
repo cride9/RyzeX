@@ -19,6 +19,7 @@ bool IPT::Setup( )
 
 	if ( hWindow == nullptr )
 		return false;
+	focused = GetForegroundWindow() == hWindow;
 
 	pOldWndProc = reinterpret_cast< WNDPROC >( SetWindowLongPtrW( hWindow, GWLP_WNDPROC, reinterpret_cast< LONG_PTR >( h::hkWndProc ) ) );
 
@@ -39,13 +40,27 @@ void IPT::Restore( )
 
 	// reset input state
 	i::InputSystem->EnableInput( true );
+	ResetPressed();
+}
+
+void IPT::ResetPressed() {
+	std::lock_guard<std::mutex> lock(keyMutex);
+	arrKeyState.fill(EKeyState::UP);
 }
 
 bool IPT::Process( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-	// prevent process when e.g. binding something in-menu
-	if ( menu::open && wParam != VK_INSERT && wParam != VK_DELETE )
+	std::lock_guard<std::mutex> lock(keyMutex);
+	if (uMsg == WM_KILLFOCUS || (uMsg == WM_ACTIVATEAPP && !wParam)) {
+		focused = false;
+		arrKeyState.fill(EKeyState::UP);
 		return false;
+	}
+	if (uMsg == WM_SETFOCUS || (uMsg == WM_ACTIVATEAPP && wParam)) {
+		focused = true;
+		arrKeyState.fill(EKeyState::UP);
+		return false;
+	}
 
 	// current active key
 	int nKey = 0;
@@ -98,7 +113,16 @@ bool IPT::Process( UINT uMsg, WPARAM wParam, LPARAM lParam )
 		return false;
 	}
 
-	// save key states
+	if (nKey <= 0 || nKey >= arrKeyState.size())
+		return false;
+	// Ignore presses used to edit bindings, but always process releases.
+	if (menu::open && nKey != VK_INSERT && nKey != VK_DELETE && state == EKeyState::DOWN)
+		return false;
+	if (state == EKeyState::DOWN && (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN) && (lParam & (1LL << 30)))
+		return false;
+	if (state == EKeyState::DOWN && arrKeyState[nKey] != EKeyState::DOWN && cfg::m_iKeyStates[nKey] == TOGGLE)
+		arrKeyBooleans[nKey] = !arrKeyBooleans[nKey];
+	// A press toggles once; every consumer reads that same state.
 	if ( state == EKeyState::UP && arrKeyState.at( nKey ) == EKeyState::DOWN ) // if swap states it will be pressed state
 		arrKeyState.at( nKey ) = EKeyState::RELEASED;
 	else

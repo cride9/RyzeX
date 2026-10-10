@@ -1,11 +1,16 @@
 #include "../../hooks.h"
 #include "../../../SDK/math.h"
+#include "../../../Features/Rage/Animations/ExperimentalResolver.h"
 
 void __fastcall h::hkSetupAliveLoop(void* ecx, void* edx) {
 
 	static auto original = detour::setupAliveLoop.GetOriginal<decltype(&h::hkSetupAliveLoop)>();
 
 	CAnimState* pState = static_cast <CAnimState*> (ecx);
+	if (pState->pEntity && pState->pEntity != g::pLocal
+		&& ExperimentalResolver::IsPredicting()
+		&& g::bAllowAnimations[pState->pEntity->EntIndex()])
+		return original(ecx, edx);
 	if (!pState->pEntity || pState->pEntity != g::pLocal)
 		return;
 

@@ -738,8 +738,7 @@ namespace BASS
 	HANDLE bass_lib_handle;
 	CLoad bass_lib;
 	DWORD stream_handle;
-	DWORD request_number;
+	std::atomic<DWORD> request_number{ 0 };
 	BOOL bass_init;
-	char bass_metadata[MAX_PATH];
 	char bass_channelinfo[MAX_PATH];
 }

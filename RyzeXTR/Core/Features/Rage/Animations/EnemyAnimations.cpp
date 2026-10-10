@@ -1,4 +1,5 @@
 #include "EnemyAnimations.h"
+#include "ExperimentalResolver.h"
 #include "../../../SDK/Menu/config.h"
 #include "../autowall.h"
 #include "../../Misc/Playerlist.h"
@@ -213,6 +214,28 @@ void Animations::TransformateMatrix(CBaseEntity* pEnt) {
 	auto pRecord = &lagcomp.GetLog(pEnt->EntIndex());
 	if (!pRecord || pRecord->pEntity != pEnt)
 		return;	
+
+	if (!pRecord->pRecord.empty()
+		&& pRecord->pRecord.front().iResolverMode == static_cast<int>(resolver::Mode::Experimental)) {
+		const auto& record = pRecord->pRecord.front();
+		const Vector renderOrigin = pEnt->GetAbsOrigin();
+		if (!record.bVisualMatrixValid || record.pEntity != pEnt
+			|| !renderOrigin.IsValid() || !record.vecAbsOrigin.IsValid())
+			return;
+
+		// The existing animfix builds VISUAL at this record's abs origin. Always
+		// position a fresh copy of that immutable source: the cache is replaced
+		// on new packets, so accumulating last-frame movement applies it twice.
+		const Vector delta = renderOrigin - record.vecAbsOrigin;
+		for (size_t bone = 0; bone < pRecord->pCachedMatrix.size(); ++bone) {
+			auto& matrix = pRecord->pCachedMatrix[bone];
+			matrix = record.pMatricies[VISUAL][bone];
+			matrix[0][3] += delta.x;
+			matrix[1][3] += delta.y;
+			matrix[2][3] += delta.z;
+		}
+		return;
+	}
 
 	static std::array<Vector, 65> vecLastOrigin = {Vector(0, 0, 0)};
 	if (vecLastOrigin[pEnt->EntIndex()] == Vector(0, 0, 0))
@@ -781,9 +804,20 @@ void HandleDormancyLeaving(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* p
 }
 
 void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog) {
+	const auto mode = resolver::GetMode(cfg::rage::iResolverMode);
+	pRecord->iResolverMode = static_cast<int>(mode);
+	if (mode != resolver::Mode::Experimental)
+		experimentalResolver.Reset(pRecord->iEntIndex);
+	else {
+		pRecord->bAnimationMatrixValid = false;
+		pRecord->bVisualMatrixValid = false;
+	}
 
 	CAnimState* pState = pEntity->AnimState();
 	Lagcompensation::LagRecord_t* pPrevious = SetupData(pEntity, pRecord, pLog);
+	if (mode == resolver::Mode::Experimental)
+		pRecord->bDidShot = pPrevious && pRecord->flLastShotTime > pPrevious->flSimulationTime
+			&& pRecord->flLastShotTime <= pRecord->flSimulationTime;
 	
 	pRecord->vecVelocity = DeterminePlayerVelocity(pEntity, pRecord, pPrevious, pState);
 	//pRecord->bBreakingLagcompensation = lagcomp.IsBreakingLagcompensation(pRecord);
@@ -925,23 +959,35 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 	pRecord->flDesyncDelta = flAimMatrixWidthRange * pEntity->AnimState()->flMaxBodyYaw;
 
 	pEntity->GetPoseParameters(pRecord->flPoses);
-	GetSideLayersForResolver(pEntity, pRecord);
+	if (mode == resolver::Mode::Standard) {
+		GetSideLayersForResolver(pEntity, pRecord);
+		FindDesyncSide(pRecord);
+	}
 
-	// Compute flGuessedYaw by sweeping playback rates across yaw offsets
-	// This is used by the resolver's animation layer matching logic
-	FindDesyncSide(pRecord);
-
-	if (playerList::arrPlayers[pEntity->EntIndex()].bOverrideResolver)
+	if (mode == resolver::Mode::Experimental) {
+		experimentalResolver.Resolve(pEntity, pRecord, pPrevious, pLog);
+		pRecord->vecAbsAngles = Vector(0.f, pState->flGoalFeetYaw, 0.f);
+		pEntity->SetAbsAngles(pRecord->vecAbsAngles);
+	}
+	else if (playerList::arrPlayers[pEntity->EntIndex()].bOverrideResolver)
 		pState->flGoalFeetYaw = M::NormalizeYaw(pRecord->vecEyeAngles.y + playerList::arrPlayers[pEntity->EntIndex()].flOverrideYaw);
 	else
 		Resolver(pEntity, pRecord, pPrevious);
 
 	SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[VISUAL], Interpolated | VisualAdjustment);
+	pRecord->bVisualMatrixValid = true;
 	std::memcpy(pLog->pCachedMatrix.data(), pRecord->pMatricies[VISUAL], sizeof(matrix3x4a_t)* MAXSTUDIOBONES);
 
 	if (cfg::rage::bEnable) {
 		SetupPlayerMatrix(pEntity, pRecord, pRecord->pMatricies[RESOLVE], BoneUsedByHitbox);
-		GenerateSafePointMatricies(pRecord->pEntity, pRecord);
+		pRecord->bAnimationMatrixValid = true;
+		if (mode == resolver::Mode::Standard)
+			GenerateSafePointMatricies(pRecord->pEntity, pRecord);
+		else if (mode == resolver::Mode::Experimental)
+			experimentalResolver.BuildSafePoints(pEntity, pRecord);
+		else
+			for (const auto type : { LEFT, RIGHT, CENTER, EXTRAPOLATED })
+				std::memcpy(pRecord->pMatricies[type], pRecord->pMatricies[RESOLVE], sizeof(pRecord->pMatricies[RESOLVE]));
 	}
 
 	pEntity->GetVelocity() = vecBackupVelocity;

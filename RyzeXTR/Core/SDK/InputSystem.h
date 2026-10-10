@@ -2,6 +2,7 @@
 // used: std::array
 #include <array>
 #include <Windows.h>
+#include <mutex>
 
 #include "../SDK/Menu/config.h"
 
@@ -35,6 +36,16 @@ namespace IPT
 	/* last processed key states */
 	inline std::array<EKeyState, 256U> arrKeyState = { };
 	inline bool arrKeyBooleans[ 256 ];
+	inline std::mutex keyMutex;
+	inline bool focused = true;
+	void ResetPressed();
+	inline void SetKeyMode(std::uint32_t key, int mode) {
+		if (key == 0 || key >= arrKeyState.size() || mode < NO || mode > ALWAYS_ON)
+			return;
+		std::lock_guard<std::mutex> lock(keyMutex);
+		cfg::m_iKeyStates[key] = mode;
+		arrKeyBooleans[key] = false;
+	}
 
 	// Get
 	/* set our window messages proccesor */
@@ -47,13 +58,15 @@ namespace IPT
 	/* is given key being held */
 	inline bool IsKeyDown( const std::uint32_t uButtonCode )
 	{
-		return arrKeyState.at( uButtonCode ) == EKeyState::DOWN;
+		std::lock_guard<std::mutex> lock(keyMutex);
+		return uButtonCode < arrKeyState.size() && arrKeyState[uButtonCode] == EKeyState::DOWN;
 	}
 
 	/* was given key released */
 	inline bool IsKeyReleased( const std::uint32_t uButtonCode )
 	{
-		if ( arrKeyState.at( uButtonCode ) == EKeyState::RELEASED )
+		std::lock_guard<std::mutex> lock(keyMutex);
+		if (uButtonCode < arrKeyState.size() && arrKeyState[uButtonCode] == EKeyState::RELEASED)
 		{
 			arrKeyState.at( uButtonCode ) = EKeyState::UP;
 			return true;
@@ -64,16 +77,14 @@ namespace IPT
 
 	inline bool HandleInput( const std::uint32_t uButtonCode )
 	{
-		if ( uButtonCode == 0 )
+		if (uButtonCode == 0 || uButtonCode >= arrKeyState.size())
 			return false;
+		std::lock_guard<std::mutex> lock(keyMutex);
 
 		if ( cfg::m_iKeyStates[ uButtonCode ] == HOLD ) {
-			return GetAsyncKeyState( uButtonCode );
+			return focused && arrKeyState[uButtonCode] == EKeyState::DOWN;
 		}
 		else if ( cfg::m_iKeyStates[ uButtonCode ] == TOGGLE ) {
-
-			if ( GetAsyncKeyState( uButtonCode ) & 1 )
-				arrKeyBooleans[ uButtonCode ] = !arrKeyBooleans[ uButtonCode ];
 
 			return arrKeyBooleans[ uButtonCode ]; //GetKeyState(uButtonCode);
 		}

@@ -1,4 +1,5 @@
 #include "config.h"
+#include "../Text.h"
 #include <Windows.h>
 #include <Psapi.h>
 #include <lmcons.h>
@@ -15,11 +16,18 @@
 #include <iomanip>
 #include <ctime>
 #include <thread>
+#include <map>
+#include <cmath>
+#include <limits>
 #include "gui.h"
 #include "../../Features/Rage/aimbot.h"
 
 void CConfig::Setup() {
 
+	for (auto* value : ints) delete value;
+	for (auto* value : bools) delete value;
+	for (auto* value : floats) delete value;
+	for (auto* value : strings) delete value;
 	ints.clear();
 	bools.clear();
 	floats.clear();
@@ -47,7 +55,7 @@ void CConfig::Setup() {
 		SetupBool(bHideshot, false, XorStr("bHideshot"));
 		SetupInt(iHideShotKey, 0, XorStr("iHideShotKey"));
 
-		SetupBool(bResolver, false, XorStr("bResolver"));
+	SetupInt(iResolverMode, 0, XorStr("iResolverMode"));
 		SetupBool(bOverride, false, XorStr("bOverride"));
 		SetupInt(iOverrideBind, 0, XorStr("iOverrideBind"));
 
@@ -395,7 +403,12 @@ void CConfig::Setup() {
 		
 
 		SetupBool(bKeyBindList, false, XorStr("bKeyBindList"));
-		SetupBoolArray(iKeyBindList, 11, false, XorStr("iKeyBindList"));
+		SetupBoolArray(iKeyBindList, 13, false, XorStr("iKeyBindList"));
+		SetupBool(bSpectatorList, false, "bSpectatorList");
+		SetupFloat(flHudScale, 1.f, "flHudScale");
+		float keyPosition[2] = { .02f, .5f }, spectatorPosition[2] = { .8f, .3f };
+		SetupFloatArray(flKeybindPosition, 2, keyPosition, "flKeybindPosition");
+		SetupFloatArray(flSpectatorPosition, 2, spectatorPosition, "flSpectatorPosition");
 
 		SetupBool(bBunnyHop, false, XorStr("bBunnyHop"));
 		SetupBool(bAutoStrafe, false, XorStr("bAutoStrafe"));
@@ -425,6 +438,9 @@ void CConfig::Setup() {
 		SetupInt(iRadioStation, 0, XorStr("iRadioStation"));
 		SetupFloat(flRadioVolume, 0.f, XorStr("flRadioVolume"));
 		SetupInt(iRadioMuteHotKey, 0, XorStr("iRadioMuteHotKey"));
+		SetupString(szCustomRadioUrl, "", "szCustomRadioUrl");
+		SetupStringArray(szRadioFavoriteNames, 4, "", "szRadioFavoriteNames");
+		SetupStringArray(szRadioFavoriteUrls, 4, "", "szRadioFavoriteUrls");
 
 		SetupBool(bOOF, false, XorStr("bOOF"));
 		SetupColor(flOOFColor, Color(0.355999f, 0.343815f, 0.666667f, 1.f), XorStr("flOOFColor"));
@@ -446,9 +462,14 @@ void CConfig::Setup() {
 
 		SetupBool(bDroppedWeaponESP, false, XorStr("bDroppedWeaponESP"));
 		SetupColor(flDroppedWeaponESP, Color(1.f, 1.f, 1.f, 1.f), XorStr("flDroppedWeaponESP"));
+		SetupBool(bDroppedWeaponIcon, false, "bDroppedWeaponIcon");
+		SetupBool(bDroppedWeaponAmmo, false, "bDroppedWeaponAmmo");
+		SetupBool(bWorldEspDistance, false, "bWorldEspDistance");
+		SetupInt(iWorldEspMaxDistance, 0, "iWorldEspMaxDistance");
 
 		SetupBool(bProjectileESP, false, XorStr("bProjectileESP"));
 		SetupColor(flProjectileESP, Color(1.f, 1.f, 1.f, 1.f), XorStr("flProjectileESP"));
+		SetupBool(bGrenadeTimers, false, "bGrenadeTimers");
 
 		SetupBool(bOnlyCheatlog, false, XorStr("bOnlyCheatlog"));
 
@@ -457,6 +478,11 @@ void CConfig::Setup() {
 
 		SetupBool(bDamageIndicator, false, XorStr("bDamageIndicator"));
 		SetupColor(flDamageIndicator, Color(1.f, 1.f, 1.f, 1.f), XorStr("flDamageIndicator"));
+		SetupColor(flDamageHeadshot, Color(255, 0, 0, 255), "flDamageHeadshot");
+		SetupFloat(flDamageLifetime, 1.f, "flDamageLifetime");
+		SetupFloat(flDamageRise, 18.f, "flDamageRise");
+		SetupInt(iDamageFontSize, 20, "iDamageFontSize");
+		SetupBool(bMergeDamage, false, "bMergeDamage");
 
 		SetupInt(iViewModelFov, 60, XorStr("iViewModelFov"));
 		SetupInt(iDebugFov, 90, XorStr("iDebugFov"));
@@ -470,6 +496,17 @@ void CConfig::Setup() {
 		SetupBool(bAutobuy, false, XorStr("bAutobuy"));
 		SetupInt(iPistols, 0, XorStr("iPistols"));
 		SetupInt(iSnipers, 0, XorStr("iSnipers"));
+		SetupInt(iRifles, 0, "iRifles");
+		SetupBool(bSeparateAutobuy, false, "bSeparateAutobuy");
+		SetupIntArray(iTeamPistols, 2, 0, "iTeamPistols");
+		SetupIntArray(iTeamRifles, 2, 0, "iTeamRifles");
+		SetupIntArray(iTeamSnipers, 2, 0, "iTeamSnipers");
+		for (int team = 0; team < 2; ++team) {
+			SetupBoolArray(bTeamEquipments[team], 3, false, "bTeamEquipments" + std::to_string(team));
+			SetupBoolArray(bTeamGrenades[team], 5, false, "bTeamGrenades" + std::to_string(team));
+		}
+		SetupInt(iAutobuyReserve, 0, "iAutobuyReserve");
+		SetupBool(bAutobuyKeepWeapons, false, "bAutobuyKeepWeapons");
 		SetupBoolArray(bEquipments, 3, false, XorStr("bEquipments"));
 		SetupBoolArray(bGrenades, 5,  false, XorStr("bGrenades"));
 
@@ -534,43 +571,72 @@ void CConfig::Setup() {
 		SetupFloat(flSensitivity, 0.00f, XorStr("flSensitivity"));
 	}
 
+	{
+		auto& s = cfg::radioVisualizer;
+		const radio_visualizer::Settings defaults;
+		PushCategory("RadioVisualizer");
+		SetupBool(s.enabled, defaults.enabled, "Enabled");
+		SetupInt(s.preset, defaults.preset, "Preset");
+		SetupInt(s.quality, defaults.quality, "Quality");
+		SetupFloat(s.size, defaults.size, "Size");
+		SetupFloat(s.position[0], defaults.position[0], "PositionX");
+		SetupFloat(s.position[1], defaults.position[1], "PositionY");
+		SetupFloat(s.opacity, defaults.opacity, "Opacity");
+		SetupColor(s.colorA, Color(defaults.colorA[0], defaults.colorA[1], defaults.colorA[2], defaults.colorA[3]), "GradientStart");
+		SetupColor(s.colorB, Color(defaults.colorB[0], defaults.colorB[1], defaults.colorB[2], defaults.colorB[3]), "GradientEnd");
+		SetupColor(s.logoColor, Color(defaults.logoColor[0], defaults.logoColor[1], defaults.logoColor[2], defaults.logoColor[3]), "LogoColor");
+		SetupFloat(s.sensitivity, defaults.sensitivity, "Sensitivity");
+		SetupFloat(s.smoothing, defaults.smoothing, "Smoothing");
+		SetupFloat(s.bassReaction, defaults.bassReaction, "BassReaction");
+		SetupBool(s.logoPulse, defaults.logoPulse, "LogoPulse");
+		SetupBool(s.glow, defaults.glow, "Glow");
+		SetupFloat(s.glowStrength, defaults.glowStrength, "GlowStrength");
+		SetupBool(s.rings, defaults.rings, "Rings");
+		SetupFloat(s.ringStrength, defaults.ringStrength, "RingStrength");
+		SetupBool(s.particles, defaults.particles, "Particles");
+		SetupFloat(s.particleDensity, defaults.particleDensity, "ParticleDensity");
+	}
+
 	// scripts
 	{
 		PushCategory( XorStr( "Scripts" ) );
-		SetupStringArray( cfg::vecScripts.data( ), cfg::vecScripts.size( ), XorStr( "" ), XorStr( "szScripts" ) );
+		// Lua clears its transfer vectors after loading; registered values need their own lifetime.
+		storedScripts = cfg::vecScripts;
+		storedScriptVariables = cfg::vecScriptVariables;
+		SetupStringArray(storedScripts.data(), storedScripts.size(), XorStr(""), XorStr("szScripts"));
 
-		for (const LuaVariables_t& variable : cfg::vecScriptVariables)
+		for (auto& variable : storedScriptVariables)
 		{
 			switch (variable.nType)
 			{
 				case EVARIABLETYPES::VARIABLES_BOOL:
 				{
-					BoolObject_t pObject = std::any_cast< BoolObject_t >( variable.pObject );
+					auto& pObject = std::any_cast<BoolObject_t&>(variable.pObject);
 					SetupBool( pObject.bValue, false, variable.strName );
 					break;
 				}
 				case EVARIABLETYPES::VARIABLES_BOOL_ARRAY:
 				{
-					BoolArrayObject_t pObject = std::any_cast< BoolArrayObject_t >( variable.pObject );
+					auto& pObject = std::any_cast<BoolArrayObject_t&>(variable.pObject);
 					for (size_t i = 0u; i < pObject.deqValues.size( ); i++)
 						SetupBool( pObject.deqValues[ i ], false, variable.strName + std::to_string( i ) );
 					break;
 				}
 				case EVARIABLETYPES::VARIABLES_INT:
 				{
-					IntObject_t pObject = std::any_cast< IntObject_t >( variable.pObject );
+					auto& pObject = std::any_cast<IntObject_t&>(variable.pObject);
 					SetupInt( pObject.iValue, 0, variable.strName );
 					break;
 				}
 				case EVARIABLETYPES::VARIABLES_FLOAT:
 				{
-					FloatObject_t pObject = std::any_cast< FloatObject_t >( variable.pObject );
+					auto& pObject = std::any_cast<FloatObject_t&>(variable.pObject);
 					SetupFloat( pObject.flValue, 0.0f, variable.strName );
 					break;
 				}
 				case EVARIABLETYPES::VARIABLES_COLOR:
 				{
-					ColorObject_t pObject = std::any_cast< ColorObject_t >( variable.pObject );
+					auto& pObject = std::any_cast<ColorObject_t&>(variable.pObject);
 					SetupColor( pObject.flValue, Color( 1.f, 1.f, 1.f, 1.f ), variable.strName );
 					break;
 				}
@@ -700,15 +766,58 @@ void CConfig::CreateMainDirectory( )
 		folder = std::string(path) + "\\ryzextr\\";
 	}
 	
-	if ( SUCCEEDED( CreateDirectory(folder.c_str(), NULL ) ) )
+	if (CreateDirectory(folder.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS)
 		printf( "Succesfully created directory" );
 	else
 		throw std::runtime_error( "Failed to create config directory" );
 }
 
-std::string cfgName = "";
-void SaveThread();
-void CConfig::Save(std::string ConfigName)
+void CConfig::Save(std::string ConfigName) {
+	if (bSaving || ConfigName.empty() || ConfigName.find_first_of("\\/:*?\"<>|\r\n") != std::string::npos)
+		return;
+	bSaving = true;
+	try {
+		if (bInitialized)
+			Setup();
+		TCHAR path[MAX_PATH]{};
+		if (FAILED(SHGetFolderPath(nullptr, CSIDL_APPDATA, nullptr, 0, path)))
+			throw std::runtime_error("Config folder unavailable");
+		const std::string folder = std::string(path) + "\\ryzextr\\";
+		const std::string file = folder + ConfigName + ".xtr";
+		CreateDirectoryA(folder.c_str(), nullptr);
+		// Serialize on the caller's thread so rendering cannot race a detached writer.
+		std::map<std::string, std::map<std::string, std::string>> sections;
+		for (const auto* value : ints) sections[value->category][value->name] = std::to_string(*value->value);
+		for (const auto* value : floats) sections[value->category][value->name] = std::to_string(*value->value);
+		for (const auto* value : bools) sections[value->category][value->name] = *value->value ? "true" : "false";
+		for (const auto* value : strings) sections[value->category][value->name] = *value->value;
+		const std::string temporary = file + ".tmp";
+		std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
+		for (const auto& [category, entries] : sections) {
+			output << "[" << category << "]\r\n";
+			for (const auto& [name, text] : entries) {
+				std::string line = text;
+				std::replace(line.begin(), line.end(), '\r', ' ');
+				std::replace(line.begin(), line.end(), '\n', ' ');
+				output << name << "=" << line << "\r\n";
+			}
+			output << "\r\n";
+		}
+		output.close();
+		if (!output)
+			throw std::runtime_error("Could not write config");
+		WritePrivateProfileStringA(nullptr, nullptr, nullptr, file.c_str());
+		if (!MoveFileExA(temporary.c_str(), file.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+			throw std::runtime_error("Could not replace config");
+		WritePrivateProfileStringA(nullptr, nullptr, nullptr, file.c_str());
+		RefreshConfigs();
+	} catch (const std::exception& error) {
+		util::Print(error.what());
+	}
+	bSaving = false;
+}
+
+void CConfig::Load(std::string ConfigName)
 {
 	if (bSaving || ConfigName.empty())
 		return;
@@ -725,153 +834,59 @@ void CConfig::Save(std::string ConfigName)
 	}
 
 	CreateDirectory(folder.c_str(), NULL);
-
-	// Define lambda functions for saving each type of value
-	auto saveInts = [&]() {
-		for (auto value : ints)
-			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
-	};
-
-	auto saveFloats = [&]() {
-		for (auto value : floats)
-			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
-	};
-
-	auto saveBools = [&]() {
-		for (auto value : bools)
-			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
-	};
-
-	auto saveStrings = [&]() {
-		for (auto value : strings)
-			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), reinterpret_cast<std::string*>(value->value)->c_str(), file.c_str());
-	};
-
-	//auto saveStuff = [&]() {
-
-	//	// Create separate threads for each type of value
-	//	std::thread intsThread(saveInts);
-	//	std::thread floatsThread(saveFloats);
-	//	std::thread boolsThread(saveBools);
-	//	std::thread stringsThread(saveStrings);
-
-	//	// Wait for all threads to finish
-	//	intsThread.join();
-	//	floatsThread.join();
-	//	boolsThread.join();
-	//	stringsThread.join();
-
-	//};
-	//std::thread save(saveStuff);
-	//save.join();
-
-	if (bInitialized)
-		Setup();
-
-	cfgName = ConfigName;
-	auto handle = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(SaveThread), nullptr, 0, nullptr);
-	CloseHandle(handle);
-
-	bSaving = false;
-}
-
-void SaveThread() {
-
-	pConfig->bSaving = true;
-
-	static TCHAR path[MAX_PATH];
-	std::string folder, file;
-
-	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
-	{
-		folder = std::string(path) + "\\ryzextr\\";
-		file = std::string(path) + "\\ryzextr\\" + cfgName + ".xtr";
-	}
-
-	CreateDirectory(folder.c_str(), NULL);
-
-	// Define lambda functions for saving each type of value
-	auto saveInts = [&]() {
-		for (auto value : pConfig->ints)
-			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
-	};
-
-	auto saveFloats = [&]() {
-		for (auto value : pConfig->floats)
-			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), file.c_str());
-	};
-
-	auto saveBools = [&]() {
-		for (auto value : pConfig->bools)
-			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", file.c_str());
-	};
-
-	auto saveStrings = [&]() {
-		for (auto value : pConfig->strings)
-			WritePrivateProfileString(value->category.c_str(), value->name.c_str(), reinterpret_cast<std::string*>(value->value)->c_str(), file.c_str());
-	};
-
-	// Create separate threads for each type of value
-	std::thread intsThread(saveInts);
-	std::thread floatsThread(saveFloats);
-	std::thread boolsThread(saveBools);
-	std::thread stringsThread(saveStrings);
-
-	// Wait for all threads to finish
-	intsThread.join();
-	floatsThread.join();
-	boolsThread.join();
-	stringsThread.join();
-	
-	pConfig->RefreshConfigs();
-	pConfig->bSaving = false;
-}
-
-void CConfig::Load(std::string ConfigName)
-{
-	if (bSaving)
+	const DWORD attributes = GetFileAttributesA(file.c_str());
+	if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+		bSaving = false;
 		return;
-
-	bSaving = true;
-
-	static TCHAR path[MAX_PATH];
-	std::string folder, file;
-
-	if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, path)))
-	{
-		folder = std::string(path) + "\\ryzextr\\";
-		file = std::string(path) + "\\ryzextr\\" + ConfigName + ".xtr";
 	}
-
-	CreateDirectory(folder.c_str(), NULL);
 
 	char value_l[32] = { '\0' };
 	char value_string[256] = { '\0' };
 
 	for (auto value : ints)
 	{
-		GetPrivateProfileString(value->category.c_str(), value->name.c_str(), "", value_l, 32, file.c_str());
-		*value->value = atoi(value_l);
+		GetPrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), value_l, 32, file.c_str());
+		char* end = nullptr;
+		const auto parsed = std::strtoll(value_l, &end, 10);
+		if (end != value_l && *end == '\0' && parsed >= (std::numeric_limits<int>::min)() && parsed <= (std::numeric_limits<int>::max)())
+			*value->value = static_cast<int>(parsed);
 	}
 
 	for (auto value : floats)
 	{
-		GetPrivateProfileString(value->category.c_str(), value->name.c_str(), "", value_l, 32, file.c_str());
-		*value->value = atof(value_l);
+		GetPrivateProfileString(value->category.c_str(), value->name.c_str(), std::to_string(*value->value).c_str(), value_l, 32, file.c_str());
+		char* end = nullptr;
+		const float parsed = std::strtof(value_l, &end);
+		if (end != value_l && *end == '\0' && std::isfinite(parsed))
+			*value->value = parsed;
 	}
 
 	for (auto value : bools)
 	{
-		GetPrivateProfileString(value->category.c_str(), value->name.c_str(), "", value_l, 32, file.c_str());
+		GetPrivateProfileString(value->category.c_str(), value->name.c_str(), *value->value ? "true" : "false", value_l, 32, file.c_str());
 		*value->value = !strcmp(value_l, "true");
 	}
 
 	for ( auto value : strings )
 	{
-		GetPrivateProfileString( value->category.c_str( ), value->name.c_str( ), "", value_string, 256, file.c_str( ) );
+		GetPrivateProfileString(value->category.c_str(), value->name.c_str(), value->value->c_str(), value_string, 256, file.c_str());
 		*value->value = value_string;
+		std::size_t limit = 255;
+		if (value->name == "szCustomClantagBuffer" || value->name == "szKillsayBuffer") limit = 31;
+		if (value->name == "szBombBuffer") limit = 11;
+		if (value->value->size() > limit)
+            value->value->resize(text::BoundedUtf8Length(*value->value, limit));
 	}
 
+	char resolverMode[32]{};
+	char legacyResolver[32]{};
+	GetPrivateProfileStringA("RageBot", "iResolverMode", "", resolverMode, sizeof(resolverMode), file.c_str());
+	GetPrivateProfileStringA("RageBot", "bResolver", "", legacyResolver, sizeof(legacyResolver), file.c_str());
+	cfg::rage::iResolverMode = resolver::LoadMode(resolverMode, legacyResolver, cfg::rage::iResolverMode);
+	radio_visualizer::Sanitize(cfg::radioVisualizer);
+
+	cfg::vecScripts = storedScripts;
+	cfg::vecScriptVariables = storedScriptVariables;
 	bSaving = false;
 }
 

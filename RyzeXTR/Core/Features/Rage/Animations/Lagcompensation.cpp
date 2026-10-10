@@ -1,5 +1,6 @@
 #include "Lagcompensation.h"
 #include "EnemyAnimations.h"
+#include "ExperimentalResolver.h"
 #include "../../Networking/networking.h"
 #include "../../../SDK/InputSystem.h"
 #include "../exploits.h"
@@ -96,6 +97,13 @@ void Lagcompensation::FrameStageNotify( ) {
 
 	if ( !g::pLocal || g::bUpdatingSkins )
 		return;
+	const auto mode = resolver::GetMode(cfg::rage::iResolverMode);
+	static auto previousMode = mode;
+	if (previousMode != mode) {
+		experimentalResolver.ResetAll();
+		for (auto& log : pPlayerLogs) log.InvalidateRecords();
+		previousMode = mode;
+	}
 
 	for ( int i = 1; i <= i::GlobalVars->nMaxClients; i++ ) {
 
@@ -105,22 +113,25 @@ void Lagcompensation::FrameStageNotify( ) {
 		if ( !pEntity || !pEntity->IsPlayer( ) || !pEntity->IsAlive( ) || pEntity == g::pLocal )
 		{
 			pLog->bLeftDormancy = true;
+			experimentalResolver.Reset(i);
 			continue;
 		}
 		pLog->pEntity = pEntity;
 		if ( !pEntity->IsEnemy( g::pLocal ) ) {
+			experimentalResolver.Reset(i);
 			g::bSettingUpBones[ i ] = g::bAllowAnimations[ i ] = true;
 			continue;
 		}
 
-		if ( pEntity->GetSimulationTime( ) == pEntity->GetOldSimulationTime( ) )
-			continue;
-
 		if ( pEntity->IsDormant( ) )
 		{
 			pLog->bLeftDormancy = true;
+			experimentalResolver.Reset(i);
 			continue;
 		}
+		if (pEntity->GetSimulationTime() == pEntity->GetOldSimulationTime()
+			|| (!pLog->pRecord.empty() && pEntity->GetSimulationTime() == pLog->pRecord.front().flSimulationTime))
+			continue;
 
 		std::shared_ptr<LagRecord_t> pPrevious = std::make_shared<LagRecord_t>( );
 
@@ -134,7 +145,7 @@ void Lagcompensation::FrameStageNotify( ) {
 		std::shared_ptr<Lagcompensation::LagRecord_t> pRecordUnique = std::make_shared<Lagcompensation::LagRecord_t>( pPlayerLogs[ i ].pEntity );
 		if ( pPrevious.get( )->bRestoreData )
 		{
-			if ( !DataChanged( pEntity, pPrevious.get( ) ) ) {
+			if (mode != resolver::Mode::Experimental && !DataChanged( pEntity, pPrevious.get( ) ) ) {
 
 				continue;
 			}
@@ -602,6 +613,7 @@ void Lagcompensation::LagRecord_t::ApplyMatrix( CBaseEntity* pEntity, matrix3x4a
 }
 
 bool Lagcompensation::LagRecord_t::IsValid( ) {
+	if (!bAnimationMatrixValid) return false;
 
 	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo( );
 

@@ -191,17 +191,12 @@ Vector CAimBot::ScanHitboxes( std::vector<Lagcompensation::AnimationInfo_t*>& ve
 				const bool bPlayerSafe =
 					playerList::arrPlayers[pRecord->iEntIndex].bSafePoint;
 
-				const bool bNeedsSafeCheck = bShouldSafe || bPlayerSafe;
+				const bool bExperimentalHead = pRecord->iResolverMode == static_cast<int>(resolver::Mode::Experimental) && iHitbox == HITBOX_HEAD;
+				const bool bNeedsSafeCheck = bShouldSafe || bPlayerSafe || bShouldForceSafePoint || bExperimentalHead;
 
 				std::vector<Vector> vecWorldPoints = CreatePoints( vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint );
-				// OPTIMIZATION: first element in the vector is always the hitbox center
+				// Experimental head scans put the certified overlap point first.
 				for ( Vector& vecHitboxPoint : vecWorldPoints ) {
-
-					FireBulletData_t pData{};
-					float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData);
-
-					if (flDamage < flTransformedDamage)
-						continue;
 
 					/* Only backtrack safe entities */
 					int iCollidePoints = 0;
@@ -218,32 +213,24 @@ Vector CAimBot::ScanHitboxes( std::vector<Lagcompensation::AnimationInfo_t*>& ve
 
 					const bool bActuallySafe = (iCollidePoints == 3);
 
-					if (bPlayerSafe && !bActuallySafe)
+					if ((bPlayerSafe || bShouldForceSafePoint) && !bActuallySafe)
 						continue;
 
 					if (bShouldSafe)
 					{
 						if (iCollidePoints < 2)
 							continue;
-
-						if (bShouldForceSafePoint && !bActuallySafe)
-							continue;
 					}
 
-					if ( playerList::arrPlayers[ pRecord->iEntIndex ].bSafePoint && iCollidePoints < 3 )
+					FireBulletData_t pData{};
+					const float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData);
+					if (flDamage < flTransformedDamage)
 						continue;
-
-					if ( bShouldSafe ) {
-
-						if ( iCollidePoints < 2 )
-							continue;
-
-						if ( bShouldForceSafePoint && iCollidePoints < 3 )
-							continue;
-					}
+					const bool bHeadOverlap = bExperimentalHead && pRecord->bHasHeadOverlap && bActuallySafe
+						&& vecHitboxPoint == pRecord->vecRageSafePoint && pData.enterTrace.iHitbox == HITBOX_HEAD;
 
 					/* Push back this shit */
-					vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), bActuallySafe, flTransformedDamage, i));
+					vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), bActuallySafe, flTransformedDamage, i, bHeadOverlap));
 				}
 			}
 		}
@@ -656,9 +643,15 @@ std::vector<Vector> CAimBot::CreatePoints( Vector vecEyePosition, CBaseCombatWea
 
 	float flRadius = 0.f;
 	Vector vecCenter = pRecord->pEntity->GetHitboxPosition( iHitbox, pRecord->pMatricies[ iType ], flRadius );
+	if (iHitbox == HITBOX_HEAD && iType == RESOLVE && pRecord->bHasHeadOverlap
+		&& pRecord->iResolverMode == static_cast<int>(resolver::Mode::Experimental))
+		refVecPoints.push_back(pRecord->vecRageSafePoint);
 
 	if ( flRadius < 0 || !bShouldMultipoint )
-		return { vecCenter };
+	{
+		refVecPoints.push_back(vecCenter);
+		return refVecPoints;
+	}
 
 	float flHitboxDistance = flRadius * ( ( iHitbox == HITBOX_HEAD ? curConfig.iHeadScale : curConfig.iBodyScale ) * 0.01f );
 

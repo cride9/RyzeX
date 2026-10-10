@@ -2,8 +2,23 @@
 #include "../../Features/Rage/antiaim.h"
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Lua/Lua.h"
+#include "../../Features/Misc/misc.h"
+#include "../../Features/Misc/RadioVisualizer.h"
+#include "../Text.h"
 #include <iostream>
 #include <string>
+
+namespace {
+    template<std::size_t Size>
+    bool EditString(const char* label, std::string& value) {
+        char buffer[Size]{};
+        std::copy_n(value.data(), text::BoundedUtf8Length(value, Size - 1), buffer);
+        if (!ImGui::InputText(label, buffer, sizeof(buffer)))
+            return false;
+        value = buffer;
+        return true;
+    }
+}
 void menu::HandleMenuElements() noexcept {
 
     ImGui::Begin(("##main"), NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoResize*/);
@@ -103,6 +118,8 @@ void menu::HandleMenuElements() noexcept {
         ImGui::PopStyleVar();
         ImGui::PopStyleVar(4);
 
+        radio_visualizer::DrawSettingsModal(radioLogoFont);
+
     }
     ImGui::End();
 }
@@ -176,7 +193,8 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         ImGui::Keybind(("aimbotkey"), &iAimbotKey);
         ImGui::Checkbox(("Silent"), &bSilentAim);
         ImGui::SliderInt(("Fov"), &iAimbotFov, 0, 180); 
-        ImGui::Checkbox(("Resolver"), &bResolver);
+        const char* resolverModes[] = { "Off", "Standard", "Experimental" };
+        ImGui::Combo(("Resolver"), &iResolverMode, resolverModes, IM_ARRAYSIZE(resolverModes));
 
         ImGui::Checkbox(("Force baim"), &bForceBaim);
         ImGui::Keybind(("fbaimKey"), &iForceBaimKey);
@@ -742,9 +760,19 @@ void menu::Visual(ImVec2 savedCursorPosition) {
 
         ImGui::Checkbox(("Dropped weapons"), &bDroppedWeaponESP);
         ImGui::ColorEdit4(("##flDroppedWeaponESP"), flDroppedWeaponESP);
+        if (bDroppedWeaponESP) {
+            ImGui::Checkbox("Weapon icons", &bDroppedWeaponIcon);
+            ImGui::Checkbox("Dropped ammo", &bDroppedWeaponAmmo);
+        }
 
         ImGui::Checkbox(("Projectile"), &bProjectileESP);
         ImGui::ColorEdit4(("##flProjectileESP"), flProjectileESP);
+        if (bProjectileESP)
+            ImGui::Checkbox("Smoke / fire timers", &bGrenadeTimers);
+        if (bDroppedWeaponESP || bProjectileESP) {
+            ImGui::Checkbox("World ESP distance", &bWorldEspDistance);
+            ImGui::SliderInt("Maximum distance (m, 0 = unlimited)", &iWorldEspMaxDistance, 0, 200);
+        }
 
         ImGui::Checkbox(("Nade prediction"), &bNadePrediction);
 
@@ -757,6 +785,14 @@ void menu::Visual(ImVec2 savedCursorPosition) {
 
 		ImGui::Checkbox(("Damage Indicator"), &bDamageIndicator);
 		ImGui::ColorEdit4(("##flDamageIndicator"), flDamageIndicator);
+        if (bDamageIndicator) {
+            ImGui::TextUnformatted("Headshot color");
+            ImGui::ColorEdit4("##flDamageHeadshot", flDamageHeadshot);
+            ImGui::SliderFloat("Damage lifetime", &flDamageLifetime, .25f, 5.f, "%.2f s");
+            ImGui::SliderFloat("Damage rise", &flDamageRise, 0.f, 80.f, "%.0f");
+            ImGui::SliderInt("Damage text size", &iDamageFontSize, 10, 36);
+            ImGui::Checkbox("Merge simultaneous hits", &bMergeDamage);
+        }
 
         ImGui::Checkbox(("Capsule on hit"), &bDrawCapsule);
         ImGui::ColorEdit4(("##flDrawCapsuleColor"), flDrawCapsuleColor, true);
@@ -822,7 +858,7 @@ void menu::Visual(ImVec2 savedCursorPosition) {
 
 void menu::Misc(ImVec2 savedCursorPosition) {
 
-    static const char* arrRadios[] = { ("2000's"), ("Rock"), ("Techno"), ("Rap"), ("Chill"), ("Club"), ("House"), ("8-Bit"), ("8-Bit Alternative"), ("Lo-Fi"), ("Eurobeat"), ("Nightcore"),("Radio 1"), ("Phonk") };
+    static const char* arrRadios[] = { ("Gabber"), ("Rock"), ("Techno"), ("Rap"), ("Chill"), ("Club"), ("House"), ("8-Bit"), ("8-Bit Alternative"), ("Lo-Fi"), ("Eurobeat"), ("Nightcore"),("Radio 1"), ("Phonk") };
     using namespace cfg::misc;
 
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x + 1);
@@ -861,10 +897,7 @@ void menu::Misc(ImVec2 savedCursorPosition) {
         
         ImGui::Checkbox(("Clantag"), &bClantag);
         if (bClantag) {
-            char CustomClantagBuffer[32]{};
-            strcpy(CustomClantagBuffer, szCustomClantagBuffer.c_str());
-            ImGui::InputText(("Custom clantag"), CustomClantagBuffer, sizeof(CustomClantagBuffer));
-            szCustomClantagBuffer = CustomClantagBuffer;
+            EditString<32>("Custom clantag", szCustomClantagBuffer);
         }
         
         ImGui::Checkbox(("Invert knife"), &bInvertKnife);
@@ -889,55 +922,38 @@ void menu::Misc(ImVec2 savedCursorPosition) {
     {
         ImGui::Checkbox(("Killsay"), &bKillsay);
         if (bKillsay) {
-            char killsayBuffer[32]{};
-            strcpy(killsayBuffer, szKillsayBuffer.c_str());
-            ImGui::InputText(("Text"), killsayBuffer, sizeof(killsayBuffer));
-            szKillsayBuffer = killsayBuffer;
+            EditString<32>("Text", szKillsayBuffer);
         }
 
-        char bombCharBuffer[12]{};
-        strcpy(bombCharBuffer, szBombBuffer.c_str());
-        ImGui::InputText(("Bomb text"), bombCharBuffer, sizeof(bombCharBuffer));
-        szBombBuffer = bombCharBuffer;
+        EditString<12>("Bomb text", szBombBuffer);
 
         ImGui::Checkbox(("Filter logs"), &bOnlyCheatlog);
 
-        for (size_t i = 0; i < 65; i++) {
-            if (playerList::arrPlayers[i].bLocalPlayer) {
-                if (playerList::arrPlayers[i].iTeamID == TEAM_TT) {
-
-                    static const char* pistolsT[] = { ("none"), ("glock"), ("dual beretta"), ("p250"),  ("tec9 / cz-auto"), ("desert eagle / revolver") };
-                    static const char* riflesT[] = { ("none"), ("galil ar"), ("ak47"), ("sg 553") };
-                    static const char* snipersT[] = { ("none"), ("ssg08"), ("awp"), ("g3sg1") };
-                    static const char* equipmentsT[] = { ("kevlar + helmet"), ("zeus") };
-
-                    static const char* grenadesT[] = { ("molotov"), ("decoy grenade"),("flashbang"),("he grenade"), ("smoke grenade") };
-
-                    ImGui::Checkbox(("Autobuy masterswitch"), &bAutobuy);
-
-                    ImGui::Combo(("Pistols"), &cfg::misc::iPistols, pistolsT, IM_ARRAYSIZE(pistolsT));
-                    ImGui::Combo(("Snipers"), &cfg::misc::iSnipers, snipersT, IM_ARRAYSIZE(snipersT));
-
-                    ImGui::MultiComboBox(("Equipments"), equipmentsT, bEquipments, IM_ARRAYSIZE(equipmentsT));
-                    ImGui::MultiComboBox(("Grenades"), grenadesT, bGrenades, IM_ARRAYSIZE(grenadesT));
-                }
-                else {
-                    static const char* pistolsCT[] = { ("None"), ("Usp-s / p2000"), ("Dual beretta"), ("P250"), ("Five-seven / Cz-auto"), ("Desert eagle / Revolver") };
-                    static const char* riflesCT[] = { ("None"), ("Famas"), ("M4a1-s / M4a4"), ("Aug") };
-                    static const char* snipersCT[] = { ("None"), ("Ssg08"), ("Awp"), ("Scar-20") };
-                    static const char* equipmentsCT[] = { ("Kevlar + Helmet"), ("Zeus"), ("Defuse kit") };
-                    static const char* grenadesCT[] = { ("Incendiary grenade"), ("Decoy grenade"), ("Flashbang"), ("He grenade"), ("Smoke grenade") };
-                   
-                    ImGui::Checkbox(("Autobuy masterswitch"), &bAutobuy);
-
-                    ImGui::Combo(("Pistols"), &cfg::misc::iPistols, pistolsCT, IM_ARRAYSIZE(pistolsCT));
-                    ImGui::Combo(("Snipers"), &cfg::misc::iSnipers, snipersCT, IM_ARRAYSIZE(snipersCT));
-
-                    ImGui::MultiComboBox(("Equipments"), equipmentsCT, bEquipments, IM_ARRAYSIZE(equipmentsCT));
-                    ImGui::MultiComboBox(("Grenades"), grenadesCT, bGrenades, IM_ARRAYSIZE(grenadesCT));
-                }
-                break;
-            }
+        ImGui::Checkbox("Autobuy", &bAutobuy);
+        if (bAutobuy) {
+            ImGui::Checkbox("Separate T / CT presets", &bSeparateAutobuy);
+            static int editTeam = 0;
+            static const char* teams[] = {"T", "CT"};
+            ImGui::Combo("Edit team", &editTeam, teams, 2);
+            const bool ct = editTeam == 1;
+            static const char* pistolsT[] = {"None", "Glock", "Dual Berettas", "P250", "Tec-9 / CZ75", "Deagle / Revolver"};
+            static const char* pistolsCT[] = {"None", "USP-S / P2000", "Dual Berettas", "P250", "Five-Seven / CZ75", "Deagle / Revolver"};
+            static const char* riflesT[] = {"None", "Galil", "AK-47", "SG 553"};
+            static const char* riflesCT[] = {"None", "Famas", "M4A4 / M4A1-S", "AUG"};
+            static const char* snipersT[] = {"None", "SSG 08", "AWP", "G3SG1"};
+            static const char* snipersCT[] = {"None", "SSG 08", "AWP", "SCAR-20"};
+            static const char* equipment[] = {"Armor + helmet", "Zeus", "Defuse kit (CT)"};
+            static const char* grenades[] = {"Molotov / Incendiary", "Decoy", "Flashbang", "HE grenade", "Smoke"};
+            int* pistol = bSeparateAutobuy ? &iTeamPistols[editTeam] : &iPistols;
+            int* rifle = bSeparateAutobuy ? &iTeamRifles[editTeam] : &iRifles;
+            int* sniper = bSeparateAutobuy ? &iTeamSnipers[editTeam] : &iSnipers;
+            ImGui::Combo("Pistol", pistol, ct ? pistolsCT : pistolsT, 6);
+            ImGui::Combo("Rifle", rifle, ct ? riflesCT : riflesT, 4);
+            ImGui::Combo("Sniper (takes priority)", sniper, ct ? snipersCT : snipersT, 4);
+            ImGui::MultiComboBox("Equipment", equipment, bSeparateAutobuy ? bTeamEquipments[editTeam] : bEquipments, 3);
+            ImGui::MultiComboBox("Grenades", grenades, bSeparateAutobuy ? bTeamGrenades[editTeam] : bGrenades, 5);
+            ImGui::Checkbox("Keep existing weapons", &bAutobuyKeepWeapons);
+            ImGui::SliderInt("Keep at least ($)", &iAutobuyReserve, 0, 16000);
         }
     }
     ImGui::EndChild();
@@ -947,19 +963,34 @@ void menu::Misc(ImVec2 savedCursorPosition) {
     {
 		ImGui::Checkbox("Keybind", &cfg::misc::bKeyBindList);
         if (bKeyBindList) {
-            static const char* options[] = { "Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping", "Auto Nade", "Manual Anti-Aim"};
+            static const char* options[] = { "Aimbot", "Exploit", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping", "Auto Nade", "Manual Anti-Aim", "Radio mute"};
             ImGui::MultiComboBox("Keybinds", options, cfg::misc::iKeyBindList, IM_ARRAYSIZE(options));
+        }
+        ImGui::Checkbox("Spectator list", &bSpectatorList);
+        if (bKeyBindList || bSpectatorList) {
+            ImGui::SliderFloat("HUD scale", &flHudScale, .75f, 2.f, "%.2f");
+            ImGui::TextUnformatted("Drag the lists while the menu is open");
+            if (ImGui::Button("Reset HUD positions", ImVec2(ImGui::GetContentRegionAvail().x, 20), true, true)) {
+                flKeybindPosition[0] = .02f; flKeybindPosition[1] = .5f;
+                flSpectatorPosition[0] = .8f; flSpectatorPosition[1] = .3f;
+            }
         }
 
         static const char* arrHitSoundOptions[] = { ("None"), ("Default"), ("Custom") };
         ImGui::Combo(("Hitsound##combo"), &iHitSound, arrHitSoundOptions, IM_ARRAYSIZE(arrHitSoundOptions));
         ImGui::SliderFloat("Volume##123", &flHitSoundVolume, 0.f, 100.f, "%.2f");
+        if (iHitSound != 0 && ImGui::Button("Preview hitsound", ImVec2(ImGui::GetContentRegionAvail().x, 20), true, true))
+            misc::PreviewHitSound();
+        const auto soundError = misc::GetHitSoundError();
+        if (iHitSound == 2 && !soundError.empty())
+            ImGui::TextWrapped("%s", soundError.c_str());
         if (iHitSound == 2) {
 
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
             static int soundItemCurrent1 = -1;
             static std::string soundItem;
-            if (ImGui::ListBoxVector(("##soundFiles"), &soundItemCurrent1, pConfig->vecSoundFileNames, 5)) {
+            if (ImGui::ListBoxVector(("##soundFiles"), &soundItemCurrent1, pConfig->vecSoundFileNames, 5) &&
+                soundItemCurrent1 >= 0 && soundItemCurrent1 < pConfig->vecSoundFileNames.size()) {
 
                 soundItem = pConfig->vecSoundFileNames[soundItemCurrent1];
                 cfg::misc::szWavPath = std::filesystem::path(pConfig->SoundPath.c_str() + soundItem).string();
@@ -976,11 +1007,31 @@ void menu::Misc(ImVec2 savedCursorPosition) {
         if (bEnableRadio) {
             ImGui::SliderFloat(("Volume"), &flRadioVolume, 0.f, 100.f, ("%.1f%%"));
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::ListBox(("##Radio"), &iRadioStation, arrRadios, IM_ARRAYSIZE(arrRadios));
+            std::vector<std::string> stations(std::begin(arrRadios), std::end(arrRadios));
+            stations.push_back("Custom stream");
+            for (int slot = 0; slot < 4; ++slot)
+                stations.push_back(szRadioFavoriteNames[slot].empty() ? std::format("Favorite {} (empty)", slot + 1) : szRadioFavoriteNames[slot]);
+            ImGui::ListBoxVector("##Radio", &iRadioStation, stations, 5);
+            if (iRadioStation == 14) {
+                EditString<256>("Stream URL", szCustomRadioUrl);
+                ImGui::TextUnformatted("Use a direct http:// or https:// audio stream");
+            }
+            static int favoriteSlot = 0;
+            static const char* favoriteSlots[] = {"Favorite 1", "Favorite 2", "Favorite 3", "Favorite 4"};
+            ImGui::Combo("Edit favorite", &favoriteSlot, favoriteSlots, 4);
+            EditString<32>("Favorite name", szRadioFavoriteNames[favoriteSlot]);
+            EditString<256>("Favorite URL", szRadioFavoriteUrls[favoriteSlot]);
+            if (ImGui::Button("Play favorite", ImVec2(ImGui::GetContentRegionAvail().x, 20), true, true))
+                iRadioStation = 15 + favoriteSlot;
+            ImGui::TextWrapped("%s", misc::GetRadioStatus().c_str());
             ImGui::PopItemWidth();
         }
 
-        ImGui::Checkbox("Vizualizer", &cfg::vizualizer::bEnabled);
+        ImGui::Checkbox("Radio visualizer", &cfg::radioVisualizer.enabled);
+        if (ImGui::Button("Visualizer settings...", ImVec2(ImGui::GetContentRegionAvail().x, 25.f), true, true))
+            radio_visualizer::OpenSettings();
+
+        ImGui::Checkbox("Audio screen effect", &cfg::vizualizer::bEnabled);
         ImGui::Checkbox("Dynamic threshold", &cfg::vizualizer::bDynamic);
         ImGui::SliderFloat("Sens", &cfg::vizualizer::flSensitivity, 0.00f, 0.1f, "%.3f");
         if (!cfg::vizualizer::bDynamic)

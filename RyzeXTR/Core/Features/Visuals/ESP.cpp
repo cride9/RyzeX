@@ -2,6 +2,7 @@
 #include "../Rage/Animations/LocalAnimation.h"
 #include "../Misc/misc.h"
 #include "../Rage/Animations/EnemyAnimations.h"
+#include "../Rage/Animations/ExperimentalResolverMath.h"
 #include "../Rage/aimbot.h"
 #include "../Rage/exploits.h"
 #include "../../SDK/Menu/gui.h"
@@ -10,6 +11,60 @@
 #include "../../../Dependecies/BASS/dll.h"
 #include "../Misc/Playerlist.h"
 #include "drawlist.h"
+#include <algorithm>
+#include <cctype>
+#include <mutex>
+#include <map>
+#include <cmath>
+
+namespace {
+	std::mutex damageIndicatorMutex;
+	std::vector<visual::DamageIndicator> damageIndicators;
+	struct HudLine { std::string text; Color color; };
+	std::mutex hudMutex;
+	std::vector<HudLine> hotkeyLines;
+	std::vector<HudLine> spectatorLines;
+
+	std::array<std::string, 3> ResolverFlagLines(const Lagcompensation::LagRecord_t& record) {
+		const auto mode = resolver::GetMode(cfg::rage::iResolverMode);
+		if (mode == resolver::Mode::Off)
+			return { "OFF", "", "" };
+		if (record.iResolverMode != static_cast<int>(mode))
+			return { mode == resolver::Mode::Experimental ? "EXP WAIT" : "WAIT", "", "" };
+		if (mode != resolver::Mode::Experimental)
+			return { misc::GetMatrixName(record.iResolveSide), "", "" };
+
+		std::array<std::string, 3> lines;
+		const auto reason = static_cast<experimental::Reason>(record.iExperimentalReason);
+		const bool hasSide = record.iResolveSide == LEFT || record.iResolveSide == RIGHT || record.iResolveSide == CENTER;
+		const bool accepted = hasSide && (reason == experimental::Reason::Override
+			|| (std::isfinite(record.flResolverConfidence) && record.flResolverConfidence > 0.f
+				&& (reason == experimental::Reason::MovingLayers || reason == experimental::Reason::LastMove)));
+		lines[0] = accepted ? "EXP " + misc::GetMatrixName(record.iResolveSide) : "EXP BASE";
+		if (accepted && std::isfinite(record.flResolveDelta))
+			lines[0] += std::format(" {:+.1f}deg", record.flResolveDelta);
+
+		switch (reason) {
+		case experimental::Reason::Warmup: lines[1] = "WARMUP"; break;
+		case experimental::Reason::Ambiguous: lines[1] = "UNCERTAIN"; break;
+		case experimental::Reason::MovingLayers: lines[1] = "LAYER"; break;
+		case experimental::Reason::LastMove: lines[1] = "LASTMOVE"; break;
+		case experimental::Reason::LbyChanged: lines[1] = "LBY UPDATE"; break;
+		case experimental::Reason::Transition: lines[1] = "TRANSITION"; break;
+		case experimental::Reason::Override: lines[1] = "OVERRIDE"; break;
+		default: lines[1] = "INVALID"; break;
+		}
+		if (accepted && reason != experimental::Reason::Override) {
+			const int confidence = static_cast<int>(std::round(std::clamp(record.flResolverConfidence, 0.f, 1.f) * 100.f));
+			lines[1] += std::format(" C{}", confidence);
+		}
+		if (record.bBreakingLagcompensation)
+			lines[2] = "LC BREAK";
+		else if (record.iChoked > 1)
+			lines[2] = std::format("CHOKE {}", record.iChoked);
+		return lines;
+	}
+}
 
 void SafepointDebug(CBaseEntity* pEnt) {
 
@@ -138,7 +193,7 @@ void visual::VisualRender() {
 	//DrawWeaponInfo( );
 	WorldCrosshair();
 
-	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
+	for (size_t i = 1; i <= i::GlobalVars->nMaxClients && i < playerList::arrPlayers.size(); i++) {
 
 		if (playerList::arrPlayers[i].iIndex != i)
 			continue;
@@ -414,13 +469,11 @@ void visual::Flags(float& top, int& right, CBaseEntity* pEnt, size_t& iIndex, bo
 
 		auto* pLog = &lagcomp.GetLog(pEnt->EntIndex());
 		if (pLog && !pLog->pRecord.empty() && pLog->iLastValid <= pLog->pRecord.size()) {
-			i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, misc::GetMatrixName(pLog->pRecord.front().iResolveSide).c_str());
-			spacing += 10;
-
-			//if (pLog->pRecord.front().bBreakingLagcompensation) {
-			//	i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, "LC");
-			//	spacing += 10;
-			//}
+			for (const auto& line : ResolverFlagLines(pLog->pRecord.front())) {
+				if (line.empty()) continue;
+				i::Surface->DrawT(right + 2, top + spacing, bDormant ? vecDormantColor : flFlagsColor[RESOLVER], g::fonts::FlagESP, false, line.c_str());
+				spacing += 10;
+			}
 		}
 	}
 
@@ -565,26 +618,30 @@ void visual::Glow(CBaseEntity* pLocal)
 }
 
 void visual::WorldCrosshair() {
+	if (!cfg::misc::bWorldCrosshair || !g::pLocal || !i::EngineClient->IsInGame()) {
+		std::fill(std::begin(vecWorldCrosshair), std::end(vecWorldCrosshair), Vector{});
+		return;
+	}
 
 	for (size_t i = 0; i < 5; i++) {
 
 		if (vecWorldCrosshair[i] == Vector(0, 0, 0))
 			continue;
 
-		Vector vecScreenPoint;
-		if (i::DebugOverlay->ScreenPosition(vecWorldCrosshair[i], vecScreenPoint))
-			return;
-
-		if (i::GlobalVars->flCurrentTime - 3.f > flWorldCrosshairLength[i]) {
+		const float age = i::GlobalVars->flCurrentTime - flWorldCrosshairLength[i];
+		if (age < 0.f || age >= 3.f) {
 			vecWorldCrosshair[i] = Vector(0, 0, 0);
 			continue;
 		}
 
-		if (cfg::misc::flWorldCrosshairColor[3] > 0.f)
-			cfg::misc::flWorldCrosshairColor[3] -= 0.0001f;
+		Vector vecScreenPoint;
+		if (i::DebugOverlay->ScreenPosition(vecWorldCrosshair[i], vecScreenPoint))
+			continue;
 
 		/* Set color */
-		i::Surface->DrawSetColor(Color(cfg::misc::flWorldCrosshairColor));
+		Color color(cfg::misc::flWorldCrosshairColor);
+		color[3] = static_cast<std::uint8_t>(color[3] * (1.f - age / 3.f));
+		i::Surface->DrawSetColor(color);
 
 		/* Top right */
 		i::Surface->DrawLine(vecScreenPoint.x + 2, vecScreenPoint.y - 2, vecScreenPoint.x + 8, vecScreenPoint.y - 8);
@@ -618,11 +675,11 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 	bool pLocal = g::pLocal == pEntity;
 	matrix3x4_t* pBoneToWorld = pLocal ? localAnim->GetRealMatrix().data() : pLog->pCachedMatrix.data();
 
-	for (int j = 0; j < pStudioHdr->nBones; j++) {
+	for (int j = 0; j < pStudioHdr->nBones && j < MAXSTUDIOBONES; j++) {
 
 		mstudiobone_t* pBone = pStudioHdr->GetBone(j);
 
-		if (!pBone || !(pBone->iFlags & BONE_USED_BY_HITBOX) || pBone->iParent <= -1 || pBone->iParent > MAXSTUDIOBONES)
+		if (!pBone || !(pBone->iFlags & BONE_USED_BY_HITBOX) || pBone->iParent < 0 || pBone->iParent >= MAXSTUDIOBONES)
 			continue;
 
 		Vector vecChild = pBoneToWorld[j].GetOrigin();
@@ -645,8 +702,9 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 			continue;
 
 		Vector vecScreenParent, vecScreenChild;
-		i::DebugOverlay->ScreenPosition(vecParent, vecScreenParent);
-		i::DebugOverlay->ScreenPosition(vecChild, vecScreenChild);
+		if (i::DebugOverlay->ScreenPosition(vecParent, vecScreenParent) ||
+			i::DebugOverlay->ScreenPosition(vecChild, vecScreenChild))
+			continue;
 
 		i::Surface->DrawSetColor(Color(color));
 		i::Surface->DrawLine(vecScreenParent[0], vecScreenParent[1], vecScreenChild[0], vecScreenChild[1]);
@@ -654,16 +712,60 @@ void visual::SkeletonEsp(CBaseEntity* pEntity, Color color) {
 }
 
 // thx @94
+namespace {
+	float WorldDistance(const Vector& origin) {
+		return g::pLocal ? (origin - g::pLocal->GetAbsOrigin()).Length() * .0254f : 0.f;
+	}
+	Color WorldColor(float* rgba, float distance) {
+		Color color(rgba);
+		const int limit = std::clamp(cfg::misc::iWorldEspMaxDistance, 0, 200);
+		if (limit > 0)
+			color[3] = static_cast<std::uint8_t>(color[3] * std::clamp((limit - distance) / (limit * .15f), 0.f, 1.f));
+		return color;
+	}
+	void GrenadeTimer(const Vector& screen, Color color, float remaining, float duration) {
+		if (!std::isfinite(remaining) || !std::isfinite(duration) || remaining <= 0.f || duration <= 0.f)
+			return;
+		remaining = (std::min)(remaining, duration);
+		i::Surface->DrawT(screen.x, screen.y + 14, color, g::fonts::FlagESP, true, std::format("{:.1f}s", remaining).c_str());
+		i::Surface->DrawSetColor(Color(0, 0, 0, color[3] / 2));
+		i::Surface->DrawFilledRect(screen.x - 30, screen.y + 27, screen.x + 30, screen.y + 30);
+		i::Surface->DrawSetColor(color);
+		i::Surface->DrawFilledRect(screen.x - 30, screen.y + 27, screen.x - 30 + 60 * std::clamp(remaining / duration, 0.f, 1.f), screen.y + 30);
+	}
+	void DrawWeaponTypeIcon(const Vector& screen, Color color, int type) {
+		// Keep an icon for weapons without a glyph in the game's icon font.
+		const int x = static_cast<int>(screen.x), y = static_cast<int>(screen.y) - 11;
+		i::Surface->DrawSetColor(color);
+		i::Surface->DrawFilledRect(x - 8, y - 7, x + 6, y - 3);
+		i::Surface->DrawFilledRect(x + 6, y - 6, x + (type == WEAPONTYPE_PISTOL ? 11 : 18), y - 4);
+		i::Surface->DrawFilledRect(x - 6, y - 3, x - 2, y + 2);
+		if (type != WEAPONTYPE_PISTOL) {
+			i::Surface->DrawFilledRect(x - 18, y - 5, x - 8, y - 1);
+			i::Surface->DrawFilledRect(x, y - 3, x + 4, y + 2);
+		}
+		if (type == 5) // sniper scope
+			i::Surface->DrawFilledRect(x - 3, y - 11, x + 6, y - 8);
+	}
+}
+
 void visual::WorldEsp() {
 
 	if (i::ClientState->iSignonState != SIGNONSTATE_FULL || !g::pLocal || !i::EngineClient->IsConnected() || !i::EngineClient->IsInGame())
 		return;
 
-	for (size_t i = 0; i < i::EntityList->GetHighestEntityIndex(); i++) {
+	if (!cfg::misc::bDroppedWeaponESP && !cfg::misc::bProjectileESP)
+		return;
+	const int highestEntityIndex = i::EntityList->GetHighestEntityIndex();
+	for (int i = 1; i <= highestEntityIndex; i++) {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if (!pEntity || pEntity->IsPlayer())
+		if (!pEntity || pEntity->IsPlayer() || pEntity->IsDormant())
+			continue;
+		const float distance = WorldDistance(pEntity->GetAbsOrigin());
+		const int limit = std::clamp(cfg::misc::iWorldEspMaxDistance, 0, 200);
+		if (limit > 0 && distance >= limit)
 			continue;
 
 		// change the entity to a weapon
@@ -681,17 +783,22 @@ void visual::WorldEsp() {
 		const EClassIndex iClientID = pWeapon->GetClientClass()->nClassID;
 
 		if (!cfg::misc::bProjectileESP)
-			return;
+			continue;
 
 		using enum EClassIndex;
+		const auto projectileColor = WorldColor(cfg::misc::flProjectileESP, distance);
 		if (iClientID == CDecoyProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Decoy");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, projectileColor, g::fonts::FlagESP, true, "Decoy");
 
 		else if (iClientID == CMolotovProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Molotov");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, projectileColor, g::fonts::FlagESP, true, "Molotov");
 
-		else if (iClientID == CSmokeGrenadeProjectile)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Smoke");
+		else if (iClientID == CSmokeGrenadeProjectile) {
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, projectileColor, g::fonts::FlagESP, true, "Smoke");
+			const int begin = reinterpret_cast<::CSmokeGrenade*>(pEntity)->GetEffectTickBegin();
+			if (cfg::misc::bGrenadeTimers && begin > 0)
+				GrenadeTimer(vecScreenPosition, projectileColor, 18.f - (i::GlobalVars->flCurrentTime - TICKS_TO_TIME(begin)), 18.f);
+		}
 
 		else if (iClientID == CBaseCSGrenadeProjectile) {
 
@@ -702,17 +809,27 @@ void visual::WorldEsp() {
 				std::string szName = pModel->szName;
 
 				if (szName.find("flashbang") != std::string::npos)
-					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Flashbang");
+					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, projectileColor, g::fonts::FlagESP, true, "Flashbang");
 				else if (szName.find("fraggrenade") != std::string::npos)
-					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Grenade");
+					i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, projectileColor, g::fonts::FlagESP, true, "Grenade");
 			}
 		}
 
-		else if (iClientID == CInferno) 
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Fire");
+		else if (iClientID == CInferno) {
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, projectileColor, g::fonts::FlagESP, true, "Fire");
+			const int begin = reinterpret_cast<::CInferno*>(pEntity)->GetEffectTickBegin();
+			static auto* lifetime = i::ConVar->FindVar("inferno_flame_lifetime");
+			const float seconds = lifetime && std::isfinite(lifetime->GetFloat()) ? std::clamp(lifetime->GetFloat(), .1f, 60.f) : 7.f;
+			if (cfg::misc::bGrenadeTimers && begin > 0)
+				GrenadeTimer(vecScreenPosition, projectileColor, seconds - (i::GlobalVars->flCurrentTime - TICKS_TO_TIME(begin)), seconds);
+		}
 		
 		else if (iClientID == CPlantedC4)
-			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, cfg::misc::flProjectileESP, g::fonts::FlagESP, true, "Bomb");
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, projectileColor, g::fonts::FlagESP, true, "Bomb");
+		if (cfg::misc::bWorldEspDistance && (iClientID == CDecoyProjectile || iClientID == CMolotovProjectile ||
+			iClientID == CSmokeGrenadeProjectile || iClientID == CBaseCSGrenadeProjectile || iClientID == CInferno || iClientID == CPlantedC4))
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y + (cfg::misc::bGrenadeTimers ? 34 : 14), projectileColor,
+				g::fonts::FlagESP, true, std::format("{:.0f}m", distance).c_str());
 	}
 }
 
@@ -720,12 +837,18 @@ void visual::DroppedWeapons(CBaseCombatWeapon* pWeapon, Vector& vecScreenPositio
 
 	if (!cfg::misc::bDroppedWeaponESP)
 		return;
+	const float distance = WorldDistance(pWeapon->GetAbsOrigin());
+	const auto color = WorldColor(cfg::misc::flDroppedWeaponESP, distance);
 
 	const EClassIndex iClientID = pWeapon->GetClientClass()->nClassID;
 
 	using enum EClassIndex;
-	if (iClientID == CC4)
-		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(1.f, 1.f, 1.f, 1.f), g::fonts::FlagESP, true, "Grenade");
+	if (iClientID == CC4) {
+		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, color, g::fonts::FlagESP, true, "Bomb");
+		if (cfg::misc::bWorldEspDistance)
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y + 14, color, g::fonts::FlagESP, true, std::format("{:.0f}m", distance).c_str());
+		return;
+	}
 
 	if (pWeapon->GetItemDefinitionIndex() == WEAPON_TASER && pWeapon->GetAmmo() == 0)
 		return;
@@ -735,147 +858,162 @@ void visual::DroppedWeapons(CBaseCombatWeapon* pWeapon, Vector& vecScreenPositio
 	if (!pData)
 		return;
 
-	if (pData->nWeaponType < 1 || pData->nWeaponType > 9 || pData->nWeaponType == 8)
-		return;
-
-	if (pData->nWeaponType == 9) // grenade
+	if (pData->nWeaponType < WEAPONTYPE_PISTOL || pData->nWeaponType > WEAPONTYPE_MACHINEGUN)
 		return;
 
 	static std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-	wchar_t* pName = i::Localize->Find(pData->szHudName);
+	wchar_t* pName = pData->szHudName ? i::Localize->Find(pData->szHudName) : nullptr;
 	std::string name = "";
 	if (pName)
 		name = converter.to_bytes(pName);
 
-	std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+	if (name.empty() && pData->szWeaponName) {
+		name = pData->szWeaponName;
+		if (name.starts_with("weapon_"))
+			name.erase(0, 7);
+	}
+	const std::string icon = GetWeaponChar(name);
+	std::transform(name.begin(), name.end(), name.begin(), [](unsigned char ch) {
+		return static_cast<char>(std::tolower(ch));
+	});
 
-	i::Surface->DrawT(vecScreenPosition.x + 1, vecScreenPosition.y - -2, cfg::misc::flDroppedWeaponESP, g::fonts::FlagESP, true, name.c_str());
+	i::Surface->DrawT(vecScreenPosition.x + 1, vecScreenPosition.y + 2, color, g::fonts::FlagESP, true, name.c_str());
+	if (cfg::misc::bDroppedWeaponIcon) {
+		if (icon != "<")
+			i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y - 18, color, 0xA1, true, icon.c_str());
+		else
+			DrawWeaponTypeIcon(vecScreenPosition, color, pData->nWeaponType);
+	}
+	std::string details;
+	if (cfg::misc::bDroppedWeaponAmmo)
+		details = std::format("{} / {}", (std::max)(0, pWeapon->GetAmmo()), (std::max)(0, pWeapon->GetAmmoReserve()));
+	if (cfg::misc::bWorldEspDistance)
+		details += std::format("{}{:0.0f}m", details.empty() ? "" : "  ", distance);
+	if (!details.empty())
+		i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y + 15, color, g::fonts::FlagESP, true, details.c_str());
 }
 
 void visual::CoolHackKeyBindList() {
-
-	// static const char* options[] = { "Aimbot", "Doubletap", "Force baim", "DMG override", "Slow walk", "Fake duck", "Auto peek", "Thirdperson", "Blockbot", "Ping" };
-
-	// g::fonts::SkeetFont
-
-	if (!cfg::misc::iKeyBindList)
-		return;
-
-	int iWidth;
-	int iHeight;
-	i::EngineClient->GetScreenSize(iWidth, iHeight);
-
-	//std::vector<std::pair<const char*, Color>> vecIndicators;
-	//vecIndicators.push_back(std::make_pair("DT", Color(255, 255, 255)));
-
-	//for (auto& current : vecIndicators) {
-
-	//}
-
-	int spacing = 10;
-	if (IPT::HandleInput(cfg::rage::iAimbotKey) && cfg::rage::bEnable && cfg::misc::iKeyBindList[0]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "AIMBOT");
-		spacing += 30;
+	std::vector<HudLine> binds, spectators;
+	if (i::EngineClient->IsInGame() && g::pLocal) {
+		if (cfg::misc::bKeyBindList) {
+			struct Bind { const char* name; int key; bool enabled; int option; };
+			const Bind entries[] = {
+				{"Aimbot", cfg::rage::iAimbotKey, cfg::rage::bEnable, 0},
+				{"Doubletap", cfg::rage::iDoubletapKey, cfg::rage::bDoubletap, 1},
+				{"Hide shots", cfg::rage::iHideShotKey, cfg::rage::bHideshot, 1},
+				{"Break LC", cfg::antiaim::iLCKey, cfg::antiaim::bBreakLagcompensation, 1},
+				{"Force body", cfg::rage::iForceBaimKey, cfg::rage::bForceBaim, 2},
+				{"Damage override", cfg::rage::iOverrideBind, true, 3},
+				{"Slow walk", cfg::antiaim::iFakeWalkKey, cfg::antiaim::bFakeWalk, 4},
+				{"Fake duck", cfg::antiaim::iFakeDuckKey, cfg::antiaim::bFakeDuck, 5},
+				{"Auto peek", cfg::antiaim::iAutoPeek, cfg::antiaim::bAutoPeek, 6},
+				{"Thirdperson", cfg::misc::iThirdPersonKey, cfg::misc::bThirdPerson, 7},
+				{"Blockbot", cfg::misc::iBlockbotKey, cfg::misc::bBlockbot, 8},
+				{"Auto nade", cfg::rage::iAutoNadeBind, cfg::rage::bAutoNade, 10},
+				{"Manual right", cfg::antiaim::iManualAAR, cfg::antiaim::bManualAA, 11},
+				{"Manual left", cfg::antiaim::iManualAAL, cfg::antiaim::bManualAA, 11},
+				{"Radio mute", cfg::misc::iRadioMuteHotKey, cfg::misc::bEnableRadio, 12}
+			};
+			for (const auto& entry : entries) {
+				if (entry.enabled && cfg::misc::iKeyBindList[entry.option] && IPT::HandleInput(entry.key)) {
+					const int mode = cfg::m_iKeyStates[entry.key];
+					const char* modeName = mode == TOGGLE ? "toggle" : mode == ALWAYS_ON ? "always" : "hold";
+					binds.push_back({std::format("{} [{}]", entry.name, modeName), Color(238, 238, 238, 255)});
+				}
+			}
+			if (auto* channel = i::EngineClient->GetNetChannelInfo(); channel && cfg::misc::iKeyBindList[9]) {
+				const int ping = static_cast<int>((channel->GetLatency(FLOW_OUTGOING) + channel->GetLatency(FLOW_INCOMING)) * 1000.f);
+				binds.push_back({std::format("Ping: {} ms", (std::max)(0, ping)), Color(238, 238, 238, 255)});
+			}
+		}
+		if (cfg::misc::bSpectatorList) {
+			auto* watched = g::pLocal->IsAlive() ? g::pLocal :
+				static_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(g::pLocal->GetObserverTarget()));
+			for (int index = 1; watched && index <= (std::min)(64, i::GlobalVars->nMaxClients); ++index) {
+				auto* player = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(index));
+				if (!player || player == g::pLocal || player->IsAlive() || player->IsDormant())
+					continue;
+				if (i::EntityList->GetClientEntityFromHandle(player->GetObserverTarget()) != watched)
+					continue;
+				PlayerInfo_t info{};
+				if (i::EngineClient->GetPlayerInfo(index, &info))
+					spectators.push_back({std::string(info.szName, strnlen_s(info.szName, sizeof(info.szName))), Color(238, 238, 238, 255)});
+			}
+		}
 	}
-	if (IPT::HandleInput(cfg::rage::iDoubletapKey) && cfg::rage::bDoubletap && cfg::misc::iKeyBindList[1]) {
+	std::lock_guard<std::mutex> lock(hudMutex);
+	hotkeyLines = std::move(binds);
+	spectatorLines = std::move(spectators);
+}
 
-		i::Surface->DrawT(10, iHeight / 2 + spacing, exploits::iTicksToStore ? Color(255, 255, 255) : Color(255, 0, 0), g::fonts::SkeetFont, false, "DT");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::rage::iHideShotKey) && cfg::rage::bHideshot && cfg::misc::iKeyBindList[1]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "OSAA");
-		spacing += 30;
-	}
-	if ( IPT::HandleInput( cfg::antiaim::iLCKey ) && cfg::antiaim::bBreakLagcompensation && cfg::misc::iKeyBindList[ 1 ] ) {
-
-		i::Surface->DrawT( 10, iHeight / 2 + spacing, Color( 255, 255, 255 ), g::fonts::SkeetFont, false, "LC" );
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::rage::iForceBaimKey) && cfg::rage::bForceBaim && cfg::misc::iKeyBindList[2]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BODY");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::rage::iOverrideBind) && cfg::misc::iKeyBindList[3]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "DMG");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::antiaim::iFakeWalkKey) && cfg::antiaim::bFakeWalk && cfg::misc::iKeyBindList[4]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "SLOW");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck && cfg::misc::iKeyBindList[5]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (i::ClientState->nChokedCommands * 8), 255), max(191 - i::ClientState->nChokedCommands * 8, 0), 61, 255), g::fonts::SkeetFont, false, "DUCK");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::antiaim::iAutoPeek) && cfg::antiaim::bAutoPeek && cfg::misc::iKeyBindList[6]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, misc::bRetreat ? Color(255, 0, 0) : Color(255, 255, 255), g::fonts::SkeetFont, false, "PEEK");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::misc::iThirdPersonKey) && cfg::misc::bThirdPerson && cfg::misc::iKeyBindList[7]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "TP");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::misc::iBlockbotKey) && cfg::misc::bBlockbot && cfg::misc::iKeyBindList[8]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "BLOCK");
-		spacing += 30;
-	}
-	if (auto pNetChannelInfo = i::EngineClient->GetNetChannelInfo(); pNetChannelInfo && cfg::misc::iKeyBindList[9]) {
-
-		int outgoing = (pNetChannelInfo->GetLatency(FLOW_OUTGOING) + pNetChannelInfo->GetLatency(FLOW_INCOMING)) * 100;
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(min(143 + (outgoing), 255), max(191 - outgoing, 0), 61, 255), g::fonts::SkeetFont, false, "PING");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::rage::iAutoNadeBind) && cfg::rage::bAutoNade && cfg::misc::iKeyBindList[10]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "Auto Nade");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::antiaim::iManualAAR) && cfg::antiaim::bManualAA && cfg::misc::iKeyBindList[11]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "R");
-		spacing += 30;
-	}
-	if (IPT::HandleInput(cfg::antiaim::iManualAAL) && cfg::antiaim::bManualAA && cfg::misc::iKeyBindList[11]) {
-
-		i::Surface->DrawT(10, iHeight / 2 + spacing, Color(255, 255, 255), g::fonts::SkeetFont, false, "L");
-		spacing += 30;
+namespace {
+	void DrawHudWindow(const char* name, bool enabled, const std::vector<HudLine>& rows, float* position) {
+		if (!enabled || (rows.empty() && !menu::open))
+			return;
+		const auto display = ImGui::GetIO().DisplaySize;
+		if (display.x <= 0.f || display.y <= 0.f)
+			return;
+		const float scale = std::isfinite(cfg::misc::flHudScale) ? std::clamp(cfg::misc::flHudScale, .75f, 2.f) : 1.f;
+		for (int axis = 0; axis < 2; ++axis)
+			position[axis] = std::isfinite(position[axis]) ? std::clamp(position[axis], 0.f, 1.f) : .02f;
+		struct Position { float x = -1.f, y = -1.f; ImVec2 display{}; };
+		static std::map<std::string, Position> savedPositions;
+		auto& last = savedPositions[name];
+		if (position[0] != last.x || position[1] != last.y || display.x != last.display.x || display.y != last.display.y)
+			ImGui::SetNextWindowPos(ImVec2(position[0] * display.x, position[1] * display.y), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2((std::min)(220.f * scale, display.x), 0.f), ImGuiCond_Always);
+		ImGui::SetNextWindowSizeConstraints(ImVec2(1.f, 1.f), display);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(1.f, 1.f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f * scale, 6.f * scale));
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing;
+		if (!menu::open)
+			flags |= ImGuiWindowFlags_NoInputs;
+		if (ImGui::Begin(name, nullptr, flags)) {
+			ImGui::SetWindowFontScale(scale);
+			if (rows.empty())
+				ImGui::TextUnformatted("None active");
+			for (const auto& row : rows) {
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(row.color[0] / 255.f, row.color[1] / 255.f, row.color[2] / 255.f, row.color[3] / 255.f));
+				ImGui::TextUnformatted(row.text.c_str());
+				ImGui::PopStyleColor();
+			}
+		}
+		const auto size = ImGui::GetWindowSize();
+		auto pos = ImGui::GetWindowPos();
+		pos.x = std::clamp(pos.x, 0.f, (std::max)(0.f, display.x - size.x));
+		pos.y = std::clamp(pos.y, 0.f, (std::max)(0.f, display.y - size.y));
+		ImGui::SetWindowPos(pos);
+		position[0] = last.x = pos.x / display.x;
+		position[1] = last.y = pos.y / display.y;
+		last.display = display;
+		ImGui::End();
+		ImGui::PopStyleVar(2);
 	}
 }
 
-void visual::DrawRadioInformation() {
-
-	int iWidth;
-	int iHeight;
-	i::EngineClient->GetScreenSize(iWidth, iHeight);
-	auto position = (iHeight / 2) - 20;
-
-	if (strlen(BASS::bass_metadata) > 0 && cfg::misc::bEnableRadio)
+void visual::DrawMiscHud() {
+	std::vector<HudLine> binds, spectators;
 	{
-		if (!IPT::HandleInput(cfg::misc::iRadioMuteHotKey))
-			i::Surface->DrawT(10, position, RYZEXCOLOR, g::fonts::FlagESP, false, "Now playing:");
-		else
-			i::Surface->DrawT(10, position, RYZEXCOLOR, g::fonts::FlagESP, false, "Now playing: [MUTED]");
-		i::Surface->DrawT(10, position + 16, Color(238, 238, 238, 255), g::fonts::FlagESP, false, BASS::bass_metadata);
+		std::lock_guard<std::mutex> lock(hudMutex);
+		binds = hotkeyLines;
+		spectators = spectatorLines;
 	}
-	else if (cfg::misc::iRadioStation == 12 && cfg::misc::bEnableRadio) {
+	DrawHudWindow("Hotkeys", cfg::misc::bKeyBindList, binds, cfg::misc::flKeybindPosition);
+	DrawHudWindow("Spectators", cfg::misc::bSpectatorList, spectators, cfg::misc::flSpectatorPosition);
+}
 
-		if (!IPT::HandleInput(cfg::misc::iRadioMuteHotKey))
-			i::Surface->DrawT(10, position, RYZEXCOLOR, g::fonts::FlagESP, false, "Now playing:");
-		else 
-			i::Surface->DrawT(10, position, RYZEXCOLOR, g::fonts::FlagESP, false, "Now playing: [MUTED]");
-		
-		static std::string radio1lmao = "Radio 1 - Csak igazi mai slager megy";
-		i::Surface->DrawT(10, position + 16, Color(238, 238, 238, 255), g::fonts::FlagESP, false, radio1lmao.c_str());
-	}
+void visual::DrawRadioInformation() {
+	if (!cfg::misc::bEnableRadio)
+		return;
+	int width, height;
+	i::EngineClient->GetScreenSize(width, height);
+	const auto status = misc::GetRadioStatus();
+	const auto metadata = BASS::GetMetadata();
+	i::Surface->DrawT(10, height / 2 - 40, RYZEXCOLOR, g::fonts::FlagESP, false, ("Radio: " + status).c_str());
+	if (!metadata.empty())
+		i::Surface->DrawT(10, height / 2 - 24, Color(238, 238, 238, 255), g::fonts::FlagESP, false, metadata.c_str());
 }
 
 void visual::OutOfFov(CBaseEntity* pEntity) {
@@ -1702,37 +1840,70 @@ void visual::DrawList() {
 		g::drawList.pop_front();
 }
 
-void visual::HandleDamageIndicator() {
+void visual::AddDamageIndicator(const DamageIndicator& indicator) {
+	if (!cfg::misc::bDamageIndicator || indicator.iDamage <= 0)
+		return;
+	std::lock_guard<std::mutex> lock(damageIndicatorMutex);
+	if (cfg::misc::bMergeDamage && indicator.iVictimIndex > 0) {
+		for (auto& existing : damageIndicators) {
+			const int age = indicator.iTickcount - existing.iTickcount;
+			if (existing.iVictimIndex == indicator.iVictimIndex && age >= 0 && age <= TIME_TO_TICKS(.05f)) {
+				existing.iDamage = (std::min)(10000, existing.iDamage + std::clamp(indicator.iDamage, 1, 10000));
+				existing.bHeadshot |= indicator.bHeadshot;
+				return;
+			}
+		}
+	}
+	if (damageIndicators.size() >= 64)
+		damageIndicators.erase(damageIndicators.begin());
+	auto stored = indicator;
+	stored.iDamage = std::clamp(stored.iDamage, 1, 10000);
+	damageIndicators.push_back(stored);
+}
 
-	if (vecDamageIndicator.empty() || !cfg::misc::bDamageIndicator) {
-		vecDamageIndicator.clear();
+void visual::ClearDamageIndicators() {
+	std::lock_guard<std::mutex> lock(damageIndicatorMutex);
+	damageIndicators.clear();
+}
+
+void visual::HandleDamageIndicator() {
+	if (!cfg::misc::bDamageIndicator || !g::pLocal || !i::EngineClient->IsInGame()) {
+		ClearDamageIndicators();
 		return;
 	}
 
-	for (int i = 0; i < vecDamageIndicator.size(); i++) {
+	const int currentTick = i::GlobalVars->iTickCount;
+	const float seconds = std::isfinite(cfg::misc::flDamageLifetime) ? std::clamp(cfg::misc::flDamageLifetime, .25f, 5.f) : 1.f;
+	const int lifetime = (std::max)(1, TIME_TO_TICKS(seconds));
+	const float rise = std::isfinite(cfg::misc::flDamageRise) ? std::clamp(cfg::misc::flDamageRise, 0.f, 80.f) : 18.f;
+	const int fontSize = std::clamp(cfg::misc::iDamageFontSize, 10, 36);
+	static int previousFontSize = 20;
+	if (fontSize != previousFontSize) {
+		i::Surface->SetFontGlyphSet(g::fonts::HitIndicator, "Verdana", fontSize, FW_NORMAL, 0, 0, FONTFLAG_ANTIALIAS);
+		previousFontSize = fontSize;
+	}
+	std::vector<DamageIndicator> indicators;
+	{
+		std::lock_guard<std::mutex> lock(damageIndicatorMutex);
+		std::erase_if(damageIndicators, [currentTick, lifetime](const DamageIndicator& indicator) {
+			const int age = currentTick - indicator.iTickcount;
+			return age < 0 || age >= lifetime;
+		});
+		indicators = damageIndicators;
+	}
 
-		auto& it = vecDamageIndicator.at(i);
-
-		// it.vecPosition += Vector( 0, 0, 10 * i::GlobalVars->flFrameTime );
-
-		if ( abs( it.iTickcount - i::GlobalVars->iTickCount ) > TIME_TO_TICKS( 1.f ) ) {
-
-			vecDamageIndicator.erase( vecDamageIndicator.begin( ) + i );
-			i--;
-			continue;
-		}
-
+	for (const auto& it : indicators) {
+		const int age = currentTick - it.iTickcount;
+		const Vector position = it.vecPosition + Vector(0.f, 0.f, rise * TICKS_TO_TIME(age));
 		Vector vecScreenPosition{};
-		if ( i::DebugOverlay->ScreenPosition( it.vecPosition, vecScreenPosition ) )
+		if (i::DebugOverlay->ScreenPosition(position, vecScreenPosition))
 			continue;
 
-		if ( it.iDamage == 0 )
-			continue;
-
-		Color indicatorColor = it.bHeadshot ? Color( 255, 0, 0, 255 ) : Color( 255, 255, 255, 255 );
-		indicatorColor[ 3 ] = std::clamp( it.iTickcount - ( TIME_TO_TICKS( 1.f ) / 255.f ), 0.f, 1.f ) * 255;
+		auto* selectedColor = it.bHeadshot ? cfg::misc::flDamageHeadshot : cfg::misc::flDamageIndicator;
+		Color indicatorColor(selectedColor);
+		const float alpha = std::clamp(selectedColor[3], 0.f, 1.f) *
+			(1.f - static_cast<float>(age) / lifetime);
+		indicatorColor[3] = static_cast<std::uint8_t>(alpha * 255.f);
 		i::Surface->DrawT( vecScreenPosition.x, vecScreenPosition.y, indicatorColor, g::fonts::HitIndicator, true, std::to_string( it.iDamage ).c_str( ) );
-
-		/*i::Surface->DrawT(vecScreenPosition.x, vecScreenPosition.y, Color(cfg::misc::flDamageIndicator[0], cfg::misc::flDamageIndicator[1], cfg::misc::flDamageIndicator[2], animationMap.at(it.second).second), g::fonts::FlagESP, true, it.second == 0 ? XorStr( "Missed" ) : std::to_string( it.second ).c_str( ) );*/
 	}
 }

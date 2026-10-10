@@ -4,6 +4,7 @@
 #include "../../../globals.h"
 #include "../../../SDK/math.h"
 #include "../../Misc/Playerlist.h"
+#include "../HitboxGeometry.h"
 
 #pragma region lagcompensation_definitions
 #define LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR ( 64.0f * 64.0f )
@@ -133,6 +134,14 @@ public:
 		Vector vecMaxs{};
 
 		Vector vecRageSafePoint{};
+		std::array<hitbox::Shape, hitbox::MaxShapes> headHypotheses{};
+		int iHeadHypothesisCount{};
+		bool bHasHeadOverlap{};
+		bool bAnimationMatrixValid = true;
+		bool bVisualMatrixValid{};
+		bool bSafeMatrixValid = true;
+		std::array<float, 9> experimentalYawHypotheses{};
+		bool bHasExperimentalYaws{};
 
 		Vector vecEyeAngles{};
 		Vector vecAbsAngles{};
@@ -169,6 +178,9 @@ public:
 		int iEntIndex{};
 		int iChoked{};
 		int iResolveSide = 0;
+		int iResolverMode{};
+		int iExperimentalReason{};
+		float flResolverConfidence{};
 		int iCreationTick{};
 	};
 

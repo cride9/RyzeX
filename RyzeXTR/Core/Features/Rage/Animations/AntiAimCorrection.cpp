@@ -31,7 +31,7 @@ float Animations::GetLocalCycleIncrement(CBaseEntity* pEntity, float flPlaybackr
 void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
-	if (!cfg::rage::bResolver || !pLocal || !pEntity || !pEntity->IsAlive() || !pRecord || !pPrevious)
+	if (resolver::GetMode(cfg::rage::iResolverMode) != resolver::Mode::Standard || !pLocal || !pEntity || !pEntity->IsAlive() || !pRecord || !pPrevious)
 		return;
 
 #ifdef NDEBUG
@@ -251,7 +251,6 @@ void Animations::ResolverLogic() {
 				) ) );
 		}
 		pLog->iHitAmount++;
-		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, static_cast< int >( iHitDmg ), i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 		return;
 	}
@@ -280,7 +279,6 @@ void Animations::ResolverLogic() {
 			)));
 		}
 		pLog->iHitAmount++;
-		visual::vecDamageIndicator.push_back( { bBulletImpact, static_cast< int >( iHitDmg ), i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 		return;
 	}
@@ -307,7 +305,6 @@ void Animations::ResolverLogic() {
 					refCurrentData.pRecord->flResolveDelta
 				)));
 			}
-			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -326,7 +323,6 @@ void Animations::ResolverLogic() {
 				refCurrentData.pRecord->flResolveDelta
 			)));
 		}
-		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 	}
 	else {
@@ -347,7 +343,6 @@ void Animations::ResolverLogic() {
 					refCurrentData.pRecord->flResolveDelta
 				)));
 			}
-			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -375,7 +370,6 @@ void Animations::ResolverLogic() {
 					refCurrentData.pRecord->flResolveDelta
 				)));
 			}
-			visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 			refCurrentData.ClearTarget();
 			return;
 		}
@@ -394,7 +388,6 @@ void Animations::ResolverLogic() {
 				refCurrentData.pRecord->flResolveDelta
 			)));
 		}
-		visual::vecDamageIndicator.push_back( { refCurrentData.vecTargetShootPosition, 0, i::GlobalVars->iTickCount, iHitHitbox == HITGROUP_HEAD } );
 		refCurrentData.ClearTarget();
 	}
 }

@@ -2,6 +2,7 @@
 #include "../../globals.h"
 #include "../Misc/Playerlist.h"
 #include "Animations/Lagcompensation.h"
+#include "StudioHitboxGeometry.h"
 
 float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* pDataOut)
 {
@@ -485,8 +486,12 @@ bool CAutoWall::CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSou
 
 #pragma runtime_checks( "", off )
 bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstudiobbox_t* pHitbox, matrix3x4a_t* aMatrix) {
-	if (!pHitbox)
+	if (!pHitbox || !aMatrix || pHitbox->iBone < 0 || pHitbox->iBone >= MAXSTUDIOBONES)
 		return false;
+	if (resolver::GetMode(cfg::rage::iResolverMode) == resolver::Mode::Experimental) {
+		const auto shape = hitbox::FromStudio(pHitbox, aMatrix);
+		if (shape.valid) return shape.Intersects(hitbox::FromVector(vecStart), hitbox::FromVector(vecEnd));
+	}
 
 	Ray_t ray(vecStart, vecEnd);
 	Trace_t trace;
@@ -508,6 +513,17 @@ bool CAutoWall::bCollidePoint(const Vector& vecStart, const Vector& vecEnd, mstu
 #pragma runtime_checks( "", restore )
 
 int CAutoWall::SafePoint(Vector& vecEyePosition, Lagcompensation::LagRecord_t* pRecord, Vector vecShootposition, int iHitbox) {
+	if (!pRecord || !pRecord->pEntity || !pRecord->bAnimationMatrixValid) return 0;
+	if (pRecord->iResolverMode == static_cast<int>(resolver::Mode::Experimental) && !pRecord->bSafeMatrixValid) return 0;
+	if (pRecord->iResolverMode == static_cast<int>(resolver::Mode::Experimental) && iHitbox == HITBOX_HEAD) {
+		if (pRecord->iHeadHypothesisCount != static_cast<int>(hitbox::MaxShapes)) return 0;
+		int hits = 0;
+		for (const auto& shape : pRecord->headHypotheses)
+			hits += shape.Intersects(hitbox::FromVector(vecEyePosition), hitbox::FromVector(vecShootposition));
+		// Preserve the public 0..3 coverage scale. Full safety requires ALL
+		// sampled heads, including the actual selected matrix, to intersect.
+		return hits * 3 / pRecord->iHeadHypothesisCount;
+	}
 
 	mstudiobbox_t* studioBox = pRecord->pEntity->StudioHitbox(iHitbox);
 	if (!studioBox)

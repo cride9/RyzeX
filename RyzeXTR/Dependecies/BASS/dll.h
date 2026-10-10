@@ -1,5 +1,8 @@
 #pragma once
 #include <windows.h>
+#include <atomic>
+#include <mutex>
+#include <string>
 #define XorStr(str) str
 
 using HCUSTOMMODULE = void*;
@@ -86,14 +89,43 @@ struct stream_sounds_s
 
 namespace BASS
 {
+	enum class RadioStatus { Off, Loading, Buffering, Playing, Reconnecting, Unavailable };
+	inline std::atomic<RadioStatus> radioStatus{RadioStatus::Off};
+	inline std::atomic<DWORD> endedStream{0};
     extern stream_sounds_s stream_sounds;
     extern HANDLE          bass_lib_handle;
     extern CLoad           bass_lib;
     extern DWORD           stream_handle;
-    extern DWORD           request_number;
+    extern std::atomic<DWORD> request_number;
     extern BOOL            bass_init;
-    extern char            bass_metadata[MAX_PATH];
     extern char            bass_channelinfo[MAX_PATH];
+
+    inline std::mutex metadataMutex;
+    inline std::string metadata;
+    inline DWORD metadataChannel = 0;
+
+    inline void SetMetadataChannel(DWORD channel) {
+        std::lock_guard<std::mutex> lock(metadataMutex);
+        metadataChannel = channel;
+        metadata.clear();
+    }
+
+    inline void SetMetadata(DWORD channel, const std::string& title) {
+        std::lock_guard<std::mutex> lock(metadataMutex);
+        if (channel != 0 && channel == metadataChannel)
+            metadata = title;
+    }
+
+    inline void NotifyStreamEnd(DWORD channel) {
+        std::lock_guard<std::mutex> lock(metadataMutex);
+        if (channel != 0 && channel == metadataChannel)
+            endedStream.store(channel);
+    }
+
+    inline std::string GetMetadata() {
+        std::lock_guard<std::mutex> lock(metadataMutex);
+        return metadata;
+    }
 }
 
 extern const unsigned char bass_dll_image[111772];

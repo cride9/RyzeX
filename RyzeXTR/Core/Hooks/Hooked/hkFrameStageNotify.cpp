@@ -177,6 +177,8 @@ void hkPostFrameStageNotify(EStage curStage) {
 void __fastcall h::hkFrameStageNotify(void* ecx, void* edx, EStage curStage) {
 
 	static auto original = detour::frameStageNotify.GetOriginal<decltype(&h::hkFrameStageNotify)>();
+	if (curStage == FRAME_RENDER_START)
+		misc::RemoveSmoke();
 
 	hkPreFrameStageNotify(curStage);
 	original(ecx, edx, curStage);

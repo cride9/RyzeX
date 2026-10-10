@@ -20,7 +20,7 @@ void grenadePrediction::AutoThrow( CUserCmd* pCmd )
 	if (!cfg::rage::bAutoNade || !IPT::HandleInput(cfg::rage::iAutoNadeBind))
 		return;
 
-	if (!g::pLocal->IsAlive( ) || vecBounces.empty( ))
+	if (!pCmd || !g::pLocal || !g::pLocal->IsAlive() || vecBounces.empty())
 		return;
 
 	// get refference to last entry in bounces
@@ -29,7 +29,7 @@ void grenadePrediction::AutoThrow( CUserCmd* pCmd )
 	static bool bRemoveAttack = false;
 
 	// loop through all entities
-	for (int i = 1; i < i::GlobalVars->nMaxClients; i++) 
+	for (int i = 1; i <= i::GlobalVars->nMaxClients; i++)
 	{
 		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
 		if (!pEntity || !pEntity->IsAlive( ) || !pEntity->IsEnemy( g::pLocal ) )
@@ -75,6 +75,8 @@ void grenadePrediction::AutoThrow( CUserCmd* pCmd )
 }
 
 void grenadePrediction::Draw() {
+	if (!cfg::misc::bNadePrediction)
+		return;
 	
 	static CTraceFilter pFilter(nullptr);
 	Trace_t pTrace;
@@ -97,18 +99,18 @@ void grenadePrediction::Draw() {
 
 		if(cfg::misc::bNadePrediction)
 		{
-			if (i::DebugOverlay->ScreenPosition(vecPrevious, vecScreen[0]) || i::DebugOverlay->ScreenPosition(vecCurrent, vecScreen[1]))
-				continue;
-
-			i::Surface->DrawSetColor(Color(255, 255, 255, 255));
-			i::Surface->DrawLine(vecScreen[0].x, vecScreen[0].y, vecScreen[1].x, vecScreen[1].y);
+			if (!i::DebugOverlay->ScreenPosition(vecPrevious, vecScreen[0]) &&
+				!i::DebugOverlay->ScreenPosition(vecCurrent, vecScreen[1])) {
+				i::Surface->DrawSetColor(Color(255, 255, 255, 255));
+				i::Surface->DrawLine(vecScreen[0].x, vecScreen[0].y, vecScreen[1].x, vecScreen[1].y);
+			}
 		}
 
 		vecPrevious = vecCurrent;
 	}
 
 	static Color colTextColor{};
-	for (size_t i = 1; i < i::GlobalVars->nMaxClients; i++) {
+	for (size_t i = 1; i <= i::GlobalVars->nMaxClients; i++) {
 
 		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 		if (!pEntity || !pEntity->IsAlive() || !pEntity->IsEnemy(pLocal))
@@ -418,15 +420,10 @@ size_t grenadePrediction::Advance(size_t iTick, CBaseEntity* pLocal) {
 bool grenadePrediction::Detonate(size_t iTick, Trace_t& refTrace) {
 
 	float flTime = TICKS_TO_TIME(iTick);
-	static CConVar* weapon_molotov_maxdetonateslope = i::ConVar->FindVar(XorStr("weapon_molotov_maxdetonateslope"));
-	if (!weapon_molotov_maxdetonateslope)
-		return false;
 
 	switch (iID) {
 
 	case WEAPON_FLASHBANG:
-		break;
-
 	case WEAPON_HEGRENADE:
 		return flTime >= 1.5f && !(iTick % TIME_TO_TICKS(0.2f));
 
@@ -437,13 +434,18 @@ bool grenadePrediction::Detonate(size_t iTick, Trace_t& refTrace) {
 		return vecVelocity.Length() <= 0.2f && !(iTick % TIME_TO_TICKS(0.2f));
 
 	case WEAPON_MOLOTOV:
-		break;
-
+	case WEAPON_INCGRENADE:
 	case WEAPON_FIREBOMB:
-		if (refTrace.flFraction != 1.f && (std::cos(M_DEG2RAD(weapon_molotov_maxdetonateslope->GetFloat())) <= refTrace.plane.vecNormal.z))
+	{
+		static CConVar* maxSlope = i::ConVar->FindVar(XorStr("weapon_molotov_maxdetonateslope"));
+		static CConVar* maxTime = i::ConVar->FindVar(XorStr("weapon_molotov_maxdetonatetime"));
+		if (!maxSlope || !maxTime)
+			return false;
+		if (refTrace.flFraction != 1.f && std::cos(M_DEG2RAD(maxSlope->GetFloat())) <= refTrace.plane.vecNormal.z)
 			return true;
 
-		return flTime >= weapon_molotov_maxdetonateslope->GetFloat() && !(iTick % TIME_TO_TICKS(0.1f));
+		return flTime >= maxTime->GetFloat() && !(iTick % TIME_TO_TICKS(0.1f));
+	}
 
 	default:
 		return false;

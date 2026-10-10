@@ -19,6 +19,7 @@ namespace visual {
 
 	void VisualRender();
 	void CoolHackKeyBindList();
+	void DrawMiscHud();
 
 	void BoxEsp(int&, float&, int&, float&, Color);
 	void HealthEsp(int&, float&, int&, float&, float&, float&, int&, Color, Color, size_t&);
@@ -54,9 +55,11 @@ namespace visual {
 		int iDamage{};
 		int iTickcount{};
 		bool bHeadshot{};
+		int iVictimIndex{};
 	};
 
-	inline std::vector<DamageIndicator> vecDamageIndicator{};
+	void AddDamageIndicator(const DamageIndicator& indicator);
+	void ClearDamageIndicators();
 	void HandleDamageIndicator();
 
 	void WorldCrosshair();

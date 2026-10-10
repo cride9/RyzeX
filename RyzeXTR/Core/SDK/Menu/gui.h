@@ -115,6 +115,7 @@ namespace menu {
 	inline ImFont* tabIcons = nullptr;
 	inline ImFont* tabIconsPreview = nullptr;
 	inline ImFont* weaponIcons = nullptr;
+	inline ImFont* radioLogoFont = nullptr;
 	inline ImFont* defaultFont = nullptr;
 	inline ImFont* defaultFontBigger = nullptr;
 	inline int iSelectedTab = 0;

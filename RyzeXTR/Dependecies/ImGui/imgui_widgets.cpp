@@ -48,6 +48,7 @@ Index of this file:
 #include <string>
 #include <format>
 #include "../../Core/SDK/Menu/config.h"
+#include "../../Core/SDK/InputSystem.h"
 #include "../../Core/xorstr.h"
 
 //-------------------------------------------------------------------------
@@ -1126,6 +1127,11 @@ struct KeyBindAnim {
 };
 bool ImGui::Keybind(const char* str_id, int* current_key, int* key_style) {
 
+    if (!current_key)
+        return false;
+    if (*current_key < 0 || *current_key >= IM_ARRAYSIZE(KeyNames))
+        *current_key = 0;
+
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
         return false;
@@ -1204,8 +1210,11 @@ bool ImGui::Keybind(const char* str_id, int* current_key, int* key_style) {
             *current_key = 0;
             ClearActiveID();
         }
-        else
+        else {
             *current_key = key;
+            if (value_changed && key > 0 && key < 256 && cfg::m_iKeyStates[key] == 0)
+                IPT::SetKeyMode(key, HOLD);
+        }
     }
 
     const bool bLeftClicked = hovered && io->MouseClicked[1];
@@ -1239,9 +1248,9 @@ bool ImGui::Keybind(const char* str_id, int* current_key, int* key_style) {
     {
         ImVec2 sizelmao = GetWindowSize();
         it_anim->second.Maxs = ImLerp(it_anim->second.Maxs, ImVec2(90, 75), g.IO.DeltaTime * 12.f);
-        if (ImGui::Button("Hold", ImVec2(70, 15), cfg::m_iKeyStates[*current_key] == 1, false)) cfg::m_iKeyStates[*current_key] = 1;
-        if (ImGui::Button("Toggle", ImVec2(70, 15), cfg::m_iKeyStates[*current_key] == 2, false)) cfg::m_iKeyStates[*current_key] = 2;
-        if (ImGui::Button("Always-on", ImVec2(70, 15), cfg::m_iKeyStates[*current_key] == 3, false)) cfg::m_iKeyStates[*current_key] = 3;
+        if (ImGui::Button("Hold", ImVec2(70, 15), cfg::m_iKeyStates[*current_key] == HOLD, false)) IPT::SetKeyMode(*current_key, HOLD);
+        if (ImGui::Button("Toggle", ImVec2(70, 15), cfg::m_iKeyStates[*current_key] == TOGGLE, false)) IPT::SetKeyMode(*current_key, TOGGLE);
+        if (ImGui::Button("Always-on", ImVec2(70, 15), cfg::m_iKeyStates[*current_key] == ALWAYS_ON, false)) IPT::SetKeyMode(*current_key, ALWAYS_ON);
 
         ImGui::EndPopup();
     }

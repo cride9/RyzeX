@@ -42,10 +42,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 		if (thread)
 			CloseHandle(thread);
 
-		//auto vizualizerThread = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(vizualizer::Initialize), nullptr, 0, nullptr);
-
-		//if (vizualizerThread)
-		//	CloseHandle(vizualizerThread);
 	}
 
 	return TRUE;
@@ -111,18 +107,23 @@ DWORD WINAPI CheatThread(PVOID hinstDLL) {
 	//g::entityListener.Setup();
 	IPT::Setup();
 	p::Setup();
+	vizualizer::Initialize();
 
 	g::bStartWelcome = true;
 	misc::SetupRadio();
+	vizualizer::Shutdown();
 	// destroy radio
-	BASS::bass_init = FALSE;
-	BASS_Stop( );
-	BASS_StreamFree( BASS::stream_handle );
-	BASS_Free( );
+	if (BASS::bass_init) {
+		BASS_Stop();
+		BASS_StreamFree(BASS::stream_handle);
+		BASS_Free();
+		BASS::bass_init = FALSE;
+	}
 
 	//g::entityListener.Destroy();
 	menu::open = false;
 	h::DestroyHooks();
+	misc::Shutdown();
 	menu::Destroy();
 	i::EngineClient->ClientCmdUnrestricted(XorStr("cl_fullupdate"));
 	IPT::Restore( );

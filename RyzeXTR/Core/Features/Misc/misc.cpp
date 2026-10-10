@@ -17,17 +17,66 @@
 #include "../../../Dependecies/BASS/string_obfuscation.h"
 #include "../../SDK/Menu/gui.h"
 #include "Playerlist.h"
+#include "Hitsound.h"
+#include "Autobuy.h"
+#include "RadioVisualizer.h"
 #include "../Rage/Animations/EnemyAnimations.h"
 #include "../Rage/aimbot.h"
+#include <algorithm>
+#include <cmath>
+#include <mutex>
+#include <map>
+
+namespace {
+	struct RadioSettings {
+		bool enabled = false;
+		int station = 0;
+		float volume = 0.f;
+		bool muted = false;
+		std::string url;
+	};
+	std::mutex radioSettingsMutex;
+	RadioSettings radioSettings;
+}
+
+void misc::UpdateRadioSettings() {
+	RadioSettings settings;
+	settings.enabled = cfg::misc::bEnableRadio;
+	settings.station = cfg::misc::iRadioStation;
+	settings.volume = std::isfinite(cfg::misc::flRadioVolume)
+		? std::clamp(cfg::misc::flRadioVolume, 0.f, 100.f) / 200.f : 0.f;
+	settings.muted = IPT::HandleInput(cfg::misc::iRadioMuteHotKey);
+	if (settings.station == 14)
+		settings.url = cfg::misc::szCustomRadioUrl;
+	else if (settings.station >= 15 && settings.station < 19)
+		settings.url = cfg::misc::szRadioFavoriteUrls[settings.station - 15];
+	std::lock_guard<std::mutex> lock(radioSettingsMutex);
+	radioSettings = settings;
+}
+
+bool misc::IsRadioMuted() {
+	std::lock_guard<std::mutex> lock(radioSettingsMutex);
+	return radioSettings.muted;
+}
+
+std::string misc::GetRadioStatus() {
+	switch (BASS::radioStatus.load()) {
+	case BASS::RadioStatus::Loading: return "Connecting...";
+	case BASS::RadioStatus::Buffering: return "Buffering...";
+	case BASS::RadioStatus::Playing: return IsRadioMuted() ? "Playing [muted]" : "Playing";
+	case BASS::RadioStatus::Reconnecting: return "Reconnecting...";
+	case BASS::RadioStatus::Unavailable: return "Unavailable (check URL / audio device)";
+	default: return "Off";
+	}
+}
 
 void misc::SetupRadio( )
 {
 	BASS::bass_lib_handle = BASS::bass_lib.LoadFromMemory( bass_dll_image, sizeof( bass_dll_image ) );
 
-	if ( BASS_INIT_ONCE( ) )
+	if (BASS::bass_lib_handle && BASS_INIT_ONCE())
 		BASS::bass_init = TRUE;
-
-	static bool m_bBassNeedsReinit = false;
+	radio_visualizer::InitializeAnalysis();
 
 	static std::pair<std::string, char> channels[ ] =
 	{
@@ -47,47 +96,80 @@ void misc::SetupRadio( )
 		__(XorStr("http://stream-158.zeno.fm/71ntub27u18uv?zs=R4yvq6kaRPyekzJdUwP1VA")) // Phonk radio
 	};
 
-	bool bShouldDisable = false;
-
-	while (!bShouldDisable)
+	int current_channel = -1;
+	std::string currentUrl;
+	unsigned int retryTicks = 0;
+	auto nextMaintenance = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
+	while (!cfg::bDoUnload.load())
 	{
-#ifdef NDEBUG
-		if (cfg::bDoUnload)
-			bShouldDisable = true;
-#endif
-
 #ifdef _DEBUG
-		if (GetAsyncKeyState(VK_DELETE) || cfg::bDoUnload)
-			bShouldDisable = true;
+		if (GetAsyncKeyState(VK_DELETE) & 0x8000) {
+			cfg::bDoUnload.store(true);
+			break;
+		}
 #endif
-		std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
-		const auto desired_channel = cfg::misc::iRadioStation;
-
-		if ( BASS::bass_init && desired_channel )
+		const auto now = std::chrono::steady_clock::now();
+		const auto wake = radio_visualizer::IsAnalysisEnabled()
+			? (std::min)(nextMaintenance, now + std::chrono::milliseconds(16)) : nextMaintenance;
+		std::this_thread::sleep_until(wake);
+		if (cfg::bDoUnload.load())
+			break;
+		if (std::chrono::steady_clock::now() < nextMaintenance) {
+			radio_visualizer::Capture(BASS::stream_handle);
+			continue;
+		}
+		nextMaintenance = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
+		RadioSettings settings;
 		{
-			static auto current_channel = 0;
+			std::lock_guard<std::mutex> lock(radioSettingsMutex);
+			settings = radioSettings;
+		}
+		const int desired_channel = settings.station;
+		const bool builtin = desired_channel >= 0 && desired_channel < std::size(channels);
+		const bool custom = desired_channel >= 14 && desired_channel < 19 &&
+			(settings.url.starts_with("http://") || settings.url.starts_with("https://")) &&
+			settings.url.find_first_of(" \t\r\n") == std::string::npos;
 
-			if ( current_channel != desired_channel || m_bBassNeedsReinit )
+		if (BASS::bass_init && settings.enabled && (builtin || custom))
+		{
+			if (current_channel != desired_channel || currentUrl != settings.url || (!BASS::stream_handle && ++retryTicks >= 20))
 			{
-				m_bBassNeedsReinit = false;
+				retryTicks = 0;
 				BASS_Start( );
-				_rt( channel, channels[ desired_channel ] );
-				BASS_OPEN_STREAM( channel );
+				radio_visualizer::ResetStream();
+				if (builtin) {
+					_rt(channel, channels[desired_channel]);
+					BASS_OPEN_STREAM(channel);
+				} else {
+					BASS_OPEN_STREAM(settings.url.c_str());
+				}
 				current_channel = desired_channel;
+				currentUrl = settings.url;
 			}
 
 			BASS_SET_VOLUME( BASS::stream_handle,
-				IPT::HandleInput( cfg::misc::iRadioMuteHotKey ) || !cfg::misc::bEnableRadio
+				settings.muted
 				? 0.f
-				: cfg::misc::flRadioVolume / 200.f );
+				: settings.volume);
 			BASS_PLAY_STREAM( );
 		}
-		else if ( BASS::bass_init )
+		else
 		{
-			m_bBassNeedsReinit = true;
-			BASS_StreamFree( BASS::stream_handle );
+			BASS::radioStatus.store(settings.enabled ? BASS::RadioStatus::Unavailable : BASS::RadioStatus::Off);
+			BASS::SetMetadataChannel(0);
+			if (BASS::bass_init && BASS::stream_handle) {
+				radio_visualizer::ResetStream();
+				BASS_StreamFree(BASS::stream_handle);
+				BASS::stream_handle = 0;
+			}
+			current_channel = -1;
+			currentUrl.clear();
+			retryTicks = 0;
 		}
+		radio_visualizer::Capture(BASS::stream_handle);
 	}
+	radio_visualizer::ResetStream();
+	radio_visualizer::SetAnalysisEnabled(false);
 }
 
 void misc::CreateMove(CUserCmd* pCmd, Vector& vecViewAngle,bool& bSendPacket) {
@@ -157,14 +239,11 @@ XorStr("cs_baggage_skybox_"),
 
 	static CConVar* sv_skyname = i::ConVar->FindVar(XorStr("sv_skyname"));
 	static std::string szBackup;
-	if (cfg::misc::iSkybox == 0) {
-
-		util::SetSkybox(sv_skyname->GetString());
-	}
-	else if (szBackup.c_str() != szSkyboxes[cfg::misc::iSkybox] || bRefreshNewGame) {
-
-		util::SetSkybox(szSkyboxes[cfg::misc::iSkybox].c_str());
-		szBackup = szSkyboxes[cfg::misc::iSkybox];
+	const int skybox = std::clamp(cfg::misc::iSkybox, 0, static_cast<int>(std::size(szSkyboxes)) - 1);
+	const std::string skyboxName = skybox == 0 ? sv_skyname->GetString() : szSkyboxes[skybox];
+	if (szBackup != skyboxName || bRefreshNewGame) {
+		util::SetSkybox(skyboxName.c_str());
+		szBackup = skyboxName;
 		bRefreshNewGame = false;
 	}
 }
@@ -196,6 +275,7 @@ void misc::EventHandler(IGameEvent* pEvent) {
 
 	}
 	if (szEventName.find(cachedEvents::roundStart) != std::string_view::npos) {
+		visual::ClearDamageIndicators();
 		BuyBot(pEvent);
 		WalkBotHandler(pEvent);
 		std::fill(anims.arrMissedShots.begin(), anims.arrMissedShots.end(), 0);
@@ -261,11 +341,46 @@ void misc::ServerHitboxes() {
 	}
 }
 
+namespace {
+	struct ConVarBackup { CConVar* var; std::string original; };
+	std::map<std::string, ConVarBackup> conVarBackups;
+	struct SmokeBackup { IMaterial* material; bool noDraw; bool wireframe; };
+	std::vector<SmokeBackup> smokeBackups;
+
+	void ApplyConVarOverride(const char* name, bool enabled, const std::string& value) {
+		auto saved = conVarBackups.find(name);
+		if (!enabled) {
+			if (saved != conVarBackups.end()) {
+				saved->second.var->SetValue(saved->second.original.c_str());
+				conVarBackups.erase(saved);
+			}
+			return;
+		}
+		if (saved == conVarBackups.end()) {
+			auto* var = i::ConVar->FindVar(name);
+			if (!var)
+				return;
+			saved = conVarBackups.emplace(name, ConVarBackup{var, var->GetString()}).first;
+		}
+		if (value != saved->second.var->GetString())
+			saved->second.var->SetValue(value.c_str());
+	}
+}
+
+void misc::RestoreOverrides() {
+	for (const auto& [name, backup] : conVarBackups)
+		backup.var->SetValue(backup.original.c_str());
+	conVarBackups.clear();
+	for (const auto& backup : smokeBackups) {
+		backup.material->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, backup.noDraw);
+		backup.material->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, backup.wireframe);
+	}
+	smokeBackups.clear();
+}
+
 void misc::RemovePostProcessing() {
 
-	static CConVar* mat_postprocess_enable = i::ConVar->FindVar(XorStr("mat_postprocess_enable"));
-
-	mat_postprocess_enable->SetValue(cfg::misc::bRemovals[4] ? 0 : 1);
+	ApplyConVarOverride("mat_postprocess_enable", cfg::misc::bRemovals[4], "0");
 }
 
 void misc::Security() {
@@ -431,7 +546,7 @@ void misc::BulletImpact(IGameEvent* pEvent) {
 		if (iUser != i::EngineClient->GetLocalPlayer())
 			return;
 
-		Vector vecImpact = Vector(pEvent->GetInt(XorStr("x")), pEvent->GetInt(XorStr("y")), pEvent->GetInt(XorStr("z")));
+		Vector vecImpact = Vector(pEvent->GetFloat(XorStr("x")), pEvent->GetFloat(XorStr("y")), pEvent->GetFloat(XorStr("z")));
 
 		i::DebugOverlay->AddBoxOverlay(
 			vecImpact,
@@ -447,52 +562,87 @@ void misc::BulletImpact(IGameEvent* pEvent) {
 	}
 }
 
-void misc::BuyBot(IGameEvent* event) { // need menu element
-
-	if (!cfg::misc::bAutobuy)
+void misc::BuyBot(IGameEvent* event) {
+	static int buyAfterTick = -1;
+	if (!cfg::misc::bAutobuy || !i::EngineClient->IsInGame()) {
+		buyAfterTick = -1;
 		return;
-
-	std::string buy = "";
-
-	switch (cfg::misc::iPistols) {
-	case 1: buy += XorStr("buy glock;buy usp_silencer;buy hkp2000;"); break;
-	case 2: buy += XorStr("buy elite;"); break;
-	case 3: buy += XorStr("buy p250;"); break;
-	case 4: buy += XorStr("buy cz75a;buy fiveseven; buy tec9;"); break;
-	case 5: buy += XorStr("buy deagle;buy revolver;"); break;
 	}
-
-	switch (cfg::misc::iSnipers) {
-	case 1: buy += XorStr("buy ssg08;"); break;
-	case 2: buy += XorStr("buy awp;"); break;
-	case 3: buy += XorStr("buy scar20;buy g3sg1;"); break;
+	if (event) {
+		// Wait for the new round's money and inventory to reach the client.
+		buyAfterTick = i::GlobalVars->iTickCount + TIME_TO_TICKS(.25f);
+		return;
 	}
+	const int tick = i::GlobalVars->iTickCount;
+	if (buyAfterTick < 0 || tick < buyAfterTick)
+		return;
+	if (tick > buyAfterTick + TIME_TO_TICKS(3.f)) {
+		buyAfterTick = -1;
+		return;
+	}
+	if (!g::pLocal || !g::pLocal->IsAlive())
+		return;
+	buyAfterTick = -1;
+	const int teamId = g::pLocal->GetTeam();
+	if (teamId != TEAM_TT && teamId != TEAM_CT)
+		return;
+	const int team = teamId == TEAM_CT ? 1 : 0;
+	autobuy::Options options;
+	options.ct = team == 1;
+	options.keepWeapons = cfg::misc::bAutobuyKeepWeapons;
+	options.reserve = cfg::misc::iAutobuyReserve;
+	if (auto* limit = i::ConVar->FindVar("ammo_grenade_limit_total"))
+		options.grenadeLimit = std::clamp(limit->GetInt(), 0, 16);
+	options.pistol = cfg::misc::bSeparateAutobuy ? cfg::misc::iTeamPistols[team] : cfg::misc::iPistols;
+	options.rifle = cfg::misc::bSeparateAutobuy ? cfg::misc::iTeamRifles[team] : cfg::misc::iRifles;
+	options.sniper = cfg::misc::bSeparateAutobuy ? cfg::misc::iTeamSnipers[team] : cfg::misc::iSnipers;
+	for (int index = 0; index < 3; ++index)
+		options.equipment[index] = cfg::misc::bSeparateAutobuy ? cfg::misc::bTeamEquipments[team][index] : cfg::misc::bEquipments[index];
+	for (int index = 0; index < 5; ++index)
+		options.grenades[index] = cfg::misc::bSeparateAutobuy ? cfg::misc::bTeamGrenades[team][index] : cfg::misc::bGrenades[index];
+	autobuy::Inventory inventory;
+	inventory.money = (std::max)(0, g::pLocal->GetMoney());
+	inventory.armor = g::pLocal->GetArmor();
+	inventory.helmet = g::pLocal->HasHelmet();
+	inventory.defuser = g::pLocal->HasDefuser();
+	for (const auto handle : g::pLocal->GetWeaponsHandle()) {
+		auto* weapon = static_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntityFromHandle(handle));
+		if (!weapon)
+			continue;
+		const auto id = static_cast<unsigned>(weapon->GetItemDefinitionIndex());
+		if (id > 0 && id < inventory.items.size())
+			++inventory.items[id];
+		if (const auto* data = weapon->GetCSWpnData()) {
+			if (data->nWeaponType >= WEAPONTYPE_PISTOL && data->nWeaponType <= WEAPONTYPE_MACHINEGUN) {
+				inventory.primary |= data->iSlot == 0;
+				inventory.secondary |= data->iSlot == 1;
+			}
+		}
+	}
+	const auto commands = autobuy::Build(options, inventory, [](unsigned id) {
+		const auto* data = i::WeaponSystem ? i::WeaponSystem->GetWpnData(id) : nullptr;
+		return data ? (std::max)(0, data->iWeaponPrice) : 0;
+	});
+	if (!commands.empty())
+		i::EngineClient->ExecuteClientCmd(commands.c_str());
+}
 
-	if (cfg::misc::bEquipments[0])
-		buy += XorStr("buy vesthelm;");
+namespace { HitsoundCache hitsoundCache; }
 
-	if (cfg::misc::bEquipments[1])
-		buy += XorStr("buy taser;");
+bool misc::PreviewHitSound() {
+	if (cfg::misc::iHitSound == 1) {
+		const float volume = std::isfinite(cfg::misc::flHitSoundVolume) ? std::clamp(cfg::misc::flHitSoundVolume, 0.f, 100.f) / 100.f : 0.f;
+		i::EngineSoundClient->EmitAmbientSound("buttons\\arena_switch_press_02.wav", volume);
+		return true;
+	}
+	return cfg::misc::iHitSound == 2 && hitsoundCache.Play(cfg::misc::szWavPath, cfg::misc::flHitSoundVolume, true);
+}
 
-	if (cfg::misc::bEquipments[2])
-		buy += XorStr("buy defuser;");
+std::string misc::GetHitSoundError() { return hitsoundCache.Error(); }
 
-	if (cfg::misc::bGrenades[0])
-		buy += XorStr("buy molotov;buy incgrenade;");
-
-	if (cfg::misc::bGrenades[1])
-		buy += XorStr("buy decoy;");
-
-	if (cfg::misc::bGrenades[2])
-		buy += XorStr("buy flashbang;");
-
-	if (cfg::misc::bGrenades[3])
-		buy += XorStr("buy hegrenade;");
-
-	if (cfg::misc::bGrenades[4])
-		buy += XorStr("buy smokegrenade;");
-
-	i::EngineClient->ExecuteClientCmd(buy.c_str());
+void misc::Shutdown() {
+	RestoreOverrides();
+	hitsoundCache.Clear();
 }
 
 void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
@@ -506,6 +656,17 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
 	if ( !pEntity || pEntity == g::pLocal )
 		return;
+
+	if (cfg::misc::bDamageIndicator) {
+		const int hitgroup = pEvent->GetInt(XorStr("hitgroup"));
+		Vector position = pEntity->GetWorldSpaceCenter();
+		if (hitgroup >= HITGROUP_GENERIC && hitgroup <= HITGROUP_GEAR) {
+			if (const auto hitPosition = pEntity->GetHitGroupPosition(hitgroup))
+				position = *hitPosition;
+		}
+		visual::AddDamageIndicator({ position, pEvent->GetInt(XorStr("dmg_health")),
+			i::GlobalVars->iTickCount, hitgroup == HITGROUP_HEAD, pEntity->EntIndex() });
+	}
 
 	// TODO: Add effects interface for cool hit effects :D
 	/*if ( C::Get<bool>( Vars.bScreenHitEffects ) )
@@ -532,41 +693,12 @@ void misc::HandlePlayerHitEffects( IGameEvent* pEvent ) {
 
 	// play hit sound
 	if ( cfg::misc::iHitSound == 1 ) {
-		i::EngineSoundClient->EmitAmbientSound("buttons\\arena_switch_press_02.wav", cfg::misc::flHitSoundVolume / 100.f);
+		const float volume = std::isfinite(cfg::misc::flHitSoundVolume) ? std::clamp(cfg::misc::flHitSoundVolume, 0.f, 100.f) / 100.f : 0.f;
+		i::EngineSoundClient->EmitAmbientSound("buttons\\arena_switch_press_02.wav", volume);
 		// physics\\metal\\paintcan_impact_hard3.wav
 	}
-	else if ( cfg::misc::iHitSound == 2 && !cfg::misc::szWavPath.empty( ) ) {
-
-		static bool m_bNeedsUpdate = true;
-		static float m_flOldVolume = 0.f;
-		static std::string m_szOldWavPath;
-		// store the parsed hitsound bytes to a dummy byte.
-		static BYTE* m_pParsedHitsound;
-
-		// read the .wav file into memory.
-		BYTE* m_pSoundBytes = util::ReadWavFileIntoMemory( cfg::misc::szWavPath );
-
-		if ( cfg::misc::flHitSoundVolume != m_flOldVolume || m_szOldWavPath != cfg::misc::szWavPath )
-			m_bNeedsUpdate = true;
-
-		if ( m_bNeedsUpdate )
-		{
-			m_szOldWavPath = cfg::misc::szWavPath;
-			m_flOldVolume = cfg::misc::flHitSoundVolume;
-			m_bNeedsUpdate = false;
-
-			// adjust the hitsound volume.
-			m_pParsedHitsound = m_pSoundBytes;
-
-			CWavParser::WavHeader_t header;
-			header.ParseWavHeader( m_pParsedHitsound );
-			wavparser.AdjustWavVolume( header, ( cfg::misc::flHitSoundVolume / 100.f ) );
-		}
-		// play the sound.
-		if ( m_pParsedHitsound ) {
-
-			PlaySoundA( LPCSTR( m_pParsedHitsound ), NULL, SND_MEMORY | SND_ASYNC );
-		}
+	else if (cfg::misc::iHitSound == 2 && !cfg::misc::szWavPath.empty()) {
+		hitsoundCache.Play(cfg::misc::szWavPath, cfg::misc::flHitSoundVolume);
 	}
 }
 
@@ -722,19 +854,9 @@ void misc::Slowwalk(CUserCmd* pCmd, float flSpeed) {
 }
 
 void misc::AspectRatio() {
-
-	static CConVar* r_aspectratio = i::ConVar->FindVar(XorStr("r_aspectratio"));
-
-	if (!cfg::misc::bAspectRatio) {
-		r_aspectratio->SetValue(0);
-		return;
-	}
-
-	float ratio = (cfg::misc::iAspectRatio * 0.1) / 2;
-	if (ratio > 0.001)
-		r_aspectratio->SetValue(ratio); //ayyware hhhh
-	else
-		r_aspectratio->SetValue((35 * 0.1f) / 2);
+	const int setting = std::clamp(cfg::misc::iAspectRatio, 0, 100);
+	const float ratio = setting ? setting * .05f : 1.75f;
+	ApplyConVarOverride("r_aspectratio", cfg::misc::bAspectRatio, std::to_string(ratio));
 }
 
 Vector VecAngle( Vector vec )
@@ -1034,7 +1156,7 @@ void misc::ThirdPerson() {
 		if (vecOffset.z == 0) {
 
 			vecEyePosition = pLocal->GetEyePosition(false);
-			Vector vecHeadPosition = pLocal->GetHitboxPosition(HITBOX_HEAD).value();
+			Vector vecHeadPosition = pLocal->GetHitboxPosition(HITBOX_HEAD).value_or(vecEyePosition);
 			float flDifference = ((vecEyePosition - vecHeadPosition).Length2D()) * 0.1f;
 
 			Vector vecViewPunch = g::pLocal->GetViewPunch();
@@ -1216,28 +1338,15 @@ void misc::WorldCrosshairHandler(IGameEvent* pEvent) {
 
 	static int i = 0;
 
-	cfg::misc::flWorldCrosshairColor[3] = 1.f;
 	visual::flWorldCrosshairLength[i] = i::GlobalVars->flCurrentTime;
-	visual::vecWorldCrosshair[i] = Vector(pEvent->GetInt(XorStr("x")), pEvent->GetInt(XorStr("y")), pEvent->GetInt(XorStr("z")));
+	visual::vecWorldCrosshair[i] = Vector(pEvent->GetFloat(XorStr("x")), pEvent->GetFloat(XorStr("y")), pEvent->GetFloat(XorStr("z")));
 	i = ( i + 1 ) % 5;
 }
 
 void misc::FixScopeSens() {
-
-	// zoom_sensitivity_ratio_mouse 
-	static CConVar* zoom_sensitivity_ratio_mouse = i::ConVar->FindVar(XorStr("zoom_sensitivity_ratio_mouse"));
-
-	if (!g::pLocal || !g::pLocal->GetWeapon()) {
-		zoom_sensitivity_ratio_mouse->SetValue(1);
-	}
-
-	if (!g::pLocal->IsScoped() || !i::EngineClient->IsInGame()) {
-		zoom_sensitivity_ratio_mouse->SetValue(1);
-		return;
-	}
-	
-	
-	zoom_sensitivity_ratio_mouse->SetValue(g::pLocal->IsScoped() ? cfg::misc::bRemovals[3] ? 0 : 1 : 1);
+	const bool enabled = cfg::misc::bRemovals[3] && g::pLocal && g::pLocal->IsAlive() &&
+		i::EngineClient->IsInGame() && g::pLocal->IsScoped();
+	ApplyConVarOverride("zoom_sensitivity_ratio_mouse", enabled, "0");
 }
 
 void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
@@ -1257,37 +1366,36 @@ void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
 }
 
 void misc::RemoveSmoke() {
-	static int flCurrentTime = i::GlobalVars->flCurrentTime;
-
-	if (!cfg::misc::bRemovals[0] || !g::pLocal || flCurrentTime > (i::GlobalVars->flCurrentTime - TICKS_TO_TIME(32)))
+	const bool enabled = cfg::misc::bRemovals[0] && i::EngineClient->IsInGame();
+	if (!enabled) {
+		for (const auto& backup : smokeBackups) {
+			backup.material->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, backup.noDraw);
+			backup.material->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, backup.wireframe);
+		}
+		smokeBackups.clear();
 		return;
-
-	flCurrentTime = i::GlobalVars->flCurrentTime;
-
-    if (static auto sigLineGoesThroughSmoke = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 08 8B 15 ? ? ? ? 0F 57 C0")); sigLineGoesThroughSmoke) {
-        int* smokeCount = reinterpret_cast<int*>(*reinterpret_cast<DWORD*>(sigLineGoesThroughSmoke + 0x8));
-        *smokeCount = 0;
-    }
-
-    static const char* vecSmokeWireframe = XorStr("particle/vistasmokev1/vistasmokev1_smokegrenade");
-
-    IMaterial* wireframeMaterial = i::MaterialSystem->FindMaterial(vecSmokeWireframe, XorStr("Other textures"));
-    if (wireframeMaterial) {
-        wireframeMaterial->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, true);
-    }
-
-    static std::array<const char*, 3> vecSmokeNoDraw = {
-        XorStr("particle/vistasmokev1/vistasmokev1_fire"),
-        XorStr("particle/vistasmokev1/vistasmokev1_emods"),
-        XorStr("particle/vistasmokev1/vistasmokev1_emods_impactdust")
-    };
-
-    for (const char* smokeMaterialName : vecSmokeNoDraw) {
-        IMaterial* smokeMaterial = i::MaterialSystem->FindMaterial(smokeMaterialName, XorStr("Other textures"));
-        if (smokeMaterial) {
-            smokeMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
-        }
-    }
+	}
+	if (smokeBackups.empty()) {
+		static const char* names[] = {
+			"particle/vistasmokev1/vistasmokev1_smokegrenade",
+			"particle/vistasmokev1/vistasmokev1_fire",
+			"particle/vistasmokev1/vistasmokev1_emods",
+			"particle/vistasmokev1/vistasmokev1_emods_impactdust",
+			"particle/screenspace_fog",
+			"effects/overlaysmoke"
+		};
+		for (const char* name : names) {
+			auto* material = i::MaterialSystem->FindMaterial(name,
+				std::string_view(name) == "particle/screenspace_fog" ? "ClientEffect textures" : "Other textures", false);
+			if (material && !material->IsErrorMaterial())
+				smokeBackups.push_back({material, material->GetMaterialVarFlag(MATERIAL_VAR_NO_DRAW),
+					material->GetMaterialVarFlag(MATERIAL_VAR_WIREFRAME)});
+		}
+	}
+	for (const auto& backup : smokeBackups) {
+		backup.material->SetMaterialVarFlag(MATERIAL_VAR_WIREFRAME, false);
+		backup.material->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
+	}
 }
 
 void misc::WalkBotHandler(IGameEvent* pEvent) {
@@ -1781,26 +1889,20 @@ std::string misc::GetMatrixName(int iType) {
 }
 
 void misc::LeftHandKnife() {
-	
-	if (!g::pLocal || !g::pLocal->IsAlive())
-		return;
-
-	static bool bSaveAgain = false;
-	if (!cfg::misc::bInvertKnife) {
-
-		bSaveAgain = true;
+	const bool enabled = cfg::misc::bInvertKnife && g::pLocal && g::pLocal->IsAlive() && g::pLocal->GetWeapon();
+	if (!enabled) {
+		ApplyConVarOverride("cl_righthand", false, "");
 		return;
 	}
-
-	static CConVar* convar = i::ConVar->FindVar(XorStr("cl_righthand"));
-	static int iBackupValue = convar->GetInt();
-	if (bSaveAgain) {
-		iBackupValue = convar->GetInt();
-		bSaveAgain = false;
+	if (!conVarBackups.contains("cl_righthand")) {
+		const auto* var = i::ConVar->FindVar("cl_righthand");
+		if (!var)
+			return;
+		ApplyConVarOverride("cl_righthand", true, var->GetString());
 	}
-
-	if (CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon(); pWeapon)
-		convar->SetValue(pWeapon->IsKnife() ? iBackupValue ? 0 : 1 : iBackupValue);
+	const int original = std::atoi(conVarBackups.at("cl_righthand").original.c_str());
+	const int hand = g::pLocal->GetWeapon()->IsKnife() ? !original : original;
+	ApplyConVarOverride("cl_righthand", true, std::to_string(hand));
 }
 
 static __declspec(naked) void __cdecl Invoke_NET_SetConVar(void* pfn, const char* cvar, const char* value)
@@ -2075,28 +2177,17 @@ void misc::Print(const std::string text, ...)
 }
 
 void misc::FogOptions() {
-
-	static CConVar* fog_override = i::ConVar->FindVar(XorStr("fog_override"));
-	static CConVar* fog_start = i::ConVar->FindVar(XorStr("fog_start"));
-	static CConVar* fog_end = i::ConVar->FindVar(XorStr("fog_end"));
-	static CConVar* fog_color = i::ConVar->FindVar(XorStr("fog_color"));
-
 	using namespace cfg::visual;
-
-	fog_override->SetValue(bOverrideFog);
-	if (!bOverrideFog)
-		return;
-
-	fog_start->SetValue(iFogStart);
-	fog_end->SetValue(iFogEnd);
-	fog_color->SetValue(std::format(XorStr("{} {} {}"), flFogColor[0] * 255, flFogColor[1] * 255, flFogColor[2] * 255).c_str());
+	ApplyConVarOverride("fog_override", bOverrideFog, "1");
+	ApplyConVarOverride("fog_start", bOverrideFog, std::to_string(iFogStart));
+	ApplyConVarOverride("fog_end", bOverrideFog, std::to_string(iFogEnd));
+	const auto channel = [](float value) { return std::isfinite(value) ? static_cast<int>(std::clamp(value, 0.f, 1.f) * 255.f) : 0; };
+	ApplyConVarOverride("fog_color", bOverrideFog,
+		std::format("{} {} {}", channel(flFogColor[0]), channel(flFogColor[1]), channel(flFogColor[2])));
 }
 
 void misc::RemoveShadows() {
-
-	static CConVar* r_shadows = i::ConVar->FindVar("cl_csm_shadows");
-	if (r_shadows)
-		r_shadows->SetValue(cfg::misc::bRemovals[6] ? 0 : 1);
+	ApplyConVarOverride("cl_csm_shadows", cfg::misc::bRemovals[6], "0");
 }
 
 void misc::BoostMovement(CUserCmd* pCmd) {

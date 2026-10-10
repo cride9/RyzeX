@@ -18,7 +18,6 @@ void __fastcall h::hkDrawModel(IStudioRender* thisptr, int edx, DrawModelResults
 
 	if (g::pLocal) {
 
-		misc::RemoveSmoke();
 		bClearOverride = chams::DrawChams(g::pLocal, pResults, info, pBoneToWorld, flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
 	}
 

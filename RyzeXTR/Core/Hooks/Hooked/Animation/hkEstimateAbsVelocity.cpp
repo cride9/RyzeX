@@ -2,10 +2,15 @@
 #include "../../../SDK/entity.h"
 #include "../../../globals.h"
 #include "../../../Features/Rage/Animations/Lagcompensation.h"
+#include "../../../Features/Rage/Animations/ExperimentalResolver.h"
 
 void __fastcall h::hkEstimateAbsVelocity(CBaseEntity* pPlayer, void* edx, Vector& vecVelocity)
 {
 	static auto EstimateAbsVelocity = detour::estimateAbsVelocity.GetOriginal<decltype(&hkEstimateAbsVelocity)>();
+	if (ExperimentalResolver::IsPredicting()) {
+		vecVelocity = pPlayer->GetVecAbsVelocity();
+		return;
+	}
 
 	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pPlayer->EntIndex());
 	if (!pLog || pLog->pRecord.empty())

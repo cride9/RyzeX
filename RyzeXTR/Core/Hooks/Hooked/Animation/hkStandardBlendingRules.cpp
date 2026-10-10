@@ -10,10 +10,10 @@ void __fastcall h::hkStandardBlendingRules(void* entityPointer, void* unused1, v
 	if (!pEnt->IsAlive())
 		return original( entityPointer, unused1, pStudioHdr, pos, q, currentTime, boneMask);
 
-	if (!(pEnt->GetEffects() & EF_NOINTERP))
-		pEnt->GetEffects() |= EF_NOINTERP;
+	const int backupEffects = pEnt->GetEffects();
+	pEnt->GetEffects() |= EF_NOINTERP;
 
 	original( entityPointer, unused1, pStudioHdr, pos, q, currentTime, boneMask);
 
-	pEnt->GetEffects() &= ~EF_NOINTERP;
+	pEnt->GetEffects() = backupEffects;
 }

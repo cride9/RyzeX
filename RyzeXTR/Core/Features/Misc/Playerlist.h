@@ -146,7 +146,7 @@ namespace playerList {
 
 	inline void InitializePlayerList(CBaseEntity* pLocal) {
 
-		for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+		for (size_t i = 0; i <= i::GlobalVars->nMaxClients && i < arrPlayers.size(); i++) {
 
 			CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 

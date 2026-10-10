@@ -24,13 +24,14 @@ enum EHitboxType : int {
 struct Hitscan_t {
 
 	Hitscan_t() {}
-	Hitscan_t(Lagcompensation::LagRecord_t* _record, Vector& _point, FireBulletData_t& data, bool _baimlethal, bool _safe, int _damage, int _count) {
+	Hitscan_t(Lagcompensation::LagRecord_t* _record, Vector& _point, FireBulletData_t& data, bool _baimlethal, bool _safe, int _damage, int _count, bool _headOverlap = false) {
 
 		pRecord = _record;
 		vecPoint = _point;
 
 		bBaimLethal = _baimlethal;
 		bSafe = _safe;
+		bHeadOverlap = _headOverlap;
 		bBacktrack = &lagcomp.GetLog(_record->iEntIndex).pRecord.front() != _record;
 
 		flAnimationVelocity = _record->flAnimationVelocity;
@@ -49,6 +50,7 @@ struct Hitscan_t {
 
 	bool bBaimLethal{};
 	bool bSafe{};
+	bool bHeadOverlap{};
 	bool bBacktrack{};
 
 	float flAnimationVelocity{};
@@ -67,11 +69,13 @@ struct Hitscan_t {
 			other.flDamage >= other.iTransformedDamage;
 
 		return std::make_tuple(
+			meetsDamage && bHeadOverlap,
 			bBaimLethal,
 			meetsDamage,
 			meetsDamage && bSafe,
 			flDamage
 		) > std::make_tuple(
+			otherMeetsDamage && other.bHeadOverlap,
 			other.bBaimLethal,
 			otherMeetsDamage,
 			otherMeetsDamage && other.bSafe,

@@ -36,6 +36,8 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	bSendPacket = true;
 	g::bSendPacket = &bSendPacket;
 	CBaseEntity* pLocal = g::pLocal = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
+	if (!pLocal || !pCmd->iCommandNumber)
+		return;
 	g::pCmd = pCmd;
 	g::vecEyePosition = pLocal->GetEyePosition(false);
 	skinChanger.iItemDefinitionIndex = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() : 0;

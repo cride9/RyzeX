@@ -54,16 +54,14 @@ bool __fastcall h::hkFireEvent( void* ecx, void* edx, IGameEvent* pEvent )
 		return oFireEvent( ecx, edx, pEvent );
 
 	auto pEventInfo = i::ClientState->pEvents; //0x4E6C
-	CEventInfo* pNextEvent = nullptr;
 
 	if ( !pEventInfo )
 		return oFireEvent( ecx, edx, pEvent );
 
-	do
+	for (; pEventInfo != nullptr; pEventInfo = pEventInfo->pNext)
 	{
-		pNextEvent = pEventInfo->pNext;
-
-		const uint16_t class_id = pEventInfo->iClassID - 1;
+		if (!pEventInfo->pClientClass)
+			continue;
 
 		const auto m_p_create_event_fn = pEventInfo->pClientClass->pCreateEventFn;
 		if ( !m_p_create_event_fn )
@@ -75,9 +73,6 @@ bool __fastcall h::hkFireEvent( void* ecx, void* edx, IGameEvent* pEvent )
 
 		pEventInfo->flFireDelay = 0.f;
 
-		pEventInfo = pNextEvent;
 	}
-	
-	while ( pNextEvent != nullptr );
-		return oFireEvent( ecx, edx, pEvent );
+	return oFireEvent( ecx, edx, pEvent );
 }

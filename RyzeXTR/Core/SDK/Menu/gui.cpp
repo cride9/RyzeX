@@ -1,6 +1,8 @@
 #include "gui.h"
 #include "fontBytes.h"	
 #include "../../globals.h"
+#include "../../Features/Visuals/ESP.h"
+#include "../../Features/Misc/RadioVisualizer.h"
 #include "config.h"
 #include <string>
 #include "../../memeSounds.h"
@@ -25,6 +27,9 @@ void menu::Style() {
 	tabIcons = io.Fonts->AddFontFromMemoryCompressedTTF(byteFonts::FuckMyLife_compressed_data, byteFonts::FuckMyLife_compressed_size, 35.f);
 	tabIconsPreview = io.Fonts->AddFontFromMemoryCompressedTTF(byteFonts::FuckMyLife_compressed_data, byteFonts::FuckMyLife_compressed_size, 110.f);
 	weaponIcons = io.Fonts->AddFontFromMemoryCompressedTTF(byteFonts::font_compressed_data, byteFonts::font_compressed_size, 55.f);
+	// Keep the font's spacers alongside R when building the larger logo atlas.
+	radioLogoFont = io.Fonts->AddFontFromMemoryCompressedTTF(byteFonts::font_compressed_data,
+		byteFonts::font_compressed_size, 192.f);
 
 	// window properties
 	style.WindowRounding = 10.f;
@@ -67,6 +72,8 @@ void menu::Render() noexcept {
 	ImGui_ImplWin32_NewFrame();
 
 	ImGui::NewFrame();
+	radio_visualizer::RenderOverlay(radioLogoFont, menu::open, cfg::misc::bEnableRadio);
+	visual::DrawMiscHud();
 	
 	ImDrawList* pBackgroundDrawList = ImGui::GetBackgroundDrawList( );
 	//D::RenderDrawData( pBackgroundDrawList );

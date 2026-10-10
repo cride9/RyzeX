@@ -21,6 +21,14 @@ void __fastcall h::hkPaintTraverse(void* pPanels, int edx, unsigned int vguiPane
 		return;
 
 	if (vguiPanel == i::EngineVGui->GetPanel(PANEL_TOOLS)) {
+		misc::UpdateRadioSettings();
+		misc::RemovePostProcessing();
+		misc::RemoveShadows();
+		misc::AspectRatio();
+		misc::FogOptions();
+		misc::FixScopeSens();
+		misc::LeftHandKnife();
+		misc::BuyBot(nullptr);
 
 		//if (g::pLocal) {
 

@@ -9,7 +9,7 @@ void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudio
 	if (!pEnt || !pEnt->IsAlive())
 		return original( entityPointer, edx, hdr, pos, q, transform, mask, computed);
 
-	auto backup = hdr->vecBoneFlags;
+	std::vector<int> backup(hdr->vecBoneFlags.begin(), hdr->vecBoneFlags.end());
 	float flCurtime = i::GlobalVars->flCurrentTime;
 	i::GlobalVars->flCurrentTime = pEnt->GetSimulationTime();
 	
@@ -18,6 +18,7 @@ void __fastcall h::hkBuildTransformation(void* entityPointer, void* edx, CStudio
 
 	original(entityPointer, edx, hdr, pos, q, transform, mask, computed);
 
-	hdr->vecBoneFlags = backup;
+	for (int index = 0; index < hdr->vecBoneFlags.Count(); ++index)
+		hdr->vecBoneFlags.Element(index) = backup[index];
 	i::GlobalVars->flCurrentTime = flCurtime;
 }
