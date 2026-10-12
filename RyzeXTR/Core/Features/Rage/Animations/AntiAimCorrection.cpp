@@ -1,4 +1,5 @@
 #include "EnemyAnimations.h"
+#include "ExperimentalResolver.h"
 #include "../aimbot.h"
 #include "../autowall.h"
 #include "../../Misc/Playerlist.h"
@@ -186,6 +187,9 @@ void Animations::Resolver(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pR
 }
 
 void Animations::ResolverLogic() {
+	experimentalResolver.ProcessShots();
+	if (resolver::GetMode(cfg::rage::iResolverMode) == resolver::Mode::Experimental)
+		return;
 
 	if (!aimbot.GetHitLogData().pAimbotTarget || !g::pLocal || bBulletImpact == Vector(0, 0, 0) || !aimbot.GetHitLogData().pTargetMatrix)
 		return;

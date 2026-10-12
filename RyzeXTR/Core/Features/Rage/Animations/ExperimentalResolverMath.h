@@ -62,7 +62,118 @@ inline bool AliveLoopSpeed(const Layer& current, const Layer& previous, float ma
     return true;
 }
 
-enum class Reason : int { Warmup, Ambiguous, MovingLayers, LastMove, LbyChanged, Transition, Override, Invalid };
+enum class Reason : int { Warmup, Ambiguous, MovingLayers, LastMove, LbyChanged, Transition, Override, Invalid,
+    Standing, LbyExtended, Bruteforce, HitHistory };
+
+// Standing has no unique layer-6 inversion. LBY cadence is a heuristic, not a
+// measurement of server foot yaw. A moving/airborne transition starts a new clock.
+struct Standing {
+    float lastTime = -1.f, lastLby{}, lastUpdate = -1.f, stoppedTime = -1.f;
+    float movingYaw{}, movingTime = -1.f;
+    int cadence{};
+    bool ready{}, wasMoving{};
+
+    void Update(float time, float speed, bool ground, float lby, float footYaw) {
+        if (!std::isfinite(time) || !std::isfinite(speed) || !std::isfinite(lby) || !std::isfinite(footYaw)) {
+            *this = {};
+            return;
+        }
+        if (ready && (time <= lastTime || time - lastTime > .5f)) *this = {};
+        const bool moving = ground && speed > 5.f;
+        if (!ground || moving) {
+            cadence = 0;
+            lastUpdate = stoppedTime = -1.f;
+            if (moving) { movingYaw = footYaw; movingTime = time; }
+        } else {
+            if (!ready || wasMoving || stoppedTime < 0.f) stoppedTime = time;
+            if (ready && !wasMoving && std::fabs(NormalizeYaw(lby - lastLby)) > 1.f) {
+                const float period = time - lastUpdate;
+                cadence = lastUpdate >= 0.f && period >= .9f && period <= 1.35f ? cadence + 1 : 0;
+                lastUpdate = time;
+            }
+        }
+        wasMoving = moving;
+        lastTime = time;
+        lastLby = lby;
+        ready = true;
+    }
+
+    float Guess(float eyeYaw, float lby, float negativeBound, float positiveBound, float time, bool& extended) const {
+        const float difference = NormalizeYaw(lby - eyeYaw);
+        const bool periodic = cadence >= 1 && lastUpdate >= 0.f && time - lastUpdate <= 1.35f;
+        // A constant EXTENDED flick can keep the same networked LBY value on
+        // every update. After a full standing interval, also test a persistent
+        // LBY outside the bounded yaw family. This remains a low-trust hint.
+        const bool persistentOutside = stoppedTime >= 0.f && time - stoppedTime >= 1.35f
+            && std::fabs(difference) > (std::max)(negativeBound, positiveBound) + 15.f;
+        extended = (periodic || persistentOutside) && std::fabs(difference) > 35.f;
+        // With the repository's EXTENDED pattern, the LBY flick is opposite the
+        // unsent +95 yaw. Test the opposite edge first, then let shot feedback
+        // reject it. Never copy the -120/+95 command angles into goal feet yaw.
+        if (extended) return difference < 0.f ? positiveBound : -negativeBound;
+        if (movingTime >= 0.f && time - movingTime >= 0.f && time - movingTime <= 1.5f)
+            return std::clamp(NormalizeYaw(movingYaw - eyeYaw), -negativeBound, positiveBound);
+        return std::clamp(difference, -negativeBound, positiveBound);
+    }
+};
+
+struct RecoveryChoice { float delta{}; bool changed{}, hitHistory{}; };
+struct Recovery {
+    std::array<float, 12> failed{}, failedTime{};
+    int count{}, misses{};
+    float hitDelta{}, hitTime = -1.f;
+
+    bool Blocked(float delta) const {
+        for (int i = 0; i < count; ++i)
+            if (std::fabs(NormalizeYaw(delta - failed[i])) <= 6.f) return true;
+        return false;
+    }
+    void Miss(float delta, float time) {
+        if (!std::isfinite(delta) || !std::isfinite(time)) return;
+        ++misses;
+        hitTime = -1.f;
+        if (!Blocked(delta)) {
+            if (count == static_cast<int>(failed.size())) {
+                for (int i = 1; i < count; ++i) { failed[i - 1] = failed[i]; failedTime[i - 1] = failedTime[i]; }
+                --count;
+            }
+            failed[count] = NormalizeYaw(delta); failedTime[count++] = time;
+        }
+    }
+    void Hit(float delta, float time) {
+        if (!std::isfinite(delta) || !std::isfinite(time)) return;
+        hitDelta = NormalizeYaw(delta); hitTime = time;
+        count = misses = 0;
+    }
+    RecoveryChoice Choose(float primary, float negativeBound, float positiveBound, float lbyDelta, float time,
+                          bool allowHitHistory) {
+        for (int i = 0; i < count;) {
+            if (time < failedTime[i] || time - failedTime[i] > 8.f) {
+                failed[i] = failed[count - 1]; failedTime[i] = failedTime[--count];
+            } else ++i;
+        }
+        if (allowHitHistory && hitTime >= 0.f && time >= hitTime && time - hitTime <= 4.f && !Blocked(hitDelta))
+            return {std::clamp(hitDelta, -negativeBound, positiveBound), false, true};
+        if (!Blocked(primary)) return {primary, false, false};
+        const std::array<float, 13> options{ -primary, 0.f, primary < 0.f ? positiveBound : -negativeBound,
+            -negativeBound, positiveBound, -.5f * negativeBound, .5f * positiveBound,
+            -.25f * negativeBound, .25f * positiveBound, -.75f * negativeBound, .75f * positiveBound,
+            std::clamp(lbyDelta, -negativeBound, positiveBound), primary };
+        for (float delta : options) {
+            delta = std::clamp(delta, -negativeBound, positiveBound);
+            if (!Blocked(delta)) return {delta, true, false};
+        }
+        // Start a new cycle while keeping the preferred bad yaw blocked. Merely
+        // clearing everything would restore that yaw on the very next packet,
+        // before the alternative has even been fired at.
+        count = 1; failed[0] = NormalizeYaw(primary); failedTime[0] = time;
+        for (float delta : options) {
+            delta = std::clamp(delta, -negativeBound, positiveBound);
+            if (!Blocked(delta)) return {delta, true, false};
+        }
+        return {primary, false, false};
+    }
+};
 
 struct Decision {
     int candidate = Center;

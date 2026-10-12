@@ -95,12 +95,16 @@ public:
 
 	/* resolver */
 	std::pair<CAnimationLayer*, float*> BuildSideLayerAndPose(CBaseEntity*, float);
-	bool CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4a_t* pMatrix, int nBoneCount);
+	bool CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4a_t* pMatrix, int nBoneCount, int nBoneMask = BONE_USED_BY_ANYTHING);
+	bool IsBuildingVisualMatrix(int index) const {
+		return index > 0 && index < static_cast<int>(bBuildingVisualMatrix.size()) && bBuildingVisualMatrix[index];
+	}
 	void TransformateMatrix(CBaseEntity* pPlayer);
 	void SetUpMovement(Lagcompensation::LagRecord_t* pRecord, CAnimState* pState, Lagcompensation::LagRecord_t::LayerData_t* pLayer);
 	void InterpolateMatricies(CBaseEntity* pEntity = nullptr);
 
 private:
+	std::array<bool, 65> bBuildingVisualMatrix{};
 	void FakePitchResolver( CBaseEntity*, Lagcompensation::LagRecord_t* );
 };
 inline Animations anims;

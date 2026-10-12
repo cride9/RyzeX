@@ -1,6 +1,10 @@
 #pragma once
 #include "Lagcompensation.h"
 #include "ExperimentalResolverMath.h"
+#include <cstdint>
+
+struct rageBotData_t;
+class IGameEvent;
 
 class ExperimentalResolver {
 public:
@@ -9,6 +13,10 @@ public:
                  const Lagcompensation::LagRecord_t* previous, Lagcompensation::AnimationInfo_t* log);
     // Additional safepoint hypotheses use the existing SetupPlayerMatrix path.
     void BuildSafePoints(CBaseEntity* entity, Lagcompensation::LagRecord_t* record);
+    void RecordShot(const rageBotData_t& data, int command);
+    void HandleGameEvent(IGameEvent* event);
+    void ProcessShots();
+    bool IsRejected(const Lagcompensation::LagRecord_t* record) const;
     static bool IsPredicting() { return predicting; }
     void Reset(int index);
     void ResetAll();
@@ -33,7 +41,19 @@ private:
         bool ready{};
     };
     std::array<History, 65> histories;
+    struct Control {
+        experimental::Recovery recovery;
+        experimental::Standing standing;
+        CBaseHandle entityHandle{};
+        const Model_t* model{};
+        float spawnTime{}, eyeYaw{};
+        std::uint64_t epoch{};
+        bool ready{}, moving{};
+    };
+    std::array<Control, 65> controls;
+    std::uint64_t nextEpoch{};
     inline static bool predicting{};
+    static void ResetShots(int index);
 
     static bool Capture(CBaseEntity* entity, Candidate& candidate);
     static bool Install(CBaseEntity* entity, const Candidate& candidate);

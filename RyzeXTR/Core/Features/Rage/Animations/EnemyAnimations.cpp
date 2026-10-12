@@ -79,6 +79,8 @@ float Animations::GetYawRotation(Lagcompensation::LagRecord_t* pRecord, int nRot
 
 void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pPrevious) {
 
+	pRecord->bSafeMatrixValid = false;
+	bool safeBuilt = true;
 	// point building func
 	auto BuildSafePoint = [&](int nRotationSide)
 	{
@@ -111,7 +113,7 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 			SetupPlayerMatrix( pEntity, pRecord, aMatrix, BoneUsedByHitbox, 5 );
 		}
 		else
-			SetupPlayerMatrix(pEntity, pRecord, aMatrix, BoneUsedByHitbox);
+			safeBuilt &= SetupPlayerMatrix(pEntity, pRecord, aMatrix, BoneUsedByHitbox);
 
 		std::memcpy(pEntity->GetAnimationOverlays(), arrLayers.data(), sizeof(CAnimationLayer) * 13);
 		std::memcpy(pEntity->GetPoseParameter().data(), arrPoses.data(), sizeof(float) * 24);
@@ -129,6 +131,7 @@ void Animations::GenerateSafePointMatricies(CBaseEntity* pEntity, Lagcompensatio
 	/* Make an extrapolted matrix aswell kekw */
 	//lagcomp.ExtrapolatePlayer( pEntity, pRecord, pPrevious );
 	BuildSafePoint( EXTRAPOLATED );
+	pRecord->bSafeMatrixValid = safeBuilt;
 }
 
 float Animations::BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {
@@ -163,49 +166,51 @@ float Animations::BuildFootYaw(CBaseEntity* pEntity, Lagcompensation::LagRecord_
 	return M::NormalizeAngle(flFootYaw);
 }
 
-bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4a_t* pMatrix, int nBoneCount) {
-
-	if (!g::pLocal || g::bUpdatingSkins)
+bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4a_t* pMatrix, int nBoneCount, int nBoneMask) {
+	if (!g::pLocal || !pEnt || g::bUpdatingSkins || pEnt->IsDormant())
+		return false;
+	const int index = pEnt->EntIndex();
+	if (index < 1 || index >= 65)
 		return false;
 
-	Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(pEnt->EntIndex());
-
-	if (!pLog)
+	auto& log = lagcomp.GetLog(index);
+	if (log.pEntity != pEnt || log.pRecord.empty())
+		return false;
+	const auto& record = log.pRecord.front();
+	auto& cache = pEnt->GetCachedBoneData();
+	auto& accessor = pEnt->GetBoneAccessor();
+	const int count = cache.Count();
+	if (!record.bVisualMatrixValid || record.pEntity != pEnt || !record.pVisualModel
+		|| record.pVisualModel != pEnt->GetModel() || record.iVisualBoneCount != count
+		|| count <= 0 || count > MAXSTUDIOBONES || !cache.Base() || !accessor.matBones
+		|| !pEnt->GetStudioHdr() || !pEnt->GetAbsOrigin().IsValid() || !record.vecAbsOrigin.IsValid()
+		|| (pMatrix && nBoneCount < count))
 		return false;
 
-	std::memcpy(pMatrix, pLog->pCachedMatrix.data(), sizeof(matrix3x4a_t) * nBoneCount);
+	TransformateMatrix(pEnt);
+	const size_t bytes = sizeof(matrix3x4a_t) * count;
+	// A hitbox-only build can leave the live cache holding a different yaw.
+	// Publish the full visual pose even when the caller requests no output.
+	std::memcpy(cache.Base(), log.pCachedMatrix.data(), bytes);
+	if (accessor.matBones != cache.Base())
+		std::memcpy(accessor.matBones, log.pCachedMatrix.data(), bytes);
+	accessor.nReadableBones = BONE_USED_BY_ANYTHING;
+	accessor.nWritableBones = BONE_USED_BY_ANYTHING;
+	if (nBoneMask == -1 || (nBoneMask & BONE_USED_BY_ATTACHMENT))
+		pEnt->SetupBones_AttachmentHelper();
+	if (pMatrix && pMatrix != cache.Base() && pMatrix != accessor.matBones)
+		std::memcpy(pMatrix, log.pCachedMatrix.data(), bytes);
 	return true;
 }
 
 void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
-
 	if (!exploits::bIsShiftingTicks)
 		localAnim->InterpolateMatricies();
-	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++)
-	{
+	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++) {
 		CBaseEntity* pPlayer = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));
 		if (!g::pLocal || !pPlayer || pPlayer == g::pLocal || !pPlayer->IsAlive() || !pPlayer->IsEnemy(g::pLocal))
 			continue;
-
-		auto pPlayerData = &lagcomp.GetLog(nPlayerID);
-		if (!pPlayerData || pPlayerData->pRecord.empty())
-			continue;
-
-		// get bone count
-		int nBoneCount = pPlayer->GetCachedBoneData().Count();
-		if (nBoneCount > MAXSTUDIOBONES)
-			nBoneCount = MAXSTUDIOBONES;
-
-		// re-pos matrix
-		TransformateMatrix(pPlayer);
-
-		// copy the entire matrix
-		pPlayer->SetBoneCache(pPlayerData->pCachedMatrix.data());
-
-		// build attachments
-		std::memcpy(pPlayer->GetBoneAccessor().matBones, pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4a_t) * nBoneCount);
-		pPlayer->SetupBones_AttachmentHelper();
-		std::memcpy(pPlayer->GetBoneAccessor().matBones, pPlayerData->pCachedMatrix.data(), sizeof(matrix3x4a_t) * nBoneCount);
+		CopyCachedMatrix(pPlayer, nullptr, -1);
 	}
 }
 
@@ -804,6 +809,8 @@ void HandleDormancyLeaving(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* p
 }
 
 void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog) {
+	pRecord->intersectionPoints = {};
+	pRecord->damageGeometry = {};
 	const auto mode = resolver::GetMode(cfg::rage::iResolverMode);
 	pRecord->iResolverMode = static_cast<int>(mode);
 	if (mode != resolver::Mode::Experimental)
@@ -1010,115 +1017,92 @@ void Animations::RebuildEnemyAnimations(CBaseEntity* pEntity, Lagcompensation::L
 }
 
 bool Animations::SetupPlayerMatrix(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags) {
+	return SetupPlayerMatrix(pEntity, pRecord, pMatrix, nFlags, 0);
+}
 
-	/* Remove interpolation if required */
-	if ( !( nFlags & EMatrixFlags::Interpolated ) && pRecord->vecOrigin.IsValid( ) )
-		pEntity->SetAbsOrigin( pRecord->vecOrigin );
+bool Animations::SetupPlayerMatrix( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags, int iExtrapolate ) {
+	if (!pEntity || !pRecord || !pMatrix)
+		return false;
+	const int index = pEntity->EntIndex();
+	if (index < 1 || index >= static_cast<int>(bBuildingVisualMatrix.size()))
+		return false;
 
-	/* Compute bone mask */
-	int iBoneMask = BONE_USED_BY_ANYTHING;
-	if ( nFlags & EMatrixFlags::BoneUsedByHitbox )
-		iBoneMask = BONE_USED_BY_HITBOX;
+	if (nFlags & EMatrixFlags::BoneUsedByHitbox) {
+		if (!(nFlags & EMatrixFlags::Interpolated) && pRecord->vecOrigin.IsValid())
+			pEntity->SetAbsOrigin(pRecord->vecOrigin);
+		return rebuiltBones.build(pEntity, pMatrix, MAXSTUDIOBONES, BONE_USED_BY_HITBOX, iExtrapolate);
+	}
 
-	return rebuiltBones.build( pEntity, pMatrix, MAXSTUDIOBONES, iBoneMask );
-	//pEntity->SetupBones( pMatrix, MAXSTUDIOBONES, iBoneMask, 0.0f );
+	pRecord->bVisualMatrixValid = false;
+	pRecord->iVisualBoneCount = 0;
+	pRecord->pVisualModel = nullptr;
+	// A complete render pose needs the engine's bone-merge, attachment and
+	// cache bookkeeping. It consumes the animfix's poses and resolved yaw.
+	struct VisualBuildScope {
+		CBaseEntity* entity;
+		bool& building;
+		int index;
+		bool previousBuilding, previousSetting;
+		CGlobalVarsBase globals;
+		Vector origin;
+		int effects, clientEffects, occlusion, occlusionFrame, skipFrame, eflags;
+		CAnimationLayer layers[ANIMATION_LAYER_COUNT];
+		VisualBuildScope(CBaseEntity* player, bool& flag, int playerIndex)
+			: entity(player), building(flag), index(playerIndex), previousBuilding(flag),
+			previousSetting(g::bSettingUpBones[playerIndex]), globals(*i::GlobalVars), origin(player->GetAbsOrigin()),
+			effects(player->GetEffects()), clientEffects(player->GetClientEffects()), occlusion(player->GetOcclusionFlags()),
+			occlusionFrame(player->GetOcclusionFrameCount()), skipFrame(player->GetLastSkipFrameCount()), eflags(player->GetEFlags()) {
+			entity->GetAnimationLayers(layers);
+			building = g::bSettingUpBones[index] = true;
+		}
+		~VisualBuildScope() {
+			entity->SetAnimationLayers(layers);
+			entity->SetAbsOrigin(origin);
+			entity->GetEffects() = effects;
+			entity->GetClientEffects() = clientEffects;
+			entity->GetOcclusionFlags() = occlusion;
+			entity->GetOcclusionFrameCount() = occlusionFrame;
+			entity->GetLastSkipFrameCount() = skipFrame;
+			entity->GetEFlags() = eflags;
+			building = previousBuilding;
+			g::bSettingUpBones[index] = previousSetting;
+			*i::GlobalVars = globals;
+		}
+	} restore(pEntity, bBuildingVisualMatrix[index], index);
 
 	pEntity->SetAnimationLayers(pRecord->arrLayers);
-
-	const float flCurrentTime = i::GlobalVars->flCurrentTime;
-	const float flRealTime = i::GlobalVars->flRealTime;
-	const float flFrameTime = i::GlobalVars->flFrameTime;
-	const float flAbsFrameTime = i::GlobalVars->flAbsFrameTime;
-	const float flInterpolationAmount = i::GlobalVars->flInterpolationAmount;
-	const float iTickCount = i::GlobalVars->iTickCount;
-	const float iFrameCount = i::GlobalVars->iFrameCount;
-
-	const int iLastSkipFrameCount = pEntity->GetLastSkipFrameCount();
-	const int iEffect = pEntity->GetEffects();
-	const int iClientEffects = pEntity->GetClientEffects();
-	const int iOcclusionFlags = pEntity->GetOcclusionFlags();
-	const Vector vecAbsOrigin = pEntity->GetAbsOrigin();
-
-	int iSimulationTicks = TIME_TO_TICKS(pRecord->flSimulationTime);
-	i::GlobalVars->flCurrentTime = pRecord->flSimulationTime;
-	i::GlobalVars->flRealTime = pRecord->flSimulationTime;
-	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
-	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
-	i::GlobalVars->iTickCount = iSimulationTicks;
-	i::GlobalVars->iFrameCount = INT_MAX; /* ShouldSkipAnimationFrame fix */
-	i::GlobalVars->flInterpolationAmount = 0.0f;
-
-	pEntity->InvalidateBoneCache();
-
-	for (int iLayer = 0; iLayer < ANIMATION_LAYER_COUNT; iLayer++) {
-
-		CAnimationLayer* pLayer = &pEntity->GetAnimationOverlays()[iLayer];
-		if (!pLayer)
-			continue;
-
-		pLayer->pOwner = pEntity;
-	}
-
-	/* Disable ACT_CSGO_IDLE_TURN_BALANCEADJUST animation */
+	for (int layer = 0; layer < ANIMATION_LAYER_COUNT; ++layer)
+		pEntity->GetAnimationOverlays()[layer].pOwner = pEntity;
 	if (nFlags & EMatrixFlags::VisualAdjustment) {
-
-		pEntity->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.0f;
-
-		if (pEntity->GetSequenceActivity(pEntity->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].nSequence) == ACT_CSGO_IDLE_TURN_BALANCEADJUST) {
-			pEntity->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].flCycle = 0.0f;
-			pEntity->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST].flWeight = 0.0f;
-		}
+		pEntity->GetAnimationOverlays()[ANIMATION_LAYER_LEAN].flWeight = 0.f;
+		auto& adjust = pEntity->GetAnimationOverlays()[ANIMATION_LAYER_ADJUST];
+		if (pEntity->GetSequenceActivity(adjust.nSequence) == ACT_CSGO_IDLE_TURN_BALANCEADJUST)
+			adjust.flCycle = adjust.flWeight = 0.f;
 	}
-
-	/* Remove interpolation if required */
 	if (!(nFlags & EMatrixFlags::Interpolated) && pRecord->vecOrigin.IsValid())
 		pEntity->SetAbsOrigin(pRecord->vecOrigin);
 
-	/* Compute bone mask */
-	int nBoneMask = BONE_USED_BY_ANYTHING;
-	if (nFlags & EMatrixFlags::BoneUsedByHitbox)
-		nBoneMask = BONE_USED_BY_HITBOX;
-
+	i::GlobalVars->flCurrentTime = i::GlobalVars->flRealTime = pRecord->flSimulationTime;
+	i::GlobalVars->flFrameTime = i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
+	i::GlobalVars->iTickCount = TIME_TO_TICKS(pRecord->flSimulationTime) + iExtrapolate;
+	i::GlobalVars->iFrameCount = INT_MAX;
+	i::GlobalVars->flInterpolationAmount = 0.f;
+	pEntity->InvalidateBoneCache();
 	pEntity->GetClientEffects() |= 2;
 	pEntity->GetEffects() |= EF_NOINTERP;
 	pEntity->GetOcclusionFrameCount() = -1;
 	pEntity->GetOcclusionFlags() &= ~2;
 	pEntity->GetLastSkipFrameCount() = 0;
 
-	g::bSettingUpBones[pEntity->EntIndex()] = true;
-	//setupbones.SetupBones(pEntity, pMatrix, MAXSTUDIOBONES, nBoneMask );
-	pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, nBoneMask, 0.0f);
-	g::bSettingUpBones[pEntity->EntIndex()] = false;
-
-	pEntity->GetLastSkipFrameCount() = iLastSkipFrameCount;
-	pEntity->GetEffects() = iEffect;
-	pEntity->GetClientEffects() = iClientEffects;
-	pEntity->GetOcclusionFlags() = iOcclusionFlags;
-	pEntity->SetAbsOrigin(vecAbsOrigin);
-
-	pEntity->SetAnimationLayers(pRecord->arrLayers);
-
-	i::GlobalVars->flCurrentTime = flCurrentTime;
-	i::GlobalVars->flRealTime = flRealTime;
-	i::GlobalVars->flFrameTime = flFrameTime;
-	i::GlobalVars->flAbsFrameTime = flAbsFrameTime;
-	i::GlobalVars->flInterpolationAmount = flInterpolationAmount;
-	i::GlobalVars->iTickCount = iTickCount;
-	i::GlobalVars->iFrameCount = iFrameCount;
-}
-
-bool Animations::SetupPlayerMatrix( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, matrix3x4a_t* pMatrix, int nFlags, int iExtrapolate ) {
-
-	/* Remove interpolation if required */
-	if ( !( nFlags & EMatrixFlags::Interpolated ) && pRecord->vecOrigin.IsValid( ) )
-		pEntity->SetAbsOrigin( pRecord->vecOrigin );
-
-	/* Compute bone mask */
-	int iBoneMask = BONE_USED_BY_ANYTHING;
-	if ( nFlags & EMatrixFlags::BoneUsedByHitbox )
-		iBoneMask = BONE_USED_BY_HITBOX;
-
-	return rebuiltBones.build( pEntity, pMatrix, MAXSTUDIOBONES, iBoneMask, iExtrapolate );
+	if (!pEntity->SetupBones(pMatrix, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, pRecord->flSimulationTime))
+		return false;
+	const int count = pEntity->GetCachedBoneData().Count();
+	if (count <= 0 || count > MAXSTUDIOBONES || !pEntity->GetModel())
+		return false;
+	pRecord->iVisualBoneCount = count;
+	pRecord->pVisualModel = pEntity->GetModel();
+	pRecord->bVisualMatrixValid = true;
+	return true;
 }
 
 void UpdateLmao(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord) {

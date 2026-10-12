@@ -23,6 +23,7 @@ namespace g {
 	inline bool* bSendPacket = nullptr;
 
 	inline bool bSettingUpBones[65];
+	inline bool bTracingLagRecord[65];
 
 	inline std::deque<Vector> drawList{};
 

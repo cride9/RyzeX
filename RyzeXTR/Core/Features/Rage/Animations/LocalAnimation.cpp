@@ -6,6 +6,7 @@
 #include "../../../SDK/InputSystem.h"
 #include "../antiaim.h"
 #include "../../Misc/setupbones.h"
+#include "../exploits.h"
 
 void C_LocalAnimations::AnimationBreaker( CBaseEntity* pLocal ) {
 
@@ -130,7 +131,9 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 	for (int nSimulationTick = 1; nSimulationTick <= LocalData_t.iSimulationTick; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int GetTickBase = networking.GetCorrectedTickbase() - LocalData_t.iSimulationTick + nSimulationTick;
+		const int command = g::pCmd->iCommandNumber - LocalData_t.iSimulationTick + nSimulationTick;
+		int GetTickBase = exploits::GetCommandTickbase(command,
+			networking.GetCorrectedTickbase() - LocalData_t.iSimulationTick + nSimulationTick);
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -289,7 +292,9 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 	for (int nSimulationTick = 1; nSimulationTick <= LocalData_t.iSimulationTick; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		int GetTickBase = networking.GetCorrectedTickbase() - LocalData_t.iSimulationTick + nSimulationTick;
+		const int command = g::pCmd->iCommandNumber - LocalData_t.iSimulationTick + nSimulationTick;
+		int GetTickBase = exploits::GetCommandTickbase(command,
+			networking.GetCorrectedTickbase() - LocalData_t.iSimulationTick + nSimulationTick);
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -642,7 +647,8 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4a_t* aMatrix, int nMask, CBase
 	}
 
 	// get simulation time
-	float flSimulationTime = TICKS_TO_TIME(networking.GetServerTick());
+	const int shootTickbase = exploits::GetShotTickbase(g::pCmd->iCommandNumber, pLocal->GetTickBase());
+	float flSimulationTime = TICKS_TO_TIME(shootTickbase);
 
 	// setup globals
 	i::GlobalVars->flCurrentTime = flSimulationTime;
@@ -650,7 +656,7 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4a_t* aMatrix, int nMask, CBase
 	i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
 	i::GlobalVars->flAbsFrameTime = i::GlobalVars->flIntervalPerTick;
 	i::GlobalVars->flInterpolationAmount = 0.0f;
-	i::GlobalVars->iTickCount = networking.GetServerTick();
+	i::GlobalVars->iTickCount = shootTickbase;
 
 	// fix skipanimframe ( part 1 )
 	i::GlobalVars->iFrameCount = INT_MAX;

@@ -3,25 +3,16 @@
 #include "../../Interface/interfaces.h"
 #include "../../SDK/Entity.h"
 
-struct TickbaseRecord_t
-{
-	TickbaseRecord_t()
-	{
-		iTickbase = 0;
-		bIsValid = false;
-	}
-	TickbaseRecord_t(int nTick)
-	{
-		iTickbase = nTick;
-		bIsValid = true;
-	}
-
-	int iTickbase = 0;
-	bool bIsValid = false;
-};
-
 struct CNetvarData
 {
+	int command = 0;
+	std::uint32_t epoch = 0;
+	CBaseHandle localHandle = 0, weaponHandle = 0, groundHandle = 0;
+	float spawnTime = 0.f;
+	int eflags = 0, buttons = 0, buttonLast = 0, buttonPressed = 0, buttonReleased = 0, nextThink = 0;
+	float surfaceFriction = 0.f, velocityModifier = 0.f, nextAttack = 0.f;
+	float nextPrimaryAttack = 0.f, nextSecondaryAttack = 0.f;
+	Vector absOrigin{}, absVelocity{};
 	float flRecoilIndex = 0.f;
 	float flAccuracyPenalty = 0.f;
 	float flDuckAmount = 0.f;
@@ -58,7 +49,8 @@ public:
 	}
 
 	void Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber );
-	void End(CUserCmd* pCmd, CBaseEntity* pLocal) const;
+	void End(CUserCmd* pCmd, CBaseEntity* pLocal);
+	void RequestReprediction();
 
 	CNetvarData GetNetvars( int iCommand ) { return this->pNetvarData[ iCommand % 150 ]; };
 
@@ -66,7 +58,6 @@ public:
 	void RestoreNetvars( int iCommand, CBaseEntity* pLocal);
 	void SaveViewmodelData(CBaseEntity* pLocal);
 	void AdjustViewmodelData(CBaseEntity* pLocal);
-	int AdjustPlayerTimeBase(int iSimulationTick);
 
 	float flSpread = 0.f;
 	float flInaccuracy = 0.f;
@@ -74,38 +65,29 @@ public:
 	std::array < CNetvarData, 150 > pNetvarData = { };
 	CUserCmd* pLastCmd = nullptr;
 
-	struct
-	{
-		int iSimulationTick = 0;
-
-		std::array < TickbaseRecord_t, 150 > arrTickbase{};
-		std::array < int, 150 > arrGameTickbase{};
-	} Tickbase_t;
-
-	inline void ResetData()
-	{
-		Tickbase_t.iSimulationTick = 0;
-		Tickbase_t.arrTickbase = { };
-		Tickbase_t.arrGameTickbase = { };
-	}
-	inline int GetEngineTickbase(int nCommand) { return Tickbase_t.arrGameTickbase[nCommand % 150]; };
-	inline void SetTickbase(int nCommand, int nTickBase)
-	{
-		Tickbase_t.arrTickbase[nCommand % 150] = TickbaseRecord_t(nTickBase);
-	};
-	inline TickbaseRecord_t* GetTickbaseRecord(int nCommand)
-	{
-		return &Tickbase_t.arrTickbase[nCommand % 150];
-	}
+    void ResetData() {
+        iObservedSimulationOffset = 0;
+        pNetvarData = {};
+        pLastCmd = nullptr;
+        viewmodelHandle = 0;
+    }
 	void OnFrameStage(CBaseEntity* pLocal);
 
 private:
 
+	int iObservedSimulationOffset = 0;
 	int* uPredictionRandomSeed = nullptr;
 
 	CBaseEntity** pPredictionPlayer = nullptr;
 
 	CMoveData moveData = { };
+	bool active = false;
+	int oldTickbase = 0, oldSeed = -1;
+	CUserCmd* oldCommand = nullptr;
+	CUserCmd oldLastCommand;
+	CBaseEntity* oldPredictionPlayer = nullptr;
+	CBaseHandle viewmodelHandle = 0;
+	std::uint32_t viewmodelEpoch = 0;
 
 	float flOldCurrentTime = 0.f;
 	float flOldFrameTime = 0.f;

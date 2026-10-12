@@ -1187,6 +1187,7 @@ void misc::ThirdPerson() {
 }
 
 void misc::FakeLag(bool& bSendPacket) {
+	networking.LagcompensatedTicks = 0;
 
 	enum FAKELAGTYPE {
 
@@ -1264,7 +1265,10 @@ void misc::FakeLag(bool& bSendPacket) {
 
 
 
-	iMax = ( ( cfg::rage::bDoubletap && IPT::HandleInput( cfg::rage::iDoubletapKey ) ) || ( cfg::rage::bHideshot && IPT::HandleInput( cfg::rage::iHideShotKey ) ) || ( cfg::antiaim::bBreakLagcompensation && IPT::HandleInput( cfg::antiaim::iLCKey ) ) ) ? 1 : iMax;
+	// Exploit packet ownership is decided centrally after all command callbacks.
+	if (exploits::IsExploiting() != NONE) {
+		iMax = 1;
+	}
 	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
 	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;
 	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;

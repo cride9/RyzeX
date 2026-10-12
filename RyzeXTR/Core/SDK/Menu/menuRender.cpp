@@ -4,6 +4,7 @@
 #include "../../Lua/Lua.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/RadioVisualizer.h"
+#include "../../Features/Rage/exploits.h"
 #include "../Text.h"
 #include <iostream>
 #include <string>
@@ -225,8 +226,12 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         ImGui::Checkbox(("Hideshot"), &bHideshot);
         ImGui::Keybind(("##iHideShotKey"), &iHideShotKey);
 
-        ImGui::Checkbox( ( "Break lagcompenstaion" ), &cfg::antiaim::bBreakLagcompensation );
+        ImGui::Checkbox( ( "Break lag compensation" ), &cfg::antiaim::bBreakLagcompensation );
         ImGui::Keybind( ( "##iLCButton" ), &cfg::antiaim::iLCKey );
+        if (ImGui::Button("Export timing log", ImVec2(ImGui::GetContentRegionAvail().x, 20))) {
+            const std::string path = pConfig->ConfigPath + "\\tickshift.csv";
+            util::LogConsole(exploits::ExportTelemetry(path.c_str()) ? "Timing log exported: tickshift.csv" : "Timing log export failed", Color(200, 200, 200));
+        }
     }
     ImGui::EndChild();
 

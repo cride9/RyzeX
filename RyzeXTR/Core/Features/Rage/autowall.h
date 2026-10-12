@@ -24,6 +24,7 @@ public:
 	// Get
 	/* returns damage at point and simulated bullet data (if given) */
 	static float GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* pDataOut = nullptr);
+	static float GetDamageUpperBound(const Vector& source, CBaseCombatWeapon* weapon, Lagcompensation::LagRecord_t* record, const Vector* direction = nullptr);
 	/* calculates damage factor */
 	static void ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const float flWeaponArmorRatio, const float flWeaponHeadShotMultiplier, float& flDamage );
 	/* simulates fire bullet to penetrate up to 4 walls, return true when hitting player */

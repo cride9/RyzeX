@@ -23,10 +23,16 @@ inline bool IsFloatValid( float flOriginal, float flCurrent )
 
 void CNetworking::SaveNetvarData( int nCommand )
 {
-	if (!g::pLocal)
+	if (!g::pLocal || nCommand <= 0)
 		return; 
 	
 	iLastCommandNumber = nCommand;
+	auto& saved = pCompressData[nCommand % 150];
+	saved = {};
+	saved.command = nCommand;
+	saved.epoch = exploits::commandTimes.epoch;
+	saved.localHandle = g::pLocal->GetRefEHandle();
+	saved.spawnTime = g::pLocal->GetSpawnTime();
 	pCompressData[ nCommand % 150 ].nTickbase = g::pLocal->GetTickBase( );
 	pCompressData[ nCommand % 150 ].flDuckAmount = g::pLocal->GetDuckAmount( );
 	pCompressData[ nCommand % 150 ].flDuckSpeed = g::pLocal->GetDuckSpeed( );
@@ -40,6 +46,7 @@ void CNetworking::SaveNetvarData( int nCommand )
 	pCompressData[ nCommand % 150 ].vecViewPunchAngle = g::pLocal->GetViewPunch( );
 
 	CBaseCombatWeapon* pWeapon = g::pLocal->GetWeapon( );
+	saved.weaponHandle = pWeapon ? pWeapon->GetRefEHandle() : 0;
 	if ( !pWeapon )
 	{
 		pCompressData[ nCommand % 150 ].flRecoilIndex = 0.0f;
@@ -54,10 +61,12 @@ void CNetworking::SaveNetvarData( int nCommand )
 
 void CNetworking::RestoreNetvarData( int nCommand )
 {
-	if (!g::pLocal)
+	if (!g::pLocal || nCommand <= 0)
 		return;
 
 	volatile auto aNetVars = &pCompressData[ nCommand % 150 ];
+	if (aNetVars->command != nCommand || aNetVars->epoch != exploits::commandTimes.epoch
+		|| aNetVars->localHandle != g::pLocal->GetRefEHandle() || aNetVars->spawnTime != g::pLocal->GetSpawnTime()) return;
 	if ( aNetVars->nTickbase != g::pLocal->GetTickBase( ) )
 		return;
 
@@ -88,7 +97,7 @@ void CNetworking::RestoreNetvarData( int nCommand )
 	if ( IsFloatValid( aNetVars->flDuckSpeed, g::pLocal->GetDuckSpeed( ) ) )
 		g::pLocal->GetDuckSpeed( ) = aNetVars->flDuckSpeed;
 
-	if ( g::pLocal->GetWeapon( ) )
+	if (g::pLocal->GetWeapon() && aNetVars->weaponHandle == g::pLocal->GetWeapon()->GetRefEHandle())
 	{
 		if ( IsFloatValid( aNetVars->flAccuracyPenalty, static_cast< CWeaponCSBase* >( g::pLocal->GetWeapon( ) )->GetAccuracyPenalty( ) ) )
 			static_cast< CWeaponCSBase* >( g::pLocal->GetWeapon( ) )->GetAccuracyPenalty( ) = aNetVars->flAccuracyPenalty;
@@ -108,12 +117,13 @@ void CNetworking::RestoreNetvarData( int nCommand )
 
 void CNetworking::OnPacketEnd( CClientState* cl )
 {
-	if (!g::pLocal)
+	if (!g::pLocal || !g::pLocal->IsAlive() || cl->iDeltaTick != static_cast<int>(cl->clockDriftMgr.nServerTick))
 		return; 
 	
 	prediction.AdjustViewmodelData( g::pLocal );
+	exploits::ObserveAcknowledgement(cl->iCommandAck, g::pLocal->GetTickBase(), TIME_TO_TICKS(g::pLocal->GetSimulationTime()));
 	g::flVelocityModifier = g::pLocal->GetVelocityModifier();
-	return this->RestoreNetvarData( i::ClientState->iLastCommandAck );
+	return this->RestoreNetvarData(cl->iCommandAck);
 }
 
 bool CPacketManager::ShouldProcessPacketStart( int iCommand )
@@ -123,16 +133,11 @@ bool CPacketManager::ShouldProcessPacketStart( int iCommand )
 		return true;
 	}
 
-	for (auto pCmd = pCommandList.begin(); pCmd != pCommandList.end(); pCmd++)
-	{
-		if (*pCmd != iCommand)
-			continue;
-
-		pCommandList.erase( pCmd );
-		return true;
-	}
-
-	return false;
+	// PacketStart also updates the incoming sequence. Repeated, cumulative and
+	// loss-related acks must reach the engine even without an exact list match.
+	while (!pCommandList.empty() && pCommandList.front() <= iCommand) pCommandList.pop_front();
+	while (pCommandList.size() > 500) pCommandList.pop_front();
+	return true;
 }
 
 int CNetworking::GetServerTick() {
@@ -214,6 +219,7 @@ void CNetworking::FinishNetworking() {
 void CNetworking::ResetNetwork() {
 
 	iLastCommandNumber = 0;
+	LagcompensatedTicks = 0;
 	data = networkData_t();
 	pCompressData = std::array < CNetvarData, 150 >();
 }

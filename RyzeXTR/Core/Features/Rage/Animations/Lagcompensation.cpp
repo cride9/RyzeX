@@ -105,21 +105,28 @@ void Lagcompensation::FrameStageNotify( ) {
 		previousMode = mode;
 	}
 
-	for ( int i = 1; i <= i::GlobalVars->nMaxClients; i++ ) {
+	const int maxClients = (std::min)(i::GlobalVars->nMaxClients, static_cast<int>(std::size(pPlayerLogs)) - 1);
+	for (int i = 1; i <= maxClients; ++i) {
 
 		auto pLog = &pPlayerLogs[ i ];
 
 		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
 		if ( !pEntity || !pEntity->IsPlayer( ) || !pEntity->IsAlive( ) || pEntity == g::pLocal )
 		{
-			pLog->bLeftDormancy = true;
+			pLog->ClearData();
 			experimentalResolver.Reset(i);
 			continue;
 		}
+		if (pLog->pEntity != pEntity)
+			pLog->ClearData();
 		pLog->pEntity = pEntity;
 		if ( !pEntity->IsEnemy( g::pLocal ) ) {
 			experimentalResolver.Reset(i);
-			g::bSettingUpBones[ i ] = g::bAllowAnimations[ i ] = true;
+			pLog->ClearData();
+			// Native teammate animation is allowed; a bone build is not active.
+			// Persisting this flag blocks rendering when the slot becomes enemy.
+			g::bAllowAnimations[i] = true;
+			g::bSettingUpBones[i] = g::bTracingLagRecord[i] = false;
 			continue;
 		}
 

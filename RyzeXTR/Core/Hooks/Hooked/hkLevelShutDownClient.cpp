@@ -17,20 +17,24 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
 	misc::RestoreOverrides();
 	experimentalResolver.ResetAll();
+	exploits::ResetExploits();
+	prediction.ResetData();
+	networking.ResetNetwork();
+	packetManager.pCommandList.clear();
 	original(ecx, edx);
 
-	auto pLocal = CBaseEntity::GetLocalPlayer();
-	if (pLocal && pLocal->IsAlive())
-		return;
-
 	/* Clear lagcomp & global player data */
-	for (size_t i = 0; i < i::GlobalVars->nMaxClients; i++) {
+	// Shutdown can run while the local player is alive and after maxClients
+	// has been cleared. Reset the complete slot storage, including player 64.
+	for (size_t i = 0; i < std::size(g::bSettingUpBones); ++i) {
 
 		auto pLog = &lagcomp.GetLog(i);
 		pLog->ClearData();
 
 		g::bAllowAnimations[i] = true;
-		g::bSettingUpBones[i] = true;
+		g::bSettingUpBones[i] = false;
+		g::bTracingLagRecord[i] = false;
+		lagcomp.arrBackupData[i].second = false;
 		playerList::arrPlayers[i] = playerSettings_t();
 	}
 	/* Clear global pointers */
@@ -60,8 +64,6 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 		*g::bSendPacket = true;
 
 	lagcomp.ClearIncomingSequences();
-	//exploits::TickbaseFix.clear( );
-	exploits::arrTickbases = std::array<int, 500U>( );
 	/* New server = new client these needs to be rehooked */
 	//UnHookClientState();
 }

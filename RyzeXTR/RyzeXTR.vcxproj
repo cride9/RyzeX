@@ -258,12 +258,15 @@
     <ClInclude Include="Core\Features\Rage\Animations\ExperimentalResolver.h" />
     <ClInclude Include="Core\Features\Rage\Animations\ExperimentalResolverMath.h" />
     <ClInclude Include="Core\Features\Rage\HitboxGeometry.h" />
+    <ClInclude Include="Core\Features\Rage\HitscanMath.h" />
+    <ClInclude Include="Core\Features\Rage\RecordTraceScope.h" />
     <ClInclude Include="Core\Features\Rage\StudioHitboxGeometry.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
     <ClInclude Include="Core\Features\Rage\Animations\LocalAnimation.h" />
     <ClInclude Include="Core\Features\Rage\antiaim.h" />
     <ClInclude Include="Core\Features\Rage\autowall.h" />
     <ClInclude Include="Core\Features\Rage\exploits.h" />
+    <ClInclude Include="Core\Features\Rage\TickshiftModel.h" />
     <ClInclude Include="Core\Features\Visuals\chams.h" />
     <ClInclude Include="Core\Features\Visuals\drawlist.h" />
     <ClInclude Include="Core\Features\Visuals\ESP.h" />

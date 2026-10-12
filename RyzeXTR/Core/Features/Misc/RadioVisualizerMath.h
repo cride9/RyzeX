@@ -7,9 +7,11 @@
 
 namespace radio_visualizer {
     using Clock = std::chrono::steady_clock;
-    constexpr int FftSize = 2048;
+    constexpr int FftSize = 8192;
     constexpr int BinCount = FftSize / 2;
-    constexpr int BandCount = 64;
+    constexpr int BandCount = 128;
+    constexpr float LowHz = 15.f;
+    constexpr float HighHz = 180.f;
     constexpr float Pi = 3.14159265358979323846f;
 
     struct Settings {
@@ -40,7 +42,7 @@ namespace radio_visualizer {
 
     inline void Sanitize(Settings& s) {
         const Settings defaults;
-        s.preset = std::clamp(s.preset, 0, 1);
+        s.preset = std::clamp(s.preset, 0, 2);
         s.quality = std::clamp(s.quality, 0, 2);
         s.size = Bounded(s.size, 180.f, 640.f, defaults.size);
         for (int axis = 0; axis < 2; ++axis)
@@ -74,6 +76,10 @@ namespace radio_visualizer {
             next.bassReaction = 1.3f;
             next.smoothing = .7f;
         }
+        else if (s.preset == 2) {
+            next.bassReaction = 1.2f;
+            next.smoothing = .8f;
+        }
         s = next;
     }
 
@@ -99,29 +105,35 @@ namespace radio_visualizer {
         float peak = 0.f;
     };
 
+    inline float SampleBin(const Frame& frame, float bin) {
+        const int i = std::clamp(static_cast<int>(std::floor(bin)), 0, BinCount - 2);
+        const float t = std::clamp(bin - i, 0.f, 1.f);
+        const float a = Bounded(frame.fft[i], 0.f, 4.f, 0.f);
+        const float b = Bounded(frame.fft[i + 1], 0.f, 4.f, 0.f);
+        return a + (b - a) * t;
+    }
+
     inline Energies Analyze(const Frame& frame) {
         Energies out;
         if (!frame.valid || frame.sampleRate < 4000 || frame.sampleRate > 384000)
             return out;
         const float binHz = static_cast<float>(frame.sampleRate) / FftSize;
-        const float upperHz = (std::min)(16000.f, frame.sampleRate * .49f);
+        for (int band = 0; band < BandCount; ++band) {
+            const float hz = LowHz + (HighHz - LowHz) * (band + .5f) / BandCount;
+            out.bands[band] = SampleBin(frame, hz / binHz);
+            out.peak = (std::max)(out.peak, out.bands[band]);
+        }
         const auto rms = [&](float low, float high) {
             const int first = std::clamp(static_cast<int>(std::floor(low / binHz)), 1, BinCount - 1);
             const int last = std::clamp(static_cast<int>(std::ceil(high / binHz)), first + 1, BinCount);
             float sum = 0.f;
             for (int bin = first; bin < last; ++bin) {
-                const float value = Bounded(frame.fft[bin], 0.f, 4.f, 0.f);
-                sum += value * value;
+                const float v = Bounded(frame.fft[bin], 0.f, 4.f, 0.f);
+                sum += v * v;
             }
             return std::sqrt(sum / (last - first));
-        };
-        for (int band = 0; band < BandCount; ++band) {
-            const float low = 20.f * std::pow(upperHz / 20.f, band / static_cast<float>(BandCount));
-            const float high = 20.f * std::pow(upperHz / 20.f, (band + 1) / static_cast<float>(BandCount));
-            out.bands[band] = rms(low, high);
-            out.peak = (std::max)(out.peak, out.bands[band]);
-        }
-        out.bass = rms(25.f, 180.f);
+            };
+        out.bass = rms(25.f, 150.f);
         return out;
     }
 
@@ -132,6 +144,9 @@ namespace radio_visualizer {
 
     struct Envelope {
         std::array<float, BandCount> bands{};
+        std::array<float, BandCount> peaks{};
+        std::array<float, BandCount> peakVel{};
+        float punch = 0.f, punchVel = 0.f;   // rugós logó-ütés
         float bass = 0.f;
         float reference = .035f;
         float baseline = 0.f;
@@ -152,11 +167,27 @@ namespace radio_visualizer {
             for (int band = 0; band < BandCount; ++band) {
                 // Do not normalize silence/noise into a full-strength spectrum.
                 const float value = energy.bands[band];
+                const float tiltDb = 6.f * band / (BandCount - 1);
                 const float target = value > .0001f ? std::clamp(
-                    (20.f * std::log10(value / reference) + 48.f) / 48.f * settings.sensitivity, 0.f, 1.f) : 0.f;
+                    (20.f * std::log10(value / reference) + 48.f + tiltDb) / 48.f * settings.sensitivity, 0.f, 1.f) : 0.f;
                 bands[band] = Follow(bands[band], target, dt, .025f * settings.smoothing, .18f * settings.smoothing);
             }
+
             const float targetBass = std::clamp(energy.bass / (std::max)(.025f, reference * .55f) * settings.sensitivity, 0.f, 1.f);
+
+            for (int band = 0; band < BandCount; ++band) {
+                if (bands[band] >= peaks[band]) { peaks[band] = bands[band]; peakVel[band] = 0.f; }
+                else {
+                    peakVel[band] += dt * 2.2f;
+                    peaks[band] = (std::max)(bands[band], peaks[band] - peakVel[band] * dt);
+                }
+            }
+            if (beat) punchVel += 5.f * (std::max)(.4f, targetBass);
+            const float h = (std::min)(dt, .05f);
+            punchVel += (-punch * 180.f - punchVel * 14.f) * h;   // semi-implicit Euler, stabil
+            punch += punchVel * h;
+            punch = std::clamp(punch, -.25f, 1.25f);
+
             bass = Follow(bass, targetBass, dt, .025f, .18f * settings.smoothing);
             cooldown = (std::max)(0.f, cooldown - dt);
             beat = fresh && frame.sequence != sequence && cooldown <= 0.f &&
@@ -182,9 +213,9 @@ namespace radio_visualizer {
         if (settings.preset == 0) {
             const auto smoothBand = [&](int index) {
                 float sum = 0.f;
-                for (int offset = -2; offset <= 2; ++offset)
-                    sum += audio.bands[std::clamp(index + offset, 0, BandCount - 1)] * (3 - std::abs(offset));
-                return sum / 9.f;
+                for (int offset = -4; offset <= 4; ++offset)
+                    sum += audio.bands[std::clamp(index + offset, 0, BandCount - 1)] * (5 - std::abs(offset));
+                return sum / 25.f;
             };
             value = smoothBand(first);
             value += (smoothBand(next) - value) * (coordinate - first);

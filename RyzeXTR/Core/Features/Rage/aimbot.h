@@ -195,6 +195,7 @@ public:
 	rageBotData_t& GetHitLogData() { return hitlogData; }
 	rageBotData_t& GetAimbotData() { return aimData; }
 	weaponConfig_t& GetCurrentConfig() { return curConfig; }
+	const hitscan::Statistics& GetScanStatistics() const { return scanStatistics; }
 	bool ShouldSendPacket( ) { return bShouldSendPacket; }
 
 private:
@@ -214,6 +215,7 @@ private:
 
 	weaponConfig_t curConfig{};
 	Vector vecEyePosition{};
+	hitscan::Statistics scanStatistics{};
 
 	bool HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy);
 	bool HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecPosition, Lagcompensation::LagRecord_t* pRecord);
@@ -225,6 +227,7 @@ private:
 	weaponConfig_t GetWeaponConfiguration(short iItemDefinitionIndex);
 
 	Vector ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal);
+	bool GetIntersectionPoint(Lagcompensation::LagRecord_t* pRecord, int iHitbox, Vector& point);
 
 	std::vector<Lagcompensation::AnimationInfo_t*> GetTargetableEntities(CBaseEntity* pLocal);
 	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE, bool = false);

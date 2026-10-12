@@ -1,7 +1,10 @@
 #include "aimbot.h"
 #include "Animations/EnemyAnimations.h"
+#include "Animations/ExperimentalResolver.h"
 #include "../../Lua/Lua.h"
 #include "../../Interface/Classes/CCSGameRulesProxy.h"
+#include "StudioHitboxGeometry.h"
+#include "RecordTraceScope.h"
 
 void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 
@@ -70,7 +73,7 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 	Vector vecAimAngle = ( M::VectorAngles( vecShootPosition - vecEyePosition ) -= ( pLocal->GetAimPunch( ) * recoilScale->GetFloat( ) ) );
 
 	/* Calculate current hitchance & accuracy boost */
-	aimData.bFireReady = pLocal->CanShoot( pWeapon, pLocal->GetTickBase() - exploits::iShiftAmount );
+	aimData.bFireReady = pLocal->CanShoot(pWeapon, exploits::GetShotTickbase(pCmd->iCommandNumber, pLocal->GetTickBase()));
 	aimData.bCanShoot = HitChance( pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord );
 
 	/* Run normal autostop */
@@ -80,9 +83,6 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 	/* Wait til we can shoot */
 	if ( !aimData.bCanShoot || !aimData.bFireReady )
 		return ResetAimbotData( );
-
-	if ( exploits::IsExploiting( ) & HIDESHOT && exploits::iLastShiftTick + 16 + TIME_TO_TICKS( pWeapon->FireRate( ) ) >= g::pLocal->GetTickBase( ) )
-		return;
 
 	/* Shoot entity when we can & have enough hitchance */
 	pCmd->angViewPoint = vecAimAngle;
@@ -96,6 +96,7 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
 	bShouldSendPacket = true;
 	hitlogData = aimData;
+	experimentalResolver.RecordShot(aimData, pCmd->iCommandNumber);
 }
 
 void CAimBot::ResetAimbotData( bool bShouldRecharge ) {
@@ -121,12 +122,9 @@ bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
 	if ( bShouldSendPacket )
 		bSendPacket = true;
 
-	if ( exploits::bForcePacket )
-		bSendPacket = true;
-
 	aimData.iTickcount = pCmd->iTickCount;
 	aimData.iDesiredTickcount = -1;
-	return exploits::bChokePacket = exploits::bForcePacket = bShouldSendPacket = false;
+	return bShouldSendPacket = false;
 }
 
 CAimBot::SCAN CAimBot::ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pFirstRecord ) {
@@ -146,115 +144,192 @@ CAimBot::SCAN CAimBot::ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, 
 	return SCAN_CONTINUE;
 }
 
-Vector CAimBot::ScanHitboxes( std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal ) {
+bool CAimBot::GetIntersectionPoint(Lagcompensation::LagRecord_t* record, int hitboxIndex, Vector& point) {
+	if (!record || !record->pEntity || !record->bAnimationMatrixValid || !record->bSafeMatrixValid
+		|| hitboxIndex < 0 || hitboxIndex >= HITBOX_MAX) return false;
+	auto& cached = record->intersectionPoints[hitboxIndex];
+	if (!cached.computed) {
+		cached.computed = true;
+		if (hitboxIndex == HITBOX_HEAD && record->iResolverMode == static_cast<int>(resolver::Mode::Experimental)) {
+			if (record->bHasHeadOverlap && record->iHeadHypothesisCount == static_cast<int>(hitbox::MaxShapes)) {
+				cached.point = hitbox::FromVector(record->vecRageSafePoint);
+				cached.valid = hitbox::ContainsAll(record->headHypotheses.data(), record->headHypotheses.size(), cached.point, .03);
+			}
+		} else {
+			const auto box = record->pEntity->StudioHitbox(hitboxIndex);
+			std::array<hitbox::Shape, 4> shapes{};
+			int index = 0;
+			for (const auto type : { LEFT, RIGHT, CENTER, RESOLVE })
+				shapes[index++] = hitbox::FromStudio(box, record->pMatricies[type]);
+			hitbox::Vec common;
+			if (hitbox::FindIntersection(shapes.data(), shapes.size(), shapes.back().Center(), common)) {
+				// Certify again after narrowing to the game's float coordinates.
+				cached.point = hitbox::FromVector(hitbox::ToVector(common));
+				cached.valid = hitbox::ContainsAll(shapes.data(), shapes.size(), cached.point, .03);
+			}
+		}
+	}
+	if (!cached.valid) return false;
+	point = hitbox::ToVector(cached.point);
+	return point.IsValid();
+}
 
-	static CConVar* ax = i::ConVar->FindVar( "cl_lagcompensation" );
-
-	std::vector<Hitscan_t> vecHitscan{};
-	/* Loop through our valid entity logs */
-	float flTransformedDamage{};
-
-	for ( Lagcompensation::AnimationInfo_t* it : vecIn ) {
-
-		it->iLastValid = std::clamp( it->iLastValid, 0, ( int )( it->pRecord.size( ) - 1 ) );
-
-		if ( ax->GetInt( ) == 0 )
-			it->iLastValid = 0;
-
-		flTransformedDamage = curConfig.iMinimumDamage;
-		if ( curConfig.iMinimumDamage > 100 )
-			flTransformedDamage = max( it->pEntity->GetHealth( ), 4 ) + ( curConfig.iMinimumDamage - 100 );
-
-		Lagcompensation::LagRecord_t* pFirstRecord = &it->pRecord.front( );
-		/* Go through every valid data */
-		for ( int i = 0; i <= it->iLastValid; i++ ) {
-
-			if ( cfg::rage::bLimitScan && i % 2 == 1 )
-				continue;
-
-			Lagcompensation::LagRecord_t* pRecord = &it->pRecord.at( i );
-			SCAN result = ShouldSkipRecord( pRecord, pFirstRecord );
-			if ( result == SCAN_BREAK ) break;
-			else if ( result == SCAN_SKIP ) continue;
-
-			if (!pRecord->bValid)
-				continue;
-
-			/* Set current matrix for accurate tracing */
-			pRecord->ApplyMatrix( it->pEntity, RESOLVE );
-			for ( int& iHitbox : curConfig.vecHitboxes[ NORMAL ] ) {
-
-				bool bShouldMultiPoint = std::find( curConfig.vecHitboxes[ MULTIPOINT ].begin( ), curConfig.vecHitboxes[ MULTIPOINT ].end( ), iHitbox ) != curConfig.vecHitboxes[ MULTIPOINT ].end( );
-				bool bShouldForceSafePoint = std::find( curConfig.vecHitboxes[ SAFE ].begin( ), curConfig.vecHitboxes[ SAFE ].end( ), iHitbox ) != curConfig.vecHitboxes[ SAFE ].end( );
-				const bool bShouldSafe = curConfig.bSafePoint;
-
-				const bool bPlayerSafe =
-					playerList::arrPlayers[pRecord->iEntIndex].bSafePoint;
-
-				const bool bExperimentalHead = pRecord->iResolverMode == static_cast<int>(resolver::Mode::Experimental) && iHitbox == HITBOX_HEAD;
-				const bool bNeedsSafeCheck = bShouldSafe || bPlayerSafe || bShouldForceSafePoint || bExperimentalHead;
-
-				std::vector<Vector> vecWorldPoints = CreatePoints( vecEyePosition, curConfig.pWeapon, pRecord, iHitbox, RESOLVE, bShouldMultiPoint );
-				// Experimental head scans put the certified overlap point first.
-				for ( Vector& vecHitboxPoint : vecWorldPoints ) {
-
-					/* Only backtrack safe entities */
-					int iCollidePoints = 0;
-
-					if (bNeedsSafeCheck)
-					{
-						iCollidePoints = autowall.SafePoint(
-							vecEyePosition,
-							pRecord,
-							vecHitboxPoint,
-							iHitbox
-						);
+Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal) {
+	scanStatistics = {};
+	if (!pLocal || !curConfig.pWeapon || !vecEyePosition.IsValid()) return {};
+	static CConVar* lagcompensation = i::ConVar->FindVar("cl_lagcompensation");
+	struct Job {
+		Lagcompensation::LagRecord_t* record;
+		int age;
+		float minimum, upper;
+		int memo = -1;
+	};
+	struct RayResult {
+		std::array<float, 3> direction;
+		float damage;
+		FireBulletData_t data{};
+		RayResult(const std::array<float, 3>& key, float value, const FireBulletData_t& bullet) : direction(key), damage(value) { data = bullet; }
+		RayResult(const RayResult& other) : direction(other.direction), damage(other.damage) { data = other.data; }
+	};
+	struct GeometryResults {
+		Lagcompensation::LagRecord_t* record;
+		int count;
+		std::vector<RayResult> rays;
+	};
+	std::vector<Job> jobs;
+	std::vector<GeometryResults> memo;
+	jobs.reserve(vecIn.size() * 16);
+	for (auto log : vecIn) {
+		if (!log || !log->pEntity || log->pRecord.empty()) continue;
+		log->iLastValid = std::clamp(log->iLastValid, 0, static_cast<int>(log->pRecord.size()) - 1);
+		if (lagcompensation && lagcompensation->GetInt() == 0) log->iLastValid = 0;
+		const float minimum = curConfig.iMinimumDamage > 100
+			? (std::max)(log->pEntity->GetHealth(), 4) + curConfig.iMinimumDamage - 100 : curConfig.iMinimumDamage;
+		for (int age = 0; age <= log->iLastValid; ++age) {
+			if (cfg::rage::bLimitScan && (age & 1)) continue;
+			auto record = &log->pRecord[age];
+			const auto skip = ShouldSkipRecord(record, &log->pRecord.front());
+			if (skip == SCAN_BREAK) break;
+			if (skip == SCAN_SKIP || !record->bValid || !record->bAnimationMatrixValid || record->pEntity != log->pEntity) continue;
+			const float upper = autowall.GetDamageUpperBound(vecEyePosition, curConfig.pWeapon, record);
+			if (std::floor(upper) < minimum) { ++scanStatistics.boundSkips; continue; }
+			jobs.push_back({record, age, minimum, upper});
+		}
+	}
+	// Explore the records with the best possible result first. A later query
+	// is skipped only when its optimistic ranking cannot improve the best hit.
+	std::stable_sort(jobs.begin(), jobs.end(), [](const Job& a, const Job& b) { return a.upper > b.upper; });
+	Hitscan_t best;
+	bool found = false;
+	auto canImprove = [&](const Job& job, int hitboxIndex, bool headOverlap) {
+		if (!found) return true;
+		Hitscan_t optimistic;
+		optimistic.flDamage = std::floor(job.upper);
+		optimistic.iTransformedDamage = static_cast<int>(job.minimum);
+		optimistic.bHeadOverlap = headOverlap;
+		optimistic.bSafe = true;
+		optimistic.bBaimLethal = hitboxIndex != HITBOX_HEAD && job.upper > job.record->pEntity->GetHealth();
+		return optimistic < best;
+	};
+	auto damage = [&](Job& job, Vector point, FireBulletData_t& data) {
+		const Vector direction = (point - vecEyePosition).Normalized();
+		if (!direction.IsValid() || direction.LengthSqr() <= 0.f) return -1.f;
+		const std::array<float, 3> key{direction.x, direction.y, direction.z};
+		const int count = job.record->pEntity->GetCachedBoneData().Count();
+		if (count <= 0 || count > MAXSTUDIOBONES) return -1.f;
+		if (job.memo < 0) {
+			for (size_t index = 0; index < memo.size(); ++index) {
+				const auto& group = memo[index];
+				const auto a = group.record;
+				const auto b = job.record;
+				if (a->pEntity == b->pEntity && group.count == count && a->vecOrigin == b->vecOrigin
+					&& a->vecMins == b->vecMins && a->vecMaxs == b->vecMaxs
+					&& std::memcmp(a->pMatricies[RESOLVE], b->pMatricies[RESOLVE], count * sizeof(matrix3x4a_t)) == 0) {
+					job.memo = static_cast<int>(index); break;
+				}
+			}
+			if (job.memo < 0) {
+				job.memo = static_cast<int>(memo.size());
+				memo.push_back({job.record, count, {}});
+				memo.back().rays.reserve(16);
+			}
+		}
+		auto& rays = memo[job.memo].rays;
+		for (const auto& result : rays) {
+			if (std::memcmp(result.direction.data(), key.data(), sizeof(key)) == 0) {
+				++scanStatistics.reusedRays; data = result.data; return result.damage;
+			}
+		}
+		// The memo lives only inside this call. Every real trace restores the
+		// target's live bones, so other targets cannot alter a cached ray's world.
+		RecordTraceScope scope(job.record->pEntity);
+		if (!scope.Ready()) return -1.f;
+		job.record->ApplyMatrix(job.record->pEntity, RESOLVE);
+		++scanStatistics.damageCalls;
+		const float value = autowall.GetDamage(pLocal, vecEyePosition, point, curConfig.pWeapon, job.record, &data);
+		rays.push_back({key, value, data});
+		return value;
+	};
+	for (int phase = 0; phase < 2; ++phase) {
+		for (auto& job : jobs) {
+			auto record = job.record;
+			const bool rejected = experimentalResolver.IsRejected(record);
+			for (int hitboxIndex : curConfig.vecHitboxes[NORMAL]) {
+				if (hitboxIndex < 0 || hitboxIndex >= HITBOX_MAX) continue;
+				const bool experimentalHead = record->iResolverMode == static_cast<int>(resolver::Mode::Experimental) && hitboxIndex == HITBOX_HEAD;
+				const bool headPotential = experimentalHead && record->bHasHeadOverlap;
+				if (!canImprove(job, hitboxIndex, phase == 0 && headPotential)) { ++scanStatistics.boundSkips; continue; }
+				Vector common;
+				const bool hasCommon = GetIntersectionPoint(record, hitboxIndex, common);
+				std::vector<Vector> points;
+				if (phase == 0) {
+					if (!hasCommon) continue;
+					points.push_back(common);
+				} else {
+					const bool multipoint = std::find(curConfig.vecHitboxes[MULTIPOINT].begin(), curConfig.vecHitboxes[MULTIPOINT].end(), hitboxIndex) != curConfig.vecHitboxes[MULTIPOINT].end();
+					points = CreatePoints(vecEyePosition, curConfig.pWeapon, record, hitboxIndex, RESOLVE, multipoint);
+				}
+				const bool playerSafe = playerList::arrPlayers[record->iEntIndex].bSafePoint;
+				const bool forceSafe = std::find(curConfig.vecHitboxes[SAFE].begin(), curConfig.vecHitboxes[SAFE].end(), hitboxIndex) != curConfig.vecHitboxes[SAFE].end();
+				for (auto point : points) {
+					if (!point.IsValid() || (phase == 1 && hasCommon && point == common)) continue;
+					// A failed common head point was already tested, including a
+					// trace intercepted by a body hitbox. Never relabel it as head.
+					if (phase == 1 && experimentalHead && record->bHasHeadOverlap && point == record->vecRageSafePoint) continue;
+					const bool overlapHead = phase == 0 && experimentalHead;
+					if (!canImprove(job, hitboxIndex, overlapHead)) { ++scanStatistics.boundSkips; continue; }
+					int coverage = phase == 0 ? 3 : 0;
+					if (phase == 1 && (curConfig.bSafePoint || playerSafe || forceSafe || experimentalHead || rejected))
+						coverage = autowall.SafePoint(vecEyePosition, record, point, hitboxIndex);
+					const bool safe = coverage == 3;
+					if ((rejected || playerSafe || forceSafe) && !safe) continue;
+					if (curConfig.bSafePoint && coverage < 2) continue;
+					const Vector ray = (point - vecEyePosition).Normalized();
+					Job rayJob = job;
+					rayJob.upper = (std::min)(job.upper, autowall.GetDamageUpperBound(vecEyePosition, curConfig.pWeapon, record, &ray));
+					if (std::floor(rayJob.upper) < job.minimum || !canImprove(rayJob, hitboxIndex, overlapHead)) {
+						++scanStatistics.boundSkips; continue;
 					}
-
-					const bool bActuallySafe = (iCollidePoints == 3);
-
-					if ((bPlayerSafe || bShouldForceSafePoint) && !bActuallySafe)
-						continue;
-
-					if (bShouldSafe)
-					{
-						if (iCollidePoints < 2)
-							continue;
-					}
-
-					FireBulletData_t pData{};
-					const float flDamage = autowall.GetDamage(pLocal, vecEyePosition, vecHitboxPoint, curConfig.pWeapon, pRecord, &pData);
-					if (flDamage < flTransformedDamage)
-						continue;
-					const bool bHeadOverlap = bExperimentalHead && pRecord->bHasHeadOverlap && bActuallySafe
-						&& vecHitboxPoint == pRecord->vecRageSafePoint && pData.enterTrace.iHitbox == HITBOX_HEAD;
-
-					/* Push back this shit */
-					vecHitscan.push_back(Hitscan_t(pRecord, vecHitboxPoint, pData, iHitbox != HITBOX_HEAD && flDamage > pRecord->pEntity->GetHealth(), bActuallySafe, flTransformedDamage, i, bHeadOverlap));
+					if (phase == 0) ++scanStatistics.intersectionPoints; else ++scanStatistics.fallbackPoints;
+					FireBulletData_t data{};
+					const float value = damage(job, point, data);
+					if (!std::isfinite(value) || value < job.minimum) continue;
+					if (overlapHead && data.enterTrace.iHitbox != HITBOX_HEAD) continue;
+					Hitscan_t candidate(record, point, data, hitboxIndex != HITBOX_HEAD && value > record->pEntity->GetHealth(),
+						safe, static_cast<int>(job.minimum), job.age, overlapHead);
+					if (!found || candidate < best) { best = candidate; found = true; }
 				}
 			}
 		}
 	}
-
-	if ( vecHitscan.empty( ) )
-		return Vector( 0, 0, 0 );
-
-	/* Sort hitboxes with a bit of logic ( REF: Hitscan_t::operator< ) */
-	std::sort( vecHitscan.begin( ), vecHitscan.end( ) );
-
-	for ( Hitscan_t& refRecord : vecHitscan )
-	{
-		/* Validate the candidate from the current shoot position */
-		aimData.SetTarget( refRecord.pRecord, vecEyePosition, refRecord.bBacktrack );
-		aimData.bSafe = refRecord.bSafe;
-		aimData.flDamage = static_cast< int >( refRecord.flDamage );
-		aimData.iHitbox = refRecord.iHitbox;
-		aimData.iHitGroup = refRecord.iHitgroup;
-		aimData.vecTargetShootPosition = refRecord.vecPoint;
-
-		return refRecord.vecPoint;
-	}
-	return Vector( 0, 0, 0 );
+	if (!found) return {};
+	aimData.SetTarget(best.pRecord, vecEyePosition, best.bBacktrack);
+	aimData.bSafe = best.bSafe;
+	aimData.flDamage = static_cast<int>(best.flDamage);
+	aimData.iHitbox = best.iHitbox;
+	aimData.iHitGroup = best.iHitgroup;
+	aimData.vecTargetShootPosition = best.vecPoint;
+	return best.vecPoint;
 }
 
 bool CAimBot::AutoStop( std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity*  pLocal, CUserCmd*  pCmd, bool bSkipCheck ) {

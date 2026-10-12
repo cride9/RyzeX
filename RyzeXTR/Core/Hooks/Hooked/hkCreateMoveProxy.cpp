@@ -36,9 +36,12 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	bSendPacket = true;
 	g::bSendPacket = &bSendPacket;
 	CBaseEntity* pLocal = g::pLocal = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
-	if (!pLocal || !pCmd->iCommandNumber)
+	if (!pLocal || !pCmd->iCommandNumber) {
+		exploits::ResetExploits();
 		return;
+	}
 	g::pCmd = pCmd;
+	exploits::BeginCommand(pLocal, pCmd);
 	g::vecEyePosition = pLocal->GetEyePosition(false);
 	skinChanger.iItemDefinitionIndex = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() : 0;
 	skinChanger.bIsKnife = pLocal->GetWeapon() ? pLocal->GetWeapon()->IsKnife() : false;
@@ -53,6 +56,11 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		bSendPacket = true;
 
 	vizualizer::Draw(pLocal);
+	// Engine replay owns the authoritative baseline before speculative movement.
+	if (pLocal->IsAlive() && i::ClientState->iDeltaTick > 0)
+		i::Prediction->Update(i::ClientState->iDeltaTick, true, i::ClientState->iLastCommandAck,
+			i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
+	exploits::PrepareCommand(pLocal, pCmd);
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
 	// Run lua callbacks
@@ -61,9 +69,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	bool bShooting = false;
 	prediction.Start(pCmd, pLocal, nSequenceNumber);
 	{
-		if (i::ClientState->iDeltaTick > 0 && !exploits::bIsShiftingTicks)
-			i::Prediction->Update(i::ClientState->iDeltaTick, i::ClientState->iDeltaTick > 0, i::ClientState->iLastCommandAck, i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
-		
 		grenadePrediction::Run();
 		grenadePrediction::AutoThrow( pCmd );
 
@@ -77,7 +82,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		aimbot.CreateMove(pCmd, pLocal);
 
 		exploits::HandleExploits( pLocal, pCmd, bSendPacket );
-		exploits::CorrectTickbase( pCmd );
 
 		misc::IdealTick(pCmd, pLocal);
 		misc::AutoPistol(pCmd, pLocal);
@@ -110,8 +114,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_CREATE_MOVE ], pCmd, *g::bSendPacket );
 
 	// re-verify the command after running lua callbacks
-	if ( i::ClientState->nChokedCommands >= 14 )
-		bSendPacket = true;
+	exploits::ApplyPacketPolicy(pCmd, bSendPacket);
 
 	if ( bSendPacket )
 		packetManager.pCommandList.emplace_back( pCmd->iCommandNumber );

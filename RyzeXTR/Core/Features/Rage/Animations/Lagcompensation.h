@@ -1,10 +1,12 @@
 #pragma once
 #include <deque>
+#include <cstdint>
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
 #include "../../../SDK/math.h"
 #include "../../Misc/Playerlist.h"
 #include "../HitboxGeometry.h"
+#include "../HitscanMath.h"
 
 #pragma region lagcompensation_definitions
 #define LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR ( 64.0f * 64.0f )
@@ -134,11 +136,15 @@ public:
 		Vector vecMaxs{};
 
 		Vector vecRageSafePoint{};
+		std::array<hitscan::IntersectionCache, HITBOX_MAX> intersectionPoints{};
+		hitscan::DamageGeometry damageGeometry{};
 		std::array<hitbox::Shape, hitbox::MaxShapes> headHypotheses{};
 		int iHeadHypothesisCount{};
 		bool bHasHeadOverlap{};
 		bool bAnimationMatrixValid = true;
 		bool bVisualMatrixValid{};
+		int iVisualBoneCount{};
+		const Model_t* pVisualModel{};
 		bool bSafeMatrixValid = true;
 		std::array<float, 9> experimentalYawHypotheses{};
 		bool bHasExperimentalYaws{};
@@ -180,6 +186,8 @@ public:
 		int iResolveSide = 0;
 		int iResolverMode{};
 		int iExperimentalReason{};
+		int iExperimentalBruteStep{};
+		std::uint64_t uExperimentalEpoch{};
 		float flResolverConfidence{};
 		int iCreationTick{};
 	};

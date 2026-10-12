@@ -4,6 +4,7 @@
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Misc/Playerlist.h"
+#include "../../Features/Rage/exploits.h"
 
 void __fastcall h::hkProcessPacket( void* ecx, void* edx, void* packet, bool header )
 {
@@ -84,7 +85,10 @@ bool __fastcall h::hkSendNetMsg( INetChannel* thisptr, int edx, INetMessage* pMe
 	if ( pMessage->GetGroup( ) == INetChannelInfo::VOICE )
 		bVoice = true;
 	
-	return original(thisptr, edx, pMessage, bForceReliable, bVoice);
+	const bool accepted = original(thisptr, edx, pMessage, bForceReliable, bVoice);
+	if (pMessage->GetGroup() == INetChannelInfo::MOVE)
+		exploits::OnMoveQueued(accepted);
+	return accepted;
 
 	//C_CLCMsg_VoiceData msg = { };
 	//using ConstructVoiceMessage_t = uint32_t( __fastcall* )( void*, void* );
@@ -191,7 +195,11 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag"  );
 
 	if (!i::EngineClient->IsInGame() || !cfg::misc::bFakePing || pDatagram != nullptr || pNetChannelInfo == nullptr || sv_maxunlag == nullptr)
-		return original(thisptr, edx, pDatagram);
+	{
+		const int sequence = original(thisptr, edx, pDatagram);
+		if (i::ClientState->pNetChannel == thisptr && !pDatagram) exploits::OnDatagramSent(sequence);
+		return sequence;
+	}
 
 	const int iOldInReliableState = thisptr->iInReliableState;
 	const int iOldInSequenceNr = thisptr->iInSequenceNr;
@@ -201,6 +209,7 @@ int __fastcall h::hkSendDatagram( INetChannel* thisptr, int edx, bf_write* pData
 	lagcomp.AddLatencyToNetChannel( thisptr, flMaxLatency );
 
 	const int iReturn = original(thisptr, edx, pDatagram);
+	if (i::ClientState->pNetChannel == thisptr) exploits::OnDatagramSent(iReturn);
 
 	thisptr->iInReliableState = iOldInReliableState;
 	thisptr->iInSequenceNr = iOldInSequenceNr;

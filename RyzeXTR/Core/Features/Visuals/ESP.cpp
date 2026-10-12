@@ -38,6 +38,8 @@ namespace {
 		const auto reason = static_cast<experimental::Reason>(record.iExperimentalReason);
 		const bool hasSide = record.iResolveSide == LEFT || record.iResolveSide == RIGHT || record.iResolveSide == CENTER;
 		const bool accepted = hasSide && (reason == experimental::Reason::Override
+			|| reason == experimental::Reason::Standing || reason == experimental::Reason::LbyExtended
+			|| reason == experimental::Reason::Bruteforce || reason == experimental::Reason::HitHistory
 			|| (std::isfinite(record.flResolverConfidence) && record.flResolverConfidence > 0.f
 				&& (reason == experimental::Reason::MovingLayers || reason == experimental::Reason::LastMove)));
 		lines[0] = accepted ? "EXP " + misc::GetMatrixName(record.iResolveSide) : "EXP BASE";
@@ -52,9 +54,13 @@ namespace {
 		case experimental::Reason::LbyChanged: lines[1] = "LBY UPDATE"; break;
 		case experimental::Reason::Transition: lines[1] = "TRANSITION"; break;
 		case experimental::Reason::Override: lines[1] = "OVERRIDE"; break;
+		case experimental::Reason::Standing: lines[1] = "STAND"; break;
+		case experimental::Reason::LbyExtended: lines[1] = "LBY EXT HINT"; break;
+		case experimental::Reason::Bruteforce: lines[1] = std::format("BRUTE {}", record.iExperimentalBruteStep); break;
+		case experimental::Reason::HitHistory: lines[1] = "HIT HISTORY"; break;
 		default: lines[1] = "INVALID"; break;
 		}
-		if (accepted && reason != experimental::Reason::Override) {
+		if (accepted && (reason == experimental::Reason::MovingLayers || reason == experimental::Reason::LastMove)) {
 			const int confidence = static_cast<int>(std::round(std::clamp(record.flResolverConfidence, 0.f, 1.f) * 100.f));
 			lines[1] += std::format(" C{}", confidence);
 		}

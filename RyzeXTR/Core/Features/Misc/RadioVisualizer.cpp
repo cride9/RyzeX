@@ -34,6 +34,54 @@ namespace {
         return ImGui::ColorConvertFloat4ToU32(color);
     }
 
+    void Bars(ImDrawList* draw, ImVec2 center, float radius, float size,
+        const Animation& st, const Settings& s, float widthScale, float alpha, bool caps) {
+        const int total = GetQuality(s.quality).points;      // 64 / 128 / 192 oszlop
+        const float inner = radius * 1.12f;
+        const float maxLen = radius * .85f;
+        const float width = 2.f * Pi * inner / total * .5f * widthScale;
+        const ImVec2 uv = ImGui::GetFontTexUvWhitePixel();
+        draw->PrimReserve(total * 6, total * 4);
+        const unsigned int base = draw->_VtxCurrentIdx;
+        for (int i = 0; i < total; ++i) {
+            const float t = (i + .5f) / total;
+            const float u = std::abs(2.f * t - 1.f);              // 0 = alul (bass), 1 = fent (magas), tükrözött
+            const float angle = -Pi * .5f + t * 2.f * Pi;
+            const float c = u * (BandCount - 1);
+            const int a = static_cast<int>(c), b = (std::min)(a + 1, BandCount - 1);
+            const float v = st.audio.bands[a] + (st.audio.bands[b] - st.audio.bands[a]) * (c - a);
+            const float len = size * .006f + std::pow(v, 1.3f) * maxLen;
+            const ImVec2 dir(std::cos(angle), std::sin(angle));
+            const ImVec2 perp(-dir.y * width * .5f, dir.x * width * .5f);
+            const ImVec2 p0(center.x + dir.x * inner, center.y + dir.y * inner);
+            const ImVec2 p1(center.x + dir.x * (inner + len), center.y + dir.y * (inner + len));
+            const ImU32 lo = Blend(s, u, alpha * .55f), hi = Blend(s, u, alpha);
+            draw->PrimWriteVtx(ImVec2(p0.x - perp.x, p0.y - perp.y), uv, lo);
+            draw->PrimWriteVtx(ImVec2(p0.x + perp.x, p0.y + perp.y), uv, lo);
+            draw->PrimWriteVtx(ImVec2(p1.x + perp.x, p1.y + perp.y), uv, hi);
+            draw->PrimWriteVtx(ImVec2(p1.x - perp.x, p1.y - perp.y), uv, hi);
+            const unsigned int o = base + i * 4;
+            for (unsigned int k : { 0u, 1u, 2u, 0u, 2u, 3u })
+                draw->PrimWriteIdx(static_cast<ImDrawIdx>(o + k));
+        }
+        if (!caps) return;
+        for (int i = 0; i < total; ++i) {
+            const float t = (i + .5f) / total;
+            const float u = std::abs(2.f * t - 1.f);
+            const float angle = -Pi * .5f + t * 2.f * Pi;
+            const float pk = st.audio.peaks[static_cast<int>(u * (BandCount - 1))];
+            if (pk < .06f) continue;
+            const float r = inner + size * .010f + std::pow(pk, 1.3f) * maxLen;
+            const ImVec2 dir(std::cos(angle), std::sin(angle));
+            const ImVec2 perp(-dir.y * width * .5f, dir.x * width * .5f);
+            const float th = size * .004f;
+            const ImVec2 q(center.x + dir.x * r, center.y + dir.y * r);
+            const ImVec2 q2(q.x + dir.x * th, q.y + dir.y * th);
+            draw->AddQuadFilled(ImVec2(q.x - perp.x, q.y - perp.y), ImVec2(q.x + perp.x, q.y + perp.y),
+                ImVec2(q2.x + perp.x, q2.y + perp.y), ImVec2(q2.x - perp.x, q2.y - perp.y), Blend(s, u, .9f));
+        }
+    }
+
     // Three strips give the closed ribbon an opaque core and soft transparent edges.
     // The annular mesh also handles the concave Nation ears without a convex-fill assumption.
     void Ribbon(ImDrawList* draw, const std::array<float, 384>& radii, int count,
@@ -137,15 +185,23 @@ namespace {
         }
 
         if (settings.glow) {
-            for (int layer = quality.glowLayers; layer > 0; --layer)
-                Ribbon(draw, contour, quality.points, center, radius,
-                    size * (.014f + layer * .012f), size * .002f, settings,
-                    settings.glowStrength * (.10f / layer) * (.6f + state.audio.bass * .4f));
+            if (settings.preset == 2)
+                Bars(draw, center, radius, size, state, settings, 2.6f,
+                    settings.glowStrength * .14f * (.6f + state.audio.bass * .4f), false);
+            else
+                for (int layer = quality.glowLayers; layer > 0; --layer)
+                    Ribbon(draw, contour, quality.points, center, radius,
+                        size * (.014f + layer * .012f), size * .002f, settings,
+                        settings.glowStrength * (.10f / layer) * (.6f + state.audio.bass * .4f));
         }
-        Ribbon(draw, contour, quality.points, center, radius, size * .012f,
-            size * (settings.preset ? .004f : .003f), settings, .85f);
+        if (settings.preset == 2)
+            Bars(draw, center, radius, size, state, settings, 1.f, .95f, true);
+        else
+            Ribbon(draw, contour, quality.points, center, radius, size * .012f,
+                size * (settings.preset ? .004f : .003f), settings, .85f);
 
-        const float pulse = settings.logoPulse ? state.audio.bass * settings.bassReaction * .10f : 0.f;
+        const float punch = settings.preset == 2 ? state.audio.punch : state.audio.bass;
+        const float pulse = settings.logoPulse ? punch * settings.bassReaction * .12f : 0.f;
         const float diskRadius = radius * (.89f + pulse);
         draw->AddCircleFilled(center, diskRadius, IM_COL32(9, 8, 19, static_cast<int>(230 * settings.opacity)), quality.points / 2);
         Ribbon(draw, circle, quality.points, center, diskRadius, size * .005f, size * .001f, settings, .65f);
@@ -176,7 +232,7 @@ namespace {
         for (int bin = 1; bin < BinCount; ++bin) {
             const float frequency = bin * (44100.f / FftSize);
             frame.fft[bin] = .018f * std::exp(-frequency / 5000.f) *
-                (.55f + .4f * std::sin(bin * .19f + demoTime * 3.f));
+                (.55f + .4f * std::sin(frequency * .0088f + demoTime * 3.f));
             if (frequency < 180.f) frame.fft[bin] += kick * .07f;
         }
         return frame;
@@ -203,8 +259,8 @@ namespace {
     }
 
     void SettingsControls(Settings& s) {
-        const char* presets[] = { "Nation", "Gutter" };
-        if (ImGui::Combo("Preset", &s.preset, presets, 2)) {
+        const char* presets[] = { "Nation", "Gutter", "Bars" };
+        if (ImGui::Combo("Preset", &s.preset, presets, 3)) {
             ResetPreset(s);
             preview = {}; overlay = {};
         }

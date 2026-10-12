@@ -44,8 +44,8 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
 
-	if ( abs( pEntity->GetTickBase( ) - exploits::arrTickbases[ pCommandContext->nCommandNumber % 500 ] ) < 20 )
-		pEntity->GetTickBase( ) = exploits::arrTickbases[ pCommandContext->nCommandNumber % 500 ];
+	// Exact command/epoch identity; retain the entry for deterministic reprediction.
+	pEntity->GetTickBase() = exploits::GetCommandTickbase(pCommandContext->nCommandNumber, pEntity->GetTickBase());
 
 	original(ecx, edx);
 

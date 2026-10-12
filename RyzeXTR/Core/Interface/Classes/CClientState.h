@@ -26,6 +26,11 @@ public:
 
 	// where we are in the buffer
 	int				iCurrentBit;
+	bool            bOverflow;
+	bool            bAssertOnOverflow;
+	const char*     pDebugName;
+
+	bool IsOverflowed() const { return bOverflow || iCurrentBit < 0 || iCurrentBit > nDataBits; }
 };
 
 class bf_read

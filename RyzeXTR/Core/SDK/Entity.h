@@ -778,7 +778,7 @@ public:
 	ADD_NETVAROFFSET(GeFinalPredictedTick, int, "CBasePlayer->m_nTickBase", 0x4);
 	ADD_PNETVAR(GetNextThink, int, "CBasePlayer->m_nNextThinkTick");
 	ADD_NETVAR(GetVelocity, Vector, "CBasePlayer->m_vecVelocity[0]");
-	//ADD_NETVAR(GetGroundEntity, CBaseHandle, "CBasePlayer->m_hGroundEntity");
+	ADD_NETVAR(GetGroundHandle, CBaseHandle, "CBasePlayer->m_hGroundEntity");
 	ADD_NETVAR(GetHealth, int, "CBasePlayer->m_iHealth");
 	ADD_NETVAR(GetLifeState, int, "CBasePlayer->m_lifeState");
 	ADD_NETVAR(GetFlags, int, "CBasePlayer->m_fFlags");

@@ -24,6 +24,92 @@ float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, c
 	return data.flCurrentDamage;
 }
 
+float CAutoWall::GetDamageUpperBound(const Vector& source, CBaseCombatWeapon* weapon, Lagcompensation::LagRecord_t* record, const Vector* direction) {
+	const float unknown = std::numeric_limits<float>::infinity();
+	if (!weapon || !record || !record->pEntity || !source.IsValid()) return unknown;
+	const auto data = i::WeaponSystem->GetWpnData(weapon->GetItemDefinitionIndex());
+	if (!data || data->iDamage < 0 || !std::isfinite(data->flArmorRatio) || data->flArmorRatio < 0.f
+		|| !std::isfinite(data->flHeadShotMultiplier) || data->flHeadShotMultiplier < 0.f) return unknown;
+
+	double distance = 0.; // Unsupported model/transformation keeps the looser bound.
+	const auto model = record->pEntity->GetModel();
+	const int hitboxSet = record->pEntity->GetHitboxSet();
+	auto& geometry = record->damageGeometry;
+	if (!geometry.computed || geometry.model != model || geometry.hitboxSet != hitboxSet) {
+		geometry = {};
+		geometry.computed = true;
+		geometry.model = model;
+		geometry.hitboxSet = hitboxSet;
+		const auto studio = model ? i::ModelInfo->GetStudioModel(model) : nullptr;
+		const auto set = studio ? studio->GetHitboxSet(hitboxSet) : nullptr;
+		const int bones = record->pEntity->GetCachedBoneData().Count();
+		if (set && set->nHitboxes > 0 && set->nHitboxes <= static_cast<int>(geometry.shapes.size())) {
+			geometry.count = set->nHitboxes;
+			for (int index = 0; index < set->nHitboxes; ++index) {
+				const auto box = set->GetHitbox(index);
+				if (!box || box->iBone < 0 || box->iBone >= bones) { geometry.count = 0; break; }
+				geometry.shapes[index] = hitbox::FromStudio(box, record->pMatricies[RESOLVE]);
+				geometry.hitgroups[index] = box->iGroup;
+				if (!geometry.shapes[index].valid) { geometry.count = 0; break; }
+			}
+		}
+	}
+	std::array<bool, HITGROUP_GEAR + 1> groups{};
+	bool restrictGroups = direction && direction->IsValid() && direction->LengthSqr() > 0.f && geometry.count > 0;
+	if (geometry.count > 0) {
+		distance = std::numeric_limits<double>::infinity();
+		const auto start = hitbox::FromVector(source);
+		hitbox::Vec end;
+		if (restrictGroups) {
+			const auto ray = hitbox::FromVector(*direction);
+			double length = 1.;
+			for (int index = 0; index < geometry.count; ++index) {
+				const auto& shape = geometry.shapes[index];
+				const double size = shape.capsule ? std::sqrt((shape.b - shape.a).LengthSq()) + shape.radius
+					: shape.extents[0] + shape.extents[1] + shape.extents[2];
+				length = (std::max)(length, std::sqrt((shape.Center() - start).LengthSq()) + size + 1.);
+			}
+			end = start + ray * (length / std::sqrt(ray.LengthSq()));
+		}
+		for (int index = 0; index < geometry.count; ++index) {
+			const auto& shape = geometry.shapes[index];
+			if (restrictGroups) {
+				auto expanded = shape;
+				const auto center = shape.Center();
+				const double tolerance = .05 + ((std::max)({std::fabs(start.x), std::fabs(start.y), std::fabs(start.z),
+					std::fabs(center.x), std::fabs(center.y), std::fabs(center.z)})) * .000001;
+				if (expanded.capsule) expanded.radius += tolerance;
+				else for (auto& extent : expanded.extents) extent += tolerance;
+				if (!expanded.Intersects(start, end)) continue;
+				const int group = geometry.hitgroups[index];
+				if (group < 0 || group > HITGROUP_GEAR) { restrictGroups = false; distance = 0.; break; }
+				groups[group] = true;
+			}
+			distance = (std::min)(distance, std::sqrt((start - shape.Project(start, 0.)).LengthSq()));
+		}
+		if (restrictGroups && !std::isfinite(distance)) return 0.f;
+	}
+	// Glass/grates lose at least 5%; teammate flesh can have a smaller custom
+	// loss. A zero flesh setting blocks penetration rather than granting damage.
+	static auto flesh = i::ConVar->FindVar("ff_damage_bullet_penetration");
+	const float fleshLoss = flesh ? flesh->GetFloat() : -1.f;
+	const double loss = !std::isfinite(fleshLoss) || fleshLoss < 0.f ? 0.
+		: fleshLoss > 0.f ? (std::min)(.05, static_cast<double>(fleshLoss)) : .05;
+	const double raw = hitscan::RawDamageBound(data->iDamage, data->flRangeModifier, distance, loss);
+	if (!std::isfinite(raw) || raw > (std::numeric_limits<float>::max)()) return unknown;
+	float maximum = restrictGroups ? 0.f : static_cast<float>(raw);
+	// The ray can hit another target hitbox before the requested point. Bound
+	// all accepted hitgroups, including the unscaled unknown-group fallback.
+	for (int group = HITGROUP_HEAD; group < HITGROUP_GEAR; ++group) {
+		if (restrictGroups && !groups[group]) continue;
+		float scaled = static_cast<float>(raw);
+		ScaleDamage(group, record->pEntity, data->flArmorRatio, data->flHeadShotMultiplier, scaled);
+		if (!std::isfinite(scaled)) return unknown;
+		maximum = (std::max)(maximum, scaled);
+	}
+	return maximum + maximum * .0001f + .01f;
+}
+
 void CAutoWall::ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const float flWeaponArmorRatio, const float flWeaponHeadShotMultiplier, float& flDamage )
 {
 	// @ida traceattack: server.dll @ 55 8B EC 83 E4 F8 81 EC C0 00 00 00 56 8B 75 08 57 8B F9 C6 44 24 13 01

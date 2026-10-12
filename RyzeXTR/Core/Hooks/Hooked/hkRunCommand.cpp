@@ -16,17 +16,9 @@ void __fastcall h::hkRunCommand(void* ecx, void* edx, CBaseEntity* pEnt, CUserCm
 
 	i::MoveHelper = pMovehelper;
 
-	if (pCmd->iTickCount > i::GlobalVars->iTickCount + (int)(1.0f / i::GlobalVars->flIntervalPerTick)) {
-
-		pCmd->bHasBeenPredicted = true;
-		return;
-	}
-
-	//if ( TickbaseFix.contains( pCmd->iCommandNumber ) ) 
-	//	pEnt->GetTickBase( ) = TickbaseFix.at( pCmd->iCommandNumber ) - 1;
-	//
-	//while ( TickbaseFix.size( ) > 128 )
-	//	TickbaseFix.erase( TickbaseFix.end( ) );
+	// Serialization-only rejected commands never enter this ring. Do not reject
+	// genuine engine commands using a different, arbitrary future-tick threshold.
+	pEnt->GetTickBase() = GetCommandTickbase(pCmd->iCommandNumber, pEnt->GetTickBase());
 
 	original(ecx, edx, pEnt, pCmd, pMovehelper);
 	misc::RevolverRunCommand(pEnt);

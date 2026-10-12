@@ -33,14 +33,14 @@ public:
 	void StartNetworking();
 	void FinishNetworking();
 
-	int LagcompensatedTicks;
+	int LagcompensatedTicks = 0;
 
 	void ResetNetwork();
-	networkData_t data;
+	networkData_t data{};
 
 private:
 	std::array < CNetvarData, 150 > pCompressData = { };
-	int iLastCommandNumber;
+	int iLastCommandNumber = 0;
 };
 inline CNetworking networking;
 
