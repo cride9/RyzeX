@@ -143,14 +143,22 @@
     <ClCompile Include="Core\Features\Misc\RadioSpectrum.cpp" />
     <ClCompile Include="Core\Features\Misc\RadioVisualizer.cpp" />
     <ClCompile Include="Core\Features\Networking\networking.cpp" />
-    <ClCompile Include="Core\Features\Rage\aimbot.cpp" />
+    <ClCompile Include="Core\Features\Rage\aimbot.cpp">
+      <Optimization Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Alpha'">MaxSpeed</Optimization>
+      <IntrinsicFunctions Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Alpha'">true</IntrinsicFunctions>
+      <OmitFramePointers>false</OmitFramePointers>
+    </ClCompile>
     <ClCompile Include="Core\Features\Rage\Animations\AntiAimCorrection.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\EnemyAnimations.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\ExperimentalResolver.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\LocalAnimation.cpp" />
     <ClCompile Include="Core\Features\Rage\antiaim.cpp" />
-    <ClCompile Include="Core\Features\Rage\autowall.cpp" />
+    <ClCompile Include="Core\Features\Rage\autowall.cpp">
+      <Optimization Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Alpha'">MaxSpeed</Optimization>
+      <IntrinsicFunctions Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Alpha'">true</IntrinsicFunctions>
+      <OmitFramePointers>false</OmitFramePointers>
+    </ClCompile>
     <ClCompile Include="Core\Features\Rage\exploits.cpp" />
     <ClCompile Include="Core\Features\Visuals\chams.cpp" />
     <ClCompile Include="Core\Features\Visuals\ESP.cpp" />
@@ -259,6 +267,8 @@
     <ClInclude Include="Core\Features\Rage\Animations\ExperimentalResolverMath.h" />
     <ClInclude Include="Core\Features\Rage\HitboxGeometry.h" />
     <ClInclude Include="Core\Features\Rage\HitscanMath.h" />
+    <ClInclude Include="Core\Features\Rage\HitscanScheduler.h" />
+    <ClInclude Include="Core\Features\Rage\BacktrackTiming.h" />
     <ClInclude Include="Core\Features\Rage\RecordTraceScope.h" />
     <ClInclude Include="Core\Features\Rage\StudioHitboxGeometry.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />

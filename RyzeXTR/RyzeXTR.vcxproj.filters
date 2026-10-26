@@ -124,6 +124,8 @@
     <ClInclude Include="Core\Features\Rage\Animations\ExperimentalResolverMath.h" />
     <ClInclude Include="Core\Features\Rage\HitboxGeometry.h" />
     <ClInclude Include="Core\Features\Rage\HitscanMath.h" />
+    <ClInclude Include="Core\Features\Rage\HitscanScheduler.h" />
+    <ClInclude Include="Core\Features\Rage\BacktrackTiming.h" />
     <ClInclude Include="Core\Features\Rage\RecordTraceScope.h" />
     <ClInclude Include="Core\Features\Rage\StudioHitboxGeometry.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />

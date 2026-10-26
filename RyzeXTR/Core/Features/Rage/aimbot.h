@@ -7,6 +7,7 @@
 #include "../../SDK/Entity.h"
 #include "exploits.h"
 #include "autowall.h"
+#include "HitscanScheduler.h"
 
 enum EConditions : int {
 	CONDITION_BETWEEN_SHOTS,
@@ -86,7 +87,7 @@ struct Hitscan_t {
 
 struct rageBotData_t
 {
-	rageBotData_t() { pRecord, pAimbotTarget, pTargetMatrix = nullptr; }
+	rageBotData_t() = default;
 
 	Lagcompensation::LagRecord_t* pRecord{};
 	CBaseEntity* pAimbotTarget{};
@@ -96,7 +97,8 @@ struct rageBotData_t
 
 	int	iHealth{};
 	int	iTickcount{};
-	int	iDesiredTickcount{};
+	int	iDesiredTickcount = -1;
+	backtrack::Evaluation shotTiming{};
 	int	iHitbox{};
 	int	iHitGroup{};
 	int iEntityIndex{};
@@ -135,6 +137,10 @@ struct rageBotData_t
 		vecLocalShootPosition = Vector(0, 0, 0);
 		bBacktrack = false;
 		flHitchance = 0.f;
+		iDesiredTickcount = -1;
+		iBacktrackTicks = 0;
+		bCanShoot = false;
+		shotTiming = {};
 	}
 
 	sol::object _lua_get( sol::stack_object key, sol::this_state L ) {
@@ -196,6 +202,7 @@ public:
 	rageBotData_t& GetAimbotData() { return aimData; }
 	weaponConfig_t& GetCurrentConfig() { return curConfig; }
 	const hitscan::Statistics& GetScanStatistics() const { return scanStatistics; }
+	hitscan::Policy& GetScanPolicy() { return scanRuntime.policy; }
 	bool ShouldSendPacket( ) { return bShouldSendPacket; }
 
 private:
@@ -216,6 +223,7 @@ private:
 	weaponConfig_t curConfig{};
 	Vector vecEyePosition{};
 	hitscan::Statistics scanStatistics{};
+	hitscan::Runtime scanRuntime{};
 
 	bool HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy);
 	bool HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecPosition, Lagcompensation::LagRecord_t* pRecord);
@@ -230,6 +238,6 @@ private:
 	bool GetIntersectionPoint(Lagcompensation::LagRecord_t* pRecord, int iHitbox, Vector& point);
 
 	std::vector<Lagcompensation::AnimationInfo_t*> GetTargetableEntities(CBaseEntity* pLocal);
-	std::vector<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE, bool = false);
+	hitscan::Points<Vector> CreatePoints(Vector, CBaseCombatWeapon*, Lagcompensation::LagRecord_t*, int, EMatrixType = RESOLVE, bool = false);
 };
 inline CAimBot aimbot;

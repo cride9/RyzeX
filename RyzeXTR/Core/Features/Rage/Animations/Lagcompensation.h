@@ -7,6 +7,7 @@
 #include "../../Misc/Playerlist.h"
 #include "../HitboxGeometry.h"
 #include "../HitscanMath.h"
+#include "../BacktrackTiming.h"
 
 #pragma region lagcompensation_definitions
 #define LAG_COMPENSATION_TELEPORTED_DISTANCE_SQR ( 64.0f * 64.0f )
@@ -305,6 +306,7 @@ public:
 
 	// get client interp amount
 	static float GetClientInterpAmount();
+	static backtrack::Evaluation GetRecordTiming(float simulation, float range = .2f, int shotTickbase = -1);
 
 	// fuck interpolation
 	void SetInterpolationFlags();

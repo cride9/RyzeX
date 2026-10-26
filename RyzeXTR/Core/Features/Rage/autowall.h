@@ -15,6 +15,8 @@ struct FireBulletData_t
 	Trace_t			enterTrace = { };
 	float			flCurrentDamage = 0.0f;
 	int				iPenetrateCount = 0;
+	hitscan::Failure failure = hitscan::Failure::None;
+	int traceCalls{}, exitSteps{};
 };
 
 // @credits: outlassn
@@ -23,12 +25,13 @@ class CAutoWall
 public:
 	// Get
 	/* returns damage at point and simulated bullet data (if given) */
-	static float GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* pDataOut = nullptr);
+	static float GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* pDataOut = nullptr, const hitscan::DamageQuery* query = nullptr);
 	static float GetDamageUpperBound(const Vector& source, CBaseCombatWeapon* weapon, Lagcompensation::LagRecord_t* record, const Vector* direction = nullptr);
 	/* calculates damage factor */
 	static void ScaleDamage( const int iHitGroup, CBaseEntity* pEntity, const float flWeaponArmorRatio, const float flWeaponHeadShotMultiplier, float& flDamage );
 	/* simulates fire bullet to penetrate up to 4 walls, return true when hitting player */
-	static bool SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord);
+	static bool SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord, const hitscan::DamageQuery* query = nullptr);
+	static bool CanReachDamage(float raw, const CCSWeaponInfo* weapon, CBaseEntity* target, float minimum);
 	/* I need this exlo trust me this will be fun*/
 	static bool CanHitFloatingPoint(const Vector& vecPoint, const Vector& vecSource, Lagcompensation::LagRecord_t* pRecord);
 	/* BBOX can be shot or not */
@@ -41,8 +44,8 @@ public:
 private:
 	// Main
 	static void ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vecAbsEnd, const unsigned int fMask, CTraceFilter* pFilter, Trace_t* pTrace, Lagcompensation::LagRecord_t* pRecord, const float flMinRange = 0.0f );
-	static bool TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vector& vecPosition, const Vector& vecDirection, const CBaseEntity* pClipPlayer, Lagcompensation::LagRecord_t* pRecord);
-	static bool HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInfo* pWeaponData, const surfacedata_t* pEnterSurfaceData, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord);
+	static bool TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vector& vecPosition, const Vector& vecDirection, const CBaseEntity* pClipPlayer, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* bullet = nullptr, const hitscan::DamageQuery* query = nullptr);
+	static bool HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInfo* pWeaponData, const surfacedata_t* pEnterSurfaceData, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord, const hitscan::DamageQuery* query = nullptr);
 };
 
 inline CAutoWall autowall;

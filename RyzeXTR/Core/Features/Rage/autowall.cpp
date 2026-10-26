@@ -4,10 +4,12 @@
 #include "Animations/Lagcompensation.h"
 #include "StudioHitboxGeometry.h"
 
-float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* pDataOut)
+float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, const Vector& vecPoint, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* pDataOut, const hitscan::DamageQuery* query)
 {
-	if (!pLocal || !pWeapon || !pRecord || !pRecord->pEntity)
+	if (!pLocal || !pWeapon || !pRecord || !pRecord->pEntity || !vecEyePosition.IsValid() || !vecPoint.IsValid()) {
+		if (pDataOut) { *pDataOut = {}; pDataOut->failure = hitscan::Failure::Invalid; }
 		return -1.0f;
+	}
 
 	// setup data
 	FireBulletData_t data = { };
@@ -15,13 +17,17 @@ float CAutoWall::GetDamage( CBaseEntity* pLocal, const Vector& vecEyePosition, c
 	data.vecDirection = ( vecPoint - vecEyePosition).Normalized( );
 	data.iPenetrateCount = 4;
 
-	if (!SimulateFireBullet( pLocal, pWeapon, data, pRecord) )
-		return -1.0f;
+	if (!data.vecDirection.IsValid() || data.vecDirection.LengthSqr() <= 0.f) {
+		data.failure = hitscan::Failure::Invalid;
+		if (pDataOut) *pDataOut = data;
+		return -1.f;
+	}
+	const bool hit = SimulateFireBullet(pLocal, pWeapon, data, pRecord, query);
 
 	if ( pDataOut != nullptr )
 		*pDataOut = data;
 
-	return data.flCurrentDamage;
+	return hit ? data.flCurrentDamage : -1.f;
 }
 
 float CAutoWall::GetDamageUpperBound(const Vector& source, CBaseCombatWeapon* weapon, Lagcompensation::LagRecord_t* record, const Vector* direction) {
@@ -227,26 +233,30 @@ void CAutoWall::ClipTraceToPlayers( const Vector& vecAbsStart, const Vector& vec
 	}
 }
 
-bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vector& vecPosition, const Vector& vecDirection, const CBaseEntity* pClipPlayer, Lagcompensation::LagRecord_t* pRecord)
+bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vector& vecPosition, const Vector& vecDirection, const CBaseEntity* pClipPlayer, Lagcompensation::LagRecord_t* pRecord, FireBulletData_t* bullet, const hitscan::DamageQuery* query)
 {
 	// @ida tracetoexit: client.dll @ 55 8B EC 83 EC 4C F3
 	// server.dll @ 55 8B EC 83 EC 4C F3 0F 10 75
 
 	float flDistance = 0.0f;
 	int iStartContents = 0;
+	bool startContentsKnown = false;
 
 	while ( flDistance <= 90.0f )
 	{
+		if (query && query->Expired()) {
+			if (bullet) bullet->failure = hitscan::Failure::Deadline;
+			return false;
+		}
+		if (bullet) ++bullet->exitSteps;
 		// add extra distance to our ray
 		flDistance += 4.0f;
 
 		// multiply the direction vector to the distance so we go outwards, add our position to it
 		Vector vecStart = vecPosition + vecDirection * flDistance;
 
-		if ( !iStartContents )
-			iStartContents = i::EngineTrace->GetPointContents_WorldOnly( vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX/*, nullptr*/ );
-
 		const int iCurrentContents = i::EngineTrace->GetPointContents_WorldOnly( vecStart, MASK_SHOT_HULL | CONTENTS_HITBOX/*, nullptr*/ );
+		if (!startContentsKnown) { iStartContents = iCurrentContents; startContentsKnown = true; }
 
 		if ( !( iCurrentContents & MASK_SHOT_HULL ) || ( iCurrentContents & CONTENTS_HITBOX && iCurrentContents != iStartContents ) )
 		{
@@ -255,6 +265,7 @@ bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vect
 
 			// trace ray to world
 			Ray_t rayWorld( vecStart, vecEnd );
+			if (bullet) ++bullet->traceCalls;
 			i::EngineTrace->TraceRay( rayWorld, MASK_SHOT_HULL | CONTENTS_HITBOX, nullptr, &exitTrace );
 
 			if (static CConVar* sv_clip_penetration_traces_to_players = i::ConVar->FindVar(XorStr("sv_clip_penetration_traces_to_players")); sv_clip_penetration_traces_to_players != nullptr && sv_clip_penetration_traces_to_players->GetBool())
@@ -270,6 +281,7 @@ bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vect
 				Ray_t ray( vecStart, vecPosition );
 				CTraceFilter filter( exitTrace.pHitEntity );
 
+				if (bullet) ++bullet->traceCalls;
 				i::EngineTrace->TraceRay( ray, MASK_SHOT_HULL, &filter, &exitTrace );
 
 				if ( exitTrace.DidHit( ) && !exitTrace.bStartSolid )
@@ -316,10 +328,11 @@ bool CAutoWall::TraceToExit( Trace_t& enterTrace, Trace_t& exitTrace, const Vect
 		}
 	}
 
+	if (bullet) bullet->failure = hitscan::Failure::NoExit;
 	return false;
 }
 
-bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInfo* pWeaponData, const surfacedata_t* pEnterSurfaceData, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord)
+bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInfo* pWeaponData, const surfacedata_t* pEnterSurfaceData, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord, const hitscan::DamageQuery* query)
 {
 	// @ida handlebulletpenetration: client.dll @ E8 ? ? ? ? 83 C4 40 84 C0
 
@@ -338,10 +351,13 @@ bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInf
 		return false;
 
 	Trace_t exitTrace = { };
-	if ( !TraceToExit( data.enterTrace, exitTrace, data.enterTrace.vecEnd, data.vecDirection, pLocal, pRecord) && !( i::EngineTrace->GetPointContents_WorldOnly( data.enterTrace.vecEnd, MASK_SHOT_HULL/*, nullptr*/ ) & MASK_SHOT_HULL ) )
+	// A failed exit must not use an uninitialized surface/exit position. In
+	// particular, a deadline interruption is unknown, never a blocked-ray cache.
+	if (!TraceToExit(data.enterTrace, exitTrace, data.enterTrace.vecEnd, data.vecDirection, pLocal, pRecord, &data, query))
 		return false;
 
 	const surfacedata_t* pExitSurfaceData = i::PhysicsProps->GetSurfaceData( exitTrace.surface.nSurfaceProps );
+	if (!pExitSurfaceData) { data.failure = hitscan::Failure::Invalid; return false; }
 	const MaterialHandle_t hExitMaterial = pExitSurfaceData->game.hMaterial;
 
 	const float flEnterPenetrationModifier = pEnterSurfaceData->game.flPenetrationModifier;
@@ -408,17 +424,33 @@ bool CAutoWall::HandleBulletPenetration( CBaseEntity* pLocal, const CCSWeaponInf
 	return true;
 }
 
-bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord)
+bool CAutoWall::CanReachDamage(float raw, const CCSWeaponInfo* weapon, CBaseEntity* target, float minimum) {
+	if (minimum <= 0.f || !weapon || !target || !std::isfinite(raw) || raw < 0.f
+		|| !std::isfinite(weapon->flRangeModifier) || weapon->flRangeModifier <= 0.f || weapon->flRangeModifier > 1.f)
+		return true;
+	float maximum = raw;
+	for (int group = HITGROUP_HEAD; group < HITGROUP_GEAR; ++group) {
+		float scaled = raw;
+		ScaleDamage(group, target, weapon->flArmorRatio, weapon->flHeadShotMultiplier, scaled);
+		if (!std::isfinite(scaled)) return true;
+		maximum = (std::max)(maximum, scaled);
+	}
+	return maximum + maximum * .0001f + .01f >= minimum;
+}
+
+bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWeapon, FireBulletData_t& data, Lagcompensation::LagRecord_t* pRecord, const hitscan::DamageQuery* query)
 {
 	// @ida firebullet: client.dll @ 55 8B EC 83 E4 F0 81 EC ? ? ? ? F3 0F 7E
 
-	if (!pWeapon || !pLocal)
-		return false;
+	if (!pWeapon || !pLocal || !pRecord || !pRecord->pEntity) {
+		data.failure = hitscan::Failure::Invalid; return false;
+	}
 
 	CCSWeaponInfo* pWeaponData = i::WeaponSystem->GetWpnData( pWeapon->GetItemDefinitionIndex( ) );
 
-	if ( pWeaponData == nullptr )
-		return false;
+	if ( pWeaponData == nullptr ) {
+		data.failure = hitscan::Failure::Invalid; return false;
+	}
 
 	const float flMaxRange = pWeaponData->flRange;
 
@@ -433,6 +465,10 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 
 	while ( data.iPenetrateCount > 0 && data.flCurrentDamage >= 1.0f )
 	{
+		if (query && query->Expired()) { data.failure = hitscan::Failure::Deadline; return false; }
+		if (query && !CanReachDamage(data.flCurrentDamage, pWeaponData, pRecord->pEntity, query->minimumDamage)) {
+			data.failure = hitscan::Failure::LowDamage; return false;
+		}
 		const float flRemainingRange = flMaxRange - flTraceLength;
 
 		if (flRemainingRange <= 0.0f)
@@ -446,6 +482,7 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 
 		Ray_t ray(data.vecPosition, vecEnd);
 
+		++data.traceCalls;
 		i::EngineTrace->TraceRay(
 			ray, kTraceMask, &filter, &data.enterTrace
 		);
@@ -521,11 +558,15 @@ bool CAutoWall::SimulateFireBullet( CBaseEntity* pLocal, CBaseCombatWeapon* pWea
 			return true;
 		}
 
+		if (query && !CanReachDamage(data.flCurrentDamage, pWeaponData, pRecord->pEntity, query->minimumDamage)) {
+			data.failure = hitscan::Failure::LowDamage; return false;
+		}
 		// calling handlebulletpenetration here reduces our penetration �ounter, and if it returns true, we can't shoot through it
-		if ( !HandleBulletPenetration( pLocal, pWeaponData, pEnterSurfaceData, data, pRecord) )
+		if ( !HandleBulletPenetration( pLocal, pWeaponData, pEnterSurfaceData, data, pRecord, query) )
 			break;
 	}
 
+	if (data.failure == hitscan::Failure::None) data.failure = hitscan::Failure::NoHit;
 	return false;
 }
 

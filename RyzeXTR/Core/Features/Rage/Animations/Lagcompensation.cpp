@@ -480,27 +480,35 @@ void Lagcompensation::ExtrapolatePlayer( CBaseEntity* m_pEntity, Lagcompensation
 
 float Lagcompensation::GetClientInterpAmount( )
 {
-	if ( !i::ConVar->FindVar( XorStr( "cl_interpolate" ) )->GetInt( ) )
-		return 0.0f;
-
+	// The server applies interpolation to human players independently of
+	// cl_interpolate, which only controls local rendering in this case.
 	static CConVar* m_pMinUpdateRate = i::ConVar->FindVar( XorStr( "sv_minupdaterate" ) );
 	static CConVar* m_pMaxUpdateRate = i::ConVar->FindVar( XorStr( "sv_maxupdaterate" ) );
+	static CConVar* interp = i::ConVar->FindVar("cl_interp");
+	static CConVar* updateRate = i::ConVar->FindVar("cl_updaterate");
+	static CConVar* ratio = i::ConVar->FindVar("cl_interp_ratio");
+	if (!interp || !updateRate || !ratio) return std::numeric_limits<float>::quiet_NaN();
 
-	float m_flLerpAmount = i::ConVar->FindVar( XorStr( "cl_interp" ) )->GetFloat( );
-	float m_nUpdateRate = i::ConVar->FindVar( XorStr( "cl_updaterate" ) )->GetFloat( );
+	float m_flLerpAmount = interp->GetFloat();
+	float m_nUpdateRate = updateRate->GetFloat();
 
-	if ( m_pMinUpdateRate && m_pMaxUpdateRate )
+	if ( m_pMinUpdateRate && m_pMaxUpdateRate ) {
+		if (m_pMinUpdateRate->GetFloat() > m_pMaxUpdateRate->GetFloat()) return std::numeric_limits<float>::quiet_NaN();
 		m_nUpdateRate = std::clamp( m_nUpdateRate, m_pMinUpdateRate->GetFloat( ), m_pMaxUpdateRate->GetFloat( ) );
+	}
+	if (!std::isfinite(m_nUpdateRate) || m_nUpdateRate <= 0.f) return std::numeric_limits<float>::quiet_NaN();
 
-	float flLerpRatio = i::ConVar->FindVar( XorStr( "cl_interp_ratio" ) )->GetFloat( );
+	float flLerpRatio = ratio->GetFloat();
 	if ( flLerpRatio == 0 )
 		flLerpRatio = 1.0f;
 
 	static CConVar* pMin = i::ConVar->FindVar( XorStr( "sv_client_min_interp_ratio" ) );
 	static CConVar* pMax = i::ConVar->FindVar( XorStr( "sv_client_max_interp_ratio" ) );
 
-	if ( pMin && pMax && pMin->GetFloat( ) != -1 )
+	if ( pMin && pMax && pMin->GetFloat( ) != -1 ) {
+		if (pMin->GetFloat() > pMax->GetFloat()) return std::numeric_limits<float>::quiet_NaN();
 		flLerpRatio = std::clamp( flLerpRatio, pMin->GetFloat( ), pMax->GetFloat( ) );
+	}
 
 	return fmax( m_flLerpAmount, flLerpRatio / m_nUpdateRate );
 }
@@ -523,34 +531,31 @@ float Lagcompensation::GetClientInterpAmount( )
 	//return (i::GlobalVars->flCurrentTime - mflSimulationTime + flLerpTime) < flRange;
 */
 
-bool Lagcompensation::IsValidRecord( float mflSimulationTime, float flRange )
-{
-	if ( !i::EngineClient->GetNetChannelInfo( ) )
-		return false;
+backtrack::Evaluation Lagcompensation::GetRecordTiming(float simulation, float range, int shotTickbase) {
+	if (!g::pLocal || !i::EngineClient || !i::GlobalVars || !i::ClientState) return {};
+	const auto channel = i::EngineClient->GetNetChannelInfo();
+	static CConVar* maxUnlag = i::ConVar->FindVar("sv_maxunlag");
+	if (!channel || !maxUnlag) return {};
+	backtrack::Context context;
+	context.interval = i::GlobalVars->flIntervalPerTick;
+	context.lerp = GetClientInterpAmount();
+	// The remote peer's exact latency is not exposed to the client. Keep the
+	// local estimate explicit while matching the server's encoding and clock.
+	context.latency = channel->GetLatency(FLOW_INCOMING) + channel->GetLatency(FLOW_OUTGOING);
+	context.maxUnlag = maxUnlag->GetFloat();
+	context.shotTime = TICKS_TO_TIME(shotTickbase >= 0 ? shotTickbase : g::pLocal->GetTickBase());
+	context.historyTime = TICKS_TO_TIME(i::ClientState->clockDriftMgr.nServerTick);
+	return backtrack::Evaluate(simulation, context, range);
+}
 
-	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo( );
-
-	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag" );
-
-	int iTickBase = g::pLocal->GetTickBase( );
-	const float flLerpTime = GetClientInterpAmount( );
-	float flLatency = NetChannelInfo->GetLatency( FLOW_INCOMING ) + NetChannelInfo->GetLatency( FLOW_OUTGOING );
-
-	float flDeltaTime = fminf( flLatency + flLerpTime, sv_maxunlag->GetFloat( ) ) - ( i::GlobalVars->flCurrentTime - mflSimulationTime );
-	if ( fabsf( flDeltaTime ) >= flRange )
-		return false;
-
-	int nDeadTime = static_cast< int >( static_cast< float >( TICKS_TO_TIME( i::GlobalVars->iTickCount + TIME_TO_TICKS( flLatency ) ) ) - flRange );
-	if ( TIME_TO_TICKS( mflSimulationTime + flLerpTime ) < nDeadTime )
-		return false;
-
-	return true;
+bool Lagcompensation::IsValidRecord(float simulation, float range) {
+	return GetRecordTiming(simulation, range).valid;
 }
 
 int Lagcompensation::FixTickCount( float flSimulationTime )
 {
 
-	return TIME_TO_TICKS( flSimulationTime + lagcomp.GetClientInterpAmount( ) );
+	return GetRecordTiming(flSimulationTime).commandTick;
 }
 
 void Lagcompensation::UpdateIncomingSequences( INetChannel* pNetChannel )
@@ -619,50 +624,8 @@ void Lagcompensation::LagRecord_t::ApplyMatrix( CBaseEntity* pEntity, matrix3x4a
 	pEntity->SetBoneCache( pMatrix );
 }
 
-bool Lagcompensation::LagRecord_t::IsValid( ) {
-	if (!bAnimationMatrixValid) return false;
-
-	auto NetChannelInfo = i::EngineClient->GetNetChannelInfo( );
-
-	static CConVar* sv_maxunlag = i::ConVar->FindVar( "sv_maxunlag" );
-
-	const float flLerpTime = GetClientInterpAmount( );
-	float flLatency = NetChannelInfo->GetLatency( FLOW_INCOMING ) + NetChannelInfo->GetLatency( FLOW_OUTGOING );
-
-	float flDeltaTime = fminf( flLatency + flLerpTime, sv_maxunlag->GetFloat( ) ) - ( TICKS_TO_TIME( g::pLocal->GetTickBase( ) ) - this->flSimulationTime );
-	if ( fabsf( flDeltaTime ) >= 0.2f )
-		return false;
-
-	// idk if lagcomp counts with the servertick or current time
-	int nDeadTime = static_cast< int >( static_cast< float >( TICKS_TO_TIME( i::ClientState->clockDriftMgr.nServerTick ) ) - sv_maxunlag->GetFloat() );
-	if ( TIME_TO_TICKS( this->flSimulationTime + flLerpTime ) < nDeadTime )
-		return false;
-
-	return true;
-
-	//INetChannelInfo* pNetChannel = i::EngineClient->GetNetChannelInfo();
-	//if (!pNetChannel)
-	//	return false;
-
-	//float flServerTime = i::GlobalVars->flCurrentTime;
-	//if (g::pLocal && g::pLocal->IsAlive())
-	//	flServerTime = TICKS_TO_TIME(networking.GetCorrectedTickbase());
-	//
-	//const float flDeltaTime = std::clamp(pNetChannel->GetLatency(MAX_FLOWS) + lagcomp.GetClientInterpAmount(), 0.f, 0.2f) - (flServerTime - this->flSimulationTime);
-	//if (fabsf(flDeltaTime) > 0.2f)
-	//	return false;
-
-	//int iChokedModifierClient = 0;
-	//if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey))
-	//	iChokedModifierClient = 15 - i::ClientState->nChokedCommands;
-
-	//iChokedModifierClient += i::ClientState->clockDriftMgr.nServerTick + TIME_TO_TICKS(pNetChannel->GetLatency(FLOW_OUTGOING));
-
-	//const auto flDeadTime = (int)(TICKS_TO_TIME(iChokedModifierClient) - 0.2f);
-	//if (this->flSimulationTime < flDeadTime)
-	//	return false;
-
-	//return true;
+bool Lagcompensation::LagRecord_t::IsValid() {
+	return bAnimationMatrixValid && Lagcompensation::IsValidRecord(flSimulationTime);
 }
 
 void Lagcompensation::StartLagcompensation( CBaseEntity* pLocal ) {

@@ -662,7 +662,8 @@ void ExperimentalResolver::ProcessShots() {
             || entity->GetSpawnTime() != shot.spawnTime || entity->GetModel() != shot.payload.model) continue;
         auto& data = shot.payload.data;
         data.iServerHitbox = shot.hitgroup;
-        data.iBacktrackTicks = data.iTickcount - TIME_TO_TICKS(data.flTargetSimulation + lagcomp.GetClientInterpAmount());
+        // Tick and lerp belong to the committed shot; current cvars may have
+        // changed by the time its events settle.
         if (shot.fired && (shot.hasImpact || shot.hurt))
             LuaImplementation::RunCallbacks(LuaImplementation::vecCallbackList[LuaImplementation::CALLBACK_ON_RAGEBOT_SHOT], data);
         // Keep a killing hit available for logging even if FrameStage has
@@ -680,7 +681,9 @@ void ExperimentalResolver::ProcessShots() {
         } else if (outcome == experimental::ShotOutcome::GeometryMiss) {
             misc::Print(std::format("EXP geometry miss | yaw {:+.1f} | brute {}", shot.delta, control.recovery.misses));
         } else if (shot.fired && shot.hasImpact) {
-            misc::Print("EXP miss | no resolver feedback (spread/occlusion/safe/backtrack/ambiguous)");
+            misc::Print(std::format("EXP miss | bt {} | tick {} | lerp {:.2f} ms | rounding {:+.2f} ms | timing delta {:+.2f} ms | no resolver feedback",
+                data.iBacktrackTicks, data.shotTiming.commandTick, data.shotTiming.lerp * 1000.f,
+                data.shotTiming.roundingError * 1000.f, data.shotTiming.delta * 1000.f));
         }
     }
 }
