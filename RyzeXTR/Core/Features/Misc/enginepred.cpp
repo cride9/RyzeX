@@ -1,7 +1,20 @@
 #include "enginepred.h"
 #include "../../globals.h"
 #include "../Networking/networking.h"
-#include "../Rage/exploits.h"
+
+void Prediction::OnCommand(CBaseEntity* pLocal, CUserCmd* pCmd) {
+	if (!pLocal || !pCmd || pCmd->iCommandNumber <= 0) {
+		ResetData();
+		return;
+	}
+	if (observedHandle != pLocal->GetRefEHandle() || observedSpawn != pLocal->GetSpawnTime()
+		|| observedAlive != pLocal->IsAlive() || pCmd->iCommandNumber < lastCommand)
+		ResetData();
+	observedHandle = pLocal->GetRefEHandle();
+	observedSpawn = pLocal->GetSpawnTime();
+	observedAlive = pLocal->IsAlive();
+	lastCommand = pCmd->iCommandNumber;
+}
 
 void Prediction::OnFrameStage(CBaseEntity* local) {
     if (!local || !local->IsAlive()) return;
@@ -53,7 +66,7 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	flOldFrameTime = i::GlobalVars->flFrameTime;
 	iOldTickCount = i::GlobalVars->iTickCount;
 
-	const int TickBase = exploits::GetShotTickbase(pCmd->iCommandNumber, oldTickbase);
+	const int TickBase = oldTickbase;
 
 	pLastCmd = g::pCmd;
 
@@ -72,6 +85,9 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	i::Prediction->Split[0].bIsFirstTimePredicted = false;
 	i::Prediction->bInPrediction = true;
 	if (CBaseCombatWeapon* pWeapon = pLocal->GetWeapon(); pWeapon) {
+		movementStart.weaponHandle = pWeapon->GetRefEHandle();
+		movementStart.flAccuracyPenalty = static_cast<CWeaponCSBase*>(pWeapon)->GetAccuracyPenalty();
+		movementStart.flRecoilIndex = static_cast<CWeaponCSBase*>(pWeapon)->GetRecoilIndex();
 		pWeapon->UpdateAccuracyPenalty();
 		flSpread = pWeapon->GetSpread();
 		flInaccuracy = pWeapon->GetInaccuracy();
@@ -124,6 +140,27 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	i::MoveHelper->SetHost(pLocal);
 
 	// setup move
+	// Keep the movement entry state separately from the command snapshot, so a
+	// changed move can be replayed without running Think/PostThink/impacts twice.
+	movementStart.command = pCmd->iCommandNumber;
+	movementStart.localHandle = pLocal->GetRefEHandle();
+	movementStart.spawnTime = pLocal->GetSpawnTime();
+	movementStart.vecOrigin = pLocal->GetVecOrigin();
+	movementStart.absOrigin = pLocal->GetAbsOrigin();
+	movementStart.vecVelocity = pLocal->GetVelocity();
+	movementStart.absVelocity = pLocal->GetVecAbsVelocity();
+	movementStart.vecBaseVelocity = pLocal->GetVecBaseVelocity();
+	movementStart.iFlags = pLocal->GetFlags();
+	movementStart.eflags = pLocal->GetEFlags();
+	movementStart.groundHandle = pLocal->GetGroundHandle();
+	movementStart.surfaceFriction = pLocal->GetSurfaceFriction();
+	movementStart.velocityModifier = pLocal->GetVelocityModifier();
+	movementStart.flDuckAmount = pLocal->GetDuckAmount();
+	movementStart.flDuckSpeed = pLocal->GetDuckSpeed();
+	movementStart.flFallVelocity = pLocal->GetFallVelocity();
+	movementStart.vecViewOffset = pLocal->GetViewOffset();
+	movementStart.buttonLast = pLocal->GetButtonLast();
+	moveData = {};
 	i::Prediction->SetupMove(pLocal, pCmd, i::MoveHelper, &moveData);
 	i::GameMovement->ProcessMovement(pLocal, &moveData);
 
@@ -137,6 +174,60 @@ void Prediction::Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber )
 	// restore prediction states
 	i::Prediction->bInPrediction = bOldInPrediction;
 	i::Prediction->Split[0].bIsFirstTimePredicted = bOldIsFirstPrediction;
+}
+
+bool Prediction::RepredictMovement(CUserCmd* pCmd, CBaseEntity* pLocal, const Vector& movementAngles)
+{
+	if (!active || !pCmd || !pLocal || !pLocal->IsAlive() || !i::MoveHelper
+		|| movementStart.command != pCmd->iCommandNumber
+		|| movementStart.localHandle != pLocal->GetRefEHandle()
+		|| movementStart.spawnTime != pLocal->GetSpawnTime()) return false;
+	auto* weapon = pLocal->GetWeapon();
+	if (!weapon || weapon->GetRefEHandle() != movementStart.weaponHandle) return false;
+
+	pLocal->SetAbsOrigin(movementStart.absOrigin);
+	pLocal->GetVecOrigin() = movementStart.vecOrigin;
+	pLocal->GetVelocity() = movementStart.vecVelocity;
+	pLocal->GetVecAbsVelocity() = movementStart.absVelocity;
+	pLocal->GetVecBaseVelocity() = movementStart.vecBaseVelocity;
+	pLocal->GetFlags() = movementStart.iFlags;
+	pLocal->GetGroundHandle() = movementStart.groundHandle;
+	pLocal->GetSurfaceFriction() = movementStart.surfaceFriction;
+	pLocal->GetVelocityModifier() = movementStart.velocityModifier;
+	pLocal->GetDuckAmount() = movementStart.flDuckAmount;
+	pLocal->GetDuckSpeed() = movementStart.flDuckSpeed;
+	pLocal->GetFallVelocity() = movementStart.flFallVelocity;
+	pLocal->GetViewOffset() = movementStart.vecViewOffset;
+	pLocal->GetEFlags() = movementStart.eflags;
+	const int changed = movementStart.buttonLast ^ pCmd->iButtons;
+	*pLocal->GetButtons() = pCmd->iButtons;
+	pLocal->GetButtonLast() = movementStart.buttonLast;
+	pLocal->GetButtonPressed() = changed & pCmd->iButtons;
+	pLocal->GetButtonReleased() = changed & ~pCmd->iButtons;
+	static_cast<CWeaponCSBase*>(weapon)->GetAccuracyPenalty() = movementStart.flAccuracyPenalty;
+	static_cast<CWeaponCSBase*>(weapon)->GetRecoilIndex() = movementStart.flRecoilIndex;
+
+	const bool oldInPrediction = i::Prediction->bInPrediction;
+	const bool oldFirstTime = i::Prediction->Split[0].bIsFirstTimePredicted;
+	const Vector commandAngles = pCmd->angViewPoint;
+	i::Prediction->bInPrediction = true;
+	i::Prediction->Split[0].bIsFirstTimePredicted = false;
+	// Autostop movement is still expressed in the original input view. The
+	// final command gets its aim/antiaim movement correction in CreateMove.
+	pCmd->angViewPoint = movementAngles;
+	i::GameMovement->Reset();
+	moveData = {};
+	i::Prediction->SetLocalViewAngles(pCmd->angViewPoint);
+	i::Prediction->SetupMove(pLocal, pCmd, i::MoveHelper, &moveData);
+	i::GameMovement->ProcessMovement(pLocal, &moveData);
+	i::Prediction->FinishMove(pLocal, pCmd, &moveData);
+	pCmd->angViewPoint = commandAngles;
+	i::Prediction->bInPrediction = oldInPrediction;
+	i::Prediction->Split[0].bIsFirstTimePredicted = oldFirstTime;
+	weapon->UpdateAccuracyPenalty();
+	flSpread = weapon->GetSpread();
+	flInaccuracy = weapon->GetInaccuracy();
+	return true;
 }
 
 void Prediction::End(CUserCmd* pCmd, CBaseEntity* pLocal)
@@ -177,7 +268,7 @@ void Prediction::SaveNetvars( int iCommand, CBaseEntity* pLocal)
 	auto& saved = pNetvarData[iCommand % 150];
 	saved = {};
 	saved.command = iCommand;
-	saved.epoch = exploits::commandTimes.epoch;
+	saved.epoch = GetEpoch();
 	saved.localHandle = pLocal->GetRefEHandle();
 	saved.spawnTime = pLocal->GetSpawnTime();
 	saved.nTickbase = pLocal->GetTickBase();
@@ -222,7 +313,7 @@ void Prediction::RestoreNetvars(int iCommand, CBaseEntity* pLocal)
 	if (!pLocal->IsAlive() || iCommand <= 0)
 		return;
 	const auto& saved = pNetvarData[iCommand % 150];
-	if (saved.command != iCommand || saved.epoch != exploits::commandTimes.epoch
+	if (saved.command != iCommand || saved.epoch != GetEpoch()
 		|| saved.localHandle != pLocal->GetRefEHandle() || saved.spawnTime != pLocal->GetSpawnTime()) return;
 	pLocal->GetTickBase() = saved.nTickbase;
 	pLocal->SetAbsOrigin(saved.absOrigin);
@@ -270,7 +361,7 @@ void Prediction::SaveViewmodelData(CBaseEntity* pLocal)
 	if ( !hViewmodel )
 		return;
 	viewmodelHandle = pLocal->GetViewModel();
-	viewmodelEpoch = exploits::commandTimes.epoch;
+	viewmodelEpoch = GetEpoch();
 
 	iAnimationParity = hViewmodel->iAnimationParity( );
 	iSequence = hViewmodel->iSequence( );
@@ -283,7 +374,7 @@ void Prediction::AdjustViewmodelData(CBaseEntity* pLocal)
 
 	CBaseViewModel* const hViewmodel = ( CBaseViewModel* )i::EntityList->GetClientEntityFromHandle( pLocal->GetViewModel( ) );
 
-	if (!hViewmodel || viewmodelHandle != pLocal->GetViewModel() || viewmodelEpoch != exploits::commandTimes.epoch)
+	if (!hViewmodel || viewmodelHandle != pLocal->GetViewModel() || viewmodelEpoch != GetEpoch())
 		return;
 
 	if ( iSequence != hViewmodel->iSequence( ) || iAnimationParity != hViewmodel->iAnimationParity( ) )

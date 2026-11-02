@@ -154,6 +154,11 @@
     <ClCompile Include="Core\Features\Rage\Animations\Lagcompensation.cpp" />
     <ClCompile Include="Core\Features\Rage\Animations\LocalAnimation.cpp" />
     <ClCompile Include="Core\Features\Rage\antiaim.cpp" />
+    <ClCompile Include="Core\Features\Rage\AdaptiveAntiAim.cpp">
+      <Optimization Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Alpha'">MaxSpeed</Optimization>
+      <IntrinsicFunctions Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Alpha'">true</IntrinsicFunctions>
+      <OmitFramePointers>false</OmitFramePointers>
+    </ClCompile>
     <ClCompile Include="Core\Features\Rage\autowall.cpp">
       <Optimization Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Alpha'">MaxSpeed</Optimization>
       <IntrinsicFunctions Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Alpha'">true</IntrinsicFunctions>
@@ -259,16 +264,20 @@
     <ClInclude Include="Core\Features\Misc\Vizualizer.h" />
     <ClInclude Include="Core\Features\Misc\RadioVisualizer.h" />
     <ClInclude Include="Core\Features\Misc\RadioVisualizerMath.h" />
+    <ClInclude Include="Core\Features\Misc\RadioSpectrumStyle.h" />
+    <ClInclude Include="Core\Features\Misc\RadioSpectrumDraw.h" />
     <ClInclude Include="Core\Features\Networking\networking.h" />
     <ClInclude Include="Core\Features\Rage\aimbot.h" />
-    <ClInclude Include="Core\Features\Rage\Animations\BoneSetup.h" />
     <ClInclude Include="Core\Features\Rage\Animations\EnemyAnimations.h" />
     <ClInclude Include="Core\Features\Rage\Animations\ExperimentalResolver.h" />
     <ClInclude Include="Core\Features\Rage\Animations\ExperimentalResolverMath.h" />
     <ClInclude Include="Core\Features\Rage\HitboxGeometry.h" />
+    <ClInclude Include="Core\Features\Rage\MultipointGeometry.h" />
     <ClInclude Include="Core\Features\Rage\HitscanMath.h" />
     <ClInclude Include="Core\Features\Rage\HitscanScheduler.h" />
     <ClInclude Include="Core\Features\Rage\BacktrackTiming.h" />
+    <ClInclude Include="Core\Features\Rage\LagcompHistory.h" />
+    <ClInclude Include="Core\Features\Rage\AdaptiveAntiAim.h" />
     <ClInclude Include="Core\Features\Rage\RecordTraceScope.h" />
     <ClInclude Include="Core\Features\Rage\StudioHitboxGeometry.h" />
     <ClInclude Include="Core\Features\Rage\Animations\Lagcompensation.h" />
@@ -276,7 +285,7 @@
     <ClInclude Include="Core\Features\Rage\antiaim.h" />
     <ClInclude Include="Core\Features\Rage\autowall.h" />
     <ClInclude Include="Core\Features\Rage\exploits.h" />
-    <ClInclude Include="Core\Features\Rage\TickshiftModel.h" />
+    <ClInclude Include="Core\Features\Misc\FakelagCycle.h" />
     <ClInclude Include="Core\Features\Visuals\chams.h" />
     <ClInclude Include="Core\Features\Visuals\drawlist.h" />
     <ClInclude Include="Core\Features\Visuals\ESP.h" />

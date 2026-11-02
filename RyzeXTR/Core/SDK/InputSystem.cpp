@@ -113,6 +113,24 @@ bool IPT::Process( UINT uMsg, WPARAM wParam, LPARAM lParam )
 		return false;
 	}
 
+	// Win32 keyboard messages normally carry VK_SHIFT/VK_CONTROL/VK_MENU,
+	// while the binding widget records their left/right virtual-key codes.
+	int modifier = 0, leftModifier = 0, rightModifier = 0;
+	const auto keyData = static_cast<std::uintptr_t>(lParam);
+	switch (nKey) {
+	case VK_SHIFT: case VK_LSHIFT: case VK_RSHIFT:
+		modifier = VK_SHIFT; leftModifier = VK_LSHIFT; rightModifier = VK_RSHIFT;
+		if (nKey == VK_SHIFT) nKey = ((keyData >> 16) & 0xffU) == 0x36U ? VK_RSHIFT : VK_LSHIFT;
+		break;
+	case VK_CONTROL: case VK_LCONTROL: case VK_RCONTROL:
+		modifier = VK_CONTROL; leftModifier = VK_LCONTROL; rightModifier = VK_RCONTROL;
+		if (nKey == VK_CONTROL) nKey = (keyData & (1U << 24)) ? VK_RCONTROL : VK_LCONTROL;
+		break;
+	case VK_MENU: case VK_LMENU: case VK_RMENU:
+		modifier = VK_MENU; leftModifier = VK_LMENU; rightModifier = VK_RMENU;
+		if (nKey == VK_MENU) nKey = (keyData & (1U << 24)) ? VK_RMENU : VK_LMENU;
+		break;
+	}
 	if (nKey <= 0 || nKey >= arrKeyState.size())
 		return false;
 	// Ignore presses used to edit bindings, but always process releases.
@@ -120,13 +138,15 @@ bool IPT::Process( UINT uMsg, WPARAM wParam, LPARAM lParam )
 		return false;
 	if (state == EKeyState::DOWN && (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN) && (lParam & (1LL << 30)))
 		return false;
-	if (state == EKeyState::DOWN && arrKeyState[nKey] != EKeyState::DOWN && cfg::m_iKeyStates[nKey] == TOGGLE)
-		arrKeyBooleans[nKey] = !arrKeyBooleans[nKey];
-	// A press toggles once; every consumer reads that same state.
-	if ( state == EKeyState::UP && arrKeyState.at( nKey ) == EKeyState::DOWN ) // if swap states it will be pressed state
-		arrKeyState.at( nKey ) = EKeyState::RELEASED;
-	else
-		arrKeyState.at( nKey ) = state;
+	const auto update = [&](int key, EKeyState next) {
+		if (next == EKeyState::DOWN && arrKeyState[key] != EKeyState::DOWN && cfg::m_iKeyStates[key] == TOGGLE)
+			arrKeyBooleans[key] = !arrKeyBooleans[key];
+		arrKeyState[key] = next == EKeyState::UP && arrKeyState[key] == EKeyState::DOWN ? EKeyState::RELEASED : next;
+	};
+	update(nKey, state);
+	// Generic Shift/Ctrl/Alt bindings remain held until both sides are up.
+	if (modifier) update(modifier, arrKeyState[leftModifier] == EKeyState::DOWN || arrKeyState[rightModifier] == EKeyState::DOWN
+		? EKeyState::DOWN : EKeyState::UP);
 
 	return true;
 }

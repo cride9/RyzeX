@@ -50,7 +50,10 @@ public:
 
 	void Start(CUserCmd* pCmd, CBaseEntity* pLocal, int SequenceNumber );
 	void End(CUserCmd* pCmd, CBaseEntity* pLocal);
+	bool RepredictMovement(CUserCmd* pCmd, CBaseEntity* pLocal, const Vector& movementAngles);
 	void RequestReprediction();
+	void OnCommand(CBaseEntity* pLocal, CUserCmd* pCmd);
+	std::uint32_t GetEpoch() const { return epoch; }
 
 	CNetvarData GetNetvars( int iCommand ) { return this->pNetvarData[ iCommand % 150 ]; };
 
@@ -66,14 +69,24 @@ public:
 	CUserCmd* pLastCmd = nullptr;
 
     void ResetData() {
+        ++epoch;
         iObservedSimulationOffset = 0;
         pNetvarData = {};
         pLastCmd = nullptr;
         viewmodelHandle = 0;
+        observedHandle = 0;
+        observedSpawn = 0.f;
+        lastCommand = 0;
+        observedAlive = false;
     }
 	void OnFrameStage(CBaseEntity* pLocal);
 
 private:
+	std::uint32_t epoch = 1;
+	CBaseHandle observedHandle = 0;
+	float observedSpawn = 0.f;
+	int lastCommand = 0;
+	bool observedAlive = false;
 
 	int iObservedSimulationOffset = 0;
 	int* uPredictionRandomSeed = nullptr;
@@ -81,6 +94,7 @@ private:
 	CBaseEntity** pPredictionPlayer = nullptr;
 
 	CMoveData moveData = { };
+	CNetvarData movementStart{};
 	bool active = false;
 	int oldTickbase = 0, oldSeed = -1;
 	CUserCmd* oldCommand = nullptr;

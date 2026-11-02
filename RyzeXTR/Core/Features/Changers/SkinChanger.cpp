@@ -59,35 +59,48 @@ CreateClientClassFn GetWearableCreateFn()
 		if (client_class->nClassID == EClassIndex::CEconWearable)
 			return client_class->pCreateFn;
 	}
+	return nullptr;
 }
 
 CBaseCombatWeapon* MakeGlove(int entry, int serial)
 {
 	static CreateClientClassFn WearableCreateFn = GetWearableCreateFn();
+	if (!WearableCreateFn) return nullptr;
 	WearableCreateFn(entry, serial);
 
 	const auto glove = static_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntity(entry));
-	assert(glove);
+	if (!glove) return nullptr;
 	{
 		static auto set_abs_origin_addr = MEM::FindPattern(CLIENT_DLL, "55 8B EC 83 E4 F8 51 53 56 57 8B F1 E8");
 		const auto set_abs_origin_fn = reinterpret_cast<void(__thiscall*)(void*, const std::array<float, 3>&)>(set_abs_origin_addr);
 		static constexpr std::array<float, 3> new_pos = { 10000.f, 10000.f, 10000.f };
-		set_abs_origin_fn(glove, new_pos);
+		if (set_abs_origin_fn) set_abs_origin_fn(glove, new_pos);
 	}
 	return glove;
 }
 
-bool ApplyGlove(CBaseCombatWeapon* glove, short item_definition_index, int paint_kit, int model_index, int entity_quality, float fallback_wear) {
-	auto oldIndex = glove->GetItemDefinitionIndex();
+bool ApplyGlove(CBaseCombatWeapon* glove, short item_definition_index, int paint_kit, int model_index, int entity_quality, float fallback_wear, int account_id, int seed) {
+	const bool changed = !glove->IsItemInitialized()
+		|| glove->GetItemDefinitionIndex() != item_definition_index
+		|| glove->GetFallbackPaintKit() != paint_kit || glove->GetModelIndex() != model_index
+		|| glove->GetEntityQuality() != entity_quality || glove->GetFallbackWear() != fallback_wear
+		|| glove->GetItemIDHigh() != -1 || glove->GetItemIDLow() != 0
+		|| glove->GetAccountID() != account_id || glove->GetFallbackSeed() != seed;
+	if (!changed) return false;
 
-	if (oldIndex != item_definition_index)
-		glove->GetItemDefinitionIndex() = item_definition_index;
-
+	glove->GetItemDefinitionIndex() = item_definition_index;
+	// A client-created wearable has no inventory/SOC item. Use fallback data
+	// and mark its item view valid before Equip/InitializeAttributes/materials.
+	glove->GetItemIDHigh() = -1;
+	glove->GetItemIDLow() = 0;
+	glove->GetAccountID() = account_id;
 	glove->GetFallbackPaintKit() = paint_kit;
-	glove->GetModelIndex() = model_index;
-	glove->SetModelIndex(model_index);
+	glove->GetFallbackSeed() = seed;
 	glove->GetEntityQuality() = entity_quality;
 	glove->GetFallbackWear() = fallback_wear;
+	glove->IsItemInitialized() = true;
+	glove->GetModelIndex() = model_index;
+	glove->SetModelIndex(model_index);
 
 	return true;
 }
@@ -268,8 +281,17 @@ void CSkinChanger::AgentChanger(CBaseEntity* pLocal, EStage stage)
 
 void HandleGloves()
 {
-	if (!iGloveModel)
+	if (iGloveModel < 1 || iGloveModel > 8 || !skinChanger.m_pItemSchematic)
 		return;
+	const short definition = static_cast<short>(skinChanger.GetGloveIdFromMenu(iGloveModel));
+	auto* item = skinChanger.m_pItemSchematic->getItemDefinitionInterface(definition);
+	if (!item) return;
+	// Equip attaches this wearable to the player skeleton. The v_models/arms
+	// model has viewmodel bones and appears as detached arms at the player's feet.
+	const char* worldModel = item->getWorldDisplayModel();
+	if (!worldModel || !*worldModel) return;
+	const int modelIndex = i::ModelInfo->GetModelIndex(worldModel);
+	if (modelIndex <= 0) return;
 
 	CBaseEntity* pLocal = CBaseEntity::GetLocalPlayer();
 
@@ -281,6 +303,8 @@ void HandleGloves()
 		return;
 
 	static uintptr_t glove_handle = uintptr_t(0);
+	bool attached = false;
+	bool created = false;
 
 	CBaseCombatWeapon* glove = reinterpret_cast<CBaseCombatWeapon*>(i::EntityList->GetClientEntityFromHandle(wearables[0]));
 
@@ -291,6 +315,7 @@ void HandleGloves()
 		{
 			wearables[0] = glove_handle;
 			glove = our_glove;
+			attached = true;
 		}
 	}
 
@@ -300,6 +325,8 @@ void HandleGloves()
 		{
 			glove->SetDestroyedOnRecreateEntities();
 			glove->ReleaseNetworkable();
+			wearables[0] = static_cast<CBaseHandle>(-1);
+			glove_handle = 0;
 		}
 		return;
 	}
@@ -310,42 +337,31 @@ void HandleGloves()
 		const int entry = highestEntityIndex + 1;
 		const int serial = rand() % 0x1000;
 		glove = MakeGlove(entry, serial);   // He he
+		if (!glove) return;
 		wearables[0] = entry | serial << 16;
 		glove_handle = wearables[0]; // Let's store it in case we somehow lose it.
+		created = true;
 	}
 
 	if (glove)
 	{
-		ApplyGlove(glove, skinChanger.GetGloveIdFromMenu(iGloveModel), iSkinId[35], i::ModelInfo->GetModelIndex(mapGloveList.at(skinChanger.GetGloveIdFromMenu(iGloveModel))), 0, flSkinWear[35]);
-		
-		uint64_t uMask = UINT32_MAX;
-		uint32_t uLowId = uMask & skinChanger.GetGloveIdFromMenu(iGloveModel);
-		uint32_t uHighId = skinChanger.GetGloveIdFromMenu(iGloveModel) >> 32;
-
-		glove->GetItemIDLow() = uLowId;
-		glove->GetItemIDHigh() = uHighId;
-		glove->GetAccountID() = pLocal->GetPlayerInfo().nXuidLow;
-
-		if (EconItemDefinition* def = skinChanger.m_pItemSchematic->getItemDefinitionInterface(skinChanger.GetGloveIdFromMenu(iGloveModel)); def)
-			if (CBaseEntity* pViewModel = static_cast<CBaseEntity*>(i::EntityList->GetClientEntityFromHandle(pLocal->GetViewModel())); pViewModel)
-				if (const char* szViewmodel = def->getPlayerDisplayModel(); szViewmodel)
-					if (CBaseHandle pWorldModelHandle = glove->GetRefEHandle(); pWorldModelHandle)
-						if (CBaseCombatWeapon* pWorldModel = (CBaseCombatWeapon*)(i::EntityList->GetClientEntityFromHandle(pWorldModelHandle)); pWorldModel)
-							if (const char* szWorldModel = def->getWorldDisplayModel(); szWorldModel)
-								glove->SetModelIndex(i::ModelInfo->GetModelIndex(szWorldModel));
+		const bool changed = ApplyGlove(glove, definition, iSkinId[35], modelIndex, 0,
+			std::clamp(flSkinWear[35] / 100.f, 0.f, 1.f), pLocal->GetPlayerInfo().nXuidLow, iSeed[35]);
+		pLocal->GetBodyID() = 1;
+		if (!created && !attached && !changed) return;
 
 		static auto uEquipSig = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 EC 10 53 8B 5D 08 57 8B F9"));
 		static auto uInitializeAttributesSig = MEM::FindPattern(CLIENT_DLL, XorStr("55 8B EC 83 E4 F8 83 EC 0C 53 56 8B F1 8B 86"));
+		if (!uEquipSig || !uInitializeAttributesSig) return;
 
 		((int(__thiscall*)(void*, void*))(uEquipSig))(glove, pLocal);
 
-		pLocal->GetBodyID() = 1;
-
 		((int(__thiscall*)(void*))(uInitializeAttributesSig))(glove);
 
-		i::LeafSystem->CreateRenderableHandle(glove, true, 0, RENDERABLE_MODEL_UNKNOWN_TYPE);
+		if (created)
+			i::LeafSystem->CreateRenderableHandle(glove, true, 0, RENDERABLE_MODEL_UNKNOWN_TYPE);
 
-		glove->GetClientNetworkable()->PreDataUpdate(DATA_UPDATE_CREATED);
+		glove->GetClientNetworkable()->PreDataUpdate(created ? DATA_UPDATE_CREATED : DATA_UPDATE_DATATABLE_CHANGED);
 	}
 }
 

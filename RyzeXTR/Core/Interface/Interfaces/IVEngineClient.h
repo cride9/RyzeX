@@ -59,6 +59,10 @@ public:
 		return util::CallVFunc<INetChannelInfo*>(this, 78);
 	}
 
+	float GetLastTimeStamp() {
+		return util::CallVFunc<float>(this, 14);
+	}
+
 	int GetLocalPlayer() {
 
 		return util::CallVFunc<int>(this, 12);

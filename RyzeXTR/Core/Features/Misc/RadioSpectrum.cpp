@@ -11,6 +11,7 @@ namespace {
     GetInfoFn getInfo = nullptr;
     IsActiveFn isActive = nullptr;
     std::atomic<bool> analysisEnabled{ false };
+    std::atomic<float> analysisDuration{0.f};
     std::mutex frameMutex;
     radio_visualizer::Frame published;
     std::uint32_t currentChannel = 0;
@@ -46,6 +47,7 @@ void radio_visualizer::ResetStream() {
 }
 
 void radio_visualizer::SetAnalysisEnabled(bool enabled) { analysisEnabled.store(enabled); }
+void radio_visualizer::SetAnalysisDuration(float milliseconds) { analysisDuration.store(Bounded(milliseconds,0.f,1000.f,0.f)); }
 bool radio_visualizer::IsAnalysisEnabled() { return analysisEnabled.load(); }
 
 radio_visualizer::Frame radio_visualizer::GetFrame() {
@@ -72,7 +74,10 @@ void radio_visualizer::Capture(std::uint32_t channel) {
         if (getInfo(channel, &info)) sampleRate = info.freq;
     }
     if (sampleRate >= 4000 && sampleRate <= 384000 && isActive(channel) == BASS_ACTIVE_PLAYING) {
-        const DWORD read = getData(channel, frame.fft.data(), BASS_DATA_FFT2048 | BASS_DATA_FFT_REMOVEDC);
+        frame.fftSize=SpectrumFftSize(sampleRate,analysisDuration.load());
+        unsigned exponent=0;
+        for(int size=frame.fftSize;size>256;size/=2) ++exponent;
+        const DWORD read = getData(channel, frame.fft.data(), (BASS_DATA_FFT256+exponent) | BASS_DATA_FFT_REMOVEDC);
         if (read != static_cast<DWORD>(-1) && read > 0) {
             for (float& value : frame.fft) value = Bounded(value, 0.f, 4.f, 0.f);
             frame.sampleRate = sampleRate;

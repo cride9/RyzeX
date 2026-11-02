@@ -75,58 +75,82 @@ IMaterial* chams::CreateMaterial(std::string_view szName, std::string_view szSha
 	return pReturn;
 }
 
-void MatrixSetOrigin( Vector pos, matrix3x4a_t& matrix )
+// Interpolate only the displayed history origin. Never mutate lagcomp records
+// or blend rotation matrices, which would shear the skeleton.
+bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4a_t* out, Vector& renderOrigin)
 {
-	matrix[ 0 ][ 3 ] = pos.x;
-	matrix[ 1 ][ 3 ] = pos.y;
-	matrix[ 2 ][ 3 ] = pos.z;
-}
-
-bool GenerateLerpedMatrix(CBaseEntity* pEntity, matrix3x4a_t* out)
-{
-	if (!pEntity)
+	if (!pEntity || !out) return false;
+	const int index = pEntity->EntIndex();
+	if (index < 1 || index > 64) return false;
+	struct Interpolation {
+		CBaseHandle handle{};
+		const Model_t* model{};
+		float spawn{}, simulation{}, began{}, duration{}, lastDraw{};
+		Vector from{}, target{};
+		bool initialized{};
+	};
+	static std::array<Interpolation, 65> states{};
+	auto& state = states[index];
+	auto& log = lagcomp.GetLog(index);
+	if (!pEntity->IsAlive() || pEntity->IsDormant() || log.pRecord.size() < 2
+		|| log.iLastValid < 0 || static_cast<size_t>(log.iLastValid) >= log.pRecord.size()) {
+		state = {};
 		return false;
-
-	auto& pLog = lagcomp.GetLog(pEntity->EntIndex());
-	if (!&pLog || !pLog.pRecord.size() || pLog.iLastValid + 1 >= pLog.pRecord.size())
-		return false;
-
-	const auto& FirstInvalid = &pLog.pRecord[pLog.iLastValid];
-	const auto& LastInvalid = &pLog.pRecord[pLog.iLastValid + 1];
-
-	if (FirstInvalid->bDormant)
-		return false;
-
-	if (LastInvalid->flSimulationTime - FirstInvalid->flSimulationTime > 0.5f)
-		return false;
-
-	if (!LastInvalid->bDidShot && (!LastInvalid->vecOrigin.DistTo(FirstInvalid->vecOrigin) || LastInvalid->flDuck == FirstInvalid->flDuck && LastInvalid->vecEyeAngles == FirstInvalid->vecEyeAngles && LastInvalid->vecOrigin == FirstInvalid->vecOrigin))
-		return false;
-
-	const auto NextOrigin = LastInvalid->vecOrigin;
-	const auto curtime = i::GlobalVars->flCurrentTime;
-
-	auto flDelta = 1.f - (curtime - LastInvalid->flInterpTime) / (LastInvalid->flSimulationTime - FirstInvalid->flSimulationTime);
-	if (flDelta < 0.f || flDelta > 1.f)
-		LastInvalid->flInterpTime = curtime;
-
-	flDelta = 1.f - (curtime - LastInvalid->flInterpTime) / (LastInvalid->flSimulationTime - FirstInvalid->flSimulationTime);
-
-	flDelta = std::clamp( flDelta, 0.f, 1.f );
-
-	const auto lerp = M::Lerp(NextOrigin, FirstInvalid->vecOrigin, flDelta );
-
-	matrix3x4a_t ret[256];
-	memcpy(ret, FirstInvalid->pMatricies[VISUAL], sizeof(matrix3x4a_t) * 256);
-
-	for (size_t i{ }; i < 256; ++i) {
-		const auto matrix_delta = Vector( FirstInvalid->pMatricies[VISUAL][ i ][ 0 ][ 3 ], FirstInvalid->pMatricies[VISUAL][ i ][ 1 ][ 3 ], FirstInvalid->pMatricies[VISUAL][ i ][ 2 ][ 3 ] ) - FirstInvalid->vecOrigin;
-		MatrixSetOrigin(matrix_delta + lerp, ret[i]);
 	}
-
-	memcpy(out, ret, sizeof(matrix3x4a_t[256]));
+	const auto& record = log.pRecord[log.iLastValid];
+	const int count = record.iVisualBoneCount;
+	if (!record.bValid || record.bDormant || record.bBreakingLagcompensation
+		|| !record.bVisualMatrixValid || count < 1 || count > MAXSTUDIOBONES
+		|| record.pEntity != pEntity || record.entityHandle != pEntity->GetRefEHandle()
+		|| record.flSpawnTime != pEntity->GetSpawnTime() || record.pVisualModel != pEntity->GetModel()
+		|| !record.vecOrigin.IsValid() || !record.vecAbsOrigin.IsValid()
+		|| !std::isfinite(record.flSimulationTime)) {
+		state = {};
+		return false;
+	}
+	const float now = i::GlobalVars->flRealTime;
+	if (!std::isfinite(now)) { state = {}; return false; }
+	const float tick = std::clamp(i::GlobalVars->flIntervalPerTick, .001f, .125f);
+	const bool reset = !state.initialized || state.handle != pEntity->GetRefEHandle()
+		|| state.model != record.pVisualModel || state.spawn != pEntity->GetSpawnTime()
+		|| (record.bFirstAfterDormant && record.flSimulationTime != state.simulation)
+		|| now < state.lastDraw || now - state.lastDraw > .25f
+		|| (record.vecOrigin - state.target).LengthSqr() > 64.f * 64.f
+		|| std::abs(record.flSimulationTime - state.simulation) > .5f;
+	auto evaluate = [&]() {
+		const float alpha = state.duration > 0.f ? std::clamp((now - state.began) / state.duration, 0.f, 1.f) : 1.f;
+		return state.from + (state.target - state.from) * alpha;
+	};
+	if (reset) {
+		state.handle = pEntity->GetRefEHandle();
+		state.model = record.pVisualModel;
+		state.spawn = pEntity->GetSpawnTime();
+		state.from = state.target = record.vecOrigin;
+		state.simulation = record.flSimulationTime;
+		state.began = now;
+		state.duration = tick;
+		state.initialized = true;
+	} else if (record.flSimulationTime != state.simulation || record.vecOrigin != state.target) {
+		// Rebase from the currently displayed point if another packet arrives
+		// during a transition. Repeated render passes at the same time do not advance it.
+		state.from = evaluate();
+		state.target = record.vecOrigin;
+		state.duration = std::clamp(std::abs(record.flSimulationTime - state.simulation), tick, .125f);
+		state.simulation = record.flSimulationTime;
+		state.began = now;
+	}
+	state.lastDraw = now;
+	renderOrigin = evaluate();
+	// VISUAL bones were built at vecAbsOrigin, not at the network vecOrigin.
+	// Translate a fresh copy each draw so movement never accumulates in history.
+	const Vector offset = renderOrigin - record.vecAbsOrigin;
+	std::copy_n(record.pMatricies[VISUAL], count, out);
+	for (int bone = 0; bone < count; ++bone) {
+		out[bone][0][3] += offset.x;
+		out[bone][1][3] += offset.y;
+		out[bone][2][3] += offset.z;
+	}
 	return true;
-	return false;
 }
 
 static void BeginChams( IMaterial* pMaterial, float const* flColor, bool bIgnoreZ, bool bWireFrame ) {
@@ -386,15 +410,13 @@ bool chams::DrawChams(CBaseEntity* pLocal, DrawModelResults_t* pResults, const D
 			//}
 
 			if (bBacktrackChams && !bRagdoll) {
-
-				auto pLog = &lagcomp.GetLog(pEnt->EntIndex());
-				if (pLog && pLog->pRecord.size() >= 2) {
-
+				std::array<matrix3x4a_t, MAXSTUDIOBONES> historyMatrix{};
+				Vector historyOrigin{};
+				if (GenerateLerpedMatrix(pEnt, historyMatrix.data(), historyOrigin)) {
 					std::array<float, 4> flBacktrackColor = { cfg::model::flBacktrackColor[0], cfg::model::flBacktrackColor[1], cfg::model::flBacktrackColor[2], cfg::model::flBacktrackColor[3] };
-					flBacktrackColor[3] *= min(pLog->pRecord.at(pLog->iLastValid).vecOrigin.DistTo(pEnt->GetVecOrigin()) / 10.f, 1.f);
-
+					flBacktrackColor[3] *= std::clamp(historyOrigin.DistTo(pEnt->GetAbsOrigin()) / 10.f, 0.f, 1.f);
 					BeginChams(materials[iBacktrackType], flBacktrackColor.data(), true, bBacktrackXhair);
-					original(i::StudioRender, 0U, pResults, info, pLog->pRecord.at(pLog->iLastValid).pMatricies[VISUAL], flFlexWeights, flFlexDelayedWeights, vecModelOrigin, nFlags);
+					original(i::StudioRender, 0U, pResults, info, historyMatrix.data(), flFlexWeights, flFlexDelayedWeights, historyOrigin, nFlags);
 				}
 			}
 			if (bChams[0]) {

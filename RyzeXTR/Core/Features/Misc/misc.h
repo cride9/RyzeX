@@ -39,6 +39,7 @@ namespace misc {
 
 	void BunnyHop(CUserCmd* pCmd);
 	void FakeLag(bool&);
+	void FinalizeFakeLag(CUserCmd*, bool sendPacket);
 	void ThirdPerson();
 	void MovementFix(CUserCmd*, Vector&);
 	void AutoStrafe(Vector&, CUserCmd*);
@@ -85,7 +86,6 @@ namespace misc {
 	void BuyBot(IGameEvent*);
 	void BulletTracer(IGameEvent*);
 	void BlockBot(CUserCmd*);
-	void BoostMovement(CUserCmd*);
 
 	void CustomBombText(const char*);
 	std::string GetHitgroupName(int iHitgroup);

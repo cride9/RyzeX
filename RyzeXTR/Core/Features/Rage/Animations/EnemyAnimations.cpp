@@ -204,8 +204,7 @@ bool Animations::CopyCachedMatrix(CBaseEntity* pEnt, matrix3x4a_t* pMatrix, int 
 }
 
 void Animations::InterpolateMatricies(CBaseEntity* pEntity) {
-	if (!exploits::bIsShiftingTicks)
-		localAnim->InterpolateMatricies();
+	localAnim->InterpolateMatricies();
 	for (int nPlayerID = 1; nPlayerID <= 64; nPlayerID++) {
 		CBaseEntity* pPlayer = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(nPlayerID));
 		if (!g::pLocal || !pPlayer || pPlayer == g::pLocal || !pPlayer->IsAlive() || !pPlayer->IsEnemy(g::pLocal))
@@ -618,15 +617,17 @@ int DetermineAnimationCycle(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* 
 
 Lagcompensation::LagRecord_t* SetupData(CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pRecord, Lagcompensation::AnimationInfo_t* pLog) {
 
-	if (pRecord->bFirstAfterDormant)
+	if (pRecord->bFirstAfterDormant || pRecord->bBreakingLagcompensation)
 		return nullptr;
 
 	if (pLog->pRecord.size() < 2)
 		return nullptr;
 
 	auto* pPrevious = &pLog->pRecord.at(1);
-	pPrevious->iChoked = DetermineAnimationCycle(pEntity, pRecord, pPrevious);
-	if (TIME_TO_TICKS(pRecord->flSimulationTime - pPrevious->flSimulationTime) > 17)
+	// Packet time is authoritative. Alive-loop phase may wrap or remain
+	// quantized; never rewrite an already captured previous record with it.
+	const float elapsed=pRecord->flSimulationTime-pPrevious->flSimulationTime;
+	if (!std::isfinite(elapsed) || elapsed<=0.f || TIME_TO_TICKS(elapsed)>17)
 		return nullptr;
 
 	return pPrevious;

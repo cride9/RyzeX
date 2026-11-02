@@ -4,11 +4,14 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <vector>
+#include "RadioSpectrumStyle.h"
 
 namespace radio_visualizer {
     using Clock = std::chrono::steady_clock;
     constexpr int FftSize = 8192;
     constexpr int BinCount = FftSize / 2;
+    constexpr int MaxFftSize = 32768;
     constexpr int BandCount = 128;
     constexpr float LowHz = 15.f;
     constexpr float HighHz = 180.f;
@@ -34,6 +37,7 @@ namespace radio_visualizer {
         float ringStrength = .6f;
         bool particles = true;
         float particleDensity = .6f;
+        SpectrumStyle spectrum;
     };
 
     inline float Bounded(float value, float low, float high, float fallback) {
@@ -42,6 +46,7 @@ namespace radio_visualizer {
 
     inline void Sanitize(Settings& s) {
         const Settings defaults;
+        SanitizeSpectrum(s.spectrum);
         s.preset = std::clamp(s.preset, 0, 2);
         s.quality = std::clamp(s.quality, 0, 2);
         s.size = Bounded(s.size, 180.f, 640.f, defaults.size);
@@ -77,15 +82,16 @@ namespace radio_visualizer {
             next.smoothing = .7f;
         }
         else if (s.preset == 2) {
-            next.bassReaction = 1.2f;
-            next.smoothing = .8f;
+            next.logoPulse = next.glow = next.rings = next.particles = false;
+            next.opacity = 1.f;
         }
         s = next;
     }
 
     enum class AnalysisStatus { Waiting, Ready, Stalled, Unsupported };
     struct Frame {
-        std::array<float, BinCount> fft{};
+        std::array<float, MaxFftSize / 2> fft{};
+        int fftSize = FftSize;
         std::uint32_t sampleRate = 0;
         std::uint64_t sequence = 0;
         std::uint64_t generation = 0;
@@ -94,8 +100,17 @@ namespace radio_visualizer {
         bool valid = false;
     };
 
+    inline int SpectrumFftSize(std::uint32_t rate, float durationMs) {
+        if(durationMs<=0.f || !std::isfinite(durationMs)) return FftSize;
+        const float wanted=rate*std::clamp(durationMs,5.f,1000.f)*.001f;
+        int samples=256;
+        while(samples<MaxFftSize && wanted>samples*1.41421356237f) samples*=2;
+        return samples;
+    }
+
     inline bool IsFresh(const Frame& frame, Clock::time_point now) {
-        return frame.valid && frame.sampleRate >= 4000 && frame.sampleRate <= 384000 &&
+        return frame.valid && frame.fftSize>=256 && frame.fftSize<=MaxFftSize && (frame.fftSize&(frame.fftSize-1))==0 &&
+            frame.sampleRate >= 4000 && frame.sampleRate <= 384000 &&
             now >= frame.timestamp && now - frame.timestamp <= std::chrono::milliseconds(250);
     }
 
@@ -106,26 +121,81 @@ namespace radio_visualizer {
     };
 
     inline float SampleBin(const Frame& frame, float bin) {
-        const int i = std::clamp(static_cast<int>(std::floor(bin)), 0, BinCount - 2);
+        if(!std::isfinite(bin) || frame.fftSize<256 || frame.fftSize>MaxFftSize || bin<1.f || bin>=frame.fftSize*.5f) return 0.f;
+        const int i = std::clamp(static_cast<int>(std::floor(bin)), 1, frame.fftSize/2 - 2);
         const float t = std::clamp(bin - i, 0.f, 1.f);
         const float a = Bounded(frame.fft[i], 0.f, 4.f, 0.f);
         const float b = Bounded(frame.fft[i + 1], 0.f, 4.f, 0.f);
         return a + (b - a) * t;
     }
 
+    struct SpectrumEnvelope {
+        struct Slice {
+            std::array<float,MaxSpectrumBands> bands{};
+            Clock::time_point time{};
+        };
+        std::array<float,MaxSpectrumBands> bands{};
+        std::vector<Slice> history;
+        int next{}, count{}, configuredBands{};
+        float configuredLow{},configuredHigh{},dominant{};
+        std::uint64_t sequence{},generation{};
+        void Update(const Frame& frame,const Settings& settings,Clock::time_point now) {
+            const auto& s=settings.spectrum;
+            const int total=std::clamp(s.bands,2,MaxSpectrumBands);
+            if(generation!=frame.generation || total!=configuredBands || configuredLow!=s.startHz || configuredHigh!=s.endHz) {
+                next=count=0;sequence=0;bands.fill(0);
+                generation=frame.generation;configuredBands=total;configuredLow=s.startHz;configuredHigh=s.endHz;
+            }
+            if(IsFresh(frame,now) && frame.sequence!=sequence && frame.fftSize>=256 && frame.fftSize<=MaxFftSize) {
+                constexpr int capacity=128; // 2.56 seconds at the worker's 20ms cadence.
+                if(history.empty()) history.resize(capacity);
+                auto& slice=history[next]; slice.time=frame.timestamp;
+                const float binHz=float(frame.sampleRate)/frame.fftSize;
+                for(int i=0;i<total;++i) {
+                    const float hz=s.startHz+(s.endHz-s.startHz)*i/(total-1);
+                    slice.bands[i]=SampleBin(frame,hz/binHz);
+                }
+                next=(next+1)%capacity;count=(std::min)(count+1,capacity);sequence=frame.sequence;
+            }
+            bands.fill(0);dominant=0;
+            if(!count) return;
+            const auto wanted=now+std::chrono::duration_cast<Clock::duration>(std::chrono::duration<float,std::milli>(s.offsetMs));
+            const auto earliest=wanted-std::chrono::duration_cast<Clock::duration>(std::chrono::duration<float,std::milli>(s.durationMs));
+            int used=0; Clock::time_point newest{};
+            for(int age=0;age<count;++age) {
+                const auto& slice=history[(next-1-age+int(history.size()))%history.size()];
+                if(slice.time>wanted) continue;
+                if(used==0) newest=slice.time;
+                if(wanted-newest>std::chrono::milliseconds(250)) break;
+                if(s.durationAverage && slice.time<earliest) break;
+                for(int i=0;i<total;++i) bands[i]+=slice.bands[i];
+                ++used;
+                if(!s.durationAverage) break;
+            }
+            if(!used) return;
+            int peak=0;
+            for(int i=0;i<total;++i) {
+                // Fixed gain, with no automatic normalization or falling peak caps.
+                bands[i]=std::clamp(bands[i]/used*4.f*settings.sensitivity,0.f,1.f);
+                if(bands[i]>bands[peak]) peak=i;
+            }
+            dominant=float(peak)/(total-1);
+        }
+    };
+
     inline Energies Analyze(const Frame& frame) {
         Energies out;
-        if (!frame.valid || frame.sampleRate < 4000 || frame.sampleRate > 384000)
+        if (!frame.valid || frame.sampleRate < 4000 || frame.sampleRate > 384000 || frame.fftSize<256 || frame.fftSize>MaxFftSize)
             return out;
-        const float binHz = static_cast<float>(frame.sampleRate) / FftSize;
+        const float binHz = static_cast<float>(frame.sampleRate) / frame.fftSize;
         for (int band = 0; band < BandCount; ++band) {
             const float hz = LowHz + (HighHz - LowHz) * (band + .5f) / BandCount;
             out.bands[band] = SampleBin(frame, hz / binHz);
             out.peak = (std::max)(out.peak, out.bands[band]);
         }
         const auto rms = [&](float low, float high) {
-            const int first = std::clamp(static_cast<int>(std::floor(low / binHz)), 1, BinCount - 1);
-            const int last = std::clamp(static_cast<int>(std::ceil(high / binHz)), first + 1, BinCount);
+            const int first = std::clamp(static_cast<int>(std::floor(low / binHz)), 1, frame.fftSize/2 - 1);
+            const int last = std::clamp(static_cast<int>(std::ceil(high / binHz)), first + 1, frame.fftSize/2);
             float sum = 0.f;
             for (int bin = first; bin < last; ++bin) {
                 const float v = Bounded(frame.fft[bin], 0.f, 4.f, 0.f);
@@ -144,8 +214,6 @@ namespace radio_visualizer {
 
     struct Envelope {
         std::array<float, BandCount> bands{};
-        std::array<float, BandCount> peaks{};
-        std::array<float, BandCount> peakVel{};
         float punch = 0.f, punchVel = 0.f;   // rugós logó-ütés
         float bass = 0.f;
         float reference = .035f;
@@ -175,13 +243,6 @@ namespace radio_visualizer {
 
             const float targetBass = std::clamp(energy.bass / (std::max)(.025f, reference * .55f) * settings.sensitivity, 0.f, 1.f);
 
-            for (int band = 0; band < BandCount; ++band) {
-                if (bands[band] >= peaks[band]) { peaks[band] = bands[band]; peakVel[band] = 0.f; }
-                else {
-                    peakVel[band] += dt * 2.2f;
-                    peaks[band] = (std::max)(bands[band], peaks[band] - peakVel[band] * dt);
-                }
-            }
             if (beat) punchVel += 5.f * (std::max)(.4f, targetBass);
             const float h = (std::min)(dt, .05f);
             punchVel += (-punch * 180.f - punchVel * 14.f) * h;   // semi-implicit Euler, stabil

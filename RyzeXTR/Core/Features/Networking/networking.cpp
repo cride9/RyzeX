@@ -1,5 +1,4 @@
 #include "networking.h"
-#include "../Rage/exploits.h"
 
 inline bool IsVectorValid( Vector vecOriginal, Vector vecCurrent )
 {
@@ -30,7 +29,7 @@ void CNetworking::SaveNetvarData( int nCommand )
 	auto& saved = pCompressData[nCommand % 150];
 	saved = {};
 	saved.command = nCommand;
-	saved.epoch = exploits::commandTimes.epoch;
+	saved.epoch = prediction.GetEpoch();
 	saved.localHandle = g::pLocal->GetRefEHandle();
 	saved.spawnTime = g::pLocal->GetSpawnTime();
 	pCompressData[ nCommand % 150 ].nTickbase = g::pLocal->GetTickBase( );
@@ -65,7 +64,7 @@ void CNetworking::RestoreNetvarData( int nCommand )
 		return;
 
 	volatile auto aNetVars = &pCompressData[ nCommand % 150 ];
-	if (aNetVars->command != nCommand || aNetVars->epoch != exploits::commandTimes.epoch
+	if (aNetVars->command != nCommand || aNetVars->epoch != prediction.GetEpoch()
 		|| aNetVars->localHandle != g::pLocal->GetRefEHandle() || aNetVars->spawnTime != g::pLocal->GetSpawnTime()) return;
 	if ( aNetVars->nTickbase != g::pLocal->GetTickBase( ) )
 		return;
@@ -121,7 +120,6 @@ void CNetworking::OnPacketEnd( CClientState* cl )
 		return; 
 	
 	prediction.AdjustViewmodelData( g::pLocal );
-	exploits::ObserveAcknowledgement(cl->iCommandAck, g::pLocal->GetTickBase(), TIME_TO_TICKS(g::pLocal->GetSimulationTime()));
 	g::flVelocityModifier = g::pLocal->GetVelocityModifier();
 	return this->RestoreNetvarData(cl->iCommandAck);
 }
@@ -156,7 +154,6 @@ int CNetworking::GetCorrectedTickbase() {
 		return 0; 
 
 	return g::pLocal->GetTickBase();
-	//return pCompressData[iLastCommandNumber % 150].nTickbase - exploits::iShiftAmount;
 }
 
 CNetvarData* CNetworking::GetRecord() {

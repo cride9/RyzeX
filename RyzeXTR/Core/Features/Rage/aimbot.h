@@ -5,7 +5,6 @@
 #include "../../SDK/Menu/gui.h"
 #include "../Misc/enginepred.h"
 #include "../../SDK/Entity.h"
-#include "exploits.h"
 #include "autowall.h"
 #include "HitscanScheduler.h"
 
@@ -195,15 +194,18 @@ class CAimBot {
 
 public:
 	void CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal);
-    void ResetAimbotData( bool bShouldRecharge = false );
+    void ResetAimbotData();
 	bool PostPrediction(CUserCmd* pCmd, bool& bSendPacket);
+	void RevalidatePrediction(CUserCmd* pCmd, CBaseEntity* pLocal);
 
 	rageBotData_t& GetHitLogData() { return hitlogData; }
 	rageBotData_t& GetAimbotData() { return aimData; }
 	weaponConfig_t& GetCurrentConfig() { return curConfig; }
 	const hitscan::Statistics& GetScanStatistics() const { return scanStatistics; }
+	const std::array<hitscan::TargetDiagnostics,65>& GetTargetDiagnostics() const { return targetDiagnostics; }
 	hitscan::Policy& GetScanPolicy() { return scanRuntime.policy; }
 	bool ShouldSendPacket( ) { return bShouldSendPacket; }
+	bool HasValidPoint() const { return hasValidPoint; }
 
 private:
 
@@ -215,6 +217,7 @@ private:
 	};
 
 	bool bShouldSendPacket = false;
+	bool hasValidPoint = false;
 	int iTickCount = 0;
 
 	rageBotData_t aimData{};
@@ -223,13 +226,14 @@ private:
 	weaponConfig_t curConfig{};
 	Vector vecEyePosition{};
 	hitscan::Statistics scanStatistics{};
+	std::array<hitscan::TargetDiagnostics,65> targetDiagnostics{};
 	hitscan::Runtime scanRuntime{};
 
 	bool HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy);
 	bool HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecPosition, Lagcompensation::LagRecord_t* pRecord);
 	
 	void GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon);
-	bool AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal, CUserCmd* pCmd, bool bSkipCheck);
+	bool AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& targets, CBaseEntity* pLocal, CUserCmd* pCmd);
 	SCAN ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pFirstRecord );
 
 	weaponConfig_t GetWeaponConfiguration(short iItemDefinitionIndex);

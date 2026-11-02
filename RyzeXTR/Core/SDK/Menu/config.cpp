@@ -50,6 +50,7 @@ void CConfig::Setup() {
 		SetupBool(bSilentAim, false, XorStr("bSilentAim"));
 
 		SetupBool(bDoubletap, false, XorStr("bDoubletap"));
+		SetupBool(bDoubletapOnlyCharged, false, XorStr("bDoubletapOnlyCharged"));
 		SetupInt(iDoubletapKey, 0, XorStr("iDoubletapKey"));
 
 		SetupBool(bHideshot, false, XorStr("bHideshot"));
@@ -146,6 +147,10 @@ void CConfig::Setup() {
 		SetupBool(bInverter, false, XorStr("bInverter"));
 
 		SetupIntArray(iDesyncType, 3, 0, XorStr("iDesyncType"));
+		SetupBool(bAdaptiveDefensive, true, XorStr("bAdaptiveDefensive"));
+		SetupBool(bAdaptiveReact, true, XorStr("bAdaptiveReact"));
+		SetupBoolArray(bAdaptiveYaw, 3, false, XorStr("bAdaptiveYaw"));
+		SetupBoolArray(bDefensivePitch, 3, false, XorStr("bDefensivePitch"));
 		SetupInt(iInverterBind, 0, XorStr("iInverterBind"));
 
 		SetupIntArray(iFlickOffset, 3, 0, XorStr("iFlickOffset"));
@@ -595,6 +600,27 @@ void CConfig::Setup() {
 		SetupFloat(s.ringStrength, defaults.ringStrength, "RingStrength");
 		SetupBool(s.particles, defaults.particles, "Particles");
 		SetupFloat(s.particleDensity, defaults.particleDensity, "ParticleDensity");
+		auto& a=s.spectrum; const auto& d=defaults.spectrum;
+		SetupFloat(a.start[0],d.start[0],"SpectrumStartX"); SetupFloat(a.start[1],d.start[1],"SpectrumStartY");
+		SetupFloat(a.end[0],d.end[0],"SpectrumEndX"); SetupFloat(a.end[1],d.end[1],"SpectrumEndY");
+		SetupBool(a.polarPath,d.polarPath,"SpectrumPolarPath");
+		SetupFloat(a.startHz,d.startHz,"SpectrumStartFrequency"); SetupFloat(a.endHz,d.endHz,"SpectrumEndFrequency");
+		SetupInt(a.bands,d.bands,"SpectrumFrequencyBands");
+		SetupFloat(a.maximumHeight,d.maximumHeight,"SpectrumMaximumHeight");
+		SetupFloat(a.durationMs,d.durationMs,"SpectrumAudioDuration"); SetupFloat(a.offsetMs,d.offsetMs,"SpectrumAudioOffset");
+		SetupFloat(a.thickness,d.thickness,"SpectrumThickness"); SetupFloat(a.softness,d.softness,"SpectrumSoftness");
+		SetupColor(a.inside,Color(d.inside[0],d.inside[1],d.inside[2],d.inside[3]),"SpectrumInsideColor");
+		SetupColor(a.outside,Color(d.outside[0],d.outside[1],d.outside[2],d.outside[3]),"SpectrumOutsideColor");
+		SetupBool(a.blendOverlap,d.blendOverlap,"SpectrumBlendOverlappingColors");
+		SetupFloat(a.hueDegrees,d.hueDegrees,"SpectrumHueInterpolation");
+		SetupBool(a.dynamicHue,d.dynamicHue,"SpectrumDynamicHuePhase"); SetupBool(a.colorSymmetry,d.colorSymmetry,"SpectrumColorSymmetry");
+		SetupInt(a.display,d.display,"SpectrumDisplayOptions"); SetupInt(a.side,d.side,"SpectrumSideOptions");
+		SetupBool(a.durationAverage,d.durationAverage,"SpectrumDurationAveraging"); SetupBool(a.compositeOriginal,d.compositeOriginal,"SpectrumCompositeOriginal");
+		SetupFloat(a.polarAmount,d.polarAmount,"SpectrumPolarInterpolation"); SetupInt(a.conversion,d.conversion,"SpectrumPolarConversion");
+		SetupBool(a.mirror,d.mirror,"SpectrumMirror");
+		SetupFloat(a.reflectionCenter[0],d.reflectionCenter[0],"SpectrumReflectionCenterX");
+		SetupFloat(a.reflectionCenter[1],d.reflectionCenter[1],"SpectrumReflectionCenterY");
+		SetupFloat(a.reflectionAngle,d.reflectionAngle,"SpectrumReflectionAngle");
 	}
 
 	// scripts

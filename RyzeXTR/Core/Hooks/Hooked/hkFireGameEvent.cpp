@@ -4,6 +4,7 @@
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
 #include "../../Features/Rage/Animations/ExperimentalResolver.h"
+#include "../../Features/Rage/antiaim.h"
 #include "../../Lua/Lua.h"
 
 void Event::FireGameEvent(IGameEvent* pEvent) {
@@ -15,6 +16,7 @@ void Event::FireGameEvent(IGameEvent* pEvent) {
 		return;
 
 	misc::EventHandler(pEvent);
+	antiaim::HandleAdaptiveEvent(pEvent);
 	experimentalResolver.HandleGameEvent(pEvent);
 	anims.ResolverHandler(pEvent);
 

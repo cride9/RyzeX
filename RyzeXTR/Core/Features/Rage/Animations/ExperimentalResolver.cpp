@@ -191,8 +191,9 @@ bool ExperimentalResolver::IsRejected(const Lagcompensation::LagRecord_t* record
         || record->iEntIndex < 1 || record->iEntIndex >= 65
         || record->iExperimentalReason == static_cast<int>(experimental::Reason::Override)) return false;
     const auto& control = controls[record->iEntIndex];
-    return control.ready && control.epoch == record->uExperimentalEpoch
-        && control.recovery.Blocked(record->flResolveDelta);
+    return control.ready && (control.historical.Contains(record->flSimulationTime,record->flResolveDelta)
+        || (control.epoch == record->uExperimentalEpoch
+            && control.Feedback(record->iResolverFeedbackPhase).Blocked(record->flResolveDelta)));
 }
 
 bool ExperimentalResolver::Capture(CBaseEntity* entity, Candidate& candidate) {
@@ -366,6 +367,7 @@ void ExperimentalResolver::Resolve(CBaseEntity* entity, Lagcompensation::LagReco
     record->flResolverConfidence = 0.f;
     record->iExperimentalBruteStep = 0;
     record->uExperimentalEpoch = 0;
+    record->iResolverFeedbackPhase=0;
     auto& history = histories[record->iEntIndex];
     auto& control = controls[record->iEntIndex];
     const float interval = i::GlobalVars->flIntervalPerTick;
@@ -398,7 +400,7 @@ void ExperimentalResolver::Resolve(CBaseEntity* entity, Lagcompensation::LagReco
         Reset(record->iEntIndex);
     else {
         if (poseChanged) {
-            control.recovery = {};
+            control.ClearRecovery();
             control.epoch = ++nextEpoch;
             if (std::fabs(experimental::NormalizeYaw(record->vecEyeAngles.y - control.eyeYaw)) > 60.f)
                 control.standing = {};
@@ -412,6 +414,9 @@ void ExperimentalResolver::Resolve(CBaseEntity* entity, Lagcompensation::LagReco
     }
     control.moving = moving;
     control.eyeYaw = record->vecEyeAngles.y;
+    const auto jitter=control.jitter.Update(record->flSimulationTime,record->vecEyeAngles.y,(record->iFlags & FL_ONGROUND)!=0);
+    if (jitter.newContext) { control.ClearRecovery();control.epoch=++nextEpoch; }
+    if (jitter.valid && !record->bDidShot) record->iResolverFeedbackPhase=jitter.phase;
     record->uExperimentalEpoch = control.epoch;
     const auto prior = continuous ? previous : nullptr;
     const float speed = record->vecVelocity.Length2D();
@@ -469,7 +474,8 @@ void ExperimentalResolver::Resolve(CBaseEntity* entity, Lagcompensation::LagReco
     control.standing.Update(record->flSimulationTime, speed, (record->iFlags & FL_ONGROUND) != 0,
         record->flLowerBodyYawTarget, yaw);
     const bool standing = (record->iFlags & FL_ONGROUND) && speed <= 40.f;
-    if (standing && baselineValid && candidatesValid && continuous) {
+    const bool useJitter=jitter.valid && !record->bDidShot && baselineValid && candidatesValid && continuous && decision.confidence<=.2f;
+    if (standing && !useJitter && baselineValid && candidatesValid && continuous) {
         bool extended = false;
         const float guess = control.standing.Guess(record->vecEyeAngles.y, record->flLowerBodyYawTarget,
             negativeBound, positiveBound, record->flSimulationTime, extended);
@@ -480,11 +486,16 @@ void ExperimentalResolver::Resolve(CBaseEntity* entity, Lagcompensation::LagReco
         }
         selected = nullptr;
     }
+    if (useJitter) {
+        const float centerDelta=std::clamp(experimental::NormalizeYaw(jitter.center-record->vecEyeAngles.y),-negativeBound,positiveBound);
+        yaw=experimental::NormalizeYaw(record->vecEyeAngles.y+centerDelta);
+        decision.reason=experimental::Reason::YawJitter;decision.confidence=0.f;selected=nullptr;
+    }
     if (baselineValid && candidatesValid && continuous && !record->bBreakingLagcompensation) {
         const float primary = experimental::NormalizeYaw(yaw - record->vecEyeAngles.y);
-        auto choice = control.recovery.Choose(primary, negativeBound, positiveBound,
+        auto choice = control.Feedback(record->iResolverFeedbackPhase).Choose(primary, negativeBound, positiveBound,
             experimental::NormalizeYaw(record->flLowerBodyYawTarget - record->vecEyeAngles.y),
-            record->flSimulationTime, standing);
+            record->flSimulationTime, standing || useJitter);
         if (choice.changed || choice.hitHistory) {
             yaw = experimental::NormalizeYaw(record->vecEyeAngles.y + choice.delta);
             decision.reason = choice.hitHistory ? experimental::Reason::HitHistory : experimental::Reason::Bruteforce;
@@ -503,11 +514,12 @@ void ExperimentalResolver::Resolve(CBaseEntity* entity, Lagcompensation::LagReco
     entity->AnimState()->flGoalFeetYaw = yaw;
     record->flResolverConfidence = decision.confidence;
     record->iExperimentalReason = static_cast<int>(decision.reason);
-    record->iExperimentalBruteStep = control.recovery.misses;
+    record->iExperimentalBruteStep = control.Feedback(record->iResolverFeedbackPhase).misses;
     record->flGuessedYaw = record->flResolveDelta = experimental::NormalizeYaw(yaw - record->vecEyeAngles.y);
     const bool chosen = decision.confidence > 0.f || decision.reason == experimental::Reason::Standing
         || decision.reason == experimental::Reason::LbyExtended || decision.reason == experimental::Reason::Bruteforce
-        || decision.reason == experimental::Reason::HitHistory || decision.reason == experimental::Reason::Override;
+        || decision.reason == experimental::Reason::HitHistory || decision.reason == experimental::Reason::Override
+        || decision.reason == experimental::Reason::YawJitter;
     record->iResolveSide = VISUAL;
     if (chosen)
         record->iResolveSide = record->flResolveDelta < -.01f ? LEFT : record->flResolveDelta > .01f ? RIGHT : CENTER;
@@ -613,7 +625,8 @@ void ExperimentalResolver::RecordShot(const rageBotData_t& data, int command) {
     const auto reason = static_cast<experimental::Reason>(data.pRecord->iExperimentalReason);
     auto weapon = g::pLocal ? g::pLocal->GetWeapon() : nullptr;
     auto weaponData = weapon ? weapon->GetCSWpnData() : nullptr;
-    shot.learn = shot.epoch != 0 && shot.expected.valid && data.pRecord->bAnimationMatrixValid && !data.bBacktrack
+    shot.learn = shot.epoch != 0 && shot.expected.valid && data.pRecord->bAnimationMatrixValid
+        && (!data.bBacktrack || data.shotTiming.valid)
         && !data.bSafe && !data.pRecord->bBreakingLagcompensation && !data.pRecord->bFirstAfterDormant
         && !data.pRecord->bDidShot && weaponData && weaponData->iBullets == 1
         && reason != experimental::Reason::Override && reason != experimental::Reason::Warmup
@@ -668,18 +681,26 @@ void ExperimentalResolver::ProcessShots() {
             LuaImplementation::RunCallbacks(LuaImplementation::vecCallbackList[LuaImplementation::CALLBACK_ON_RAGEBOT_SHOT], data);
         // Keep a killing hit available for logging even if FrameStage has
         // already reset the dead player's control. Stale epochs never learn.
-        const auto outcome = control.ready && control.epoch == shot.epoch ? shot.Outcome() : experimental::ShotOutcome::Ignore;
+        const auto outcome = control.ready && (data.bBacktrack || control.epoch == shot.epoch)
+            ? shot.Outcome() : experimental::ShotOutcome::Ignore;
         const float time = histories[shot.target].simulationTime;
-        if (outcome == experimental::ShotOutcome::GeometryMiss) control.recovery.Miss(shot.delta, time);
+        auto& feedback=control.Feedback(data.pRecord->iResolverFeedbackPhase);
+        if (outcome == experimental::ShotOutcome::GeometryMiss) {
+            // A historical miss says nothing unique about today's yaw phase.
+            // Veto this immutable record/pose, without poisoning newer records.
+            if (data.bBacktrack) control.historical.Add(data.pRecord->flSimulationTime,shot.delta);
+            else feedback.Miss(shot.delta,time);
+        }
         // Body hits and overlaps do not uniquely confirm a head-yaw hypothesis.
-        if (outcome == experimental::ShotOutcome::Hit && data.iHitbox == HITBOX_HEAD && shot.hitgroup == HITGROUP_HEAD)
-            control.recovery.Hit(shot.delta, time);
+        if (!data.bBacktrack && outcome == experimental::ShotOutcome::Hit && data.iHitbox == HITBOX_HEAD && shot.hitgroup == HITGROUP_HEAD)
+            feedback.Hit(shot.delta, time);
         if (shot.hurt) {
             lagcomp.GetLog(shot.target).iHitAmount++;
             misc::Print(std::format("EXP hit {} for {} hp | yaw {:+.1f} | bt {}", misc::GetHitgroupName(shot.hitgroup),
                 shot.damage, shot.delta, data.iBacktrackTicks));
         } else if (outcome == experimental::ShotOutcome::GeometryMiss) {
-            misc::Print(std::format("EXP geometry miss | yaw {:+.1f} | brute {}", shot.delta, control.recovery.misses));
+            misc::Print(std::format("EXP geometry miss | yaw {:+.1f} | brute {} | phase {} | historical {}", shot.delta,
+                feedback.misses,data.pRecord->iResolverFeedbackPhase,data.bBacktrack));
         } else if (shot.fired && shot.hasImpact) {
             misc::Print(std::format("EXP miss | bt {} | tick {} | lerp {:.2f} ms | rounding {:+.2f} ms | timing delta {:+.2f} ms | no resolver feedback",
                 data.iBacktrackTicks, data.shotTiming.commandTick, data.shotTiming.lerp * 1000.f,

@@ -4,7 +4,6 @@
 #include "../../SDK/Menu/config.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
-#include "../../Features/Rage/exploits.h"
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../Lua/Lua.h"
 
@@ -113,8 +112,6 @@ void hkPreFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_RENDER_START:
-		if (exploits::bIsCurrentlyCharging )
-			localAnim->SetupInterpolation(pLocal, false);
 
 #ifdef _DEBUG
 		misc::ServerHitboxes();
@@ -165,8 +162,6 @@ void hkPostFrameStageNotify(EStage curStage) {
 		break;
 
 	case FRAME_RENDER_START:
-		if ( exploits::bIsCurrentlyCharging )
-			localAnim->SetupInterpolation(pLocal, true);
 		break;
 
 	default:

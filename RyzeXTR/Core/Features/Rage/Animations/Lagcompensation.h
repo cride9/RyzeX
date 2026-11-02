@@ -114,6 +114,9 @@ public:
 		bool IsValid( );
 
 		CBaseEntity* pEntity{};
+		CBaseHandle entityHandle{};
+		float flSpawnTime{};
+		int iResolverFeedbackPhase{};
 
 		// 0 - Visual, 1 - Resolve, 2 - Left, 3 - Right, 4 - Center
 		matrix3x4a_t pMatricies[MAX][256];

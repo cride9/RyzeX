@@ -1,6 +1,7 @@
 #pragma once
 // used: std::array
 #include <array>
+#include <cstdint>
 #include <Windows.h>
 #include <mutex>
 

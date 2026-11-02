@@ -7,8 +7,8 @@
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/Playerlist.h"
 #include "../../Features/Rage/antiaim.h"
-#include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Rage/exploits.h"
+#include "../../Features/Rage/Animations/LocalAnimation.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Rage/Animations/Lagcompensation.h"
 #include "../../Features/Rage/Animations/EnemyAnimations.h"
@@ -33,15 +33,14 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (!pCmd || !pVerifiedCmd || !bIsActive)
 		return;
 
-	bSendPacket = true;
 	g::bSendPacket = &bSendPacket;
 	CBaseEntity* pLocal = g::pLocal = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i::EngineClient->GetLocalPlayer()));
 	if (!pLocal || !pCmd->iCommandNumber) {
-		exploits::ResetExploits();
+		prediction.ResetData();
 		return;
 	}
 	g::pCmd = pCmd;
-	exploits::BeginCommand(pLocal, pCmd);
+	prediction.OnCommand(pLocal, pCmd);
 	g::vecEyePosition = pLocal->GetEyePosition(false);
 	skinChanger.iItemDefinitionIndex = pLocal->GetWeapon() ? pLocal->GetWeapon()->GetItemDefinitionIndex() : 0;
 	skinChanger.bIsKnife = pLocal->GetWeapon() ? pLocal->GetWeapon()->IsKnife() : false;
@@ -52,7 +51,7 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	misc::CreateMove(pCmd, oldViewAngle, bSendPacket);
 	playerList::InitializePlayerList(pLocal);
 
-	if (i::ClientState->nChokedCommands >= 14 || exploits::bIsCurrentlyCharging)
+	if (i::ClientState->nChokedCommands >= 14)
 		bSendPacket = true;
 
 	vizualizer::Draw(pLocal);
@@ -60,7 +59,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	if (pLocal->IsAlive() && i::ClientState->iDeltaTick > 0)
 		i::Prediction->Update(i::ClientState->iDeltaTick, true, i::ClientState->iLastCommandAck,
 			i::ClientState->iLastOutgoingCommand + i::ClientState->nChokedCommands);
-	exploits::PrepareCommand(pLocal, pCmd);
 	prediction.SaveNetvars(pCmd->iCommandNumber, pLocal);
 
 	// Run lua callbacks
@@ -80,8 +78,6 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		antiaim::AntiAim(pCmd, bSendPacket);
 
 		aimbot.CreateMove(pCmd, pLocal);
-
-		exploits::HandleExploits( pLocal, pCmd, bSendPacket );
 
 		misc::IdealTick(pCmd, pLocal);
 		misc::AutoPistol(pCmd, pLocal);
@@ -114,7 +110,10 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		LuaImplementation::RunCallbacks( LuaImplementation::vecCallbackList[ LuaImplementation::CALLBACK_ON_CREATE_MOVE ], pCmd, *g::bSendPacket );
 
 	// re-verify the command after running lua callbacks
-	exploits::ApplyPacketPolicy(pCmd, bSendPacket);
+	Vector preAdaptiveAngle = pCmd->angViewPoint;
+	if (antiaim::FinalizeAdaptive(pCmd, bSendPacket))
+		misc::MovementFix(pCmd, preAdaptiveAngle);
+	misc::FinalizeFakeLag(pCmd, bSendPacket);
 
 	if ( bSendPacket )
 		packetManager.pCommandList.emplace_back( pCmd->iCommandNumber );
@@ -132,6 +131,12 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 	lagcomp.FinishLagcompensation(pLocal);
 	anims.ResolverLogic();
 	g::bSendPacket = &bSendPacket;
+
+	if (!exploits::bRunningShift && i::GlobalVars && pCmd->iButtons & IN_ATTACK) {
+
+		exploits::iRequestTick = i::GlobalVars->iTickCount;
+		exploits::iRequestLocalTick = aimbot.GetAimbotData().iDesiredTickcount;
+	}
 }
 
 __declspec(naked) void __fastcall h::hkCreateMoveProxy(IBaseClientDLL* thisptr, int edx, int nSequenceNumber, float flInputSampleFrametime, bool bIsActive)

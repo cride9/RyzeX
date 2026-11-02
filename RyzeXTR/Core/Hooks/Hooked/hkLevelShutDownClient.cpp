@@ -9,6 +9,7 @@
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/Playerlist.h"
 #include "../../Features/Rage/aimbot.h"
+#include "../../Features/Rage/antiaim.h"
 #include "../../Features/Changers/SkinChanger.h"
 
 void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
@@ -17,7 +18,7 @@ void __fastcall h::hkLevelShutDownClient(void* ecx, void* edx) {
 
 	misc::RestoreOverrides();
 	experimentalResolver.ResetAll();
-	exploits::ResetExploits();
+	antiaim::ResetAdaptive();
 	prediction.ResetData();
 	networking.ResetNetwork();
 	packetManager.pCommandList.clear();

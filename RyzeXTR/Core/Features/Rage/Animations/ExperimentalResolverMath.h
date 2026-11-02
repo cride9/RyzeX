@@ -63,7 +63,55 @@ inline bool AliveLoopSpeed(const Layer& current, const Layer& previous, float ma
 }
 
 enum class Reason : int { Warmup, Ambiguous, MovingLayers, LastMove, LbyChanged, Transition, Override, Invalid,
-    Standing, LbyExtended, Bruteforce, HitHistory };
+    Standing, LbyExtended, Bruteforce, HitHistory, YawJitter };
+
+struct JitterSample { bool valid{}, newContext{}; int phase{}; float center{}, span{}; };
+// Detect two repeated eye-yaw clusters. This observes a packet pattern, not a
+// unique server foot yaw, so its center is only a low-trust resolving prior.
+struct YawJitter {
+    std::array<float,8> angles{};
+    int count{};
+    float lastTime=-1.f, center{};
+    bool ready{};
+    JitterSample Update(float time,float yaw,bool ground) {
+        if (!std::isfinite(time) || !std::isfinite(yaw) || !ground) { *this={}; return {}; }
+        if (lastTime>=0.f && (time<=lastTime || time-lastTime>.35f)) *this={};
+        lastTime=time;
+        if (count==static_cast<int>(angles.size())) {
+            for (int i=1;i<count;++i) angles[i-1]=angles[i];
+            --count;
+        }
+        angles[count++]=NormalizeYaw(yaw);
+        JitterSample out;
+        if (count<4) { ready=false; return out; }
+        const float anchor=angles[0];
+        std::array<float,8> unwrapped{};
+        float low=180.f,high=-180.f;
+        for (int i=0;i<count;++i) {
+            unwrapped[i]=NormalizeYaw(angles[i]-anchor);
+            low=(std::min)(low,unwrapped[i]); high=(std::max)(high,unwrapped[i]);
+        }
+        const float span=high-low,split=(low+high)*.5f;
+        if (span<12.f || span>90.f) { ready=false; return out; }
+        float sums[2]{};int sizes[2]{},changes=0,previous=-1;
+        for (int i=0;i<count;++i) {
+            const int phase=unwrapped[i]>split;
+            sums[phase]+=unwrapped[i]; ++sizes[phase];
+            if (previous>=0 && phase!=previous) ++changes;
+            previous=phase;
+        }
+        if (sizes[0]<2 || sizes[1]<2 || changes<3) { ready=false; return out; }
+        const float means[2]{sums[0]/sizes[0],sums[1]/sizes[1]};
+        for (int i=0;i<count;++i) if (std::fabs(unwrapped[i]-means[unwrapped[i]>split])>(std::max)(3.f,span*.2f)) {
+            ready=false; return out;
+        }
+        out.valid=true;out.center=NormalizeYaw(anchor+(means[0]+means[1])*.5f);out.span=means[1]-means[0];
+        out.phase=NormalizeYaw(yaw-out.center)<0.f ? 1 : 2;
+        out.newContext=!ready || std::fabs(NormalizeYaw(out.center-center))>10.f;
+        ready=true;center=out.center;
+        return out;
+    }
+};
 
 // Standing has no unique layer-6 inversion. LBY cadence is a heuristic, not a
 // measurement of server foot yaw. A moving/airborne transition starts a new clock.
@@ -118,6 +166,19 @@ struct Standing {
 };
 
 struct RecoveryChoice { float delta{}; bool changed{}, hitHistory{}; };
+struct HistoricalRejections {
+    struct Entry {float simulation{},delta{};bool valid{};};
+    std::array<Entry,16> entries{};unsigned next{};
+    bool Contains(float simulation,float delta)const {
+        for (const auto& entry:entries) if(entry.valid && entry.simulation==simulation
+            && std::fabs(NormalizeYaw(delta-entry.delta))<.1f) return true;
+        return false;
+    }
+    void Add(float simulation,float delta) {
+        if (!std::isfinite(simulation)||!std::isfinite(delta)||Contains(simulation,delta)) return;
+        entries[next++%entries.size()]={simulation,NormalizeYaw(delta),true};
+    }
+};
 struct Recovery {
     std::array<float, 12> failed{}, failedTime{};
     int count{}, misses{};

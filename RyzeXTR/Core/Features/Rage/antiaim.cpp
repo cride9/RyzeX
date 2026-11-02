@@ -1,5 +1,4 @@
 #include "antiaim.h"
-#include "exploits.h"
 #include "../../SDK/math.h"
 #include "../../Features/Misc/enginepred.h"
 #include "Animations/LocalAnimation.h"
@@ -33,37 +32,12 @@ void HandleJitter(AATYPE type) {
 	}
 }
 
-bool antiaim::LBYUpdate(CBaseEntity* pLocal)
-{
-	static float NextUpdate = 0;
-	auto* AnimState = pLocal->AnimState();
-
-	/*
-		That LBY breaker is not even close to perfect so extended desync is not possible with it
-	*/
-
-	if (!AnimState || !(pLocal->GetFlags() & FL_ONGROUND)) {
-		return false;
-	}
-
-	if (AnimState->flVelocityLenght2D > 0.1f) 
-		NextUpdate = TICKS_TO_TIME(pLocal->GetTickBase()) + 0.22f;
-
-	if (NextUpdate < TICKS_TO_TIME(pLocal->GetTickBase()))
-	{
-		NextUpdate = TICKS_TO_TIME(pLocal->GetTickBase()) + 1.1f;
-		return true;
-	}
-	return false;
-}
-
 void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
-
 	using namespace cfg::antiaim;
 	bHideFlick = false;
 
 	HandleJitter(type);
-	bool bInverted = IPT::HandleInput(iInverterBind);
+	bool bInverted = bInverter && IPT::HandleInput(iInverterBind);
 	short bInvertValue = 1;
 	if ( cfg::antiaim::bInvertOnShoot[ type ] )
 		bInvertValue = antiaim::shotInvert ? -1 : 1;
@@ -84,24 +58,24 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 		break;
 	}
 
-	bool bInitializedFreestand = false;
-	if (iFreestand[type] == 1)
-		FreeStandingDistance( pCmd, pCmd->angViewPoint );
-	if (iFreestand[type] == 2)
-		bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
-
-	if (iYawBase[type] == 1 && !bInitializedFreestand)
-		AtTarget(pCmd, pCmd->angViewPoint);
-
 	bool bInitializedManual = false;
-	if (IPT::HandleInput(cfg::antiaim::iManualAAR)) {
+	if (bManualAA && bManualAAR && IPT::HandleInput(iManualAAR)) {
 		bInitializedManual = ManualAA(pCmd, true);
 	}
-	if (IPT::HandleInput(cfg::antiaim::iManualAAL)) {
+	else if (bManualAA && bManualAAL && IPT::HandleInput(iManualAAL)) {
 		bInitializedManual = ManualAA(pCmd, false);
 	}
 
-	if (!bInitializedFreestand || !bInitializedManual) {
+	bool bInitializedFreestand = false;
+	if (!bInitializedManual) {
+		if (iFreestand[type] == 1)
+			bInitializedFreestand = FreeStandingDistance(pCmd, pCmd->angViewPoint);
+		else if (iFreestand[type] == 2)
+			bInitializedFreestand = FreeStandingThreat(pCmd->angViewPoint);
+	}
+	if (!bInitializedFreestand && !bInitializedManual) {
+		if (iYawBase[type] == 1)
+			AtTarget(pCmd, pCmd->angViewPoint);
 		// yaw
 		switch (iYaw[type]) {
 
@@ -137,6 +111,11 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 		break;
 	}
 
+	if (IsAdaptiveMode(iDesyncType[type])) {
+		DoAdaptive(pCmd, bSendPacket, type);
+		return;
+	}
+
 	float flDesyncValue = 0.f;
 	static int iChangeOnTick = 0;
 	needMicromovement = iDesyncType[type];
@@ -153,19 +132,10 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 		break;
 
 	case EXTENDED:
-
-		needMicromovement = false;
-		if (LBYUpdate(g::pLocal)) {
-			bHideFlick = true;
-			bSendPacket = false;
-			pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y - (120 * bInvertValue));
-
-		}
-		else if (!bSendPacket) {
-			// 95 = unhittable
-			pCmd->angViewPoint.y = M::NormalizeYaw(pCmd->angViewPoint.y + (95 * bInvertValue));
-		}
-		break;
+		// Preserve legacy yaw/modifier/freestand preparation and its 120/95
+		// angles, but use the shared clock and final packet reconciliation.
+		DoExtended(pCmd, bSendPacket, type, bInvertValue);
+		return;
 
 	case FLICK:
 
@@ -203,21 +173,26 @@ void antiaim::DoAntiaim(CUserCmd* pCmd, bool& bSendPacket, AATYPE type) {
 }
 
 void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
+	bHideFlick = false;
+	needMicromovement = false;
 
 	static float oldValue = 0;
 
 	// sanity checks
 	if (!g::pLocal || !g::pLocal->GetHealth() || !g::pLocal->IsAlive()) 
 		return;
+	// Track grounded motion even when the moving stance uses another mode,
+	// anti-aim is disabled, or the following shot/use guard returns early.
+	ObserveLowerBody(pCmd);
 
-	if ((*GameRules)->m_bFreezePeriod())
+	if (GameRules && *GameRules && (*GameRules)->m_bFreezePeriod())
 		return;
 	
 	// shooting checks
 	if (antiaim::ShouldDisableAntiaim(pCmd, bSendPacket)) {
 
-		if (!(cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey)))
-			bSendPacket = (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey)) ? bSendPacket : (cfg::rage::bDoubletap && IPT::HandleInput(cfg::rage::iDoubletapKey)) || (cfg::rage::bHideshot && IPT::HandleInput(cfg::rage::iHideShotKey)) ? false : true;
+		if (!(cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey)))
+			bSendPacket = true;
 		
 		return;
 	}
@@ -236,7 +211,9 @@ void antiaim::AntiAim(CUserCmd* pCmd, bool& bSendPacket) {
 
 bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket) 
 {
-	const auto time = TICKS_TO_TIME(networking.GetCorrectedTickbase());
+	if (!pCmd || !g::pLocal || !g::pLocal->GetWeapon()) return true;
+	const int tickbase = g::pLocal->GetTickBase();
+	const auto time = TICKS_TO_TIME(tickbase);
 
 	//if (misc::CanFireWeapon(time) && pCmd->iButtons & IN_ATTACK)
 	//	return true;
@@ -248,10 +225,10 @@ bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 		const auto info = pWeapon->GetCSWpnData();
 
 		if (!info)
-			return false;
+			return true;
 
 		if (info->nWeaponType == WEAPONTYPE_C4 || info->nWeaponType == WEAPONTYPE_HEALTHSHOT)
-			return false;
+			return true;
 
 		if (info->nWeaponType == WEAPONTYPE_GRENADE) {
 
@@ -274,7 +251,9 @@ bool antiaim::ShouldDisableAntiaim(CUserCmd* pCmd, bool& bSendPacket)
 			}
 		}
 
-		if (g::pLocal->CanShoot(pWeapon) && pCmd->iButtons & IN_ATTACK)
+		if (pWeapon->GetItemDefinitionIndex() == WEAPON_REVOLVER && (pCmd->iButtons & IN_SECOND_ATTACK)
+			&& pWeapon->GetNextSecondaryAttack() <= time) return true;
+		if (g::pLocal->CanShoot(pWeapon,tickbase) && pCmd->iButtons & IN_ATTACK)
 			return true;
 	}
 
@@ -343,7 +322,10 @@ bool antiaim::FreeStandingDistance(CUserCmd* pCmd, Vector& vecCMDViewAngle) {
 		}
 	}
 	
-	pCmd->angViewPoint.y = M_RAD2DEG(flBestRotation);
+	if (flHighestThickness <= 0.f)
+		return false;
+	vecCMDViewAngle.y = M_RAD2DEG(flBestRotation);
+	return true;
 }
 
 int antiaim::ClosesToCrosshair() {
@@ -690,11 +672,11 @@ bool antiaim::ManualAA(CUserCmd* pCmd, bool type) {
 
 	if (type)
 	{
-		pCmd->angViewPoint.y = pCmd->angViewPoint.y + 90.f;
+		pCmd->angViewPoint.y = g::vecOriginalViewAngle.y + 90.f;
 	}
 	else if (!type)
 	{
-		pCmd->angViewPoint.y = pCmd->angViewPoint.y + -90.f;
+		pCmd->angViewPoint.y = g::vecOriginalViewAngle.y - 90.f;
 	}
 
 	return true;

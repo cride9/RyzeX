@@ -1,6 +1,7 @@
 #pragma once
 #include "../../../SDK/Entity.h"
 #include "../../../globals.h"
+namespace hitbox { struct Shape; }
 
 struct AnimationRecord_t
 {
@@ -74,7 +75,13 @@ public:
 		return LocalData_t.RealData.arrMatrix;
 	}
 	Vector vecViewAngle = Vector(0, 0, 0);
+	bool GetAdaptiveHead(hitbox::Shape& head, Vector& origin, float& feetYaw) const;
 private:
+	bool adaptiveHeadValid{};
+	const void* adaptiveModel{};
+	float adaptiveSpawn{}, adaptiveFeetYaw{};
+	Vector adaptiveOrigin{};
+	Vector adaptiveRoot{};
 
 
 	struct

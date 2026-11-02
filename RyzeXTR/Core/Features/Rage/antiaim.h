@@ -24,7 +24,12 @@ enum EDESYNC : int {
 	EXTENDED,
 	JITTER,
 	FLICK,
-	AUTOMATIC
+	AUTOMATIC,
+	ADAPTIVE,
+	EXTENDED_HOLD,
+	EXTENDED_PULSE,
+	EXTENDED_COVER,
+	EXTENDED_HYBRID
 };
 
 enum AATYPE : int {
@@ -34,7 +39,20 @@ enum AATYPE : int {
 	INAIR
 };
 
+class IGameEvent;
+namespace adaptiveaa { struct Statistics; }
+
 namespace antiaim {
+	constexpr bool IsAdaptiveMode(int mode) { return mode >= ADAPTIVE && mode <= EXTENDED_HYBRID; }
+	const adaptiveaa::Statistics& GetAdaptiveStatistics();
+	bool FinalizeAdaptive(CUserCmd*, bool sendPacket);
+	void HandleAdaptiveEvent(IGameEvent* event);
+	void ResetAdaptive();
+	void ObserveLowerBody(CUserCmd*);
+	void ApplyAdaptivePreset(int type);
+	void ApplyExtendedPreset(int type);
+	void DoAdaptive(CUserCmd*, bool& sendPacket, AATYPE);
+	void DoExtended(CUserCmd*, bool& sendPacket, AATYPE, int inverter);
 
 	inline bool needMicromovement = false;
 	inline bool bHideFlick = false;

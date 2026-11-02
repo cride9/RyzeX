@@ -1538,6 +1538,7 @@ public:
 	ADD_NETVAR(GetItemDefinitionIndex, short, "CBaseAttributableItem->m_iItemDefinitionIndex");
 	ADD_NETVAR(GetItemIDHigh, int, "CBaseAttributableItem->m_iItemIDHigh");
 	ADD_NETVAR(GetItemIDLow, int, "CBaseAttributableItem->m_iItemIDLow");
+	ADD_NETVAR(IsItemInitialized, bool, "CBaseAttributableItem->m_bInitialized");
 	ADD_NETVAR(GetAccountID, int, "CBaseAttributableItem->m_iAccountID");
 	ADD_NETVAR(GetEntityQuality, int, "CBaseAttributableItem->m_iEntityQuality");
 	ADD_PNETVAR(GetCustomName, char, "CBaseAttributableItem->m_szCustomName");

@@ -2,7 +2,7 @@
 #include <fstream>
 #include "../../SDK/Menu/config.h"
 #include "../../SDK/math.h"
-#include "../Rage/exploits.h"
+#include "FakelagCycle.h"
 #include "../Rage/antiaim.h"
 #include "../../SDK/WavParser.h"
 #include "../Rage/autowall.h"
@@ -22,6 +22,7 @@
 #include "RadioVisualizer.h"
 #include "../Rage/Animations/EnemyAnimations.h"
 #include "../Rage/aimbot.h"
+#include "../Rage/exploits.h"
 #include <algorithm>
 #include <cmath>
 #include <mutex>
@@ -830,18 +831,21 @@ void misc::Slowwalk(CUserCmd* pCmd, float flSpeed) {
 	if (!g::pLocal || !g::pLocal->IsAlive() || !pCmd || !pCmd->iCommandNumber)
 		return;
 
-	if (flSpeed <= 0.f)
+	if (!cfg::antiaim::bFakeWalk || !IPT::HandleInput(cfg::antiaim::iFakeWalkKey) || !std::isfinite(flSpeed))
 		return;
 
-	if (!IPT::HandleInput(cfg::antiaim::iFakeWalkKey))
+	if (!(g::pLocal->GetFlags() & FL_ONGROUND) || (pCmd->iButtons & IN_JUMP)
+		|| g::pLocal->GetMoveType() == MOVETYPE_LADDER || g::pLocal->GetMoveType() == MOVETYPE_NOCLIP)
 		return;
 
-	float flMinSpeed = (float)(sqrt((pCmd->flForwardMove * pCmd->flForwardMove) + (pCmd->flSideMove * pCmd->flSideMove) + (pCmd->flUpMove * pCmd->flUpMove)));
-	if (flMinSpeed <= 0.f)
+	const float flMinSpeed = std::hypot(pCmd->flForwardMove,pCmd->flSideMove);
+	if (!std::isfinite(flMinSpeed) || flMinSpeed <= 0.f)
 		return;
 
-	if (pCmd->iButtons & IN_DUCK)
-		flSpeed *= 2.94117647f;
+	flSpeed = std::clamp(flSpeed,0.f,100.f);
+	const float duck = g::pLocal->GetDuckAmount();
+	if (!std::isfinite(duck)) return;
+	flSpeed /= 1.f - .66f * std::clamp(duck,0.f,1.f);
 
 	if (flMinSpeed <= flSpeed)
 		return;
@@ -850,7 +854,6 @@ void misc::Slowwalk(CUserCmd* pCmd, float flSpeed) {
 
 	pCmd->flForwardMove *= flMove;
 	pCmd->flSideMove *= flMove;
-	pCmd->flUpMove *= flMove;
 }
 
 void misc::AspectRatio() {
@@ -1186,92 +1189,69 @@ void misc::ThirdPerson() {
 	}
 }
 
+namespace {
+struct FakelagRuntime {
+    fakelag::ChokeCycle cycle;
+    CBaseHandle handle{};
+    float spawn{};
+    int server{}, lastCommand{};
+    bool initialized{};
+} fakelagRuntime;
+}
 void misc::FakeLag(bool& bSendPacket) {
-	networking.LagcompensatedTicks = 0;
+    networking.LagcompensatedTicks=0; iRestChoke=0;
+    const auto release = [&] { fakelagRuntime={}; bSendPacket=true; };
+    if (!g::pLocal || !g::pLocal->IsAlive() || !g::pCmd || g::pCmd->iCommandNumber<=0
+        || !i::ClientState || i::ClientState->iDeltaTick<=0) { release(); return; }
+    if ((GameRules && *GameRules && (*GameRules)->m_bFreezePeriod()) || i::EngineClient->IsVoiceRecording()) {
+        release(); return;
+    }
+    const int cap=GameRules && *GameRules && (*GameRules)->m_bIsValveDS() ? 6 : 14;
+    if (cfg::antiaim::bFakeDuck && IPT::HandleInput(cfg::antiaim::iFakeDuckKey)) {
+        fakelagRuntime={};
+        networking.LagcompensatedTicks=cap;
+        iRestChoke=(std::max)(0,cap-i::ClientState->nChokedCommands);
+        bSendPacket=i::ClientState->nChokedCommands>=cap;
+        return;
+    }
+    const int base=std::clamp(cfg::antiaim::iFakelag,0,cap);
+    if (!cfg::antiaim::bFakelag || base==0) { release(); return; }
+    const int command=g::pCmd->iCommandNumber;
+    if (!fakelagRuntime.initialized || fakelagRuntime.handle!=g::pLocal->GetRefEHandle()
+        || fakelagRuntime.spawn!=g::pLocal->GetSpawnTime() || fakelagRuntime.server!=i::ClientState->nServerCount
+        || command<fakelagRuntime.lastCommand) {
+        fakelagRuntime={}; fakelagRuntime.initialized=true;
+        fakelagRuntime.handle=g::pLocal->GetRefEHandle(); fakelagRuntime.spawn=g::pLocal->GetSpawnTime();
+        fakelagRuntime.server=i::ClientState->nServerCount;
+    }
+    fakelagRuntime.lastCommand=command;
+    int maximum=std::clamp(cfg::antiaim::iFakeLagMax,0,base);
+    int minimum=std::clamp(cfg::antiaim::iFakelagMin,0,maximum);
+    int requested=base;
+    if (cfg::antiaim::iFakeLagType==1) {
+        auto* weapon=g::pLocal->GetWeapon();
+        const auto* data=weapon ? weapon->GetCSWpnData() : nullptr;
+        static auto* maxSpeedCvar=i::ConVar->FindVar(XorStr("sv_maxspeed"));
+        float maximumSpeed=data ? data->flMaxSpeed[g::pLocal->IsScoped() ? 1 : 0]
+            : maxSpeedCvar ? maxSpeedCvar->GetFloat() : 250.f;
+        if (!std::isfinite(maximumSpeed) || maximumSpeed<=0.f) maximumSpeed=250.f;
+        const float velocity=g::pLocal->GetVelocity().Length2D();
+        const float ratio=std::isfinite(velocity) ? std::clamp(velocity/maximumSpeed,0.f,1.f) : 0.f;
+        requested=(std::max)(1,static_cast<int>(15.f*ratio));
+    }
+    int target=fakelagRuntime.cycle.Prepare(command,cfg::antiaim::iFakeLagType,minimum,maximum,requested,
+        [](int low,int high) { return M::RandomInt(low,high); });
 
-	enum FAKELAGTYPE {
+	if (exploits::bPreparedShift)
+		target = 1;
 
-		MAXIMUM,
-		ADAPTIVE,
-		JITTER,
-		RANDOM
-	};
+    networking.LagcompensatedTicks=target;
+    iRestChoke=(std::max)(0,target-i::ClientState->nChokedCommands);
 
-	if ((*GameRules)->m_bFreezePeriod())
-		return;
-	
-	if (i::EngineClient->IsVoiceRecording())
-		return;
-
-	if (!g::pLocal || !g::pLocal->IsAlive() || !cfg::antiaim::iFakelag || !cfg::antiaim::bFakelag) {
-		bSendPacket = true;
-		return;
-	} 
-
-	if ( IPT::HandleInput(cfg::antiaim::iFakeDuckKey) && cfg::antiaim::bFakeDuck) {
-		bSendPacket = i::ClientState->nChokedCommands >= ((*GameRules)->m_bIsValveDS() ? 6 : 14);
-		return;
-	}
-
-	static int iCurrentChoke = 0;
-	static bool bSwitch = false;
-
-	static CConVar* sv_maxspeed = i::ConVar->FindVar(XorStr("sv_maxspeed"));
-	float flVelocity = g::pLocal->GetVelocity().Length2D();
-	float flMaxVelocity = g::pLocal->GetWeapon() ? g::pLocal->IsScoped() ? g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[1] : g::pLocal->GetWeapon()->GetCSWpnData()->flMaxSpeed[0] : sv_maxspeed->GetFloat();
-
-	int iMin = cfg::antiaim::iFakelagMin;
-	int iMax = cfg::antiaim::iFakeLagMax;
-
-	if ((*GameRules)->m_bIsValveDS()) {
-
-		iMin = min(6, iMin);
-		iMax = min(6, iMax);
-	}
-
-	if (cfg::antiaim::iFakelag) {
-
-		switch (cfg::antiaim::iFakeLagType) {
-
-		case MAXIMUM:
-
-			iCurrentChoke = cfg::antiaim::iFakelag;
-			break;
-
-		case ADAPTIVE:
-
-			iCurrentChoke = max(1, 15 * (flVelocity / flMaxVelocity));
-			break;
-
-		case JITTER:
-
-			if (bSendPacket) {
-				bSwitch = !bSwitch;
-				iCurrentChoke = bSwitch ? iMin : iMax;
-			}
-				
-
-			break;
-		case RANDOM:
-
-			if (bSendPacket)
-				iCurrentChoke = M::RandomInt(iMin, iMax);
-
-			break;
-		}
-	}
-	else
-		iCurrentChoke = cfg::antiaim::iFakelag;
-
-
-
-	// Exploit packet ownership is decided centrally after all command callbacks.
-	if (exploits::IsExploiting() != NONE) {
-		iMax = 1;
-	}
-	networking.LagcompensatedTicks = min(iMax, max(iMin, iCurrentChoke));
-	iRestChoke = networking.LagcompensatedTicks - i::ClientState->nChokedCommands;
-	bSendPacket = i::ClientState->nChokedCommands >= networking.LagcompensatedTicks;
+    bSendPacket=i::ClientState->nChokedCommands>=target;
+}
+void misc::FinalizeFakeLag(CUserCmd* cmd, bool sendPacket) {
+    if (cmd) fakelagRuntime.cycle.Commit(cmd->iCommandNumber,sendPacket);
 }
 
 void misc::DrawBream(Vector vecSource, Vector vecEnd, Color color) {
@@ -1365,7 +1345,8 @@ void misc::AutoPistol(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		pLocal->GetWeapon()->GetItemDefinitionIndex() == EItemDefinitionIndex::WEAPON_REVOLVER)
 		return;
 
-	if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack() >= TICKS_TO_TIME(networking.GetCorrectedTickbase())))
+	if ((pCmd->iButtons & IN_ATTACK) && (pLocal->GetWeapon()->GetNextPrimaryAttack()
+		> TICKS_TO_TIME(pLocal->GetTickBase())))
 		pCmd->iButtons &= ~IN_ATTACK;
 }
 
@@ -2015,22 +1996,6 @@ bool misc::CanFireWeapon(float curtime, bool bRevolverSecondary, bool bSkipExtra
 	float flNextPrimaryAttack = pWeapon->GetNextPrimaryAttack();
 	float flNextSecondaryAttack = pWeapon->GetNextSecondaryAttack();
 
-	// @onetap - delay 2 ticks when using exploits
-	// we don't need to delay burst shot, we don't use exploits with burst
-	//if (IExploits::Get()->m_ExploitData.m_iExploitType != EXPLOIT_TYPE_NONE
-	//	&& IExploits::Get()->m_ExploitData.m_bCanExploit
-	//	&& IExploits::Get()->m_ExploitData.m_iTicksAllowedForProcessing >= 5
-	//	&& IExploits::Get()->m_ExploitData.m_bCanExploit)
-	//{
-	//	//bool bWasOffensiveShift = features::exploits::m_Data.m_iCommandNumberOnOffensiveShift >= features::exploits::m_Data.m_iCommandNumberOnShift;
-	//	//int iLastShiftAmount = bWasOffensiveShift ? features::exploits::m_Data.m_iLastShiftAmount [ SHIFT_TYPE_OFFENSIVE ] : features::exploits::m_Data.m_iLastShiftAmount [ SHIFT_TYPE_DEFENSIVE ];
-
-	//	float delay_time = TICKS_TO_TIME(2 /*+ iLastShiftAmount*/);
-	//	flNextAttack += delay_time;
-	//	flNextPrimaryAttack += delay_time;
-	//	flNextSecondaryAttack += delay_time;
-	//}
-
 	if (!(curtime >= flNextAttack))
 		return false;
 
@@ -2192,46 +2157,6 @@ void misc::FogOptions() {
 
 void misc::RemoveShadows() {
 	ApplyConVarOverride("cl_csm_shadows", cfg::misc::bRemovals[6], "0");
-}
-
-void misc::BoostMovement(CUserCmd* pCmd) {
-
-	if (!exploits::bIsShiftingTicks)
-		return;
-
-	float& flForwardMove = pCmd->flForwardMove;
-	float& flSideMove = pCmd->flSideMove;
-	int& nButtons = pCmd->iButtons;
-
-	if (flForwardMove > 5.0f) {
-		nButtons |= IN_FORWARD;
-		nButtons &= ~IN_BACK;
-
-		flForwardMove = 450.0f;
-	}
-	else if (flForwardMove < -5.0f) {
-		nButtons |= IN_BACK;
-		nButtons &= ~IN_FORWARD;
-
-		flForwardMove = -450.0f;
-	}
-
-	if (flSideMove > 5.0f) {
-
-		nButtons |= IN_MOVERIGHT;
-		nButtons &= ~IN_MOVELEFT;
-
-		flSideMove = 450.0f;
-	}
-	else if (flSideMove < -5.0f) {
-
-		nButtons |= IN_MOVELEFT;
-		nButtons &= ~IN_MOVERIGHT;
-
-		flSideMove = -450.0f;
-	}
-
-	nButtons &= ~IN_SPEED;
 }
 
 void misc::MotionBlur(CViewSetup* pSetup) {

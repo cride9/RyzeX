@@ -1,4 +1,5 @@
 #include "LocalAnimation.h"
+#include "../StudioHitboxGeometry.h"
 #include "../../Misc/enginepred.h"
 #include "../../../SDK/math.h"
 #include "../../../SDK/Menu/config.h"
@@ -6,7 +7,6 @@
 #include "../../../SDK/InputSystem.h"
 #include "../antiaim.h"
 #include "../../Misc/setupbones.h"
-#include "../exploits.h"
 
 void C_LocalAnimations::AnimationBreaker( CBaseEntity* pLocal ) {
 
@@ -131,9 +131,7 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 	for (int nSimulationTick = 1; nSimulationTick <= LocalData_t.iSimulationTick; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		const int command = g::pCmd->iCommandNumber - LocalData_t.iSimulationTick + nSimulationTick;
-		int GetTickBase = exploits::GetCommandTickbase(command,
-			networking.GetCorrectedTickbase() - LocalData_t.iSimulationTick + nSimulationTick);
+		int GetTickBase = networking.GetCorrectedTickbase() - LocalData_t.iSimulationTick + nSimulationTick;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -209,6 +207,10 @@ void C_LocalAnimations::OnCreateMove(bool& bSendPacket, CBaseEntity* pLocal)
 	AnimationBreaker(pLocal);
 
 	localAnim->SetupPlayerBones(LocalData_t.RealData.arrMatrix.data(), BONE_USED_BY_ANYTHING, pLocal);
+	adaptiveHeadValid = true;
+	adaptiveModel = pLocal->GetModel(); adaptiveSpawn = pLocal->GetSpawnTime();
+	adaptiveOrigin = pLocal->GetAbsOrigin(); adaptiveFeetYaw = pLocal->AnimState()->flGoalFeetYaw;
+	adaptiveRoot = LocalData_t.RealData.arrMatrix[0].GetOrigin();
 	localAnim->UpdateDesyncAnimations(pLocal);
 
 	/* restore globals */
@@ -292,9 +294,7 @@ void C_LocalAnimations::UpdateDesyncAnimations(CBaseEntity* pLocal)
 	for (int nSimulationTick = 1; nSimulationTick <= LocalData_t.iSimulationTick; nSimulationTick++)
 	{
 		/* determine the tickbase and set globals to it */
-		const int command = g::pCmd->iCommandNumber - LocalData_t.iSimulationTick + nSimulationTick;
-		int GetTickBase = exploits::GetCommandTickbase(command,
-			networking.GetCorrectedTickbase() - LocalData_t.iSimulationTick + nSimulationTick);
+		int GetTickBase = networking.GetCorrectedTickbase() - LocalData_t.iSimulationTick + nSimulationTick;
 		i::GlobalVars->flCurrentTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flRealTime = TICKS_TO_TIME(GetTickBase);
 		i::GlobalVars->flFrameTime = i::GlobalVars->flIntervalPerTick;
@@ -483,7 +483,9 @@ void C_LocalAnimations::StoreAnimationRecord(CBaseEntity* pLocal)
 	m_AnimRecord.m_vecVelocity = pLocal->GetVelocity();
 	m_AnimRecord.m_flDuckAmount = pLocal->GetDuckAmount();
 	m_AnimRecord.m_flDuckSpeed = pLocal->GetDuckSpeed();
-	m_AnimRecord.m_angRealAngles = antiaim::bHideFlick ? vecViewAngle : g::pCmd->angViewPoint;
+	// Replay every actual command, including the choked fake/LBY break angle.
+	// Hiding a visual flick must not discard its effect on server-style feet yaw.
+	m_AnimRecord.m_angRealAngles = g::pCmd->angViewPoint;
 	m_AnimRecord.m_angFakeAngles = vecViewAngle;
 	m_AnimRecord.m_angAimPunch = pLocal->GetAimPunch();
 	m_AnimRecord.m_nButtons = g::pCmd->iButtons;
@@ -647,7 +649,7 @@ void C_LocalAnimations::SetupPlayerBones(matrix3x4a_t* aMatrix, int nMask, CBase
 	}
 
 	// get simulation time
-	const int shootTickbase = exploits::GetShotTickbase(g::pCmd->iCommandNumber, pLocal->GetTickBase());
+	const int shootTickbase = pLocal->GetTickBase();
 	float flSimulationTime = TICKS_TO_TIME(shootTickbase);
 
 	// setup globals
@@ -815,6 +817,15 @@ void C_LocalAnimations::TransformateMatricies()
 
 	LocalData_t.RealData.vecMatrixOrigin = pLocal->GetAbsOrigin();
 }
+bool C_LocalAnimations::GetAdaptiveHead(hitbox::Shape& head, Vector& origin, float& feetYaw) const {
+	if (!adaptiveHeadValid || !g::pLocal || adaptiveModel != g::pLocal->GetModel()
+		|| adaptiveSpawn != g::pLocal->GetSpawnTime()) return false;
+	head = hitbox::FromStudio(g::pLocal->StudioHitbox(HITBOX_HEAD), LocalData_t.RealData.arrMatrix.data());
+	const auto& root = LocalData_t.RealData.arrMatrix[0];
+	origin = adaptiveOrigin + (Vector(root[0][3],root[1][3],root[2][3]) - adaptiveRoot); feetYaw = adaptiveFeetYaw;
+	return head.valid && origin.IsValid() && std::isfinite(feetYaw);
+}
+
 bool C_LocalAnimations::CopyCachedMatrix(matrix3x4a_t* aInMatrix, int nBoneCount)
 {
 	std::memcpy(aInMatrix, LocalData_t.RealData.arrMatrix.data(), sizeof(matrix3x4a_t) * nBoneCount);
@@ -827,6 +838,7 @@ void C_LocalAnimations::CleanSnapshots()
 }
 void C_LocalAnimations::ResetData()
 {
+	adaptiveHeadValid = false; adaptiveModel = nullptr;
 	LocalData_t.iFlags = 0;
 	LocalData_t.iSimulationTick = 0;
 	LocalData_t.flSpawnTime = 0.0f;

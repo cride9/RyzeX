@@ -9,6 +9,7 @@ namespace radio_visualizer {
     void ResetStream();
     void Capture(std::uint32_t channel);
     void SetAnalysisEnabled(bool enabled);
+    void SetAnalysisDuration(float milliseconds);
     bool IsAnalysisEnabled();
     Frame GetFrame();
 

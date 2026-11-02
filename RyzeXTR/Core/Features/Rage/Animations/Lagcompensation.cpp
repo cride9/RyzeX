@@ -1,9 +1,9 @@
 #include "Lagcompensation.h"
 #include "EnemyAnimations.h"
 #include "ExperimentalResolver.h"
+#include "../LagcompHistory.h"
 #include "../../Networking/networking.h"
 #include "../../../SDK/InputSystem.h"
-#include "../exploits.h"
 #include "../../Misc/Playerlist.h"
 #include "../../../Interface/Classes/CCSGameRulesProxy.h"
 
@@ -12,6 +12,8 @@ Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity*  pEntity )
 	CBaseCombatWeapon* pWeapon = pEntity->GetWeapon( );
 
 	this->pEntity = pEntity;
+	entityHandle = pEntity->GetRefEHandle();
+	flSpawnTime = pEntity->GetSpawnTime();
 	iEntIndex = pEntity->EntIndex( );
 	bDormant = pEntity->IsDormant( );
 	vecVelocity = pEntity->GetVelocity( );
@@ -33,7 +35,8 @@ Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity*  pEntity )
 	flDuck = pEntity->GetDuckAmount( );
 	flLowerBodyYawTarget = pEntity->GetLowerBodyYaw( );
 	flInterpTime = 0.f;
-	flMaxSpeed = pWeapon ? pEntity->IsScoped( ) ? pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] : pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : 260.f;
+	const auto weaponData = pWeapon ? pWeapon->GetCSWpnData() : nullptr;
+	flMaxSpeed = weaponData ? weaponData->flMaxSpeed[pEntity->IsScoped() ? 1 : 0] : 260.f;
 	flThirdPersonRecoil = pEntity->GetThirdpersonRecoil( );
 	flWalkToRunTransition = pEntity->AnimState( )->flWalkToRunTransition;
 
@@ -43,8 +46,8 @@ Lagcompensation::LagRecord_t::LagRecord_t( CBaseEntity*  pEntity )
 	iFlags = pEntity->GetFlags( );
 	iEFlags = pEntity->GetEFlags( );
 	iEffects = pEntity->GetEffects( );
-	iChoked = TIME_TO_TICKS( flSimulationTime - flOldSimulationTime );
-	bBreakingLagcompensation = iChoked < 1;
+	const float initialElapsed=flSimulationTime-flOldSimulationTime;
+	iChoked=std::isfinite(initialElapsed) && initialElapsed>0.f && initialElapsed<=1.f ? TIME_TO_TICKS(initialElapsed) : 1;
 	iChoked = std::clamp( iChoked, 1, 16 );
 	iCreationTick = i::GlobalVars->iTickCount;
 }
@@ -117,7 +120,9 @@ void Lagcompensation::FrameStageNotify( ) {
 			experimentalResolver.Reset(i);
 			continue;
 		}
-		if (pLog->pEntity != pEntity)
+		if (pLog->pEntity != pEntity || (!pLog->pRecord.empty()
+			&& (pLog->pRecord.front().entityHandle != pEntity->GetRefEHandle()
+				|| pLog->pRecord.front().flSpawnTime != pEntity->GetSpawnTime())))
 			pLog->ClearData();
 		pLog->pEntity = pEntity;
 		if ( !pEntity->IsEnemy( g::pLocal ) ) {
@@ -136,8 +141,11 @@ void Lagcompensation::FrameStageNotify( ) {
 			experimentalResolver.Reset(i);
 			continue;
 		}
-		if (pEntity->GetSimulationTime() == pEntity->GetOldSimulationTime()
-			|| (!pLog->pRecord.empty() && pEntity->GetSimulationTime() == pLog->pRecord.front().flSimulationTime))
+		const float simulation=pEntity->GetSimulationTime();
+		if (!backtrack::CanAppendSnapshot(simulation,pLog->pRecord.empty() ? 0.f : pLog->pRecord.front().flSimulationTime,
+			!pLog->pRecord.empty()) || !std::isfinite(i::GlobalVars->flIntervalPerTick) || i::GlobalVars->flIntervalPerTick<=0.f
+			|| simulation/i::GlobalVars->flIntervalPerTick >= (std::numeric_limits<int>::max)()-1024.f
+			|| !pEntity->GetVecOrigin().IsValid())
 			continue;
 
 		std::shared_ptr<LagRecord_t> pPrevious = std::make_shared<LagRecord_t>( );
@@ -150,60 +158,24 @@ void Lagcompensation::FrameStageNotify( ) {
 		}
 
 		std::shared_ptr<Lagcompensation::LagRecord_t> pRecordUnique = std::make_shared<Lagcompensation::LagRecord_t>( pPlayerLogs[ i ].pEntity );
-		if ( pPrevious.get( )->bRestoreData )
-		{
-			if (mode != resolver::Mode::Experimental && !DataChanged( pEntity, pPrevious.get( ) ) ) {
-
-				continue;
-			}
-		}
-
-		if ( pPrevious.get( )->flSimulationTime > pRecordUnique.get( )->flSimulationTime )
-		{
-			float flOldSimulationTime = pEntity->GetOldSimulationTime( );
-			if ( &pPrevious )
-				flOldSimulationTime = pPrevious.get( )->flSimulationTime;
-
-			pLog->flExploitTime = flOldSimulationTime;
-			pLog->InvalidateRecords( );
-		}
 
 		if ( pLog->bLeftDormancy ) {
 
 			pLog->InvalidateRecords( );
 		}
 
-		if ( pRecordUnique.get( )->flSimulationTime <= pLog->flExploitTime )
-		{
-			pRecordUnique.get( )->bValid = false;
-			pRecordUnique.get( )->bBreakingLagcompensation = true;
-		}
-
 		if ( pPrevious.get( )->bRestoreData )
 		{
-			if ( ( pRecordUnique.get( )->vecOrigin - pPrevious.get( )->vecOrigin ).Length2DSqr( ) > 4096.f )
+			if ( ( pRecordUnique.get( )->vecOrigin - pPrevious.get( )->vecOrigin ).LengthSqr( ) > backtrack::TeleportDistanceSquared )
 			{
 				pRecordUnique.get( )->bBreakingLagcompensation = true;
-				pLog->InvalidateRecords( );
 			}
 		}
 
-		if ( pRecordUnique.get( )->flSimulationTime < pPrevious.get( )->flSimulationTime ) {
-
-			pRecordUnique.get( )->bValid = false;
-			pRecordUnique.get( )->bBreakingLagcompensation = true;
-
-			if ( pPrevious.get( )->bRestoreData )
-				pRecordUnique.get( )->iChoked = TIME_TO_TICKS( pRecordUnique.get( )->flOldSimulationTime - pPrevious.get( )->flOldSimulationTime );
-			else
-				pRecordUnique.get( )->iChoked = pPrevious.get( )->iChoked;
-		}
-		else {
-			if ( pPrevious.get( )->bRestoreData )
-				pRecordUnique.get( )->iChoked = TIME_TO_TICKS( pRecordUnique.get( )->flSimulationTime - pPrevious.get( )->flSimulationTime );
-			else
-				pRecordUnique.get( )->iChoked = TIME_TO_TICKS( pRecordUnique.get( )->flSimulationTime - pRecordUnique.get( )->flOldSimulationTime );
-		}
+		const float elapsed=pRecordUnique->flSimulationTime-(pPrevious->bRestoreData
+			? pPrevious->flSimulationTime : pRecordUnique->flOldSimulationTime);
+		pRecordUnique->iChoked=std::isfinite(elapsed) && elapsed>0.f && elapsed<=1.f
+			? std::clamp(TIME_TO_TICKS(elapsed),1,16) : 1;
 
 		if ( pLog->bLeftDormancy )
 			pRecordUnique.get( )->bFirstAfterDormant = true;
@@ -225,7 +197,7 @@ Lagcompensation::AnimationInfo_t& Lagcompensation::GetLog( const int iEntIndex )
 
 void Lagcompensation::FilterRecords( )
 {
-	for ( int i = 1; i <= i::GlobalVars->nMaxClients; i++ )
+	for ( int i = 1; i <= (std::min)(64,i::GlobalVars->nMaxClients); i++ )
 	{
 		if ( pPlayerLogs[ i ].pRecord.empty( ) )
 			continue;
@@ -242,6 +214,7 @@ void Lagcompensation::FilterRecords( )
 		while ( pPlayerLogs[ i ].pRecord.size( ) > flMaxTickAmt )
 			pPlayerLogs[ i ].pRecord.pop_back( );
 
+		pPlayerLogs[i].iLastValid=0;
 		for ( auto j = 0u; j < pPlayerLogs[ i ].pRecord.size( ); j++ )
 		{
 			auto& pCurrentRecord = pPlayerLogs[ i ].pRecord[ j ];
@@ -255,9 +228,8 @@ void Lagcompensation::FilterRecords( )
 				continue;
 			}
 
-			if ( pCurrentRecord.bValid )
-				if ( pCurrentRecord.bValid = lagcomp.IsValidRecord( pCurrentRecord.flSimulationTime ) )
-					pPlayerLogs[ i ].iLastValid = j;
+			pCurrentRecord.bValid=pCurrentRecord.IsValid();
+			if (pCurrentRecord.bValid) pPlayerLogs[i].iLastValid=static_cast<int>(j);
 		}
 	}
 }
@@ -696,10 +668,6 @@ void Lagcompensation::FinishLagcompensation( CBaseEntity* pLocal ) {
 }
 
 bool Lagcompensation::DataChanged( CBaseEntity* pEntity, Lagcompensation::LagRecord_t* pPrevious ) {
-
-	if ( pPrevious )
-		if ( pEntity->GetAnimationOverlays( )[ ANIMATION_LAYER_ALIVELOOP ].flCycle == pPrevious->arrLayers[ ANIMATION_LAYER_ALIVELOOP ].flCycle )
-			pEntity->GetSimulationTime( ) = pEntity->GetOldSimulationTime( );
-
-	return pEntity->GetSimulationTime( ) != pEntity->GetOldSimulationTime( );
+	return pEntity && backtrack::CanAppendSnapshot(pEntity->GetSimulationTime(),
+		pPrevious ? pPrevious->flSimulationTime : 0.f,pPrevious!=nullptr);
 }

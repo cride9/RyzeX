@@ -5,6 +5,9 @@
 #include <cstdint>
 
 namespace hitscan {
+struct TargetDiagnostics {
+    int records{}, validRecords{}, historyRejected{}, matrixRejected{}, timingRejected{};
+};
 struct IntersectionCache {
     bool computed{}, valid{};
     hitbox::Vec point{};
@@ -13,6 +16,7 @@ struct Statistics {
     int damageCalls{}, reusedRays{}, boundSkips{}, intersectionPoints{}, fallbackPoints{};
     int recordsConsidered{}, recordVisits{}, deferredPoints{}, budgetStops{};
     int lowDamageStops{}, deadlineStops{}, traceCalls{}, exitSteps{};
+    int historyBreaks{}, safetyRejected{}, resolverRejectedPoints{};
     double damageMicros{}, totalMicros{};
 };
 enum class Failure { None, Invalid, NoHit, NoExit, Blocked, LowDamage, Deadline };
@@ -23,7 +27,7 @@ struct DamageQuery {
     Clock::time_point deadline{};
     bool Expired() const { return timed && Clock::now() >= deadline; }
 };
-template<class T, std::size_t Capacity = 8> struct Points {
+template<class T, std::size_t Capacity = 32> struct Points {
     std::array<T, Capacity> values{};
     std::size_t count{};
     void push_back(const T& value) { if (count < Capacity) values[count++] = value; }
@@ -34,6 +38,7 @@ template<class T, std::size_t Capacity = 8> struct Points {
     const T* begin() const { return values.data(); }
     const T* end() const { return begin() + count; }
     T& operator[](std::size_t i) { return values[i]; }
+    const T& operator[](std::size_t i) const { return values[i]; }
 };
 inline std::uint64_t HashBytes(const void* bytes, std::size_t size, std::uint64_t hash = 14695981039346656037ull) {
     const auto* data = static_cast<const unsigned char*>(bytes);

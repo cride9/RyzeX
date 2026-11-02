@@ -95,6 +95,7 @@ namespace cfg {
 		inline bool bLimitScan = false;
 
 		inline bool bDoubletap = false;
+		inline bool bDoubletapOnlyCharged = false;
 		inline int  iDoubletapKey;
 		inline bool bHideshot = false;
 		inline int  iHideShotKey;
@@ -149,6 +150,10 @@ namespace cfg {
 		inline bool bInverter = false;
 
 		inline int iDesyncType[5];
+		inline bool bAdaptiveDefensive = true;
+		inline bool bAdaptiveReact = true;
+		inline bool bAdaptiveYaw[3]{};
+		inline bool bDefensivePitch[3]{};
 		inline int iInverterBind = 0;
 
 		inline int iFlickOffset[3];

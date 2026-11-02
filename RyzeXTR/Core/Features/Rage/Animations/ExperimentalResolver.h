@@ -43,6 +43,12 @@ private:
     std::array<History, 65> histories;
     struct Control {
         experimental::Recovery recovery;
+        std::array<experimental::Recovery,2> jitterRecovery;
+        experimental::YawJitter jitter;
+        experimental::HistoricalRejections historical;
+        void ClearRecovery() { recovery={};jitterRecovery={}; }
+        experimental::Recovery& Feedback(int phase) { return phase>=1 && phase<=2 ? jitterRecovery[phase-1] : recovery; }
+        const experimental::Recovery& Feedback(int phase) const { return phase>=1 && phase<=2 ? jitterRecovery[phase-1] : recovery; }
         experimental::Standing standing;
         CBaseHandle entityHandle{};
         const Model_t* model{};

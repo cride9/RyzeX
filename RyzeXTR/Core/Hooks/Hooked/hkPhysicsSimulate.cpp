@@ -1,4 +1,3 @@
-#include "../../Features/Rage/exploits.h"
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
 #include "../hooks.h"
@@ -43,9 +42,6 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 		SimulationTick = i::GlobalVars->iTickCount;
 		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
 	}
-
-	// Exact command/epoch identity; retain the entry for deterministic reprediction.
-	pEntity->GetTickBase() = exploits::GetCommandTickbase(pCommandContext->nCommandNumber, pEntity->GetTickBase());
 
 	original(ecx, edx);
 

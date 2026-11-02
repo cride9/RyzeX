@@ -4,7 +4,6 @@
 #include "../Rage/Animations/EnemyAnimations.h"
 #include "../Rage/Animations/ExperimentalResolverMath.h"
 #include "../Rage/aimbot.h"
-#include "../Rage/exploits.h"
 #include "../../SDK/Menu/gui.h"
 #include "../../SDK/RayTracer rebuilt/CRayTrace.h"
 #include "../../SDK/InputSystem.h"

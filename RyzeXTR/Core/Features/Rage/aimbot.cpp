@@ -4,20 +4,24 @@
 #include "../../Lua/Lua.h"
 #include "../../Interface/Classes/CCSGameRulesProxy.h"
 #include "StudioHitboxGeometry.h"
+#include "MultipointGeometry.h"
+#include "LagcompHistory.h"
 #include "RecordTraceScope.h"
+#include "exploits.h"
 #include <optional>
 
 void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
+	hasValidPoint = false;
 
 	static CConVar* recoilScale = i::ConVar->FindVar( XorStr( "weapon_recoil_scale" ) );
 
 	if ( !cfg::rage::bEnable || ( !IPT::HandleInput( cfg::rage::iAimbotKey ) && cfg::rage::iAimbotKey != 0 ) ) {
 		scanRuntime.Reset();
-		return ResetAimbotData( true );
+		return ResetAimbotData();
 	}
 
 	if ( ( *GameRules )->m_bFreezePeriod( ) )
-		return ResetAimbotData( true );
+		return ResetAimbotData();
 
 	/* Run R8 Revolver cock */
 	misc::RevolverCreateMove( );
@@ -30,7 +34,7 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 		return ResetAimbotData( );
 
 	if ( pWeapon->IsGrenade( ) || pWeapon->IsKnife( ) || !pWeapon->IsWeapon( ) )
-		return ResetAimbotData( true );
+		return ResetAimbotData();
 
 	if ( !pWeapon->GetAmmo( ) )
 		return ResetAimbotData( );
@@ -38,36 +42,62 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 	/* Get currently equipped weapon config */
 	curConfig = GetWeaponConfiguration( pWeapon->GetItemDefinitionIndex( ) );
 	curConfig.pWeapon = pWeapon;
-	aimData.bFireReady = pLocal->CanShoot(pWeapon, exploits::GetShotTickbase(pCmd->iCommandNumber, pLocal->GetTickBase()));
-	exploits::bDisableDefensive = false;
+	aimData.bFireReady = pLocal->CanShoot(pWeapon, pLocal->GetTickBase());
 
 	/* Make a vector out of every valid & tragetable entity */
 	std::vector<Lagcompensation::AnimationInfo_t*> vecTargets = GetTargetableEntities( pLocal );
 
 	if ( vecTargets.empty( ) )
-		return ResetAimbotData( true );
+		return ResetAimbotData();
 
 	/* Use the current shoot position prepared by local animations */
 	vecEyePosition = localAnim->GetShootPosition( );
 
 	/* Scan stored entities & safepoint */
 	Vector vecShootPosition = ScanHitboxes( vecTargets, pLocal );
+	// Keep point availability independent of weapon cooldown and hitchance.
+	hasValidPoint = aimData.pRecord && vecShootPosition.IsValid()
+		&& lagcomp.GetRecordTiming(aimData.flTargetSimulation).valid;
 
-	/* Run predicted autostop */
-	bool bSkipPostStop = false/*AutoStop(vecTargets, pLocal, pCmd, false)*/;
-
+	// Check the braking endpoint before requiring a currently shootable target.
+	const bool stopping = AutoStop(vecTargets, pLocal, pCmd);
+	if (stopping) {
+		// The first preview used the held movement key. Hitchance must see the
+		// command after autostop, otherwise it can wait on stale movement.
+		if (!prediction.RepredictMovement(pCmd, pLocal, g::vecOriginalViewAngle))
+			return ResetAimbotData();
+		g::vecEyePosition = pLocal->GetEyePosition(false);
+		localAnim->CopyPlayerAnimationData(false, pLocal);
+		localAnim->SetupShootPosition(pLocal);
+		vecEyePosition = localAnim->GetShootPosition();
+		// Reuse an already selected point and validate it below. Restarting a
+		// full scan here could exhaust the per-frame budget before firing.
+		if (!aimData.pRecord)
+			vecShootPosition = ScanHitboxes(vecTargets, pLocal);
+		hasValidPoint = aimData.pRecord && vecShootPosition.IsValid()
+			&& lagcomp.GetRecordTiming(aimData.flTargetSimulation).valid;
+	}
 	if ( aimData.pRecord == nullptr )
-		return ResetAimbotData( true );
-
-	/* Prepare doubletap if needed */
-	if ( cfg::rage::bDoubletap && IPT::HandleInput( cfg::rage::iDoubletapKey ) )
-		exploits::bDisableDefensive = true;
+		return ResetAimbotData();
 
 	/* Apply the selected record to the desired entity */
 	aimData.pRecord->ApplyMatrix( aimData.pAimbotTarget, RESOLVE );
-
-	/* Tell exploits that dont recharge */
-	exploits::bCanCharge = false;
+	if (stopping) {
+		const float damage = autowall.GetDamage(pLocal, vecEyePosition, vecShootPosition,
+			curConfig.pWeapon, aimData.pRecord);
+		const int minimum = curConfig.iMinimumDamage > 100
+			? (std::max)(aimData.pAimbotTarget->GetHealth(), 4) + curConfig.iMinimumDamage - 100
+			: curConfig.iMinimumDamage;
+		const int coverage = (aimData.bSafe || curConfig.bSafePoint)
+			? autowall.SafePoint(vecEyePosition, aimData.pRecord, vecShootPosition, aimData.iHitbox) : 0;
+		if (!std::isfinite(damage) || damage < minimum || (aimData.bSafe && coverage != 3)
+			|| (curConfig.bSafePoint && coverage < 2)) {
+			hasValidPoint = false;
+			return ResetAimbotData();
+		}
+		aimData.vecLocalShootPosition = vecEyePosition;
+		aimData.flDamage = std::floor(damage);
+	}
 
 	/* Auto zoom & m_bResumeZoom check */
 	if ( curConfig.bAutoScope && !pLocal->IsScoped( ) && !pLocal->IsResumingScope( ) )
@@ -77,11 +107,9 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 	Vector vecAimAngle = ( M::VectorAngles( vecShootPosition - vecEyePosition ) -= ( pLocal->GetAimPunch( ) * recoilScale->GetFloat( ) ) );
 
 	/* Calculate current hitchance & accuracy boost */
-	aimData.bCanShoot = aimData.bFireReady && HitChance( pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord );
-
-	/* Run normal autostop */
-	if ( !bSkipPostStop )
-		AutoStop( vecTargets, pLocal, pCmd, true );
+	// Fire as soon as accuracy is sufficient, including while still moving.
+	aimData.bCanShoot = aimData.bFireReady
+		&& HitChance( pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord );
 
 	/* Wait til we can shoot */
 	if ( !aimData.bCanShoot || !aimData.bFireReady )
@@ -99,17 +127,52 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 	aimData.iBacktrackTicks = pCmd->iTickCount - timing.commandTick;
 	aimData.shotTiming = timing;
 
+
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
 	bShouldSendPacket = true;
 }
 
-void CAimBot::ResetAimbotData( bool bShouldRecharge ) {
+void CAimBot::ResetAimbotData() {
+	aimData.ClearTarget();
+}
 
-	aimData.ClearTarget( );
-	if ( bShouldRecharge ) {
+void CAimBot::RevalidatePrediction(CUserCmd* pCmd, CBaseEntity* pLocal) {
+	if (!bShouldSendPacket || !(pCmd->iButtons & IN_ATTACK) || !aimData.pRecord)
+		return;
+	const auto reject = [&] {
+		pCmd->iButtons &= ~IN_ATTACK;
+		bShouldSendPacket = false;
+		aimData.ClearTarget();
+	};
+	const int tickbase = pLocal->GetTickBase();
+	const auto timing = lagcomp.GetRecordTiming(aimData.flTargetSimulation, .2f, tickbase);
+	if (!timing.valid || pLocal->GetWeapon() != curConfig.pWeapon
+		|| !pLocal->CanShoot(curConfig.pWeapon, tickbase)) return reject();
 
-		exploits::bCanCharge = bShouldRecharge;
-	}
+	vecEyePosition = localAnim->GetShootPosition();
+	static auto* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
+	Vector angle = M::VectorAngles(aimData.vecTargetShootPosition - vecEyePosition)
+		- pLocal->GetAimPunch() * recoilScale->GetFloat();
+	RecordTraceScope trace(aimData.pAimbotTarget);
+	if (!trace.Ready()) return reject();
+	aimData.pRecord->ApplyMatrix(aimData.pAimbotTarget, RESOLVE);
+	const float damage = autowall.GetDamage(pLocal, vecEyePosition, aimData.vecTargetShootPosition,
+		curConfig.pWeapon, aimData.pRecord);
+	const int minimum = curConfig.iMinimumDamage > 100
+		? (std::max)(aimData.pAimbotTarget->GetHealth(), 4) + curConfig.iMinimumDamage - 100
+		: curConfig.iMinimumDamage;
+	if (!std::isfinite(damage) || damage < minimum
+		|| !HitChance(pCmd, pLocal, aimData.vecTargetShootPosition, angle, aimData.pRecord)) return reject();
+	if (aimData.bSafe && autowall.SafePoint(vecEyePosition, aimData.pRecord,
+		aimData.vecTargetShootPosition, aimData.iHitbox) != 3) return reject();
+
+	aimData.vecLocalShootPosition = vecEyePosition;
+	aimData.flDamage = std::floor(damage);
+	aimData.bCanShoot = aimData.bFireReady = true;
+	aimData.iDesiredTickcount = timing.commandTick;
+	aimData.shotTiming = timing;
+	pCmd->angViewPoint = angle;
+	if (!cfg::rage::bSilentAim) i::EngineClient->SetViewAngles(angle);
 }
 
 bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
@@ -127,7 +190,7 @@ bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
 	}
 	// Exploits can finalize a different command tickbase after the initial
 	// prediction. Validate the selected timestamp against that final plan.
-	const int tickbase = g::pLocal ? exploits::GetShotTickbase(pCmd->iCommandNumber, g::pLocal->GetTickBase()) : -1;
+	const int tickbase = g::pLocal ? g::pLocal->GetTickBase() : -1;
 	const auto timing = lagcomp.GetRecordTiming(aimData.flTargetSimulation, .2f, tickbase);
 	if (!timing.valid || !g::pLocal || !g::pLocal->CanShoot(curConfig.pWeapon, tickbase)
 		|| timing.commandTick != aimData.iDesiredTickcount
@@ -149,9 +212,11 @@ bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
 	return send;
 }
 
-CAimBot::SCAN CAimBot::ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pFirstRecord ) {
+CAimBot::SCAN CAimBot::ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pNewerRecord ) {
 
-	if ( pRecord->bBreakingLagcompensation )
+	// A teleport boundary belongs between two records. Its newest endpoint
+	// remains usable; only traversal into the older side is forbidden.
+	if ( pNewerRecord && pNewerRecord->bBreakingLagcompensation )
 		return SCAN_BREAK;
 
 	if ( cfg::rage::iAimbotFov < 180 ) {
@@ -259,10 +324,14 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (lagcompensation && lagcompensation->GetInt() == 0) log->iLastValid = 0;
 		const float minimum = static_cast<float>(curConfig.iMinimumDamage > 100
 			? (std::max)(log->pEntity->GetHealth(), 4) + curConfig.iMinimumDamage - 100 : curConfig.iMinimumDamage);
+		backtrack::HistoryWalk history(hitbox::FromVector(log->pEntity->GetVecOrigin()));
 		for (int age = 0; age <= log->iLastValid; ++age) {
-			if (cfg::rage::bLimitScan && (age & 1)) continue;
 			auto record = &log->pRecord[age];
-			const auto skip = ShouldSkipRecord(record, &log->pRecord.front());
+			if (!history.Visit(hitbox::FromVector(record->vecOrigin),!record->bDormant,record->bBreakingLagcompensation)) {
+				++scanStatistics.historyBreaks; break;
+			}
+			if (cfg::rage::bLimitScan && (age & 1)) continue;
+			const auto skip = ShouldSkipRecord(record,age ? &log->pRecord[age-1] : nullptr);
 			if (skip == SCAN_BREAK) break;
 			if (skip == SCAN_SKIP || !record->bValid || !record->bAnimationMatrixValid || record->pEntity != log->pEntity || record->iEntIndex != entityIndex) continue;
 			++scanStatistics.recordsConsidered;
@@ -422,8 +491,11 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 			if (!isCommon && (curConfig.bSafePoint || playerSafe || forceSafe || experimentalHead || rejected))
 				coverage = autowall.SafePoint(vecEyePosition, record, point, hitboxIndex);
 			const bool safe = coverage == 3;
-			if ((rejected || playerSafe || forceSafe) && !safe) continue;
-			if (curConfig.bSafePoint && coverage < 2) continue;
+			if ((rejected || playerSafe || forceSafe) && !safe) {
+				if (rejected) ++scanStatistics.resolverRejectedPoints;
+				++scanStatistics.safetyRejected; continue;
+			}
+			if (curConfig.bSafePoint && coverage < 2) { ++scanStatistics.safetyRejected; continue; }
 			const Vector ray = (point - vecEyePosition).Normalized();
 			Job rayJob = job;
 			rayJob.upper = (std::min)(job.upper, autowall.GetDamageUpperBound(vecEyePosition, curConfig.pWeapon, record, &ray));
@@ -565,97 +637,121 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	return best.vecPoint;
 }
 
-bool CAimBot::AutoStop( std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity*  pLocal, CUserCmd*  pCmd, bool bSkipCheck ) {
-
-	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar( XorStr( "weapon_accuracy_nospread" ) );
-	if ( !curConfig.bAutostop )
+bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& targets, CBaseEntity* pLocal, CUserCmd* pCmd) {
+	if (!curConfig.bAutostop || pLocal->GetMoveType() != MOVETYPE_WALK)
 		return false;
 
-	if ( aimData.bCanShoot && !curConfig.bConditions[ CONDITION_BETWEEN_SHOTS ] )
+	const bool grounded = (pLocal->GetFlags() & FL_ONGROUND) && !(pCmd->iButtons & IN_JUMP);
+	if (!grounded && !curConfig.bConditions[CONDITION_INAIR])
 		return false;
 
-	if ( !aimData.bFireReady && !curConfig.bConditions[ CONDITION_BETWEEN_SHOTS ] )
+	static auto* noSpread = i::ConVar->FindVar(XorStr("weapon_accuracy_nospread"));
+	if (noSpread->GetInt() == 1)
+		return false;
+	const auto* data = curConfig.pWeapon->GetCSWpnData();
+	if (!data || TICK_INTERVAL <= 0.f)
 		return false;
 
-	if ( ( pCmd->iButtons & IN_JUMP || !( pLocal->GetFlags( ) & FL_ONGROUND ) ) && !curConfig.bConditions[ CONDITION_INAIR ] )
-		return false;
+	static auto* friction = i::ConVar->FindVar(XorStr("sv_friction"));
+	static auto* stopSpeed = i::ConVar->FindVar(XorStr("sv_stopspeed"));
+	static auto* accelerate = i::ConVar->FindVar(XorStr("sv_accelerate"));
+	const float surface = (std::max)(0.f, pLocal->GetSurfaceFriction());
+	const float drag = grounded ? (std::max)(0.f, friction->GetFloat()) * surface * TICK_INTERVAL : 0.f;
+	const float control = (std::max)(0.f, stopSpeed->GetFloat());
+	const float maxSpeed = data->flMaxSpeed[pLocal->IsScoped() ? 1 : 0];
 
-	if ( weapon_accuracy_nospread->GetInt( ) == 1 )
-		return false;
+	// CreateMove runs after speculative movement. Brake the saved command-start
+	// velocity, since that is the state to which the final command will be applied.
+	const auto saved = prediction.GetNetvars(pCmd->iCommandNumber);
+	const bool baseline = saved.command == pCmd->iCommandNumber
+		&& saved.epoch == prediction.GetEpoch()
+		&& saved.localHandle == pLocal->GetRefEHandle() && saved.spawnTime == pLocal->GetSpawnTime();
+	const Vector velocity = baseline ? saved.vecVelocity : pLocal->GetVelocity();
+	const float speed = velocity.Length2D();
 
-	if (exploits::iShiftAmount)
-	{
-		pCmd->iButtons &= ~(
-			IN_FORWARD |
-			IN_BACK |
-			IN_MOVELEFT |
-			IN_MOVERIGHT
-			);
-
-		return true;
+	float accelerationScale = (std::max)(250.f, maxSpeed);
+	static auto* useWeaponSpeed = i::ConVar->FindVar(XorStr("sv_accelerate_use_weapon_speed"));
+	if (useWeaponSpeed && useWeaponSpeed->GetInt())
+		accelerationScale *= (std::min)(1.f, maxSpeed / 250.f);
+	const bool ducking = (pCmd->iButtons & IN_DUCK) || (pLocal->GetFlags() & FL_DUCKING);
+	const bool walking = !ducking && (pCmd->iButtons & IN_SPEED);
+	// Slow scoped snipers keep their weapon acceleration while walking/ducking.
+	const bool slowScoped = pLocal->IsScoped() && maxSpeed * .52f < 110.f;
+	if (!slowScoped) {
+		if (ducking) accelerationScale *= .34f;
+		else if (walking) accelerationScale *= .52f;
 	}
+	const float counterStep = (std::max)(0.f, accelerate->GetFloat())
+		* accelerationScale * surface * TICK_INTERVAL;
 
-	if ( !bSkipCheck ) {
-
-		for ( auto it : vecIn ) {
-
-			if ( !it->pEntity )
-				continue;
-
-			float flTransformedDamage = curConfig.iMinimumDamage;
-			if ( curConfig.iMinimumDamage > 100 )
-				flTransformedDamage = max( it->pEntity->GetHealth( ), 8 ) + ( curConfig.iMinimumDamage - 100 );
-
-			if ( autowall.GetDamage( pLocal,
-				vecEyePosition,
-				it->pEntity->GetHitboxPosition( HITBOX_HEAD, it->pRecord.front( ).pMatricies[ RESOLVE ] ),
-				curConfig.pWeapon, &it->pRecord.front( ) ) < flTransformedDamage )
-				return false;
-		}
+	// Simulate the same counter-strafe we will send, starting at the saved
+	// position. Only a reachable end of the braking path may trigger pre-stop.
+	Vector origin = baseline ? saved.vecOrigin : pLocal->GetVecOrigin();
+	const Vector start = origin;
+	float projectedSpeed = speed;
+	int stopTicks = 0;
+	const int horizons[] = { 16, 24, 32, 48 };
+	const int phase = std::clamp(curConfig.iAutostopValue, 0, 3);
+	const int limit = (std::max)(1, static_cast<int>(std::ceil(horizons[phase] / (64.f * TICK_INTERVAL))));
+	const auto* collision = pLocal->GetCollideable();
+	if (!collision) return false;
+	CTraceFilter filter(pLocal);
+	while (grounded && projectedSpeed > 1.f && stopTicks < limit) {
+		projectedSpeed = (std::max)(0.f, projectedSpeed - (std::max)(projectedSpeed, control) * drag);
+		if (projectedSpeed > counterStep) projectedSpeed -= counterStep;
+		const Vector next = origin + Vector(velocity.x, velocity.y, 0.f)
+			* (projectedSpeed / (std::max)(speed, 1.f)) * TICK_INTERVAL;
+		Trace_t path;
+		i::EngineTrace->TraceRay(Ray_t(origin, next, collision->OBBMins(), collision->OBBMaxs()), MASK_PLAYERSOLID, &filter, &path);
+		if (path.bStartSolid || path.bAllSolid) return false;
+		origin = path.vecEnd;
+		++stopTicks;
+		if (path.flFraction < 1.f) { projectedSpeed = 0.f; break; }
+		// Do not project a grounded stop through a ledge or onto a steep slope.
+		Trace_t floor;
+		i::EngineTrace->TraceRay(Ray_t(origin, origin - Vector(0.f, 0.f, 2.f), collision->OBBMins(), collision->OBBMaxs()), MASK_PLAYERSOLID, &filter, &floor);
+		if (floor.flFraction == 1.f || floor.plane.vecNormal.z < .7f) return false;
 	}
+	if (grounded && projectedSpeed > 1.f) return false;
+	const float lead = (stopTicks + 2) * TICK_INTERVAL;
+	const float now = TICKS_TO_TIME(pLocal->GetTickBase());
+	float ready = (std::max)(pLocal->GetNextAttack(), curConfig.pWeapon->GetNextPrimaryAttack());
+	if (curConfig.pWeapon->GetItemDefinitionIndex() == WEAPON_REVOLVER)
+		ready = (std::max)(ready, curConfig.pWeapon->GetFireReadyTime());
+	if (!aimData.bFireReady && !curConfig.bConditions[CONDITION_BETWEEN_SHOTS] && ready - now > lead)
+		return false;
 
-	float flMultiplier = 0.28f;
-	switch ( curConfig.iAutostopValue ) {
-	case 1: flMultiplier = 0.26f;
-		break;
-	case 2: flMultiplier = 0.24f;
-		break;
-	case 3: flMultiplier = 0.20f;
-		break;
+	if (!hasValidPoint) {
+		if (!grounded || speed <= 1.f || (origin - start).Length2D() < .1f) return false;
+		const Vector currentEye = vecEyePosition;
+		const auto currentAim = aimData;
+		// Use the normal hitboxes, minimum damage, penetration and safety checks.
+		// A forecast can brake movement, but must never become an actual shot.
+		vecEyePosition = currentEye + origin - pLocal->GetVecOrigin();
+		const Vector point = ScanHitboxes(targets, pLocal);
+		const bool predictedPoint = aimData.pRecord && point.IsValid()
+			&& lagcomp.GetRecordTiming(aimData.flTargetSimulation).valid;
+		aimData = currentAim;
+		vecEyePosition = currentEye;
+		if (!predictedPoint) return false;
 	}
-
-	float flIdealSpeed = ( flMultiplier ) * ( pLocal->IsScoped( ) ? curConfig.pWeapon->GetCSWpnData( )->flMaxSpeed[ 1 ] : curConfig.pWeapon->GetCSWpnData( )->flMaxSpeed[ 0 ] );
 
 	pCmd->iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT);
+	pCmd->flForwardMove = pCmd->flSideMove = 0.f;
+	const float remaining = (std::max)(0.f, speed - (std::max)(speed, control) * drag);
+	// Near zero, let friction finish the stop. Full reverse input here would
+	// overshoot and start accelerating in the opposite direction.
+	if (speed <= 1.f || remaining <= counterStep)
+		return true;
 
-	// Get the ideal speed for shooting (playstyle)
-	Vector vecVelocity = pLocal->GetVelocity( );
-	Vector vecDirection{};
-	Vector vecRealView{};
-
-	if ( flIdealSpeed > vecVelocity.Length2D( ) )
-		return false;
-
-	M::VectorAngles( vecVelocity, vecDirection );
-	i::EngineClient->GetViewAngles( vecRealView );
-
-	vecDirection.y = vecRealView.y - vecDirection.y;
-
-	Vector vecForward{};
-	M::AngleVectors( vecDirection, &vecForward );
-
-	static CConVar* cl_forwardspeed = i::ConVar->FindVar( XorStr( "cl_forwardspeed" ) );
-	static CConVar* cl_sidespeed = i::ConVar->FindVar( XorStr( "cl_sidespeed" ) );
-
-	auto flNegativeForwardSpeed = -cl_forwardspeed->GetFloat( );
-	auto flNegativeSideSpeed = -cl_sidespeed->GetFloat( );
-
-	auto flNegativeForwardDirection = vecForward * flNegativeForwardSpeed;
-	auto flNegativeSideDirection = vecForward * flNegativeSideSpeed;
-
-	pCmd->flForwardMove = flNegativeForwardDirection.x;
-	pCmd->flSideMove = flNegativeSideDirection.y;
-
+	Vector direction{}, forward{};
+	M::VectorAngles(velocity, direction);
+	direction.y = g::vecOriginalViewAngle.y - direction.y;
+	M::AngleVectors(direction, &forward);
+	static auto* forwardSpeed = i::ConVar->FindVar(XorStr("cl_forwardspeed"));
+	static auto* sideSpeed = i::ConVar->FindVar(XorStr("cl_sidespeed"));
+	pCmd->flForwardMove = -forward.x * forwardSpeed->GetFloat();
+	pCmd->flSideMove = -forward.y * sideSpeed->GetFloat();
 	return true;
 }
 
@@ -876,6 +972,7 @@ void CAimBot::GetHitBoxes( int i, std::vector<int>& vecOut, int iWeapon ) {
 }
 
 std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities( CBaseEntity*  pLocal ) {
+	targetDiagnostics={};
 
 	std::vector<Lagcompensation::AnimationInfo_t*> ret{};
 
@@ -883,7 +980,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities( C
 	if ( !pWeaponData )
 		return ret;
 
-	for ( size_t i = 1; i <= i::GlobalVars->nMaxClients; i++ ) {
+	for ( int i = 1; i <= (std::min)(64,i::GlobalVars->nMaxClients); i++ ) {
 
 		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
 
@@ -903,10 +1000,20 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities( C
 
 		bool bHasValidRecord = false;
 		pLog->iLastValid = 0;
+		auto& diagnosis=targetDiagnostics[i];
+		backtrack::HistoryWalk history(hitbox::FromVector(pEntity->GetVecOrigin()));
 		for ( auto j = 0u; j < pLog->pRecord.size( ); j++ ) {
 
 			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at( j );
-			pCurrentRecord->bValid = pCurrentRecord->IsValid();
+			++diagnosis.records;
+			const bool chain=history.Visit(hitbox::FromVector(pCurrentRecord->vecOrigin),!pCurrentRecord->bDormant,
+				pCurrentRecord->bBreakingLagcompensation);
+			const auto timing=lagcomp.GetRecordTiming(pCurrentRecord->flSimulationTime);
+			pCurrentRecord->bValid=chain && pCurrentRecord->bAnimationMatrixValid && timing.valid;
+			if (!chain) ++diagnosis.historyRejected;
+			else if (!pCurrentRecord->bAnimationMatrixValid) ++diagnosis.matrixRejected;
+			else if (!timing.valid) ++diagnosis.timingRejected;
+			else ++diagnosis.validRecords;
 
 			if (pCurrentRecord->bValid)
 			{
@@ -947,37 +1054,28 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities( C
 	return ret;
 }
 
-hitscan::Points<Vector> CAimBot::CreatePoints( Vector vecEyePosition, CBaseCombatWeapon*  pWeapon, Lagcompensation::LagRecord_t*  pRecord, int iHitbox, EMatrixType iType, bool bShouldMultipoint ) {
-
-	hitscan::Points<Vector> refVecPoints{};
-
-	float flRadius = 0.f;
-	Vector vecCenter = pRecord->pEntity->GetHitboxPosition( iHitbox, pRecord->pMatricies[ iType ], flRadius );
-	if (iHitbox == HITBOX_HEAD && iType == RESOLVE && pRecord->bHasHeadOverlap
-		&& pRecord->iResolverMode == static_cast<int>(resolver::Mode::Experimental))
-		refVecPoints.push_back(pRecord->vecRageSafePoint);
-
-	if ( flRadius < 0 || !bShouldMultipoint )
-	{
-		refVecPoints.push_back(vecCenter);
-		return refVecPoints;
-	}
-
-	float flHitboxDistance = flRadius * ( ( iHitbox == HITBOX_HEAD ? curConfig.iHeadScale : curConfig.iBodyScale ) * 0.01f );
-
-	Vector vecCurrentAngles = M::VectorAngles( vecCenter - vecEyePosition );
-	Vector vecForward; M::AngleVectors( vecCurrentAngles, &vecForward );
-
-	const Vector vecRight = vecForward.CrossProduct( Vector( 0, 0, 1 ) );
-	const Vector vecLeft = Vector( -vecRight.x, -vecRight.y, vecRight.z );
-	const Vector vecTop = Vector( 0, 0, 1 );
-
-	refVecPoints.push_back(vecCenter);
-	if ( iHitbox == HITBOX_HEAD )
-		refVecPoints.push_back( vecCenter + vecTop * flHitboxDistance );
-	
-	refVecPoints.push_back( vecCenter + vecLeft * flHitboxDistance );
-	refVecPoints.push_back( vecCenter + vecRight * flHitboxDistance );
-
-	return refVecPoints;
+hitscan::Points<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord,
+    int iHitbox, EMatrixType iType, bool bShouldMultipoint) {
+    hitscan::Points<Vector> points;
+    if (!pRecord || !pRecord->pEntity || !vecEyePosition.IsValid() || iHitbox<0 || iHitbox>=HITBOX_MAX
+        || iType<VISUAL || iType>=MAX || (iType==VISUAL ? !pRecord->bVisualMatrixValid : !pRecord->bAnimationMatrixValid)) return points;
+    const auto shape=hitbox::FromStudio(pRecord->pEntity->StudioHitbox(iHitbox),pRecord->pMatricies[iType]);
+    if (!multipoint::Valid(shape)) return points;
+    const auto append=[&](hitbox::Vec candidate) {
+        const Vector point=hitbox::ToVector(candidate);
+        // Recheck after float conversion, including points at large map coordinates.
+        if (!point.IsValid() || !shape.Contains(hitbox::FromVector(point))) return;
+        for (const auto& previous:points) if ((previous-point).LengthSqr()<1e-6f) return;
+        points.push_back(point);
+    };
+    if (iHitbox==HITBOX_HEAD && iType==RESOLVE && pRecord->bHasHeadOverlap
+        && pRecord->iResolverMode==static_cast<int>(resolver::Mode::Experimental))
+        append(hitbox::FromVector(pRecord->vecRageSafePoint));
+    if (!bShouldMultipoint) { append(shape.Center()); return points; }
+    const auto region=iHitbox==HITBOX_HEAD ? multipoint::Region::Head
+        : iHitbox==HITBOX_LEFT_FOOT || iHitbox==HITBOX_RIGHT_FOOT ? multipoint::Region::Foot
+        : iHitbox>=HITBOX_RIGHT_THIGH && iHitbox<=HITBOX_LEFT_CALF ? multipoint::Region::Leg : multipoint::Region::Body;
+    const int scale=iHitbox==HITBOX_HEAD ? curConfig.iHeadScale : curConfig.iBodyScale;
+    for (const auto candidate:multipoint::Generate(shape,hitbox::FromVector(vecEyePosition),region,scale)) append(candidate);
+    return points;
 }

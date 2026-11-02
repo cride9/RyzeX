@@ -1,6 +1,8 @@
 #include "RadioVisualizer.h"
+#include "RadioSpectrumDraw.h"
 #include "../../SDK/Menu/config.h"
 #include "../../../Dependecies/ImGui/imgui.h"
+#include <cstdio>
 
 namespace {
     using namespace radio_visualizer;
@@ -8,6 +10,8 @@ namespace {
     struct Ring { float age = 0.f; bool active = false; };
     struct Animation {
         Envelope audio;
+        SpectrumEnvelope spectrum;
+        std::uint64_t generation{};
         std::array<Particle, 160> particles{};
         std::array<Ring, 6> rings{};
         int particleCount = 0;
@@ -32,54 +36,6 @@ namespace {
         color.z = s.colorA[2] + (s.colorB[2] - s.colorA[2]) * t;
         color.w = (s.colorA[3] + (s.colorB[3] - s.colorA[3]) * t) * alpha * s.opacity;
         return ImGui::ColorConvertFloat4ToU32(color);
-    }
-
-    void Bars(ImDrawList* draw, ImVec2 center, float radius, float size,
-        const Animation& st, const Settings& s, float widthScale, float alpha, bool caps) {
-        const int total = GetQuality(s.quality).points;      // 64 / 128 / 192 oszlop
-        const float inner = radius * 1.12f;
-        const float maxLen = radius * .85f;
-        const float width = 2.f * Pi * inner / total * .5f * widthScale;
-        const ImVec2 uv = ImGui::GetFontTexUvWhitePixel();
-        draw->PrimReserve(total * 6, total * 4);
-        const unsigned int base = draw->_VtxCurrentIdx;
-        for (int i = 0; i < total; ++i) {
-            const float t = (i + .5f) / total;
-            const float u = std::abs(2.f * t - 1.f);              // 0 = alul (bass), 1 = fent (magas), tükrözött
-            const float angle = -Pi * .5f + t * 2.f * Pi;
-            const float c = u * (BandCount - 1);
-            const int a = static_cast<int>(c), b = (std::min)(a + 1, BandCount - 1);
-            const float v = st.audio.bands[a] + (st.audio.bands[b] - st.audio.bands[a]) * (c - a);
-            const float len = size * .006f + std::pow(v, 1.3f) * maxLen;
-            const ImVec2 dir(std::cos(angle), std::sin(angle));
-            const ImVec2 perp(-dir.y * width * .5f, dir.x * width * .5f);
-            const ImVec2 p0(center.x + dir.x * inner, center.y + dir.y * inner);
-            const ImVec2 p1(center.x + dir.x * (inner + len), center.y + dir.y * (inner + len));
-            const ImU32 lo = Blend(s, u, alpha * .55f), hi = Blend(s, u, alpha);
-            draw->PrimWriteVtx(ImVec2(p0.x - perp.x, p0.y - perp.y), uv, lo);
-            draw->PrimWriteVtx(ImVec2(p0.x + perp.x, p0.y + perp.y), uv, lo);
-            draw->PrimWriteVtx(ImVec2(p1.x + perp.x, p1.y + perp.y), uv, hi);
-            draw->PrimWriteVtx(ImVec2(p1.x - perp.x, p1.y - perp.y), uv, hi);
-            const unsigned int o = base + i * 4;
-            for (unsigned int k : { 0u, 1u, 2u, 0u, 2u, 3u })
-                draw->PrimWriteIdx(static_cast<ImDrawIdx>(o + k));
-        }
-        if (!caps) return;
-        for (int i = 0; i < total; ++i) {
-            const float t = (i + .5f) / total;
-            const float u = std::abs(2.f * t - 1.f);
-            const float angle = -Pi * .5f + t * 2.f * Pi;
-            const float pk = st.audio.peaks[static_cast<int>(u * (BandCount - 1))];
-            if (pk < .06f) continue;
-            const float r = inner + size * .010f + std::pow(pk, 1.3f) * maxLen;
-            const ImVec2 dir(std::cos(angle), std::sin(angle));
-            const ImVec2 perp(-dir.y * width * .5f, dir.x * width * .5f);
-            const float th = size * .004f;
-            const ImVec2 q(center.x + dir.x * r, center.y + dir.y * r);
-            const ImVec2 q2(q.x + dir.x * th, q.y + dir.y * th);
-            draw->AddQuadFilled(ImVec2(q.x - perp.x, q.y - perp.y), ImVec2(q.x + perp.x, q.y + perp.y),
-                ImVec2(q2.x + perp.x, q2.y + perp.y), ImVec2(q2.x - perp.x, q2.y - perp.y), Blend(s, u, .9f));
-        }
     }
 
     // Three strips give the closed ribbon an opaque core and soft transparent edges.
@@ -126,7 +82,13 @@ namespace {
     }
 
     void Animate(Animation& state, const Frame& frame, float dt, const Settings& settings) {
-        if (state.audio.generation != frame.generation) state = {};
+        if (state.generation != frame.generation) { state = {}; state.generation=frame.generation; }
+        if(settings.preset==2) {
+            state.spectrum.Update(frame,settings,Clock::now());
+            state.particleCount=0;
+            for(auto& ring:state.rings) ring.active=false;
+            return;
+        }
         state.audio.Update(frame, dt, settings, Clock::now());
         state.time += dt;
         const auto quality = GetQuality(settings.quality);
@@ -166,6 +128,10 @@ namespace {
         std::array<float, 384> contour{};
         std::array<float, 384> circle{};
         circle.fill(1.f);
+        if(settings.preset==2) {
+            DrawAudioSpectrum(draw,topLeft,size,state.spectrum,settings);
+            if(!settings.spectrum.compositeOriginal) { draw->PopClipRect(); return; }
+        } else {
         for (int point = 0; point < quality.points; ++point)
             contour[point] = ContourRadius(state.audio, settings, point * 2.f * Pi / quality.points);
 
@@ -185,23 +151,17 @@ namespace {
         }
 
         if (settings.glow) {
-            if (settings.preset == 2)
-                Bars(draw, center, radius, size, state, settings, 2.6f,
-                    settings.glowStrength * .14f * (.6f + state.audio.bass * .4f), false);
-            else
-                for (int layer = quality.glowLayers; layer > 0; --layer)
+            for (int layer = quality.glowLayers; layer > 0; --layer)
                     Ribbon(draw, contour, quality.points, center, radius,
                         size * (.014f + layer * .012f), size * .002f, settings,
                         settings.glowStrength * (.10f / layer) * (.6f + state.audio.bass * .4f));
         }
-        if (settings.preset == 2)
-            Bars(draw, center, radius, size, state, settings, 1.f, .95f, true);
-        else
-            Ribbon(draw, contour, quality.points, center, radius, size * .012f,
+        Ribbon(draw, contour, quality.points, center, radius, size * .012f,
                 size * (settings.preset ? .004f : .003f), settings, .85f);
+        }
 
         const float punch = settings.preset == 2 ? state.audio.punch : state.audio.bass;
-        const float pulse = settings.logoPulse ? punch * settings.bassReaction * .12f : 0.f;
+        const float pulse = settings.preset!=2 && settings.logoPulse ? punch * settings.bassReaction * .12f : 0.f;
         const float diskRadius = radius * (.89f + pulse);
         draw->AddCircleFilled(center, diskRadius, IM_COL32(9, 8, 19, static_cast<int>(230 * settings.opacity)), quality.points / 2);
         Ribbon(draw, circle, quality.points, center, diskRadius, size * .005f, size * .001f, settings, .65f);
@@ -226,11 +186,12 @@ namespace {
         frame.generation = std::uint64_t{1} << 63;
         frame.sequence = ++demoSequence;
         frame.sampleRate = 44100;
+        frame.fftSize=SpectrumFftSize(frame.sampleRate,cfg::radioVisualizer.preset==2 ? cfg::radioVisualizer.spectrum.durationMs : 0.f);
         frame.timestamp = Clock::now();
         frame.valid = true;
         const float kick = std::pow((std::max)(0.f, std::cos(demoTime * 2.f * Pi * 1.8f)), 12.f);
-        for (int bin = 1; bin < BinCount; ++bin) {
-            const float frequency = bin * (44100.f / FftSize);
+        for (int bin = 1; bin < frame.fftSize/2; ++bin) {
+            const float frequency = bin * (44100.f / frame.fftSize);
             frame.fft[bin] = .018f * std::exp(-frequency / 5000.f) *
                 (.55f + .4f * std::sin(frequency * .0088f + demoTime * 3.f));
             if (frequency < 180.f) frame.fft[bin] += kick * .07f;
@@ -258,8 +219,54 @@ namespace {
         ImGui::PopID();
     }
 
+    void SpectrumControls(Settings& settings) {
+        auto& s=settings.spectrum;
+        ImGui::TextUnformatted("Audio Spectrum");
+        ImGui::TextUnformatted("Audio Layer: live radio");
+        const auto point=[](const char* label,float* value) {
+            ImGui::PushID(label);ImGui::TextUnformatted(label);
+            // This fork's InputFloat2 overlaps its component fields. One
+            // editable X,Y pair keeps both reference coordinates visible.
+            char text[64];std::snprintf(text,sizeof(text),"%.1f, %.1f",value[0],value[1]);
+            if(ImGui::InputText("##point",text,sizeof(text),ImGuiInputTextFlags_EnterReturnsTrue)) {
+                float x{},y{};if(std::sscanf(text,"%f , %f",&x,&y)==2) { value[0]=x;value[1]=y; }
+            }
+            ImGui::PopID();
+        };
+        point("Start Point",s.start);point("End Point",s.end);
+        ImGui::Checkbox("Use Polar Path",&s.polarPath);
+        SettingSlider("Start Frequency",&s.startHz,1.f,(std::min)(21999.f,s.endHz-1.f),"%.1f Hz");
+        SettingSlider("End Frequency",&s.endHz,s.startHz+1.f,22000.f,"%.1f Hz");
+        ImGui::TextUnformatted("Frequency Bands");ImGui::InputInt("##bands",&s.bands,1,100);
+        SettingSlider("Maximum Height",&s.maximumHeight,0.f,2000.f,"%.1f px");
+        SettingSlider("Audio Duration (milliseconds)",&s.durationMs,5.f,1000.f,"%.1f");
+        SettingSlider("Audio Offset (milliseconds)",&s.offsetMs,-1000.f,0.f,"%.1f");
+        SettingSlider("Thickness",&s.thickness,.1f,32.f,"%.1f");
+        SettingSlider("Softness",&s.softness,0.f,100.f,"%.1f%%");
+        SettingColor("Inside Color",s.inside);SettingColor("Outside Color",s.outside);
+        ImGui::Checkbox("Blend Overlapping Colors",&s.blendOverlap);
+        SettingSlider("Hue Interpolation",&s.hueDegrees,-3600.f,3600.f,"%.1f degrees");
+        ImGui::Checkbox("Dynamic Hue Phase",&s.dynamicHue);
+        ImGui::Checkbox("Color Symmetry",&s.colorSymmetry);
+        const char* display[]{"Digital","Analog Lines","Analog Dots"};
+        const char* sides[]{"Side A","Side B","Side A & B"};
+        ImGui::Combo("Display Options",&s.display,display,3);
+        ImGui::Combo("Side Options",&s.side,sides,3);
+        ImGui::Checkbox("Duration Averaging",&s.durationAverage);
+        ImGui::Checkbox("Composite On Original",&s.compositeOriginal);
+        ImGui::Spacing();ImGui::TextUnformatted("Polar Coordinates");
+        SettingSlider("Interpolation",&s.polarAmount,0.f,100.f,"%.1f%%");
+        const char* conversion[]{"Rect to Polar","Polar to Rect"};
+        ImGui::Combo("Type of Conversion",&s.conversion,conversion,2);
+        ImGui::Spacing();ImGui::TextUnformatted("Mirror");
+        ImGui::Checkbox("Enable Mirror",&s.mirror);
+        point("Reflection Center",s.reflectionCenter);
+        SettingSlider("Reflection Angle",&s.reflectionAngle,-180.f,180.f,"%.1f degrees");
+        ImGui::Spacing();SettingSlider("Input gain",&settings.sensitivity,.25f,3.f,"%.2fx");
+    }
+
     void SettingsControls(Settings& s) {
-        const char* presets[] = { "Nation", "Gutter", "Bars" };
+        const char* presets[] = { "Nation", "Gutter", "Audio Spectrum (AE)" };
         if (ImGui::Combo("Preset", &s.preset, presets, 3)) {
             ResetPreset(s);
             preview = {}; overlay = {};
@@ -268,6 +275,9 @@ namespace {
         ImGui::Combo("Quality", &s.quality, qualities, 3);
         SettingSlider("Size", &s.size, 180.f, 640.f, "%.0f px");
         SettingSlider("Opacity", &s.opacity, .05f, 1.f, "%.2f");
+        if(s.preset==2) {
+            ImGui::Spacing();SpectrumControls(s);
+        } else {
         ImGui::Spacing();
         ImGui::TextUnformatted("Colors");
         SettingColor("Gradient start", s.colorA);
@@ -287,6 +297,7 @@ namespace {
         if (s.rings) SettingSlider("Ring strength", &s.ringStrength, 0.f, 1.f, "%.2f");
         ImGui::Checkbox("Particles", &s.particles);
         if (s.particles) SettingSlider("Density", &s.particleDensity, 0.f, 1.f, "%.2f");
+        }
         ImGui::Spacing();
         if (ImGui::Button("Reset preset", ImVec2(ImGui::GetContentRegionAvail().x, 25.f), true, true)) {
             ResetPreset(s); preview = {}; overlay = {};
@@ -303,6 +314,7 @@ void radio_visualizer::OpenSettings() { modalRequested = true; }
 void radio_visualizer::RenderOverlay(ImFont* logoFont, bool menuOpen, bool radioEnabled) {
     auto& settings = cfg::radioVisualizer;
     Sanitize(settings);
+    SetAnalysisDuration(settings.preset==2 ? settings.spectrum.durationMs : 0.f);
     if (!menuOpen) modalVisible = modalRequested = false;
     SetAnalysisEnabled((settings.enabled && radioEnabled) || (menuOpen && (modalVisible || modalRequested)));
     if (!settings.enabled || !radioEnabled) { overlay = {}; return; }
@@ -371,6 +383,7 @@ void radio_visualizer::DrawSettingsModal(ImFont* logoFont) {
         auto& settings = cfg::radioVisualizer;
         Sanitize(settings);
         SetAnalysisEnabled(true);
+        SetAnalysisDuration(settings.preset==2 ? settings.spectrum.durationMs : 0.f);
         ImGui::Checkbox("Enable overlay", &settings.enabled);
         const bool wide = ImGui::GetContentRegionAvail().x >= 560.f;
         const float contentHeight = (std::max)(100.f, ImGui::GetContentRegionAvail().y - 60.f);

@@ -4,7 +4,6 @@
 #include "../../Lua/Lua.h"
 #include "../../Features/Misc/misc.h"
 #include "../../Features/Misc/RadioVisualizer.h"
-#include "../../Features/Rage/exploits.h"
 #include "../Text.h"
 #include <iostream>
 #include <string>
@@ -228,10 +227,6 @@ void menu::Rage(ImVec2 savedCursorPosition) {
 
         ImGui::Checkbox( ( "Break lag compensation" ), &cfg::antiaim::bBreakLagcompensation );
         ImGui::Keybind( ( "##iLCButton" ), &cfg::antiaim::iLCKey );
-        if (ImGui::Button("Export timing log", ImVec2(ImGui::GetContentRegionAvail().x, 20))) {
-            const std::string path = pConfig->ConfigPath + "\\tickshift.csv";
-            util::LogConsole(exploits::ExportTelemetry(path.c_str()) ? "Timing log exported: tickshift.csv" : "Timing log export failed", Color(200, 200, 200));
-        }
     }
     ImGui::EndChild();
 
@@ -258,8 +253,8 @@ void menu::Rage(ImVec2 savedCursorPosition) {
         if (bAutostop[iSelect]) {
             bool* bConditionsarray[] = { &bConditions[iSelect][0], &bConditions[iSelect][1] };
             ImGui::MultiComboBox(("Condition"), arrConditionNames, *bConditionsarray, IM_ARRAYSIZE(arrConditionNames));
-            static const char* autoStopPhases[] = { "Disabled", "Slight", "Normal", "Aggressive" };
-            ImGui::Combo("Predict", &bAutostopAggressiveness[iSelect], autoStopPhases, IM_ARRAYSIZE(autoStopPhases));
+            static const char* autoStopPhases[] = { "Short", "Medium", "Long", "Extended" };
+            ImGui::Combo("Prediction horizon", &bAutostopAggressiveness[iSelect], autoStopPhases, IM_ARRAYSIZE(autoStopPhases));
         }
         if (iSelect < 3) {
 
@@ -278,7 +273,9 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
     static const char* arrYawBases[] = { ("Local view"), ("At target") };
     static const char* arrYaws[] = { ("Forward"), ("Backward") };
     static const char* arrModifiers[] = { ("Off"), ("Jitter"), ("Random"), ("Rytter"), ("Spin")};
-    static const char* arrDesyncs[] = { ("Off"), ("Static"), ("Extended"), ("Jitter"), ("Flick"), ("Automatic" ) };
+    static const char* arrDesyncs[] = { ("Off"), ("Static"), ("Extended"), ("Jitter"), ("Flick"), ("Automatic"),
+        ("Adaptive head cover"), ("Extended hold"), ("Extended pulse"), ("Extended cover"), ("Extended hybrid") };
+    static_assert(IM_ARRAYSIZE(arrDesyncs) == EXTENDED_HYBRID + 1);
     static const char* arrFreestands[] = { ("Off"), ("Circular"), ("Predictive")};
     static const char* arrFakelagType[] = { ("Normal"), ("Adaptive"), ("Jitter"), ("Random")};
 
@@ -323,6 +320,8 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
     ImGui::BeginChild(("##LeftWhole"), ImVec2(ImGui::GetContentRegionAvail().x / 2.f - Padding.x, ImGui::GetContentRegionAvail().y - Padding.y - 25.f), true);
     {
         ImGui::Checkbox(("Enable"), &bEnabled[iSelect]);
+        if (ImGui::Button("Use adaptive in this state")) antiaim::ApplyAdaptivePreset(iSelect);
+        if (ImGui::Button("Use extended in this state")) antiaim::ApplyExtendedPreset(iSelect);
         if ((bEnabled[STANDING] && iSelect == STANDING) || (bEnabled[MOVING] && iSelect == MOVING) || (bEnabled[INAIR] && iSelect == INAIR)) {
 
             ImGui::Combo(("Pitch"), &iPitch[iSelect], arrPitches, IM_ARRAYSIZE(arrPitches));
@@ -360,6 +359,20 @@ void menu::AntiAim(ImVec2 savedCursorPosition) {
 				ImGui::Checkbox(("Anti Prediction"), &bAntiJitter[iSelect]);
 			}
             ImGui::Combo(("Desync"), &iDesyncType[iSelect], arrDesyncs, IM_ARRAYSIZE(arrDesyncs));
+            if (iDesyncType[iSelect] == ADAPTIVE || iDesyncType[iSelect] == EXTENDED_COVER || iDesyncType[iSelect] == EXTENDED_HYBRID)
+                ImGui::Checkbox("Auto yaw", &bAdaptiveYaw[iSelect]);
+            if (iDesyncType[iSelect] == ADAPTIVE || iDesyncType[iSelect] == EXTENDED_HYBRID) {
+                ImGui::Checkbox("Coordinate lagcomp break", &bAdaptiveDefensive);
+                ImGui::Checkbox("Defensive pitch", &bDefensivePitch[iSelect]);
+            }
+            if (antiaim::IsAdaptiveMode(iDesyncType[iSelect]) && iDesyncType[iSelect] != EXTENDED_HOLD)
+                ImGui::Checkbox("React to nearby shots", &bAdaptiveReact);
+            switch (iDesyncType[iSelect]) {
+            case EXTENDED_HOLD: ImGui::TextWrapped("Stable standing break with a fixed side."); break;
+            case EXTENDED_PULSE: ImGui::TextWrapped("Standing break with a preparation pulse and cycle changes."); break;
+            case EXTENDED_COVER: ImGui::TextWrapped("Standing break that holds a covered head direction."); break;
+            case EXTENDED_HYBRID: ImGui::TextWrapped("Covered standing break; adaptive angles while moving or airborne."); break;
+            }
             if ( iDesyncType[iSelect] != 0 ) {
                 ImGui::Checkbox(("Inverter"), &bInverter);
                 ImGui::Keybind(("##iInverterBind"), &iInverterBind);

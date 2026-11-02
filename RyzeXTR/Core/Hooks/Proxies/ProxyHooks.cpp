@@ -2,7 +2,6 @@
 #include "../../Features/Changers/SkinChanger.h"
 #include "../../SDK/Entity.h"
 #include "../../globals.h"
-#include "../../Features/Rage/exploits.h"
 
 bool p::Setup()
 {
