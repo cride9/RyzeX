@@ -8,53 +8,57 @@
 #include "LagcompHistory.h"
 #include "RecordTraceScope.h"
 #include "exploits.h"
+#include "HitchanceMath.h"
 #include <optional>
 
-void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
+void CAimBot::CreateMove(CUserCmd* pCmd, CBaseEntity* pLocal) {
+	shotCandidates.clear();
+	candidateCommand = pCmd->iCommandNumber;
+	bShouldSendPacket = false;
 	hasValidPoint = false;
 
-	static CConVar* recoilScale = i::ConVar->FindVar( XorStr( "weapon_recoil_scale" ) );
+	static CConVar* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
 
-	if ( !cfg::rage::bEnable || ( !IPT::HandleInput( cfg::rage::iAimbotKey ) && cfg::rage::iAimbotKey != 0 ) ) {
+	if (!cfg::rage::bEnable || (!IPT::HandleInput(cfg::rage::iAimbotKey) && cfg::rage::iAimbotKey != 0)) {
 		scanRuntime.Reset();
 		return ResetAimbotData();
 	}
 
-	if ( ( *GameRules )->m_bFreezePeriod( ) )
+	if ((*GameRules)->m_bFreezePeriod())
 		return ResetAimbotData();
 
 	/* Run R8 Revolver cock */
-	misc::RevolverCreateMove( );
+	misc::RevolverCreateMove();
 
 	/* Create new data for aimbot */
-	aimData = rageBotData_t( );
-	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon( );
+	aimData = rageBotData_t();
+	CBaseCombatWeapon* pWeapon = pLocal->GetWeapon();
 
-	if ( pWeapon == nullptr )
-		return ResetAimbotData( );
-
-	if ( pWeapon->IsGrenade( ) || pWeapon->IsKnife( ) || !pWeapon->IsWeapon( ) )
+	if (pWeapon == nullptr)
 		return ResetAimbotData();
 
-	if ( !pWeapon->GetAmmo( ) )
-		return ResetAimbotData( );
+	if (pWeapon->IsGrenade() || pWeapon->IsKnife() || !pWeapon->IsWeapon())
+		return ResetAimbotData();
+
+	if (!pWeapon->GetAmmo())
+		return ResetAimbotData();
 
 	/* Get currently equipped weapon config */
-	curConfig = GetWeaponConfiguration( pWeapon->GetItemDefinitionIndex( ) );
+	curConfig = GetWeaponConfiguration(pWeapon->GetItemDefinitionIndex());
 	curConfig.pWeapon = pWeapon;
 	aimData.bFireReady = pLocal->CanShoot(pWeapon, pLocal->GetTickBase());
 
 	/* Make a vector out of every valid & tragetable entity */
-	std::vector<Lagcompensation::AnimationInfo_t*> vecTargets = GetTargetableEntities( pLocal );
+	std::vector<Lagcompensation::AnimationInfo_t*> vecTargets = GetTargetableEntities(pLocal);
 
-	if ( vecTargets.empty( ) )
+	if (vecTargets.empty())
 		return ResetAimbotData();
 
 	/* Use the current shoot position prepared by local animations */
-	vecEyePosition = localAnim->GetShootPosition( );
+	vecEyePosition = localAnim->GetShootPosition();
 
 	/* Scan stored entities & safepoint */
-	Vector vecShootPosition = ScanHitboxes( vecTargets, pLocal );
+	Vector vecShootPosition = ScanHitboxes(vecTargets, pLocal);
 	// Keep point availability independent of weapon cooldown and hitchance.
 	hasValidPoint = aimData.pRecord && vecShootPosition.IsValid()
 		&& lagcomp.GetRecordTiming(aimData.flTargetSimulation).valid;
@@ -77,56 +81,41 @@ void CAimBot::CreateMove( CUserCmd*  pCmd, CBaseEntity*  pLocal ) {
 		hasValidPoint = aimData.pRecord && vecShootPosition.IsValid()
 			&& lagcomp.GetRecordTiming(aimData.flTargetSimulation).valid;
 	}
-	if ( aimData.pRecord == nullptr )
+	if (aimData.pRecord == nullptr)
 		return ResetAimbotData();
 
-	/* Apply the selected record to the desired entity */
-	aimData.pRecord->ApplyMatrix( aimData.pAimbotTarget, RESOLVE );
-	if (stopping) {
-		const float damage = autowall.GetDamage(pLocal, vecEyePosition, vecShootPosition,
-			curConfig.pWeapon, aimData.pRecord);
-		const int minimum = curConfig.iMinimumDamage > 100
-			? (std::max)(aimData.pAimbotTarget->GetHealth(), 4) + curConfig.iMinimumDamage - 100
-			: curConfig.iMinimumDamage;
-		const int coverage = (aimData.bSafe || curConfig.bSafePoint)
-			? autowall.SafePoint(vecEyePosition, aimData.pRecord, vecShootPosition, aimData.iHitbox) : 0;
-		if (!std::isfinite(damage) || damage < minimum || (aimData.bSafe && coverage != 3)
-			|| (curConfig.bSafePoint && coverage < 2)) {
-			hasValidPoint = false;
-			return ResetAimbotData();
-		}
-		aimData.vecLocalShootPosition = vecEyePosition;
-		aimData.flDamage = std::floor(damage);
-	}
-
 	/* Auto zoom & m_bResumeZoom check */
-	if ( curConfig.bAutoScope && !pLocal->IsScoped( ) && !pLocal->IsResumingScope( ) )
+	if (curConfig.bAutoScope && !pLocal->IsScoped() && !pLocal->IsResumingScope())
 		pCmd->iButtons |= IN_ZOOM;
 
+	// Revalidate all collected points after braking, using the final eye and spread.
+	if (aimData.bFireReady && !TryShotCandidates(pCmd, pLocal, pLocal->GetTickBase()))
+		return ResetAimbotData();
+	vecShootPosition = aimData.vecTargetShootPosition;
+
 	/* Calculate the aim angle with vectorAngles */
-	Vector vecAimAngle = ( M::VectorAngles( vecShootPosition - vecEyePosition ) -= ( pLocal->GetAimPunch( ) * recoilScale->GetFloat( ) ) );
+	Vector vecAimAngle = (M::VectorAngles(vecShootPosition - vecEyePosition) -= (pLocal->GetAimPunch() * recoilScale->GetFloat()));
 
 	/* Calculate current hitchance & accuracy boost */
 	// Fire as soon as accuracy is sufficient, including while still moving.
 	aimData.bCanShoot = aimData.bFireReady
-		&& HitChance( pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord );
+		&& HitChance(pCmd, pLocal, vecShootPosition, vecAimAngle, aimData.pRecord);
 
 	/* Wait til we can shoot */
-	if ( !aimData.bCanShoot || !aimData.bFireReady )
-		return ResetAimbotData( );
+	if (!aimData.bCanShoot || !aimData.bFireReady)
+		return ResetAimbotData();
 	const auto timing = lagcomp.GetRecordTiming(aimData.flTargetSimulation);
 	if (!timing.valid) return ResetAimbotData();
 
 	/* Shoot entity when we can & have enough hitchance */
 	pCmd->angViewPoint = vecAimAngle;
-	if ( !cfg::rage::bSilentAim ) i::EngineClient->SetViewAngles( vecAimAngle );
+	if (!cfg::rage::bSilentAim) i::EngineClient->SetViewAngles(vecAimAngle);
 
 	pCmd->iButtons |= IN_ATTACK;
 	aimData.iTickcount = pCmd->iTickCount;
 	aimData.iDesiredTickcount = timing.commandTick;
 	aimData.iBacktrackTicks = pCmd->iTickCount - timing.commandTick;
 	aimData.shotTiming = timing;
-
 
 	/* Sending packet in prediction will cause hit registration delay ( only in CHLClient::CreateMove() ) */
 	bShouldSendPacket = true;
@@ -136,14 +125,71 @@ void CAimBot::ResetAimbotData() {
 	aimData.ClearTarget();
 }
 
+bool CAimBot::TryShotCandidates(CUserCmd* cmd, CBaseEntity* local, int tickbase) {
+	if (!cmd || !local || candidateCommand != cmd->iCommandNumber || !curConfig.pWeapon
+		|| local->GetWeapon() != curConfig.pWeapon || !local->CanShoot(curConfig.pWeapon, tickbase)) return false;
+	vecEyePosition = localAnim->GetShootPosition();
+	static auto* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
+	for (const auto& candidate : shotCandidates) {
+		auto* record = candidate.pRecord;
+		if (!record || !record->pEntity || !record->bAnimationMatrixValid) continue;
+		auto* entity = record->pEntity;
+		if (record->iEntIndex < 1 || record->iEntIndex > 64 || entity->EntIndex() != record->iEntIndex
+			|| playerList::arrPlayers[record->iEntIndex].bWhiteList) continue;
+		if (entity->GetRefEHandle() != candidate.uEntityHandle || entity->GetSpawnTime() != candidate.flEntitySpawn
+			|| !entity->IsAlive() || entity->IsDormant() || entity->HasImmunity() || !entity->IsEnemy(local)) continue;
+		const auto timing = lagcomp.GetRecordTiming(record->flSimulationTime, .2f, tickbase);
+		if (!timing.valid) continue;
+		// Every attempt restores the previous entity before trying another pose.
+		RecordTraceScope trace(entity);
+		if (!trace.Ready()) continue;
+		record->ApplyMatrix(entity, RESOLVE);
+		const int minimum = curConfig.iMinimumDamage > 100
+			? (std::max)(entity->GetHealth(), 4) + curConfig.iMinimumDamage - 100 : curConfig.iMinimumDamage;
+		FireBulletData_t data{};
+		const float damage = autowall.GetDamage(local, vecEyePosition, candidate.vecPoint, curConfig.pWeapon, record, &data);
+		if (!std::isfinite(damage) || damage < minimum || data.enterTrace.iHitbox != candidate.iHitbox) continue;
+		const int coverage = candidate.iRequiredCoverage || candidate.bSafe
+			? autowall.SafePoint(vecEyePosition, record, candidate.vecPoint, candidate.iHitbox) : 0;
+		// Being ranked "safe" is quality information, not an implicit force-safe.
+		if (coverage < candidate.iRequiredCoverage) continue;
+		const float chance = PointHitchance(local, candidate.vecPoint, record, candidate.iHitbox);
+		if (!hitchance::Meets(chance, curConfig.iHitchance)) continue;
+		aimData.SetTarget(record, vecEyePosition, candidate.bBacktrack);
+		aimData.bSafe = coverage == 3;
+		aimData.iRequiredCoverage = candidate.iRequiredCoverage;
+		aimData.flDamage = std::floor(damage);
+		aimData.flHitchance = chance;
+		aimData.iHitbox = candidate.iHitbox;
+		aimData.iHitGroup = data.enterTrace.iHitGroup;
+		aimData.vecTargetShootPosition = candidate.vecPoint;
+		aimData.bCanShoot = aimData.bFireReady = true;
+		aimData.iDesiredTickcount = timing.commandTick;
+		aimData.iBacktrackTicks = cmd->iTickCount - timing.commandTick;
+		aimData.shotTiming = timing;
+		cmd->angViewPoint = M::VectorAngles(candidate.vecPoint - vecEyePosition) - local->GetAimPunch() * recoilScale->GetFloat();
+		if (!cfg::rage::bSilentAim) i::EngineClient->SetViewAngles(cmd->angViewPoint);
+		return true;
+	}
+	return false;
+}
+
 void CAimBot::RevalidatePrediction(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	if (!bShouldSendPacket || !(pCmd->iButtons & IN_ATTACK) || !aimData.pRecord)
 		return;
+	if (candidateCommand == pCmd->iCommandNumber && !shotCandidates.empty()) {
+		if (!TryShotCandidates(pCmd, pLocal, pLocal->GetTickBase())) {
+			pCmd->iButtons &= ~IN_ATTACK;
+			bShouldSendPacket = false;
+			aimData.ClearTarget();
+		}
+		return;
+	}
 	const auto reject = [&] {
 		pCmd->iButtons &= ~IN_ATTACK;
 		bShouldSendPacket = false;
 		aimData.ClearTarget();
-	};
+		};
 	const int tickbase = pLocal->GetTickBase();
 	const auto timing = lagcomp.GetRecordTiming(aimData.flTargetSimulation, .2f, tickbase);
 	if (!timing.valid || pLocal->GetWeapon() != curConfig.pWeapon
@@ -163,8 +209,8 @@ void CAimBot::RevalidatePrediction(CUserCmd* pCmd, CBaseEntity* pLocal) {
 		: curConfig.iMinimumDamage;
 	if (!std::isfinite(damage) || damage < minimum
 		|| !HitChance(pCmd, pLocal, aimData.vecTargetShootPosition, angle, aimData.pRecord)) return reject();
-	if (aimData.bSafe && autowall.SafePoint(vecEyePosition, aimData.pRecord,
-		aimData.vecTargetShootPosition, aimData.iHitbox) != 3) return reject();
+	if (aimData.iRequiredCoverage && autowall.SafePoint(vecEyePosition, aimData.pRecord,
+		aimData.vecTargetShootPosition, aimData.iHitbox) < aimData.iRequiredCoverage) return reject();
 
 	aimData.vecLocalShootPosition = vecEyePosition;
 	aimData.flDamage = std::floor(damage);
@@ -175,7 +221,7 @@ void CAimBot::RevalidatePrediction(CUserCmd* pCmd, CBaseEntity* pLocal) {
 	if (!cfg::rage::bSilentAim) i::EngineClient->SetViewAngles(angle);
 }
 
-bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
+bool CAimBot::PostPrediction(CUserCmd* pCmd, bool& bSendPacket) {
 	const bool armed = bShouldSendPacket;
 	bShouldSendPacket = false;
 	if (!pCmd || !(pCmd->iButtons & IN_ATTACK)) {
@@ -191,13 +237,17 @@ bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
 	// Exploits can finalize a different command tickbase after the initial
 	// prediction. Validate the selected timestamp against that final plan.
 	const int tickbase = g::pLocal ? g::pLocal->GetTickBase() : -1;
-	const auto timing = lagcomp.GetRecordTiming(aimData.flTargetSimulation, .2f, tickbase);
+	auto timing = lagcomp.GetRecordTiming(aimData.flTargetSimulation, .2f, tickbase);
 	if (!timing.valid || !g::pLocal || !g::pLocal->CanShoot(curConfig.pWeapon, tickbase)
 		|| timing.commandTick != aimData.iDesiredTickcount
 		|| std::fabs(timing.lerp - aimData.shotTiming.lerp) > .000001f) {
-		pCmd->iButtons &= ~IN_ATTACK;
-		aimData.ClearTarget();
-		return false;
+		if (TryShotCandidates(pCmd, g::pLocal, tickbase))
+			timing = aimData.shotTiming;
+		else {
+			pCmd->iButtons &= ~IN_ATTACK;
+			aimData.ClearTarget();
+			return false;
+		}
 	}
 	pCmd->iTickCount = timing.commandTick;
 	aimData.shotTiming = timing;
@@ -212,19 +262,19 @@ bool CAimBot::PostPrediction( CUserCmd* pCmd, bool&  bSendPacket ) {
 	return send;
 }
 
-CAimBot::SCAN CAimBot::ShouldSkipRecord( Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pNewerRecord ) {
+CAimBot::SCAN CAimBot::ShouldSkipRecord(Lagcompensation::LagRecord_t* pRecord, Lagcompensation::LagRecord_t* pNewerRecord) {
 
 	// A teleport boundary belongs between two records. Its newest endpoint
 	// remains usable; only traversal into the older side is forbidden.
-	if ( pNewerRecord && pNewerRecord->bBreakingLagcompensation )
+	if (pNewerRecord && pNewerRecord->bBreakingLagcompensation)
 		return SCAN_BREAK;
 
-	if ( cfg::rage::iAimbotFov < 180 ) {
+	if (cfg::rage::iAimbotFov < 180) {
 
 		float flRadius = 0.f;
-		Vector vecDistanceBetween = ( g::vecOriginalViewAngle - M::VectorAngles( pRecord->vecOrigin - vecEyePosition ) );
+		Vector vecDistanceBetween = (g::vecOriginalViewAngle - M::VectorAngles(pRecord->vecOrigin - vecEyePosition));
 
-		if ( fabsf( ( vecDistanceBetween ).Normalize( ).Length2D( ) ) > cfg::rage::iAimbotFov )
+		if (fabsf((vecDistanceBetween).Normalize().Length2D()) > cfg::rage::iAimbotFov)
 			return SCAN_SKIP;
 	}
 
@@ -242,7 +292,8 @@ bool CAimBot::GetIntersectionPoint(Lagcompensation::LagRecord_t* record, int hit
 				cached.point = hitbox::FromVector(record->vecRageSafePoint);
 				cached.valid = hitbox::ContainsAll(record->headHypotheses.data(), record->headHypotheses.size(), cached.point, .03);
 			}
-		} else {
+		}
+		else {
 			const auto box = record->pEntity->StudioHitbox(hitboxIndex);
 			std::array<hitbox::Shape, 4> shapes{};
 			int index = 0;
@@ -262,8 +313,9 @@ bool CAimBot::GetIntersectionPoint(Lagcompensation::LagRecord_t* record, int hit
 }
 
 Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vecIn, CBaseEntity* pLocal) {
+	shotCandidates.clear();
 	scanStatistics = {};
-	hitscan::ScanTimer timer{scanStatistics};
+	hitscan::ScanTimer timer{ scanStatistics };
 	if (!pLocal || !curConfig.pWeapon || !vecEyePosition.IsValid()) return {};
 	std::uint64_t signature = 14695981039346656037ull;
 	auto hashValue = [&](const auto& value) { signature = hitscan::HashBytes(&value, sizeof(value), signature); };
@@ -327,11 +379,11 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		backtrack::HistoryWalk history(hitbox::FromVector(log->pEntity->GetVecOrigin()));
 		for (int age = 0; age <= log->iLastValid; ++age) {
 			auto record = &log->pRecord[age];
-			if (!history.Visit(hitbox::FromVector(record->vecOrigin),!record->bDormant,record->bBreakingLagcompensation)) {
+			if (!history.Visit(hitbox::FromVector(record->vecOrigin), !record->bDormant, record->bBreakingLagcompensation)) {
 				++scanStatistics.historyBreaks; break;
 			}
 			if (cfg::rage::bLimitScan && (age & 1)) continue;
-			const auto skip = ShouldSkipRecord(record,age ? &log->pRecord[age-1] : nullptr);
+			const auto skip = ShouldSkipRecord(record, age ? &log->pRecord[age - 1] : nullptr);
 			if (skip == SCAN_BREAK) break;
 			if (skip == SCAN_SKIP || !record->bValid || !record->bAnimationMatrixValid || record->pEntity != log->pEntity || record->iEntIndex != entityIndex) continue;
 			++scanStatistics.recordsConsidered;
@@ -339,7 +391,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 				: autowall.GetDamageUpperBound(vecEyePosition, curConfig.pWeapon, record);
 			if (std::floor(upper) < minimum) { ++scanStatistics.boundSkips; continue; }
 			targetJobs[entityIndex].push_back(static_cast<int>(jobs.size()));
-			jobs.push_back({record, age, minimum, upper, -1, !adaptive});
+			jobs.push_back({ record, age, minimum, upper, -1, !adaptive });
 		}
 		if (!targetJobs[entityIndex].empty()) targets.push_back(entityIndex);
 	}
@@ -355,28 +407,18 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 	auto exhausted = [&]() {
 		if (!stopped && scanRuntime.Exhausted(scanStatistics)) { stopped = true; ++scanStatistics.budgetStops; }
 		return stopped;
-	};
+		};
 	auto prepare = [&](Job& job) {
 		if (!job.prepared) {
 			job.upper = autowall.GetDamageUpperBound(vecEyePosition, curConfig.pWeapon, job.record);
 			job.prepared = true; ++scanStatistics.recordVisits;
 		}
 		return std::floor(job.upper) >= job.minimum;
-	};
-	auto canImprove = [&](const Job& job, int hitboxIndex, bool headOverlap) {
-		if (!found) return true;
-		Hitscan_t optimistic;
-		optimistic.flDamage = std::floor(job.upper);
-		optimistic.iTransformedDamage = static_cast<int>(job.minimum);
-		optimistic.bHeadOverlap = headOverlap;
-		optimistic.bSafe = true;
-		optimistic.bBaimLethal = hitboxIndex != HITBOX_HEAD && job.upper > job.record->pEntity->GetHealth();
-		return optimistic < best;
-	};
+		};
 	auto damage = [&](Job& job, Vector point, FireBulletData_t& data) {
 		const Vector direction = (point - vecEyePosition).Normalized();
 		if (!direction.IsValid() || direction.LengthSqr() <= 0.f) return -1.f;
-		const std::array<float, 3> key{direction.x, direction.y, direction.z};
+		const std::array<float, 3> key{ direction.x, direction.y, direction.z };
 		const int count = job.record->pEntity->GetCachedBoneData().Count();
 		if (count <= 0 || count > MAXSTUDIOBONES) return -1.f;
 		if (job.memo < 0) {
@@ -394,7 +436,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 			}
 			if (job.memo < 0) {
 				job.memo = static_cast<int>(memo.size());
-				memo.push_back({job.record, count, poseHash, {}});
+				memo.push_back({ job.record, count, poseHash, {} });
 				targetMemo[entityIndex].push_back(job.memo);
 				memo.back().rays.reserve(16);
 			}
@@ -436,9 +478,9 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		if (data.failure == hitscan::Failure::Deadline) { ++scanStatistics.deadlineStops; stopped = adaptive; }
 		scanRuntime.Observe(probe, std::isfinite(value) && value >= job.minimum, data.failure);
 		if (data.failure != hitscan::Failure::Deadline && data.failure != hitscan::Failure::Invalid)
-			rays.push_back({key, value, data});
+			rays.push_back({ key, value, data });
 		return value;
-	};
+		};
 	std::uint32_t normalMask = 0, multipointMask = 0, safeMask = 0;
 	for (int box : curConfig.vecHitboxes[NORMAL]) if (box >= 0 && box < HITBOX_MAX) normalMask |= 1u << box;
 	for (int box : curConfig.vecHitboxes[MULTIPOINT]) if (box >= 0 && box < HITBOX_MAX) multipointMask |= 1u << box;
@@ -451,8 +493,6 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		auto record = job.record;
 		const bool rejected = experimentalResolver.IsRejected(record);
 		const bool experimentalHead = record->iResolverMode == static_cast<int>(resolver::Mode::Experimental) && hitboxIndex == HITBOX_HEAD;
-		const bool headPotential = experimentalHead && record->bHasHeadOverlap;
-		if (!canImprove(job, hitboxIndex, mode != 1 && mode != 4 && headPotential)) { ++scanStatistics.boundSkips; return; }
 		Vector common;
 		const bool hasCommon = GetIntersectionPoint(record, hitboxIndex, common);
 		hitscan::Points<Vector> points;
@@ -460,7 +500,8 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 		else if (mode == 0 || (mode == 2 && hasCommon)) {
 			if (!hasCommon) return;
 			points.push_back(common);
-		} else {
+		}
+		else {
 			points = CreatePoints(vecEyePosition, curConfig.pWeapon, record, hitboxIndex, RESOLVE,
 				(mode == 1 || mode == 4) && (multipointMask & (1u << hitboxIndex)) != 0);
 			if (mode == 2 && !points.empty()) {
@@ -486,7 +527,6 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 			if (mode == 1 && experimentalHead && record->bHasHeadOverlap && point == record->vecRageSafePoint) continue;
 			const bool isCommon = hasCommon && point == common;
 			const bool overlapHead = isCommon && experimentalHead;
-			if (!canImprove(job, hitboxIndex, overlapHead)) { ++scanStatistics.boundSkips; continue; }
 			int coverage = isCommon ? 3 : 0;
 			if (!isCommon && (curConfig.bSafePoint || playerSafe || forceSafe || experimentalHead || rejected))
 				coverage = autowall.SafePoint(vecEyePosition, record, point, hitboxIndex);
@@ -499,7 +539,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 			const Vector ray = (point - vecEyePosition).Normalized();
 			Job rayJob = job;
 			rayJob.upper = (std::min)(job.upper, autowall.GetDamageUpperBound(vecEyePosition, curConfig.pWeapon, record, &ray));
-			if (std::floor(rayJob.upper) < job.minimum || !canImprove(rayJob, hitboxIndex, overlapHead)) {
+			if (std::floor(rayJob.upper) < job.minimum) {
 				++scanStatistics.boundSkips; continue;
 			}
 			if (isCommon) ++scanStatistics.intersectionPoints; else ++scanStatistics.fallbackPoints;
@@ -509,18 +549,29 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 			if (overlapHead && data.enterTrace.iHitbox != HITBOX_HEAD) continue;
 			Hitscan_t candidate(record, point, data, hitboxIndex != HITBOX_HEAD && value > record->pEntity->GetHealth(),
 				safe, static_cast<int>(job.minimum), job.age, overlapHead);
+			candidate.iRequiredCoverage = rejected || playerSafe || forceSafe ? 3 : curConfig.bSafePoint ? 2 : 0;
+			candidate.uEntityHandle = record->pEntity->GetRefEHandle();
+			candidate.flEntitySpawn = record->pEntity->GetSpawnTime();
+			const auto accuracyStart = hitscan::Clock::now();
+			candidate.flHitchance = PointHitchance(pLocal, point, record, candidate.iHitbox);
+			candidate.bHitchance = hitchance::Meets(candidate.flHitchance, curConfig.iHitchance);
+			const double accuracyMicros = std::chrono::duration<double, std::micro>(hitscan::Clock::now() - accuracyStart).count();
+			++scanStatistics.hitchanceCalls; scanStatistics.hitchanceMicros += accuracyMicros;
+			scanRuntime.frameUsedMicros += accuracyMicros;
+			const auto duplicate = std::find_if(shotCandidates.begin(), shotCandidates.end(), [&](const Hitscan_t& previous) {
+				return previous.pRecord == record && previous.iHitbox == candidate.iHitbox
+					&& previous.iRequiredCoverage == candidate.iRequiredCoverage && previous.vecPoint == point;
+			});
+			if (duplicate == shotCandidates.end()) shotCandidates.push_back(candidate);
 			if (!found || candidate < best) { best = candidate; found = true; bestRequested = hitboxIndex; }
 		}
-	};
-	auto decisive = [&]() {
-		return adaptive && found && best.bSafe && best.flDamage >= best.iTransformedDamage
-			&& (best.bHeadOverlap || best.flDamage > best.pRecord->pEntity->GetHealth());
-	};
+		};
 	if (!adaptive) {
 		for (int phase = 0; phase < 2; ++phase)
 			for (auto& job : jobs)
 				for (int box : curConfig.vecHitboxes[NORMAL]) scanBox(job, box, phase);
-	} else if (!targets.empty()) {
+	}
+	else if (!targets.empty()) {
 		// Rotate the first target and one representative historical record on
 		// every scan, including no-hit scans. Expensive failures cannot monopolize
 		// all future command budgets.
@@ -532,7 +583,7 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 			auto& selected = representatives[index];
 			auto add = [&](int job) {
 				if (std::find(selected.begin(), selected.end(), job) == selected.end()) selected.push_back(job);
-			};
+				};
 			add(list.front());
 			auto& hint = scanRuntime.hints[index];
 			const auto entity = jobs[list.front()].record->pEntity;
@@ -548,25 +599,17 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 			for (size_t offset = 0; offset < list.size() && selected.size() < 3; ++offset) add(list[(cursor + offset) % list.size()]);
 			explorers[index] = selected[selected.size() - 1];
 		}
-		const int previous = scanRuntime.previousTarget;
-		if (previous > 0 && previous < 65 && scanRuntime.hints[previous].valid) {
-			const auto& hint = scanRuntime.hints[previous];
-			if (hint.hitbox >= 0 && hint.hitbox < HITBOX_MAX && (normalMask & (1u << hint.hitbox)))
-				for (int job : targetJobs[previous]) if (jobs[job].record->flSimulationTime == hint.simulation) {
-					const auto point = hitbox::ToVector(hint.point); scanBox(jobs[job], hint.hitbox, 3, &point); break;
-				}
-		}
 		// Give each target its newest head/body opportunity before another
 		// target's entire backtrack history or all peripheral multipoints.
 		// Leave a third of the command budget for widening points: otherwise
 		// continuously changing blocked poses can consume every scan in anchors.
 		auto coarseDone = [&]() {
 			return scanStatistics.damageCalls >= (std::max)(1, scanRuntime.CallLimit() * 2 / 3)
-				|| scanStatistics.damageMicros >= scanRuntime.TimeLimit() * (2. / 3.);
-		};
-		for (int round = 0; round < 3 && !exhausted() && !decisive() && !coarseDone(); ++round)
+				|| scanStatistics.damageMicros + scanStatistics.hitchanceMicros >= scanRuntime.TimeLimit() * (2. / 3.);
+			};
+		for (int round = 0; round < 1 && !exhausted() && !coarseDone(); ++round)
 			for (int index : targets) {
-				if (exhausted() || decisive() || coarseDone()) break;
+				if (exhausted() || coarseDone()) break;
 				if (round >= static_cast<int>(representatives[index].size())) continue;
 				auto& selected = representatives[index];
 				if (round == 0) {
@@ -581,10 +624,12 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 				}
 				auto& job = jobs[jobIndex];
 				const auto visits = scanRuntime.targetVisits[index];
-				if (round == 0 && (visits & 3u) == 0 && !curConfig.vecHitboxes[NORMAL].empty()) {
-					const unsigned ordinal = visits / 4 - 1;
+				if (round == 0 && !curConfig.vecHitboxes[NORMAL].empty()) {
+					const unsigned ordinal = visits - 1;
 					const auto count = curConfig.vecHitboxes[NORMAL].size();
-					scanBox(job, curConfig.vecHitboxes[NORMAL][ordinal % count], 4, nullptr, static_cast<unsigned>(ordinal / count));
+					const bool head = (normalMask & multipointMask & (1u << HITBOX_HEAD)) != 0;
+					scanBox(job, head ? HITBOX_HEAD : curConfig.vecHitboxes[NORMAL][ordinal % count], 4, nullptr,
+						head ? ordinal : static_cast<unsigned>(ordinal / count));
 				}
 				int body = -1;
 				for (int box : curConfig.vecHitboxes[NORMAL]) if (box != HITBOX_HEAD && box >= 0 && box < HITBOX_MAX) {
@@ -593,44 +638,56 @@ Vector CAimBot::ScanHitboxes(std::vector<Lagcompensation::AnimationInfo_t*>& vec
 					if (studio && studio->iGroup == HITGROUP_STOMACH) { body = box; break; }
 				}
 				if (normalMask & (1u << HITBOX_HEAD)) scanBox(job, HITBOX_HEAD, 2);
-				if (body >= 0 && !decisive() && !coarseDone()) scanBox(job, body, 2);
+				if (body >= 0 && !coarseDone()) scanBox(job, body, 2);
 			}
-		for (int round = 0; round < 3 && !exhausted() && !decisive(); ++round)
+		// A repeatedly slow stale hint must not consume the first probe forever.
+		const int previous = scanRuntime.previousTarget;
+		if (previous > 0 && previous < 65 && scanRuntime.hints[previous].valid) {
+			const auto& hint = scanRuntime.hints[previous];
+			if (hint.hitbox >= 0 && hint.hitbox < HITBOX_MAX && (normalMask & (1u << hint.hitbox)))
+				for (int job : targetJobs[previous]) if (jobs[job].record->flSimulationTime == hint.simulation) {
+					const auto point = hitbox::ToVector(hint.point); scanBox(jobs[job], hint.hitbox, 3, &point); break;
+				}
+		}
+		for (int round = 0; round < 3 && !exhausted(); ++round)
 			for (int index : targets) {
-				if (exhausted() || decisive()) break;
+				if (exhausted()) break;
 				if (round >= static_cast<int>(representatives[index].size())) continue;
 				auto& job = jobs[representatives[index][round]];
 				for (int box : curConfig.vecHitboxes[NORMAL]) {
-					if (exhausted() || decisive()) break;
-					scanBox(job, box, 0); if (!decisive()) scanBox(job, box, 1);
+					if (exhausted()) break;
+					scanBox(job, box, 0); scanBox(job, box, 1);
 				}
 			}
 		// Spare budget explores all remaining records in target rounds.
-		for (size_t round = 0; round < 32 && !exhausted() && !decisive(); ++round)
+		for (size_t round = 0; round < 32 && !exhausted(); ++round)
 			for (int index : targets) {
-				if (exhausted() || decisive()) break;
+				if (exhausted()) break;
 				const auto& list = targetJobs[index];
 				if (round >= list.size()) continue;
 				const int jobIndex = list[(round + scanRuntime.recordCursor[index]) % list.size()];
 				const auto& selected = representatives[index];
 				if (std::find(selected.begin(), selected.end(), jobIndex) != selected.end()) continue;
 				for (int box : curConfig.vecHitboxes[NORMAL]) {
-					if (exhausted() || decisive()) break;
-					scanBox(jobs[jobIndex], box, 0); if (!decisive()) scanBox(jobs[jobIndex], box, 1);
+					if (exhausted()) break;
+					scanBox(jobs[jobIndex], box, 0); scanBox(jobs[jobIndex], box, 1);
 				}
 			}
 	}
 	traceScope.reset();
+	std::stable_sort(shotCandidates.begin(), shotCandidates.end());
 	if (!found) return {};
 	if (adaptive) {
 		const auto entity = best.pRecord->pEntity;
 		scanRuntime.previousTarget = best.pRecord->iEntIndex;
-		scanRuntime.hints[scanRuntime.previousTarget] = {entity->GetRefEHandle(), entity->GetModel(), entity->GetSpawnTime(),
-			best.pRecord->flSimulationTime, hitbox::FromVector(best.vecPoint), bestRequested, true};
+		scanRuntime.hints[scanRuntime.previousTarget] = { entity->GetRefEHandle(), entity->GetModel(), entity->GetSpawnTime(),
+			best.pRecord->flSimulationTime, hitbox::FromVector(best.vecPoint), bestRequested, true };
 	}
 	aimData.SetTarget(best.pRecord, vecEyePosition, best.bBacktrack);
 	aimData.bSafe = best.bSafe;
+	aimData.iRequiredCoverage = best.iRequiredCoverage;
 	aimData.flDamage = best.flDamage;
+	aimData.flHitchance = best.flHitchance;
 	aimData.iHitbox = best.iHitbox;
 	aimData.iHitGroup = best.iHitgroup;
 	aimData.vecTargetShootPosition = best.vecPoint;
@@ -725,6 +782,7 @@ bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& targets, 
 		if (!grounded || speed <= 1.f || (origin - start).Length2D() < .1f) return false;
 		const Vector currentEye = vecEyePosition;
 		const auto currentAim = aimData;
+		auto currentCandidates = std::move(shotCandidates);
 		// Use the normal hitboxes, minimum damage, penetration and safety checks.
 		// A forecast can brake movement, but must never become an actual shot.
 		vecEyePosition = currentEye + origin - pLocal->GetVecOrigin();
@@ -732,6 +790,7 @@ bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& targets, 
 		const bool predictedPoint = aimData.pRecord && point.IsValid()
 			&& lagcomp.GetRecordTiming(aimData.flTargetSimulation).valid;
 		aimData = currentAim;
+		shotCandidates = std::move(currentCandidates);
 		vecEyePosition = currentEye;
 		if (!predictedPoint) return false;
 	}
@@ -755,261 +814,209 @@ bool CAimBot::AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& targets, 
 	return true;
 }
 
-bool CAimBot::HitChance( CUserCmd*  pCmd, CBaseEntity*  pLocal, Vector vecWorldPosition, Vector vecAimPosition, Lagcompensation::LagRecord_t*  pRecord ) {
-
-	matrix3x4a_t* pMatrix = pRecord->pMatricies[ RESOLVE ];
-
-	if ( curConfig.iHitchance <= 1 )
-		return true;
-
-	CBaseCombatWeapon* pWeapon = curConfig.pWeapon;
-	const CCSWeaponInfo* pWeaponData = curConfig.pWeapon->GetCSWpnData( );
-	const Vector vecShootPosition = vecEyePosition;
-	const float flGetSpread = prediction.flSpread;
-	const float flGetInaccuracy = prediction.flInaccuracy;
-
-	if ( vecShootPosition.DistTo( vecWorldPosition ) > pWeaponData->flRange )
-		return false;
-
-	//if (HasEnoughAccuracy(pLocal, flGetInaccuracy))
-	//	return true;
-
-	Vector vecForward = Vector( 0, 0, 0 );
-	Vector vecRight = Vector( 0, 0, 0 );
-	Vector vecUp = Vector( 0, 0, 0 );
-
-	M::AngleVectors( vecAimPosition, &vecForward, &vecRight, &vecUp );
-
-	vecForward.Normalize( );
-	vecRight.Normalize( );
-	vecUp.Normalize( );
-
-	bool bSpecialWeapon = pWeapon->GetItemDefinitionIndex( ) == EItemDefinitionIndex::WEAPON_AWP || pWeapon->GetItemDefinitionIndex( ) == EItemDefinitionIndex::WEAPON_SSG08;
-	int iAccuracry = bSpecialWeapon ? 256 : 128;
-
-	static bool bSetupSpreadValues = true;
-	static float flSpreadValues[ 256 ][ 6 ]{};
-
-	if ( bSetupSpreadValues )
-	{
-		bSetupSpreadValues = false;
-
-		for ( auto i = 0; i < 256; ++i )
-		{
-			M::RandomSeed( i + 1 );
-
-			float a = M::RandomFloat( 0.0f, 1.0f );
-			float b = M::RandomFloat( 0.0f, 6.283185307f );
-			float c = M::RandomFloat( 0.0f, 1.0f );
-			float d = M::RandomFloat( 0.0f, 6.283185307f );
-
-			flSpreadValues[ i ][ 0 ] = a;
-			flSpreadValues[ i ][ 1 ] = c;
-
-			auto flSinB = 0.0f, flCosB = 0.0f;
-			M::SinCos( b, &flSinB, &flCosB );
-
-			auto flSinD = 0.0f, flCosD = 0.0f;
-			M::SinCos( d, &flSinD, &flCosD );
-
-			flSpreadValues[ i ][ 2 ] = flSinB;
-			flSpreadValues[ i ][ 3 ] = flCosB;
-			flSpreadValues[ i ][ 4 ] = flSinD;
-			flSpreadValues[ i ][ 5 ] = flCosD;
-		}
-	}
-
-	int iHits = 0;
-	int iAccuracyHits = 0;
-	const int requiredHits = static_cast<int>(std::ceil(curConfig.iHitchance * iAccuracry / 100.f));
-	for ( auto i = 0; i < iAccuracry; ++i )
-	{
-		float flInacc = flSpreadValues[ i ][ 0 ] * flGetInaccuracy;
-		float flSpread = flSpreadValues[ i ][ 1 ] * flGetSpread;
-
-		float flSpreadX = flSpreadValues[ i ][ 3 ] * flInacc + flSpreadValues[ i ][ 5 ] * flSpread;
-		float flSpreadY = flSpreadValues[ i ][ 2 ] * flInacc + flSpreadValues[ i ][ 4 ] * flSpread;
-
-		Vector vecDirection = Vector( 0, 0, 0 );
-		vecDirection.x = vecForward.x + vecRight.x * flSpreadX + vecUp.x * flSpreadY;
-		vecDirection.y = vecForward.y + vecRight.y * flSpreadX + vecUp.y * flSpreadY;
-		vecDirection.z = vecForward.z + vecRight.z * flSpreadX + vecUp.z * flSpreadY;
-
-		Vector vecEnd = vecEyePosition + vecDirection * pWeaponData->flRange;
-
-		if ( autowall.bCollidePoint( vecShootPosition, vecEnd, aimData.pRecord->pEntity->StudioHitbox( aimData.iHitbox ), pMatrix ) )
-			iHits++;
-		if (iHits + iAccuracry - i - 1 < requiredHits) return false;
-
-		//if (autowall.bTraceMeantForHitbox(vecShootPosition, vecEnd, aimData.iHitbox, pRecord))
-		//	iAccuracyHits++;
-	}
-
-	int flFinalHitchance = static_cast< int >( iHits / ( static_cast< float >( iAccuracry ) / 100.f ) );
-	//int flFinalAccuracyBoost = static_cast<int>(static_cast<float>(iAccuracyHits) / (iAccuracry / 100.f));
-
-	/* Hitchance * accuracyboost% = how much shot MUST hit head */
-	//int flHitchanceAccuracy = static_cast<int>(curConfig.iHitchance * (static_cast<float>(curConfig.iAccuracyBoost) / 100.f));
-	//if (flFinalAccuracyBoost < flHitchanceAccuracy)
-	//	return false;
-
-	if ( flFinalHitchance >= curConfig.iHitchance ) {
-		aimData.flHitchance = flFinalHitchance;
-		return true;
-	}
-
-	return false;
+bool CAimBot::HitChance(CUserCmd*, CBaseEntity*, Vector point, Vector angle, Lagcompensation::LagRecord_t* record) {
+	aimData.flHitchance = CalculateHitchance(point, angle, record, aimData.iHitbox);
+	return hitchance::Meets(aimData.flHitchance, curConfig.iHitchance);
 }
 
-bool CAimBot::HasEnoughAccuracy( CBaseEntity*  pLocal, float flWeaponInAccuracy ) {
+float CAimBot::CalculateHitchance(Vector point, Vector angle, Lagcompensation::LagRecord_t* record, int hitboxIndex) {
+	if (curConfig.iHitchance <= 1) return 100.f;
+	if (!record || !record->pEntity || !record->bAnimationMatrixValid || !curConfig.pWeapon
+		|| hitboxIndex < 0 || hitboxIndex >= HITBOX_MAX || !point.IsValid() || !angle.IsValid()) return 0.f;
+	const auto* data = curConfig.pWeapon->GetCSWpnData();
+	const float inaccuracy = prediction.flInaccuracy, spread = prediction.flSpread;
+	if (!data || !std::isfinite(inaccuracy) || !std::isfinite(spread) || inaccuracy < 0.f || spread < 0.f
+		|| !std::isfinite(data->flRange) || vecEyePosition.DistTo(point) > data->flRange) return 0.f;
 
-	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar( XorStr( "weapon_accuracy_nospread" ) );
-	if ( weapon_accuracy_nospread->GetInt( ) == 1 )
+	// The same 256 Source RNG seeds as the previous hitchance. Build both
+	// inaccuracy and spread lobes once, not once per hitbox/sample.
+	static const auto seeds = [] {
+		std::array<hitchance::Seed, 256> values{};
+		for (int index = 0; index < 256; ++index) {
+			M::RandomSeed(index + 1);
+			auto& seed = values[index];
+			seed.radiusA = M::RandomFloat(0.f, 1.f);
+			const float angleA = M::RandomFloat(0.f, 6.283185307f);
+			seed.radiusB = M::RandomFloat(0.f, 1.f);
+			const float angleB = M::RandomFloat(0.f, 6.283185307f);
+			M::SinCos(angleA, &seed.sinA, &seed.cosA);
+			M::SinCos(angleB, &seed.sinB, &seed.cosB);
+		}
+		return values;
+	}();
+	static std::array<hitchance::Offset, 256> offsets{};
+	static float previousInaccuracy = -1.f, previousSpread = -1.f;
+	if (inaccuracy != previousInaccuracy || spread != previousSpread) {
+		for (int index = 0; index < 256; ++index) offsets[index] = hitchance::Spread(seeds[index], inaccuracy, spread);
+		previousInaccuracy = inaccuracy; previousSpread = spread;
+	}
+	Vector forward{}, right{}, up{};
+	M::AngleVectors(angle, &forward, &right, &up);
+	forward.Normalize(); right.Normalize(); up.Normalize();
+	const auto shape = hitbox::FromStudio(record->pEntity->StudioHitbox(hitboxIndex), record->pMatricies[RESOLVE]);
+	const hitchance::Footprint footprint(shape, hitbox::FromVector(vecEyePosition), hitbox::FromVector(forward),
+		hitbox::FromVector(right), hitbox::FromVector(up), data->flRange);
+	const int weapon = curConfig.pWeapon->GetItemDefinitionIndex();
+	const int count = weapon == WEAPON_SSG08 || weapon == WEAPON_AWP ? 256 : 128;
+	return hitchance::Percent(footprint, offsets.data(), count);
+}
+
+float CAimBot::PointHitchance(CBaseEntity* local, Vector point, Lagcompensation::LagRecord_t* record, int hitboxIndex) {
+	if (curConfig.iHitchance <= 1) return 100.f;
+	static auto* recoilScale = i::ConVar->FindVar(XorStr("weapon_recoil_scale"));
+	const Vector angle = M::VectorAngles(point - vecEyePosition) - local->GetAimPunch() * recoilScale->GetFloat();
+	return CalculateHitchance(point, angle, record, hitboxIndex);
+}
+
+bool CAimBot::HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy) {
+
+	static CConVar* weapon_accuracy_nospread = i::ConVar->FindVar(XorStr("weapon_accuracy_nospread"));
+	if (weapon_accuracy_nospread->GetInt() == 1)
 		return true;
 
 	CBaseCombatWeapon* pWeapon = curConfig.pWeapon;
 
 	// dont spamshot please
-	if ( pWeapon->GetNextPrimaryAttack( ) == i::GlobalVars->flCurrentTime )
+	if (pWeapon->GetNextPrimaryAttack() == i::GlobalVars->flCurrentTime)
 		return false;
 
 	// jumpscout
-	if ( pWeapon->GetItemDefinitionIndex( ) == WEAPON_SSG08 || pWeapon->GetItemDefinitionIndex( ) == WEAPON_REVOLVER )
-		if ( !( pLocal->GetFlags( ) & FL_ONGROUND ) )
-			if ( flWeaponInAccuracy <= 0.009f )
+	if (pWeapon->GetItemDefinitionIndex() == WEAPON_SSG08 || pWeapon->GetItemDefinitionIndex() == WEAPON_REVOLVER)
+		if (!(pLocal->GetFlags() & FL_ONGROUND))
+			if (flWeaponInAccuracy <= 0.009f)
 				return true;
 
 	return false;
 }
 
-weaponConfig_t CAimBot::GetWeaponConfiguration( short iItemDefinitionIndex ) {
+weaponConfig_t CAimBot::GetWeaponConfiguration(short iItemDefinitionIndex) {
 
 	using namespace cfg::rage;
 
 	int iWeapon = OTHER;
 
-	if ( iItemDefinitionIndex == WEAPON_USP_SILENCER || iItemDefinitionIndex == WEAPON_HKP2000 || iItemDefinitionIndex == WEAPON_ELITE || iItemDefinitionIndex == WEAPON_P250 || iItemDefinitionIndex == WEAPON_FIVESEVEN || iItemDefinitionIndex == WEAPON_CZ75A || iItemDefinitionIndex == WEAPON_GLOCK || iItemDefinitionIndex == WEAPON_TEC9 )
+	if (iItemDefinitionIndex == WEAPON_USP_SILENCER || iItemDefinitionIndex == WEAPON_HKP2000 || iItemDefinitionIndex == WEAPON_ELITE || iItemDefinitionIndex == WEAPON_P250 || iItemDefinitionIndex == WEAPON_FIVESEVEN || iItemDefinitionIndex == WEAPON_CZ75A || iItemDefinitionIndex == WEAPON_GLOCK || iItemDefinitionIndex == WEAPON_TEC9)
 		iWeapon = PISTOL;
-	else if ( iItemDefinitionIndex == WEAPON_REVOLVER || iItemDefinitionIndex == WEAPON_DEAGLE )
+	else if (iItemDefinitionIndex == WEAPON_REVOLVER || iItemDefinitionIndex == WEAPON_DEAGLE)
 		iWeapon = HEAVY_PISTOL;
-	else if ( iItemDefinitionIndex == WEAPON_SSG08 )
+	else if (iItemDefinitionIndex == WEAPON_SSG08)
 		iWeapon = SCOUT;
-	else if ( iItemDefinitionIndex == WEAPON_AWP )
+	else if (iItemDefinitionIndex == WEAPON_AWP)
 		iWeapon = AWP;
-	else if ( iItemDefinitionIndex == WEAPON_SCAR20 || iItemDefinitionIndex == WEAPON_G3SG1 )
+	else if (iItemDefinitionIndex == WEAPON_SCAR20 || iItemDefinitionIndex == WEAPON_G3SG1)
 		iWeapon = AUTO;
-	else if ( iItemDefinitionIndex == WEAPON_TASER )
+	else if (iItemDefinitionIndex == WEAPON_TASER)
 		iWeapon = ZEUS;
 
 	weaponConfig_t ret{};
 
-	ret.iMinimumDamage = ( bOverride && IPT::HandleInput( iOverrideBind ) ) ? iOverride[ iWeapon ] : iMinDamages[ iWeapon ];
-	ret.iHitchance = iHitchances[ iWeapon ];
-	ret.iAccuracyBoost = iAccuracyBoost[ iWeapon ];
-	ret.iHeadScale = iHeadPoints[ iWeapon ];
-	ret.iBodyScale = iBodyPoints[ iWeapon ];
-	ret.bSafePoint = bSafePoint[ iWeapon ];
-	ret.bAutostop = bAutostop[ iWeapon ];
-	ret.iAutostopValue = bAutostopAggressiveness[ iWeapon ];
-	ret.bConditions[ CONDITION_BETWEEN_SHOTS ] = bConditions[ iWeapon ][ CONDITION_BETWEEN_SHOTS ];
-	ret.bConditions[ CONDITION_INAIR ] = bConditions[ iWeapon ][ CONDITION_INAIR ];
-	ret.bAutoScope = ( iWeapon == SCOUT || iWeapon == AWP || iWeapon == AUTO ) ? bAutoScope[ iWeapon ] : false;
-	GetHitBoxes( NORMAL, ret.vecHitboxes[ NORMAL ], iWeapon );
-	GetHitBoxes( MULTIPOINT, ret.vecHitboxes[ MULTIPOINT ], iWeapon );
-	GetHitBoxes( SAFE, ret.vecHitboxes[ SAFE ], iWeapon );
+	ret.iMinimumDamage = (bOverride && IPT::HandleInput(iOverrideBind)) ? iOverride[iWeapon] : iMinDamages[iWeapon];
+	ret.iHitchance = iHitchances[iWeapon];
+	ret.iAccuracyBoost = iAccuracyBoost[iWeapon];
+	ret.iHeadScale = iHeadPoints[iWeapon];
+	ret.iBodyScale = iBodyPoints[iWeapon];
+	ret.bSafePoint = bSafePoint[iWeapon];
+	ret.bAutostop = bAutostop[iWeapon];
+	ret.iAutostopValue = bAutostopAggressiveness[iWeapon];
+	ret.bConditions[CONDITION_BETWEEN_SHOTS] = bConditions[iWeapon][CONDITION_BETWEEN_SHOTS];
+	ret.bConditions[CONDITION_INAIR] = bConditions[iWeapon][CONDITION_INAIR];
+	ret.bAutoScope = (iWeapon == SCOUT || iWeapon == AWP || iWeapon == AUTO) ? bAutoScope[iWeapon] : false;
+	GetHitBoxes(NORMAL, ret.vecHitboxes[NORMAL], iWeapon);
+	GetHitBoxes(MULTIPOINT, ret.vecHitboxes[MULTIPOINT], iWeapon);
+	if (ret.bSafePoint) GetHitBoxes(SAFE, ret.vecHitboxes[SAFE], iWeapon);
 
 	return ret;
 }
 
-void CAimBot::GetHitBoxes( int i, std::vector<int>& vecOut, int iWeapon ) {
+void CAimBot::GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon) {
 
-	if ( i::ConVar->FindVar( XorStr( "mp_damage_headshot_only" ) )->GetBool( ) ) {
-		vecOut.push_back( HITBOX_HEAD );
+	if (i::ConVar->FindVar(XorStr("mp_damage_headshot_only"))->GetBool()) {
+		vecOut.push_back(HITBOX_HEAD);
 		return;
 	}
 
-	if ( cfg::rage::bForceBaim && IPT::HandleInput( cfg::rage::iForceBaimKey ) ) {
+	if (cfg::rage::bForceBaim && IPT::HandleInput(cfg::rage::iForceBaimKey)) {
 
-		vecOut.push_back( HITBOX_STOMACH );
-		vecOut.push_back( HITBOX_CHEST );
+		vecOut.push_back(HITBOX_STOMACH);
+		vecOut.push_back(HITBOX_CHEST);
 		return;
 	}
 
-	for ( size_t iIndex = 0; iIndex < 6; iIndex++ )
+	for (size_t iIndex = 0; iIndex < 6; iIndex++)
 	{
-		if ( !cfg::rage::bHitboxes[ i ][ iWeapon ][ iIndex ] )
+		if (!cfg::rage::bHitboxes[i][iWeapon][iIndex])
 			continue;
 
-		switch ( iIndex )
+		switch (iIndex)
 		{
 		case 0:
-			vecOut.push_back( HITBOX_HEAD );
+			vecOut.push_back(HITBOX_HEAD);
 			break;
 
 		case 1:
-			vecOut.push_back( HITBOX_UPPER_CHEST );
+			vecOut.push_back(HITBOX_UPPER_CHEST);
 			break;
 
 		case 2:
-			vecOut.push_back( HITBOX_CHEST );
+			vecOut.push_back(HITBOX_CHEST);
 			break;
 
 		case 3:
-			vecOut.push_back( HITBOX_STOMACH );
+			vecOut.push_back(HITBOX_STOMACH);
 			break;
 
 		case 4:
-			vecOut.push_back( HITBOX_RIGHT_FOREARM );
-			vecOut.push_back( HITBOX_LEFT_FOREARM );
+			vecOut.push_back(HITBOX_RIGHT_FOREARM);
+			vecOut.push_back(HITBOX_LEFT_FOREARM);
 			break;
 
 		case 5:
-			vecOut.push_back( HITBOX_RIGHT_FOOT );
-			vecOut.push_back( HITBOX_LEFT_FOOT );
+			vecOut.push_back(HITBOX_RIGHT_FOOT);
+			vecOut.push_back(HITBOX_LEFT_FOOT);
 			break;
 		}
 	}
 }
 
-std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities( CBaseEntity*  pLocal ) {
-	targetDiagnostics={};
+std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities(CBaseEntity* pLocal) {
+	targetDiagnostics = {};
 
 	std::vector<Lagcompensation::AnimationInfo_t*> ret{};
 
-	CCSWeaponInfo* pWeaponData = curConfig.pWeapon->GetCSWpnData( );
-	if ( !pWeaponData )
+	CCSWeaponInfo* pWeaponData = curConfig.pWeapon->GetCSWpnData();
+	if (!pWeaponData)
 		return ret;
 
-	for ( int i = 1; i <= (std::min)(64,i::GlobalVars->nMaxClients); i++ ) {
+	for (int i = 1; i <= (std::min)(64, i::GlobalVars->nMaxClients); i++) {
 
-		CBaseEntity* pEntity = static_cast< CBaseEntity* >( i::EntityList->GetClientEntity( i ) );
+		CBaseEntity* pEntity = static_cast<CBaseEntity*>(i::EntityList->GetClientEntity(i));
 
-		if ( !pEntity || !pEntity->IsEnemy( pLocal ) || !pEntity->IsAlive( ) || pEntity->IsDormant( ) || pEntity->HasImmunity( ) )
+		if (!pEntity || !pEntity->IsEnemy(pLocal) || !pEntity->IsAlive() || pEntity->IsDormant() || pEntity->HasImmunity())
 			continue;
 
-		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog( i );
-		if ( !pLog || pLog->pRecord.empty( ) || pLog->pEntity != pEntity )
+		Lagcompensation::AnimationInfo_t* pLog = &lagcomp.GetLog(i);
+		if (!pLog || pLog->pRecord.empty() || pLog->pEntity != pEntity)
 			continue;
 
 		// OPTIMIZATION: skip entities that are further than our weapons range
-		if ( pLog->pEntity->GetVecOrigin( ).DistTo( pLocal->GetVecOrigin( ) ) > pWeaponData->flRange )
+		if (pLog->pEntity->GetVecOrigin().DistTo(pLocal->GetVecOrigin()) > pWeaponData->flRange)
 			continue;
 
-		if ( playerList::arrPlayers[ i ].bWhiteList )
+		if (playerList::arrPlayers[i].bWhiteList)
 			continue;
 
 		bool bHasValidRecord = false;
 		pLog->iLastValid = 0;
-		auto& diagnosis=targetDiagnostics[i];
+		auto& diagnosis = targetDiagnostics[i];
 		backtrack::HistoryWalk history(hitbox::FromVector(pEntity->GetVecOrigin()));
-		for ( auto j = 0u; j < pLog->pRecord.size( ); j++ ) {
+		for (auto j = 0u; j < pLog->pRecord.size(); j++) {
 
-			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at( j );
+			Lagcompensation::LagRecord_t* pCurrentRecord = &pLog->pRecord.at(j);
 			++diagnosis.records;
-			const bool chain=history.Visit(hitbox::FromVector(pCurrentRecord->vecOrigin),!pCurrentRecord->bDormant,
+			const bool chain = history.Visit(hitbox::FromVector(pCurrentRecord->vecOrigin), !pCurrentRecord->bDormant,
 				pCurrentRecord->bBreakingLagcompensation);
-			const auto timing=lagcomp.GetRecordTiming(pCurrentRecord->flSimulationTime);
-			pCurrentRecord->bValid=chain && pCurrentRecord->bAnimationMatrixValid && timing.valid;
+			const auto timing = lagcomp.GetRecordTiming(pCurrentRecord->flSimulationTime);
+			pCurrentRecord->bValid = chain && pCurrentRecord->bAnimationMatrixValid && timing.valid;
 			if (!chain) ++diagnosis.historyRejected;
 			else if (!pCurrentRecord->bAnimationMatrixValid) ++diagnosis.matrixRejected;
 			else if (!timing.valid) ++diagnosis.timingRejected;
@@ -1025,7 +1032,7 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities( C
 		if (!bHasValidRecord)
 			continue;
 
-		ret.push_back( pLog );
+		ret.push_back(pLog);
 	}
 
 	std::stable_sort(
@@ -1055,27 +1062,27 @@ std::vector<Lagcompensation::AnimationInfo_t*> CAimBot::GetTargetableEntities( C
 }
 
 hitscan::Points<Vector> CAimBot::CreatePoints(Vector vecEyePosition, CBaseCombatWeapon* pWeapon, Lagcompensation::LagRecord_t* pRecord,
-    int iHitbox, EMatrixType iType, bool bShouldMultipoint) {
-    hitscan::Points<Vector> points;
-    if (!pRecord || !pRecord->pEntity || !vecEyePosition.IsValid() || iHitbox<0 || iHitbox>=HITBOX_MAX
-        || iType<VISUAL || iType>=MAX || (iType==VISUAL ? !pRecord->bVisualMatrixValid : !pRecord->bAnimationMatrixValid)) return points;
-    const auto shape=hitbox::FromStudio(pRecord->pEntity->StudioHitbox(iHitbox),pRecord->pMatricies[iType]);
-    if (!multipoint::Valid(shape)) return points;
-    const auto append=[&](hitbox::Vec candidate) {
-        const Vector point=hitbox::ToVector(candidate);
-        // Recheck after float conversion, including points at large map coordinates.
-        if (!point.IsValid() || !shape.Contains(hitbox::FromVector(point))) return;
-        for (const auto& previous:points) if ((previous-point).LengthSqr()<1e-6f) return;
-        points.push_back(point);
-    };
-    if (iHitbox==HITBOX_HEAD && iType==RESOLVE && pRecord->bHasHeadOverlap
-        && pRecord->iResolverMode==static_cast<int>(resolver::Mode::Experimental))
-        append(hitbox::FromVector(pRecord->vecRageSafePoint));
-    if (!bShouldMultipoint) { append(shape.Center()); return points; }
-    const auto region=iHitbox==HITBOX_HEAD ? multipoint::Region::Head
-        : iHitbox==HITBOX_LEFT_FOOT || iHitbox==HITBOX_RIGHT_FOOT ? multipoint::Region::Foot
-        : iHitbox>=HITBOX_RIGHT_THIGH && iHitbox<=HITBOX_LEFT_CALF ? multipoint::Region::Leg : multipoint::Region::Body;
-    const int scale=iHitbox==HITBOX_HEAD ? curConfig.iHeadScale : curConfig.iBodyScale;
-    for (const auto candidate:multipoint::Generate(shape,hitbox::FromVector(vecEyePosition),region,scale)) append(candidate);
-    return points;
+	int iHitbox, EMatrixType iType, bool bShouldMultipoint) {
+	hitscan::Points<Vector> points;
+	if (!pRecord || !pRecord->pEntity || !vecEyePosition.IsValid() || iHitbox < 0 || iHitbox >= HITBOX_MAX
+		|| iType < VISUAL || iType >= MAX || (iType == VISUAL ? !pRecord->bVisualMatrixValid : !pRecord->bAnimationMatrixValid)) return points;
+	const auto shape = hitbox::FromStudio(pRecord->pEntity->StudioHitbox(iHitbox), pRecord->pMatricies[iType]);
+	if (!multipoint::Valid(shape)) return points;
+	const auto append = [&](hitbox::Vec candidate) {
+		const Vector point = hitbox::ToVector(candidate);
+		// Recheck after float conversion, including points at large map coordinates.
+		if (!point.IsValid() || !shape.Contains(hitbox::FromVector(point))) return;
+		for (const auto& previous : points) if ((previous - point).LengthSqr() < 1e-6f) return;
+		points.push_back(point);
+		};
+	if (iHitbox == HITBOX_HEAD && iType == RESOLVE && pRecord->bHasHeadOverlap
+		&& pRecord->iResolverMode == static_cast<int>(resolver::Mode::Experimental))
+		append(hitbox::FromVector(pRecord->vecRageSafePoint));
+	if (!bShouldMultipoint) { append(shape.Center()); return points; }
+	const auto region = iHitbox == HITBOX_HEAD ? multipoint::Region::Head
+		: iHitbox == HITBOX_LEFT_FOOT || iHitbox == HITBOX_RIGHT_FOOT ? multipoint::Region::Foot
+		: iHitbox >= HITBOX_RIGHT_THIGH && iHitbox <= HITBOX_LEFT_CALF ? multipoint::Region::Leg : multipoint::Region::Body;
+	const int scale = iHitbox == HITBOX_HEAD ? curConfig.iHeadScale : curConfig.iBodyScale;
+	for (const auto candidate : multipoint::Generate(shape, hitbox::FromVector(vecEyePosition), region, scale)) append(candidate);
+	return points;
 }

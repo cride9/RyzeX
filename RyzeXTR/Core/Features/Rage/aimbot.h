@@ -52,15 +52,20 @@ struct Hitscan_t {
 	bool bSafe{};
 	bool bHeadOverlap{};
 	bool bBacktrack{};
+	bool bHitchance = true;
 
 	float flAnimationVelocity{};
 	float flDesyncDelta{};
 	float flDamage{};
+	float flHitchance = 100.f;
 
 	int iHitbox{};
 	int iHitgroup{};
 	int iTransformedDamage{};
 	int iRecordCount{};
+	int iRequiredCoverage{};
+	unsigned int uEntityHandle{};
+	float flEntitySpawn{};
 
 	bool operator<(const Hitscan_t& other) const
 	{
@@ -69,16 +74,20 @@ struct Hitscan_t {
 			other.flDamage >= other.iTransformedDamage;
 
 		return std::make_tuple(
+			meetsDamage && bHitchance,
 			meetsDamage && bHeadOverlap,
 			bBaimLethal,
 			meetsDamage,
 			meetsDamage && bSafe,
+			flHitchance,
 			flDamage
 		) > std::make_tuple(
+			otherMeetsDamage && other.bHitchance,
 			otherMeetsDamage && other.bHeadOverlap,
 			other.bBaimLethal,
 			otherMeetsDamage,
 			otherMeetsDamage && other.bSafe,
+			other.flHitchance,
 			other.flDamage
 		);
 	}
@@ -106,6 +115,7 @@ struct rageBotData_t
 	bool bCanShoot{};
 	bool bFireReady{};
 	bool bSafe{};
+	int iRequiredCoverage{};
 
 	float flTargetSimulation{};
 	float flDamage{};
@@ -204,7 +214,7 @@ public:
 	const hitscan::Statistics& GetScanStatistics() const { return scanStatistics; }
 	const std::array<hitscan::TargetDiagnostics,65>& GetTargetDiagnostics() const { return targetDiagnostics; }
 	hitscan::Policy& GetScanPolicy() { return scanRuntime.policy; }
-	bool ShouldSendPacket( ) { return bShouldSendPacket; }
+	bool& ShouldSendPacket( ) { return bShouldSendPacket; }
 	bool HasValidPoint() const { return hasValidPoint; }
 
 private:
@@ -228,9 +238,15 @@ private:
 	hitscan::Statistics scanStatistics{};
 	std::array<hitscan::TargetDiagnostics,65> targetDiagnostics{};
 	hitscan::Runtime scanRuntime{};
+	// Command-local alternatives only; never reuse positive damage next tick.
+	std::vector<Hitscan_t> shotCandidates;
+	int candidateCommand = -1;
+	bool TryShotCandidates(CUserCmd* cmd, CBaseEntity* local, int tickbase);
 
 	bool HasEnoughAccuracy(CBaseEntity* pLocal, float flWeaponInAccuracy);
 	bool HitChance(CUserCmd* pCmd, CBaseEntity* pLocal, Vector vecWorldPosition, Vector vecPosition, Lagcompensation::LagRecord_t* pRecord);
+	float CalculateHitchance(Vector point, Vector angle, Lagcompensation::LagRecord_t* record, int hitbox);
+	float PointHitchance(CBaseEntity* local, Vector point, Lagcompensation::LagRecord_t* record, int hitbox);
 	
 	void GetHitBoxes(int i, std::vector<int>& vecOut, int iWeapon);
 	bool AutoStop(std::vector<Lagcompensation::AnimationInfo_t*>& targets, CBaseEntity* pLocal, CUserCmd* pCmd);

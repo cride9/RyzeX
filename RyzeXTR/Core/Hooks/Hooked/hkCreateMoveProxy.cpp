@@ -137,6 +137,9 @@ static void __stdcall CreateMove(int nSequenceNumber, float flInputSampleFrameti
 		exploits::iRequestTick = i::GlobalVars->iTickCount;
 		exploits::iRequestLocalTick = aimbot.GetAimbotData().iDesiredTickcount;
 	}
+
+	if (!bSendPacket)
+		bSendPacket = exploits::bRunningShift || exploits::bRunningRecharge;
 }
 
 __declspec(naked) void __fastcall h::hkCreateMoveProxy(IBaseClientDLL* thisptr, int edx, int nSequenceNumber, float flInputSampleFrametime, bool bIsActive)

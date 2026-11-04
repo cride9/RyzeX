@@ -41,7 +41,7 @@ struct Runtime {
     int CallLimit() const { return (std::max)(1, firing ? policy.firingCalls : policy.preparingCalls); }
     double TimeLimit() const { return (std::max)(1., firing ? policy.firingMicros : policy.preparingMicros); }
     bool Exhausted(const Statistics& stats) const {
-        return policy.adaptive && (stats.damageCalls >= CallLimit() || stats.damageMicros >= TimeLimit()
+        return policy.adaptive && (stats.damageCalls >= CallLimit() || stats.damageMicros + stats.hitchanceMicros >= TimeLimit()
             || frameUsedCalls >= (std::max)(1, policy.frameCalls)
             || frameUsedMicros >= (std::max)(1., policy.frameMicros));
     }
@@ -50,7 +50,7 @@ struct Runtime {
         // Finish the first admitted probe even if it is slow, so a valid wall
         // shot cannot time out every command and become permanently unreachable.
         query.timed = policy.adaptive && stats.damageCalls > 0;
-        const double remaining = (std::min)(TimeLimit() - stats.damageMicros,
+        const double remaining = (std::min)(TimeLimit() - stats.damageMicros - stats.hitchanceMicros,
             (std::max)(1., policy.frameMicros) - frameUsedMicros);
         query.deadline = Clock::now() + std::chrono::microseconds(static_cast<long long>((std::max)(1., remaining)));
         return query;

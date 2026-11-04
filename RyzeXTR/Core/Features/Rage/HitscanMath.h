@@ -17,7 +17,8 @@ struct Statistics {
     int recordsConsidered{}, recordVisits{}, deferredPoints{}, budgetStops{};
     int lowDamageStops{}, deadlineStops{}, traceCalls{}, exitSteps{};
     int historyBreaks{}, safetyRejected{}, resolverRejectedPoints{};
-    double damageMicros{}, totalMicros{};
+    int hitchanceCalls{};
+    double damageMicros{}, hitchanceMicros{}, totalMicros{};
 };
 enum class Failure { None, Invalid, NoHit, NoExit, Blocked, LowDamage, Deadline };
 using Clock = std::chrono::steady_clock;

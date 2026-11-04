@@ -24,7 +24,7 @@ inline Shape FromStudio(const mstudiobbox_t* box, const matrix3x4a_t* bones) {
     }
     if (!translation.Valid() || std::fabs(shape.axes[0].Dot(shape.axes[1])) > .001
         || std::fabs(shape.axes[0].Dot(shape.axes[2])) > .001 || std::fabs(shape.axes[1].Dot(shape.axes[2])) > .001) return shape;
-    shape.capsule = box->flRadius >= 0.f;
+    shape.capsule = box->flRadius > 0.f;
     if (shape.capsule) {
         // Nonuniformly scaled capsules become swept ellipsoids. Reject rather
         // than overestimate their volume; the engine path remains a fallback.

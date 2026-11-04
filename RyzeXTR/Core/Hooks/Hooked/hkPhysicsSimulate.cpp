@@ -4,6 +4,7 @@
 #include "../../Features/Misc/enginepred.h"
 #include "../../Features/Networking/networking.h"
 #include "../../Features/Misc/misc.h"
+#include "../../Features/Rage/exploits.h"
 #undef max
 
 /* CBasePlayer::PhysicsSimulate */
@@ -41,6 +42,19 @@ void __fastcall h::hkPhysicsSimulate(CBaseEntity* ecx, void* edx) {
 	{
 		SimulationTick = i::GlobalVars->iTickCount;
 		return networking.SaveNetvarData( pCommandContext->nCommandNumber );
+	}
+
+	if (!i::ClientState)
+		return original(ecx, edx);
+
+	auto& currentRecord = exploits::arrTickShiftingCount[(pCommandContext->pCmd.iCommandNumber - 1) % 128];
+
+	if (currentRecord.bValidRecord) {
+
+		const int iLeftOver = i::ClientState->nChokedCommands;
+
+		currentRecord.bValidRecord = false;
+		pEntity->GetTickBase() -= exploits::GetMaxShitAmount() - 1;
 	}
 
 	original(ecx, edx);

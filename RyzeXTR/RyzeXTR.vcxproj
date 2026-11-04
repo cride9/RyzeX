@@ -274,6 +274,7 @@
     <ClInclude Include="Core\Features\Rage\HitboxGeometry.h" />
     <ClInclude Include="Core\Features\Rage\MultipointGeometry.h" />
     <ClInclude Include="Core\Features\Rage\HitscanMath.h" />
+    <ClInclude Include="Core\Features\Rage\HitchanceMath.h" />
     <ClInclude Include="Core\Features\Rage\HitscanScheduler.h" />
     <ClInclude Include="Core\Features\Rage\BacktrackTiming.h" />
     <ClInclude Include="Core\Features\Rage\LagcompHistory.h" />
